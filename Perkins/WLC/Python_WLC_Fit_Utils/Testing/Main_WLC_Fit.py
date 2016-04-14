@@ -7,7 +7,7 @@ import sys
 
 baseDir = "../"
 sys.path.append(baseDir)
-sys.path.append("../../../../../")
+sys.path.append("../../../../../ ")
 import WLC_Fit
 
 def run():
