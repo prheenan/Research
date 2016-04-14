@@ -10,12 +10,20 @@ from scipy.optimize import curve_fit
 import GeneralUtil.python.GenUtilities as pGenUtil
 
 class WLC_DEF:
+    """
+    Class defining defaults for inputs. 
+
+    See Wang, 1997.
+    """
     L0 = 650e-9 # meters
     Lp = 50e-9 # meters
     K0 = 1200e-12 # Newtons
     kbT = 4.1e-21 # 4.1 pN * nm = 4.1e-21 N*m
 
 class WLC_MODELS:
+    """
+    Class definining valid models.
+    """
     EXTENSIBLE_WANG_1997 = 0
     INEXTENSIBLE_BOUICHAT_1999 = 1
 
@@ -119,6 +127,7 @@ web.mit.edu/cortiz/www/3.052/3.052CourseReader/38_BouchiatBiophysicalJ1999.pdf
     Returns:
         Model-predicted value for the force
     """
+    # parameters taken from paper cited above
     a0=0 
     a1=0
     a2=-.5164228
@@ -230,7 +239,6 @@ def WlcFit(ext,force,WlcOptions=WlcFitInfo()):
             if (close):
                 # then we are close enough to our final result!
                 break
-    print(params)
     return predicted
 
 
@@ -249,8 +257,9 @@ def NonExtensibleWlcFit(ext,force,VaryL0=True,VaryLp=False,**kwargs):
     model = WLC_MODELS.INEXTENSIBLE_BOUICHAT_1999
     mVals = WlcParamValues(**kwargs)
     toVary = WlcParamsToVary(VaryL0=VaryL0,VaryLp=VaryLp)
-    mInfo = WlcFitInfo(Model=model,
-                       ParamVals=mVals,VaryObj=toVary)
+    # create the informaiton to pass on to the fitter
+    mInfo = WlcFitInfo(Model=model,ParamVals=mVals,VaryObj=toVary)
+    # call the fitter
     return WlcFit(ext,force,mInfo)
 
 def ExtensibleWlcFit(ext,force,VaryL0=True,VaryLp=False,VaryK0=False,
