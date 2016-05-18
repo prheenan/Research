@@ -57,13 +57,14 @@ def NormalizedCorrelation(y1,y2):
     PointsConvolved = MaxPoints - PointsConvolved +1
     return PointsConvolved,Convolved
 
-def PlotExampleCorrelation(n=50000,out="./ExampleCorr.png"):
+def GetSampleFEC(n):
     """
-    Plots an example correlation
+    Get an AFM-style Force Extensioon Curve (FEC)
 
     Args:
-        n: number of points to use
-        out: where to save the result
+         n: number of points
+    Returns:
+         tuple of <x,y>, where x is time and y is the 'force'
     """
     TwoPi = 2 * np.pi
     # make the three regions in x
@@ -80,16 +81,35 @@ def PlotExampleCorrelation(n=50000,out="./ExampleCorr.png"):
     # concatenate them all
     x = np.concatenate((x1,x2,x3))
     y = np.concatenate((y1,y2,y3))
+    return x,y
+
+def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     # add in noise
     amplitude = 0.1
     Range = max(y)-min(y)
     AddNoise = lambda x : (x+(np.random.rand(x.size)-0.5)*2*amplitude*Range)
-    YNoise = AddNoise(y)
     # get an offset slice
     SliceFract = 0.02
-    NShift = int(YNoise.size*SliceFract)
+    NShift = int(y.size*SliceFract)
+    YNoise = AddNoise(y)[:]
     YShifted = AddNoise(y[NShift:])
     XShifted = x[NShift:]
+    XNoise = x[:]
+    return XShifted,XNoise,YShifted,YNoise
+
+    
+def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
+    """
+    Plots an example correlation, saving to 'out'
+
+    Args:
+        n: number of points to use
+        out: where to save the result
+        kwargs: passed to AddNoiseAndShift after x and y
+    """
+    x,y = GetSampleFEC(n)
+    XShifted,XNoise,YShifted,YNoise = AddNoiseAndShift(x,y,**kwargs)
+    NShift = len(y) - len(XShifted)
     PointsConvolved,Convolved = NormalizedCorrelation(YNoise,YShifted)
     MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
     NFullPoints = YShifted.size+YNoise.size-1
@@ -101,7 +121,7 @@ def PlotExampleCorrelation(n=50000,out="./ExampleCorr.png"):
     plt.subplot(2,1,1)
     plt.title("Correlation by Convolution efficiently determines time shift")
     plt.plot(x/DeltaX,StdNorm(y,*NormBy),'r-',linewidth=3.0,label="Noiseless")
-    plt.plot(x/DeltaX,StdNorm(YNoise,*NormBy),
+    plt.plot(XNoise/DeltaX,StdNorm(YNoise,*NormBy),
              'k-',label="Noisy, Unshifted",alpha=0.3)
     plt.plot(XShifted/DeltaX,StdNorm(YShifted,*NormBy),b'-',
              label="Noisy,Shifted",alpha=0.3)
