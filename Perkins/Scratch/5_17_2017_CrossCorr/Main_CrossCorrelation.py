@@ -9,9 +9,23 @@ from numpy import convolve as convolve
 from numpy import correlate as correlate
 
 def StdNorm(ToNorm,Offset,Scale):
+    """
+    Normalize an array to an offset and scale
+
+    Args:
+        ToNorm: What to normalize
+        Offset: what the new zero is. commonly mean
+        Scale: what the new scaling is. Commonly a standadrd deviation
+    Returns: 
+         The scaled array
+    """
     return (ToNorm-Offset)/Scale
 
 def Stats(x):
+    """
+    Returns:
+        the median and IQR (75%-25%)
+    """
     q75, q25 = np.percentile(x, [75 ,25])
     iqr = q75 - q25
     med = np.median(x)
@@ -43,7 +57,7 @@ def NormalizedCorrelation(y1,y2):
     PointsConvolved = MaxPoints - PointsConvolved +1
     return PointsConvolved,Convolved
 
-def PlotExampleCorrelation(n=2000,out="./ExampleCorr.png"):
+def PlotExampleCorrelation(n=50000,out="./ExampleCorr.png"):
     """
     Plots an example correlation
 
@@ -83,7 +97,7 @@ def PlotExampleCorrelation(n=2000,out="./ExampleCorr.png"):
     xlim = lambda : plt.xlim([0,max(x/DeltaX)])
     # normalize eveythning
     NormBy = Stats(y)
-    plt.figure()
+    fig = plt.figure()
     plt.subplot(2,1,1)
     plt.title("Correlation by Convolution efficiently determines time shift")
     plt.plot(x/DeltaX,StdNorm(y,*NormBy),'r-',linewidth=3.0,label="Noiseless")
@@ -104,7 +118,7 @@ def PlotExampleCorrelation(n=2000,out="./ExampleCorr.png"):
     plt.ylabel("Convolution (normalized)")
     plt.legend(loc='upper center')
     xlim()
-    plt.show()
+    fig.savefig(out)
 
 
     
