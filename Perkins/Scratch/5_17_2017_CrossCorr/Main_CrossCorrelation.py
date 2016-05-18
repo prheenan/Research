@@ -65,8 +65,9 @@ def FFTCrossCorrelation(y1,y2):
 
 def NormalizedCorrelation(y1,y2,CorrelationFunc=FFTCrossCorrelation):
     """
-    Returns the offset *from* y1 to y2, in units of data points, according to
-    the highest cross correlation.
+    Returns offset information from the larger of  (y1,y2) to the smaller 
+    of (y1,y2), defaulting to y1 to y2 if they tie. return is in units of data 
+    points, according to the highest cross correlation.
 
     Args:
         y1,y2: the two arrays to check.
@@ -76,6 +77,11 @@ def NormalizedCorrelation(y1,y2,CorrelationFunc=FFTCrossCorrelation):
     """
     # normalize the x and y
     norm = lambda x: (x-min(x))/(max(x)-min(x))
+    # may need to swap y1 and y2 (we assume y1 is the larger)
+    if (y2.size > y1.size):
+        tmp = y1.copy()
+        y1 = y2
+        y2 = tmp
     YNoiseAdded = y1
     Normalize = lambda x : StdNorm(x,med,iqr)
     YNoise = StdNorm(y1,*Stats(y1))
@@ -90,8 +96,8 @@ def NormalizedCorrelation(y1,y2,CorrelationFunc=FFTCrossCorrelation):
     # determine the actual 'shift' necessary
     # XXX explicitly define this
     PointsConvolved = np.arange(0,Convolved.size,dtype=np.float64)
-    MaxPoints = YNoise.size
-    PointsConvolved = MaxPoints - PointsConvolved -1
+    MaxPoints = max(YNoise.size,YShifted.size)
+    PointsConvolved = (MaxPoints - PointsConvolved -1)
     return PointsConvolved,Convolved
 
 def GetSampleFEC(n):
@@ -145,10 +151,12 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     # get an offset slice
     SliceFract = 0.02
     NShift = int(y.size*SliceFract)
-    YNoise = AddNoise(y)[:]
+    # shift *both*, in differnet ways
+    SliceNoise = slice(0,None,1)
+    YNoise = AddNoise(y)[SliceNoise]
     YShifted = AddNoise(y[NShift:])
     XShifted = x[NShift:]
-    XNoise = x[:]
+    XNoise = x[SliceNoise]
     return XShifted,XNoise,YShifted,YNoise,NShift
 
 def TestSpeed(Sizes=np.logspace(1,7),SizeNaiveCutoff=5e4):
@@ -231,22 +239,27 @@ def TestCorrectness(ShiftPercentages=np.linspace(0,1,num=10),
                             dtype=np.uint64)
     # loop through each percent and shift
     Errors = np.zeros((ShiftPercentages.size,Sizes.size))
+    print("Doing Correction Tests...")
     for i,pct in enumerate(ShiftPercentages):
         for j,size in enumerate(Sizes):
             # get the data and shift it
             x,y = GetSampleFEC(size)
             XShifted,XNoise,YShifted,YNoise,NShift = \
                 AddNoiseAndShift(x,y,SliceFract=pct)
-            # get the expected convolution
-            PointsConvolved,Convolved = NormalizedCorrelation(YNoise,YShifted)
-            MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
-            NPointsTotal = len(y)
-            Errors[i][j] = abs(MaxConvolved-NShift)/NPointsTotal
-            print(MaxConvolved,NShift,NPointsTotal)
-            # if that fails, check relative
-            np.testing.assert_allclose(NShift/NPointsTotal,
-                                       MaxConvolved/NPointsTotal,
-                                       atol=atol,rtol=rtol)
+            toTest = [ ([YNoise,YShifted],NShift),
+                       ([YShifted,YNoise],NShift)]
+            for args,Shift in toTest:
+                # get the expected convolution
+                PointsConvolved,Convolved = NormalizedCorrelation(*args)
+                MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
+                NPointsTotal = len(y)
+                Errors[i][j] = abs(MaxConvolved-NShift)/NPointsTotal
+                print("Checking if shift ({:d}) is close to predicted ({:d})".\
+                      format(MaxConvolved,Shift))
+                # if that fails, check relative
+                np.testing.assert_allclose(NShift/NPointsTotal,
+                                           MaxConvolved/NPointsTotal,
+                                           atol=atol,rtol=rtol)
     fig = plt.figure()
     Styles = [dict(color='r',marker='o',linestyle='--'),
               dict(color='g',marker='s',linestyle='-'),
@@ -278,7 +291,8 @@ def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
     MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
     NFullPoints = YShifted.size+YNoise.size-1
     DeltaX = np.median(np.diff(x))
-    xlim = lambda : plt.xlim([0,max(x/DeltaX)])
+    XLimits = [min(PointsConvolved),max(PointsConvolved)]
+    xlim = lambda : plt.xlim(XLimits)
     # normalize eveythning
     NormBy = Stats(y)
     fig = plt.figure()
@@ -290,18 +304,19 @@ def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
     plt.plot(XShifted/DeltaX,StdNorm(YShifted,*NormBy),b'-',
              label="Noisy,Shifted",alpha=0.3)
     plt.ylabel("Normalized measurement.")
-    plt.legend(loc='lower center')
+    plt.legend(loc='upper left')
     xlim()
     plt.subplot(2,1,2)
-    plt.plot(PointsConvolved,Convolved,'r--',label="Convolution")
+    plt.plot(PointsConvolved,Convolved,'r-',markersize=2,label="Convolution")
     plt.axvline(MaxConvolved,
-                label="Expect Shift: {:d} Points".format(MaxConvolved))
+                label="Expect Shift: {:d} Pts".format(MaxConvolved))
     plt.axvline(NShift,linestyle='--',
-                label="Actual Shift: {:d} Points".format(NShift))
+                label="Actual Shift: {:d} Pts".format(NShift))
     plt.xlabel("Time (au)")
     plt.ylabel("Convolution (normalized)")
-    plt.legend(loc='upper center')
+    plt.legend(loc='upper left')
     xlim()
+    plt.show()
     fig.savefig(out)
 
 
@@ -318,6 +333,7 @@ def run(RunSpeedTests=False,seed=42):
     np.random.seed(seed)
     PlotExampleCorrelation()
     TestCorrectness()
+    print("Passed correctness tests.")
     if (RunSpeedTests):
         TestSpeed()
 
