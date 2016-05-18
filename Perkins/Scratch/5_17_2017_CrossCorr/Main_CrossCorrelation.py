@@ -114,6 +114,32 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     XNoise = x[:]
     return XShifted,XNoise,YShifted,YNoise,NShift
 
+def TestSpeed(Sizes=np.logspace(1,4)):
+    """
+    Speed tests everything
+    """
+    from timeit import Timer
+    times = []
+    for j,size in enumerate(Sizes):
+        # get the data and shift it
+        x,y = GetSampleFEC(size)
+        _,_,YShifted,YNoise,_ = \
+                AddNoiseAndShift(x,y,SliceFract=0.1)
+        t = Timer(lambda: NormalizedCorrelation(YNoise,YShifted))
+        # get the expected convolution times
+        times.append(t.timeit(number=5))
+    # fit a quadratic
+    coeffs = np.polyfit(x=Sizes,y=times,deg=2)
+    quad = np.polyval(coeffs,Sizes)
+    fig = plt.figure()
+    plt.loglog(Sizes,times,'ro',label="Naive Convolution")
+    plt.loglog(Sizes,quad,'b--',label="O(n^2)")
+    plt.ylabel("Time (seconds)")
+    plt.xlabel("Input Size (Number of Points)")
+    plt.title("Naive convolution is O(n^2)")
+    plt.legend(loc='upper left')
+    plt.ylim([min(times),max(times)])
+    fig.savefig("./OutTimeTrials.png")
 
 def TestCorrectness(ShiftPercentages=np.linspace(0,1,num=10),
                     rtol=1e-2,atol=1e-2,Sizes=None):
@@ -224,9 +250,9 @@ def run():
         This is a description of what is returned.
     """
     np.random.seed(42)
-    PlotExampleCorrelation()
+    TestSpeed()
     TestCorrectness()
-        
+    PlotExampleCorrelation()
 
 if __name__ == "__main__":
     run()
