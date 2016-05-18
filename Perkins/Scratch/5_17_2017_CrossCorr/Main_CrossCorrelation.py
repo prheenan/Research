@@ -95,8 +95,24 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     YShifted = AddNoise(y[NShift:])
     XShifted = x[NShift:]
     XNoise = x[:]
-    return XShifted,XNoise,YShifted,YNoise
+    return XShifted,XNoise,YShifted,YNoise,NShift
 
+
+def TestCorrectness(ShiftPercentages=np.linspace(0,1),rtol=1e-2,atol=1,
+                    Sizes=None):
+    N = ShiftPercentages.size
+    if (Sizes is None):
+        Sizes = np.logspace(1,4,num=ShiftPercentages.size,base=10)
+    for pct in ShiftPercentages:
+        for size in sizes:
+            x,y = GetSampleFEC(size)
+            XShifted,XNoise,YShifted,YNoise,NShift = \
+                AddNoiseAndShift(x,y,SliceFract=pct)
+            PointsConvolved,Convolved = NormalizedCorrelation(YNoise,YShifted)
+            MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
+            np.assert_allclose(NShift,MaxConvolved)
+
+            
     
 def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
     """
@@ -108,8 +124,7 @@ def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
         kwargs: passed to AddNoiseAndShift after x and y
     """
     x,y = GetSampleFEC(n)
-    XShifted,XNoise,YShifted,YNoise = AddNoiseAndShift(x,y,**kwargs)
-    NShift = len(y) - len(XShifted)
+    XShifted,XNoise,YShifted,YNoise,NShift = AddNoiseAndShift(x,y,**kwargs)
     PointsConvolved,Convolved = NormalizedCorrelation(YNoise,YShifted)
     MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
     NFullPoints = YShifted.size+YNoise.size-1
@@ -153,6 +168,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    TestCorrectness()
     PlotExampleCorrelation()
 
 if __name__ == "__main__":
