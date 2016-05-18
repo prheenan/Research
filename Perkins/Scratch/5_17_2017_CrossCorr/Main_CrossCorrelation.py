@@ -53,8 +53,8 @@ def run():
     DeltaX = np.median(np.diff(x))
     Convolved = correlate(YShifted,YNoise, mode='full')
     PointsConvolved = np.arange(0,Convolved.size,dtype=np.float64)
-    Shift = 0
-    PointsConvolved -= Shift
+    MaxPoints = YNoise.size
+    PointsConvolved = MaxPoints - PointsConvolved
     MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
     NFullPoints = YShifted.size+YNoise.size-1
     xlim = lambda : plt.xlim([0,max(x/DeltaX)])
