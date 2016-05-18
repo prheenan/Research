@@ -22,7 +22,7 @@ def run():
     """
     TwoPi = 2 * np.pi
     # make the three regions in x
-    n = 1000
+    n = 2000
     x1 = np.linspace(0,TwoPi,n)
     x2 = np.linspace(TwoPi,2*TwoPi,n)
     x3 = np.linspace(2*TwoPi,3*TwoPi,n)
@@ -65,6 +65,7 @@ def run():
     xlim = lambda : plt.xlim([0,max(x/DeltaX)])
     plt.figure()
     plt.subplot(2,1,1)
+    plt.title("Correlation by Convolution efficiently determines time shift")
     plt.plot(x/DeltaX,StdNorm(y),'r-',linewidth=3.0,label="Noiseless")
     plt.plot(x/DeltaX,YNoise,'k-',label="Noisy, Unshifted",alpha=0.3)
     plt.plot(XShifted/DeltaX,YShifted,b'-',label="Noisy,Shifted",alpha=0.3)
