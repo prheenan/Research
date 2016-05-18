@@ -39,22 +39,27 @@ def run():
     x = norm(x)
     y = norm(y)
     # add in noise
-    amplitude = 0.1
+    amplitude = 0.2
     AddNoise = lambda x : (x+(np.random.rand(x.size)-0.5)*2*amplitude)
     YNoiseAdded = AddNoise(y)
-    StdNorm = lambda  x: (x-np.median(YNoiseAdded))/np.std(YNoiseAdded)
+    q75, q25 = np.percentile(YNoiseAdded, [75 ,25])
+    iqr = q75 - q25
+    med = np.median(YNoiseAdded)
+    StdNorm = lambda  x: (x-med)/iqr
     Normalize = lambda x : StdNorm(AddNoise(x))
     YNoise = StdNorm(YNoiseAdded)
     # get an offset slice
-    SliceFract = 0.8
+    SliceFract = 0.02
     NShift = int(YNoise.size*SliceFract)
     YShifted = Normalize(y[NShift:])
     XShifted = x[NShift:]
     DeltaX = np.median(np.diff(x))
+    # note: I *assume* that YNoise is larger than YShifted in order to get
+    # the true time shift.
     Convolved = correlate(YShifted,YNoise, mode='full')
     PointsConvolved = np.arange(0,Convolved.size,dtype=np.float64)
     MaxPoints = YNoise.size
-    PointsConvolved = MaxPoints - PointsConvolved
+    PointsConvolved = MaxPoints - PointsConvolved +1
     MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
     NFullPoints = YShifted.size+YNoise.size-1
     xlim = lambda : plt.xlim([0,max(x/DeltaX)])
