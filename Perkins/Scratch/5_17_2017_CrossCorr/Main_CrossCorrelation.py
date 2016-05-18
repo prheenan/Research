@@ -51,9 +51,9 @@ def run():
     YShifted = Normalize(y[NShift:])
     XShifted = x[NShift:]
     DeltaX = np.median(np.diff(x))
-    Convolved = correlate(YShifted,YNoise, mode='valid')
+    Convolved = correlate(YShifted,YNoise, mode='full')
     PointsConvolved = np.arange(0,Convolved.size,dtype=np.float64)
-    Shift = -(YNoise.size-YShifted.size-1)
+    Shift = 0
     PointsConvolved -= Shift
     MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
     NFullPoints = YShifted.size+YNoise.size-1
