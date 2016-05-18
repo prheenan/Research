@@ -115,8 +115,8 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     return XShifted,XNoise,YShifted,YNoise,NShift
 
 
-def TestCorrectness(ShiftPercentages=np.linspace(0,1),rtol=1e-2,atol=1e-2,
-                    AbsoluteShiftAllowed=4,Sizes=None):
+def TestCorrectness(ShiftPercentages=np.linspace(0,1,num=10),
+                    rtol=1e-2,atol=1e-2,Sizes=None):
     """
     Tests the algorithm's correctness on a variety of shifts and data sizes
 
@@ -129,16 +129,16 @@ def TestCorrectness(ShiftPercentages=np.linspace(0,1),rtol=1e-2,atol=1e-2,
          (2e-2 means a different of 2% is ok)
       
          Sizes: Sizes of the data to use. If none, defaults to a 4 OOM range
-         AbsoluteShiftAllowed: how many data points is OK, from an absolute
-         point of view
     """
     N = ShiftPercentages.size
     # default sizes
     if (Sizes is None):
-        Sizes = np.logspace(1,4,num=ShiftPercentages.size,base=10)
+        Sizes = np.logspace(3,4,num=ShiftPercentages.size,base=10,
+                            dtype=np.uint64)
     # loop through each percent and shift
-    for pct in ShiftPercentages:
-        for size in Sizes:
+    Errors = np.zeros((ShiftPercentages.size,Sizes.size))
+    for i,pct in enumerate(ShiftPercentages):
+        for j,size in enumerate(Sizes):
             # get the data and shift it
             x,y = GetSampleFEC(size)
             XShifted,XNoise,YShifted,YNoise,NShift = \
@@ -146,17 +146,27 @@ def TestCorrectness(ShiftPercentages=np.linspace(0,1),rtol=1e-2,atol=1e-2,
             # get the expected convolution
             PointsConvolved,Convolved = NormalizedCorrelation(YNoise,YShifted)
             MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
-            print(MaxConvolved,NShift,len(y))
             NPointsTotal = len(y)
-            # first,  check absolute
-            if (np.allclose(NShift,MaxConvolved,atol=AbsoluteShiftAllowed,
-                            rtol=0)):
-                continue
+            Errors[i][j] = abs(MaxConvolved-NShift)/NPointsTotal
+            print(MaxConvolved,NShift,NPointsTotal)
             # if that fails, check relative
             np.testing.assert_allclose(NShift/NPointsTotal,
                                        MaxConvolved/NPointsTotal,
                                        atol=atol,rtol=rtol)
-
+    fig = plt.figure()
+    Styles = [dict(color='r',marker='o',linestyle='--'),
+              dict(color='g',marker='s',linestyle='-'),
+              dict(color='b',marker='v',linestyle='-.'),
+              dict(color='k',marker='*',linestyle='-',linewidth=4.0)]
+    for j,s in enumerate(Sizes):
+        sty = Styles[j % len(Styles)]
+        plt.plot(ShiftPercentages,Errors[:,j],label="Size={:d}".format(s),
+                 **sty)
+    plt.title("Error in shift determination <0.1%")
+    plt.legend()
+    plt.ylabel("Error (Percentage of Total number of points)")
+    plt.xlabel("Amount Shifted")
+    fig.savefig("./ErrorBySizeAndPct.png")
             
     
 def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
