@@ -54,7 +54,7 @@ def NormalizedCorrelation(y1,y2):
     Convolved = (Convolved - min(Convolved))/(max(Convolved)-min(Convolved))
     PointsConvolved = np.arange(0,Convolved.size,dtype=np.float64)
     MaxPoints = YNoise.size
-    PointsConvolved = MaxPoints - PointsConvolved +1
+    PointsConvolved = MaxPoints - PointsConvolved -1
     return PointsConvolved,Convolved
 
 def GetSampleFEC(n):
@@ -84,10 +84,27 @@ def GetSampleFEC(n):
     return x,y
 
 def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
+    """
+    Given x and y, adds amplitude 'amplitude', which is a fraction
+    (ie: 0. to 1.) of max(y)-min(y)
+
+    Args:
+        x: x values, will be shifted
+        y: y values, will have noise added and shifted
+        SliceFract: how much to shift y by, in [0,1] fraction of len(y)
+        amplitude: noise to add,  is a fraction 
+        (ie: 0. to 1.) of max(y)-min(y)
+    Returns:
+        tuple of <XShifted,XNoise,YShifted,YNoise,NShift>
+        where N shift is the actual number of points shifted
+    """
     # add in noise
     amplitude = 0.1
     Range = max(y)-min(y)
-    AddNoise = lambda x : (x+(np.random.rand(x.size)-0.5)*2*amplitude*Range)
+    scale = amplitude * Range
+    AddNoise = lambda x : (x+np.random.normal(loc=0,
+                                              scale=scale,
+                                              size=x.size))
     # get an offset slice
     SliceFract = 0.02
     NShift = int(y.size*SliceFract)
@@ -98,19 +115,47 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     return XShifted,XNoise,YShifted,YNoise,NShift
 
 
-def TestCorrectness(ShiftPercentages=np.linspace(0,1),rtol=1e-2,atol=1,
-                    Sizes=None):
+def TestCorrectness(ShiftPercentages=np.linspace(0,1),rtol=1e-2,atol=1e-2,
+                    AbsoluteShiftAllowed=4,Sizes=None):
+    """
+    Tests the algorithm's correctness on a variety of shifts and data sizes
+
+    Throws an error if it breaks.
+    
+    Args:
+         ShiftPercentages: list of fractions [0,1] to shift the data
+         rtol: relative tolerance allowed in the perceived fractional shift
+         atol: absolute tolerance allowed in the perceived fractional shift
+         (2e-2 means a different of 2% is ok)
+      
+         Sizes: Sizes of the data to use. If none, defaults to a 4 OOM range
+         AbsoluteShiftAllowed: how many data points is OK, from an absolute
+         point of view
+    """
     N = ShiftPercentages.size
+    # default sizes
     if (Sizes is None):
         Sizes = np.logspace(1,4,num=ShiftPercentages.size,base=10)
+    # loop through each percent and shift
     for pct in ShiftPercentages:
-        for size in sizes:
+        for size in Sizes:
+            # get the data and shift it
             x,y = GetSampleFEC(size)
             XShifted,XNoise,YShifted,YNoise,NShift = \
                 AddNoiseAndShift(x,y,SliceFract=pct)
+            # get the expected convolution
             PointsConvolved,Convolved = NormalizedCorrelation(YNoise,YShifted)
             MaxConvolved = int(PointsConvolved[np.argmax(Convolved)])
-            np.assert_allclose(NShift,MaxConvolved)
+            print(MaxConvolved,NShift,len(y))
+            NPointsTotal = len(y)
+            # first,  check absolute
+            if (np.allclose(NShift,MaxConvolved,atol=AbsoluteShiftAllowed,
+                            rtol=0)):
+                continue
+            # if that fails, check relative
+            np.testing.assert_allclose(NShift/NPointsTotal,
+                                       MaxConvolved/NPointsTotal,
+                                       atol=atol,rtol=rtol)
 
             
     
@@ -168,8 +213,10 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    TestCorrectness()
+    np.random.seed(42)
     PlotExampleCorrelation()
+    TestCorrectness()
+        
 
 if __name__ == "__main__":
     run()
