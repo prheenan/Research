@@ -151,7 +151,7 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     XNoise = x[:]
     return XShifted,XNoise,YShifted,YNoise,NShift
 
-def TestSpeed(Sizes=np.logspace(1,6),SizeNaiveCutoff=5e4):
+def TestSpeed(Sizes=np.logspace(1,7),SizeNaiveCutoff=5e4):
     """
     Speed tests everything
 
@@ -182,18 +182,24 @@ def TestSpeed(Sizes=np.logspace(1,6),SizeNaiveCutoff=5e4):
             NaiveTime = t.timeit(number=5)
             timesNaive.append(NaiveTime)
             sizesNaive.append(size)
+    # remained is just for plotting the results
+    interpX = lambda x: np.linspace(min(x),max(x),
+                                    len(x)*100)
+    size_naive_interp = interpX(sizesNaive)
     # fit a quadratic to the naive
     coeffs = np.polyfit(x=sizesNaive,y=timesNaive,deg=2)
-    quad = np.polyval(coeffs,sizesNaive)
+    quad = np.polyval(coeffs,size_naive_interp)
     # fit nlogn to the fft
     mFunc = lambda x,c: c*x*np.log(x)
     pOpt,_ = curve_fit(mFunc,xdata=Sizes,ydata=times,p0=1)
-    nLogN = mFunc(Sizes,*pOpt)
+    # interpolate along sizes
+    size_fft_interp = interpX(Sizes)
+    nLogN = mFunc(size_fft_interp,*pOpt)
     fig = plt.figure()
     plt.loglog(Sizes,times,'ro',label="FFT Convolution")
     plt.loglog(sizesNaive,timesNaive,'bx',label="Naive Convolution")    
-    plt.loglog(sizesNaive,quad,'k--',label="O(n^2)")
-    plt.loglog(Sizes,nLogN,'r-',label="O(nlog(n))")
+    plt.loglog(size_naive_interp,quad,'k--',label="O(n^2)")
+    plt.loglog(size_fft_interp,nLogN,'r-',label="O(nlog(n))")
     plt.ylabel("Time (seconds)")
     plt.xlabel("Input Size (Number of Points)")
     plt.title("Naive convolution is O(n^2)")
@@ -301,20 +307,19 @@ def PlotExampleCorrelation(n=10000,out="./ExampleCorr.png",**kwargs):
 
     
 
-def run():
+def run(RunSpeedTests=False,seed=42):
     """
-    <Description>
+    Runs the tests according to the flags
 
     Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
+        Run<xx>: Runs <xx> if true
+        seed: Psuedo-random number generator seed
     """
-    np.random.seed(42)
+    np.random.seed(seed)
     PlotExampleCorrelation()
     TestCorrectness()
-    TestSpeed()
+    if (RunSpeedTests):
+        TestSpeed()
 
 if __name__ == "__main__":
     run()
