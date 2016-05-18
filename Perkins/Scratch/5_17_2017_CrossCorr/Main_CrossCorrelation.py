@@ -7,6 +7,10 @@ import sys
 
 from numpy import convolve as convolve
 from numpy import correlate as correlate
+from scipy.signal import fftconvolve
+# curve fitting, for nlogn
+from scipy.optimize import curve_fit
+
 
 def StdNorm(ToNorm,Offset,Scale):
     """
@@ -31,7 +35,35 @@ def Stats(x):
     med = np.median(x)
     return med,iqr
 
-def NormalizedCorrelation(y1,y2):
+def NaiveCrossCorrelation(y1,y2):
+    """
+    Uses the (non FFT, O(n^2)) naive cross correlation to get the convolution
+
+    Args:
+         y1,y2 : find the convolution from y1 to y2
+    Returns:
+         normalized cross-correlation
+    """
+    Convolved = correlate(y1,y2, mode='full')
+    return Convolved
+
+def FFTCrossCorrelation(y1,y2):
+    """
+    Uses FFT convolution for an O(n*log(n)) algorithm for cross correlation 
+
+    Args:
+        y1,y2: see NaiveCrossCorrelation
+    Returns:
+        normalized cross-correlation
+    """
+    # correlation is just a convolution of the two arrays, one reversed.
+    # see : https://en.wikipedia.org/wiki/Cross-correlation
+    # also:
+# stackoverflow.com/questions/12323959/fast-cross-correlation-method-in-python
+    return fftconvolve(y1, y2[::-1], mode='full')
+    
+
+def NormalizedCorrelation(y1,y2,CorrelationFunc=FFTCrossCorrelation):
     """
     Returns the offset *from* y1 to y2, in units of data points, according to
     the highest cross correlation.
@@ -50,8 +82,13 @@ def NormalizedCorrelation(y1,y2):
     YShifted = StdNorm(y2,*Stats(y1))
     # note: I *assume* that YNoise is larger than YShifted in order to get
     # the true time shift.
-    Convolved = correlate(YShifted,YNoise, mode='full')
-    Convolved = (Convolved - min(Convolved))/(max(Convolved)-min(Convolved))
+    Convolved = CorrelationFunc(YShifted,YNoise)
+    # normalize the convolved function
+    MinV = min(Convolved)
+    MaxV= max(Convolved)
+    Convolved = (Convolved - MinV)/(MaxV-MinV)
+    # determine the actual 'shift' necessary
+    # XXX explicitly define this
     PointsConvolved = np.arange(0,Convolved.size,dtype=np.float64)
     MaxPoints = YNoise.size
     PointsConvolved = MaxPoints - PointsConvolved -1
@@ -114,31 +151,56 @@ def AddNoiseAndShift(x,y,SliceFract=0.02,amplitude=0.01):
     XNoise = x[:]
     return XShifted,XNoise,YShifted,YNoise,NShift
 
-def TestSpeed(Sizes=np.logspace(1,4)):
+def TestSpeed(Sizes=np.logspace(1,6),SizeNaiveCutoff=5e4):
     """
     Speed tests everything
+
+    Args:
+       Sizes: to test the FFT-based cross correlation
+       SizeNaiveCutoff: when the naive cross correlation is cutoff
     """
     from timeit import Timer
     times = []
+    timesNaive = []
+    sizesNaive = []
     for j,size in enumerate(Sizes):
         # get the data and shift it
         x,y = GetSampleFEC(size)
         _,_,YShifted,YNoise,_ = \
                 AddNoiseAndShift(x,y,SliceFract=0.1)
-        t = Timer(lambda: NormalizedCorrelation(YNoise,YShifted))
+        t = Timer(lambda: \
+                  NormalizedCorrelation(YNoise,YShifted,
+                                        CorrelationFunc=FFTCrossCorrelation))
         # get the expected convolution times
-        times.append(t.timeit(number=5))
-    # fit a quadratic
-    coeffs = np.polyfit(x=Sizes,y=times,deg=2)
-    quad = np.polyval(coeffs,Sizes)
+        BestTime = t.timeit(number=5)
+        times.append(BestTime)
+        # see if we should record naive data
+        if (size < SizeNaiveCutoff):
+            t = Timer(lambda: \
+                NormalizedCorrelation(YNoise,YShifted,
+                                      CorrelationFunc=NaiveCrossCorrelation))
+            NaiveTime = t.timeit(number=5)
+            timesNaive.append(NaiveTime)
+            sizesNaive.append(size)
+    # fit a quadratic to the naive
+    coeffs = np.polyfit(x=sizesNaive,y=timesNaive,deg=2)
+    quad = np.polyval(coeffs,sizesNaive)
+    # fit nlogn to the fft
+    mFunc = lambda x,c: c*x*np.log(x)
+    pOpt,_ = curve_fit(mFunc,xdata=Sizes,ydata=times,p0=1)
+    nLogN = mFunc(Sizes,*pOpt)
     fig = plt.figure()
-    plt.loglog(Sizes,times,'ro',label="Naive Convolution")
-    plt.loglog(Sizes,quad,'b--',label="O(n^2)")
+    plt.loglog(Sizes,times,'ro',label="FFT Convolution")
+    plt.loglog(sizesNaive,timesNaive,'bx',label="Naive Convolution")    
+    plt.loglog(sizesNaive,quad,'k--',label="O(n^2)")
+    plt.loglog(Sizes,nLogN,'r-',label="O(nlog(n))")
     plt.ylabel("Time (seconds)")
     plt.xlabel("Input Size (Number of Points)")
     plt.title("Naive convolution is O(n^2)")
     plt.legend(loc='upper left')
-    plt.ylim([min(times),max(times)])
+    MaxT= max(max(timesNaive),max(times))
+    MinT = min(min(timesNaive),min(times))
+    plt.ylim([min(times),MaxT])
     fig.savefig("./OutTimeTrials.png")
 
 def TestCorrectness(ShiftPercentages=np.linspace(0,1,num=10),
@@ -250,9 +312,9 @@ def run():
         This is a description of what is returned.
     """
     np.random.seed(42)
-    TestSpeed()
-    TestCorrectness()
     PlotExampleCorrelation()
+    TestCorrectness()
+    TestSpeed()
 
 if __name__ == "__main__":
     run()
