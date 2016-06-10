@@ -34,9 +34,10 @@ def ToIWTObjects(TimeSepForceObjects):
 
 def run():
     Base = "./Data/"
+    Limit=50
     FullName = Base + "2016-6-5-micah-1ppm-biolever-long-strept-saved-data.pxp"
     mObjs = pCheckUtil.getCheckpoint(Base + "cache.pkl",FEC_Util.ReadInData,
-                                     False,FullName)
+                                     False,FullName,Limit)
     ApproachList,RetractList = FEC_Util.BreakUpIntoApproachAndRetract(mObjs)
     PastZeroExt = 5e-9
     FilterPoints = 30
