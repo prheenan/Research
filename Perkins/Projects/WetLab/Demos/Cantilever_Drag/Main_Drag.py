@@ -4,6 +4,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append("../../../../../..")
+import GeneralUtil.python.PlotUtilities as pPlotUtil
 
 class Cantilever:
     def __init__(self,Name,Length,Radius,Height):
@@ -65,7 +67,7 @@ def run():
         Forces.append(o.FrictionPerEta * Velocities)
     # Plot everything in pN and nm/s
     VelNmPerSec = Velocities * 1e9
-    fig = plt.figure()
+    fig = pPlotUtil.figure(figsize=(8,8))
     ax = plt.subplot(1,1,1)
     for i,f in enumerate(Forces):
         ForcePn = f *1e12
@@ -73,17 +75,15 @@ def run():
     # write down the rupture force in pN based on XXX
     RuptureForce = 15
     plt.axhline(RuptureForce,linewidth=3.0,linestyle="--",
-                label="{:d}pN (rupture of circular DNA)".format(RuptureForce))
-    TargetVel = 100
+                label="{:d}pN (Circular Rupture)".format(RuptureForce))
+    TargetVel = 50
     plt.axvline(TargetVel,linewidth=3.0,linestyle="--",
                 label="V={:d}nm/s".format(TargetVel))
-    plt.xlabel("Velocity (nm/s)")
-    plt.ylabel("Force (pN)")
-    ax.set_yscale("log")
-    plt.legend(loc='lower right')
-    plt.title("V~1um/s in water likely to " +
-              "rupture circular DNA")
-    fig.savefig("DragForceAtVelocities.png")
+    pPlotUtil.lazyLabel("Velocity (nm/s)","Force (pN)",
+                        "V~1um/s in water likely to " +
+                        "rupture circular DNA",loc='lower right',frameon=True)
+    ax.set_yscale('log')
+    pPlotUtil.savefig(fig,"DragForceAtVelocities.png")
     
 
 if __name__ == "__main__":
