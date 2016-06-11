@@ -48,6 +48,29 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
                                copy.deepcopy(Obj.Meta))
     return ToRet
 
+def GetApproachRetract(o):
+    """
+    Get the approach and retraction curves of a TimeSepForceObject
+    
+    Args:
+        o: the TimeSepForce Object, assumed 'raw' (ie: invols peak at top)
+    Returns:
+        TUple of <Appr,Retract>, which are both TimeSepForce object of the
+        Approach and Retract regions
+    """
+    ForceArray = o.Force
+    # note: force is 'upside down' by default, so high force (near surface
+    # is actually high)
+    MinForceIdx = np.argmax(ForceArray)
+    # get the different slices
+    SliceAppr = slice(0,MinForceIdx)
+    SliceRetr = slice(MinForceIdx,None)
+    # Make a new object with the given force and separation
+    # at approach and retract
+    Appr = MakeTimeSepForceFromSlice(o,SliceAppr)
+    Retr = MakeTimeSepForceFromSlice(o,SliceRetr)
+    return Appr,Retr
+
 
 def BreakUpIntoApproachAndRetract(mObjs):
     """
@@ -63,21 +86,25 @@ def BreakUpIntoApproachAndRetract(mObjs):
     Approach = []
     Retract = []
     for o in mObjs:
-        ForceArray = o.Force
-        SepArray = o.Separation
-        # note: force is 'upside down' by default, so high force (near surface
-        # is actually high)
-        MinForceIdx = np.argmax(ForceArray)
-        # get the different slices
-        SliceAppr = slice(0,MinForceIdx)
-        SliceRetr = slice(MinForceIdx,None)
-        # Make a new object with the given force and separation
-        # at approach and retract
-        Approach.append(MakeTimeSepForceFromSlice(o,SliceAppr))
-        Retract.append(MakeTimeSepForceFromSlice(o,SliceRetr))
+        Appr,Retr = GetApproachRetract(o)
+        Approach.append(Appr)
+        Retract.append(Retr)
     return Approach,Retract
 
-def GetSurfaceIndex(TimeSepForceObj,Fraction,FilterPoints):
+def GetFilteredForce(Obj,NFilterPoints):
+    """
+    Given a TimeSepForce object, return a (filtered) copy of it
+
+    Args:
+        Obj: the TimeSepForce object we care about
+        NFilterPoitns: fed to savitsky golay filter
+    """
+    ToRet = copy.deepcopy(Obj)
+    ToRet.Force = SavitskyFilter(Obj.Force,nSmooth=NFilterPoints)
+    return ToRet
+
+def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
+                            ZeroAtStart=True):
     """
     Given a retraction curve, a fraction of end-points to take the median of,
     and a filtering for the entire curve, determines the surface location
@@ -87,6 +114,8 @@ def GetSurfaceIndex(TimeSepForceObj,Fraction,FilterPoints):
         invols region is a negative force.
         Fraction: see GetAroundTouchoff
         FilterPoints: see GetAroundTouchoff
+        ZeroAtStart: if true, uses the first 'fraction' points; otherwise 
+        uses the last 'fraction' points
     Returns: 
         Tuple of (Integer surface index,Zero Force)
     """
@@ -96,18 +125,53 @@ def GetSurfaceIndex(TimeSepForceObj,Fraction,FilterPoints):
     ForceFilter = SavitskyFilter(o.Force,nSmooth=FilterPoints)
     # Flip the sign of the force
     ForceSign = -1 * ForceFilter 
-    MinForceIdx = np.argmin(ForceSign)
     N = ForceSign.size
     NumMed = int(N*Fraction)
-    MedRetr = np.median(ForceSign[-NumMed:])
+    if (ZeroAtStart):
+        SliceMed = slice(0,NumMed,1)
+    else:
+        SliceMed = slice(-NumMed,None,1)
+    MedRetr = np.median(ForceSign[SliceMed])
     ZeroForce = ForceSign - MedRetr
     # Get the first time the Retract forces is above zero
     FilteredRetract = SavitskyFilter(ZeroForce)
-    ZeroIdx = np.where(FilteredRetract >= 0)[0][0] + MinForceIdx
+    ZeroIdx = np.where(FilteredRetract >= 0)[0][0]
     return ZeroIdx,MedRetr
 
-def GetAroundTouchoff(Objects,fraction=0.05,FilterPoints=20,
-                      MetersAfterTouchoff=None):
+def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
+                        MetersAfterTouchoff=None):
+    """
+    fraction: Amount to average to determine the zero point for the force. 
+    FilterPoints: how many points to filter to find the zero, from the 
+    *start* of the array forward
+
+    MetersFromTouchoff: gets this many meters away from the surface. If
+    None, just returns all the data
+    """
+    ZeroIdx,MedRetr =  GetSurfaceIndexAndForce(o,fraction,FilterPoints,
+                                               ZeroAtStart=False)
+    if (MetersAfterTouchoff is not None):
+        ZSnsr,_ = o.ZsnsrAndDeflV
+        N = ZSnsr.size
+        # Get just that part of the Retract
+        StartRetractX = ZSnsr[ZeroIdx]
+        EndRetractX = StartRetractX + MetersAfterTouchoff
+        Index = np.arange(0,N)
+        # XXX build in approach/retract
+        StopIdxArr = np.where( (ZSnsr > EndRetractX) &
+                               (Index > ZeroIdx))[0][0]
+    else:
+        # just get eveything
+        StopIdxArr = None
+    NewSlice = slice(ZeroIdx,StopIdxArr)
+    MyObj = MakeTimeSepForceFromSlice(o,NewSlice)
+    # sign correct and offset the force
+    MyObj.Force = MyObj.Force * -1
+    MyObj.Force -= MedRetr
+    MyObj.Separation -= MyObj.Separation[0] 
+    return MyObj
+
+def GetAroundTouchoff(Objects,**kwargs):
     """
     Gets the data 'MetersAfterTouchoff' meters after (in ZSnsr)the surface 
     touchoff,  based on taking the median of
@@ -117,37 +181,13 @@ def GetAroundTouchoff(Objects,fraction=0.05,FilterPoints=20,
 
     Args:
         Objects: list of TimeSepForce Objects
-        fraction: Amount to average to determine the zero point for the force. 
-        FilterPoints: how many points to filter to find the zero, from the 
-        end of the array forward
-        MetersFromTouchoff: gets this many meters away from the surface. If
-        None, just returns all the data
+        **kwargs: passed directly to GetPullingRegion
     Returns:
         List of TimeSepForce objects, each offset in force and separation to 
         zero at the perceived start
     """
     ToRet = []
     for o in Objects:
-        ZeroIdx,MedRetr = GetSurfaceIndex(o,fraction,FilterPoints)
-        ZSnsr,_ = o.ZsnsrAndDeflV
-        N = ZSnsr.size
-        # Get just that part of the Retract
-        StartRetractX = ZSnsr[ZeroIdx]
-        if (MetersAfterTouchoff is not None):
-            EndRetractX = StartRetractX + MetersAfterTouchoff
-            Index = np.arange(0,N)
-            # XXX build in approach/retract
-            StopIdxArr = np.where( (ZSnsr > EndRetractX) &
-                                   (Index > ZeroIdx))[0][0]
-        else:
-            # just get eveything
-            StopIdxArr = None
-        NewSlice = slice(ZeroIdx,StopIdxArr)
-        MyObj = MakeTimeSepForceFromSlice(o,NewSlice)
-        # sign correct and offset the force
-        MyObj.Force = MyObj.Force * -1
-        MyObj.Force -= MedRetr
-        MyObj.Separation -= MyObj.Separation[0] 
-        ToRet.append(MyObj)
+        ToRet.append(GetFECPullingRegion(o))
     return ToRet
 

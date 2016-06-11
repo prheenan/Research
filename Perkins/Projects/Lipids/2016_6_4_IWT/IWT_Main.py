@@ -12,7 +12,8 @@ sys.path.append("../../../../..")
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from GeneralUtil.python import CheckpointUtilities as pCheckUtil
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
+    FEC_Util,FEC_Plot
 
 def ToIWTObjects(TimeSepForceObjects):
     """
@@ -71,7 +72,6 @@ def run():
         TiltedEnergy -= min(TiltedEnergy[np.isfinite(TiltedEnergy)])
         plt.plot(NanoExt,TiltedEnergy * LandscapeObj.Beta)
         plt.ylim([0,20])
-    plt.show()
     fig.savefig("out.png")
 
 if __name__ == "__main__":

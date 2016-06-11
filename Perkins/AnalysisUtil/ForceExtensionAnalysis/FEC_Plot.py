@@ -9,19 +9,37 @@ import GeneralUtil.python.PlotUtilities as pPlotUtil
 
 import copy
 
-def _ApproachRetractCurve(TimeSepForceObject,FilterN=100,ZeroForceFraction=0.1,
+def _ApproachRetractCurve(TimeSepForceObject,NFilterPoints=100,
+                          ZeroForceFraction=0.2,
                           ZeroSep=True,FlipY=True,
                           ApproachLabel="Approach",
                           RetractLabel="Retract"):
+    """
+    Most of the brains for the approach/retract curve. does *not* show anything
+
+    Args:
+        TimeSepForceObject: what we are plotting
+        NFilterPoints: how many points to filter down
+        ZeroForceFraction: if not None, fraction of points near the retract end
+        to filter to
+        
+        ZeroSep: if true, zeros the separation to its minima
+        FlipY: if true, multiplies Y (force) by -1 before plotting
+        ApproachLabel: label to put on the approach
+        RetractLabel: label to put on the retract
+    """
     Appr,Retr = FEC_Util.GetApproachRetract(TimeSepForceObject)
     if (ZeroForceFraction is not None):
         # then we need to offset the force
         # XXX assume offset is the same for both
-        _,ZeroForce = FEC_Util.GetSurfaceIndex(TimeSepForceObject,
-                                               Fraction=ZeroForceFraction,
-                                               FilterPoints=FilterN)
-        Appr.Force += ZeroForce
-        Retr.Force += ZeroForce
+        _,ZeroForceRetr = FEC_Util.\
+                          GetSurfaceIndexAndForce(Retr,
+                                                  Fraction=ZeroForceFraction,
+                                                  FilterPoints=NFilterPoints,
+                                                  ZeroAtStart=False)
+        Appr.Force += ZeroForceRetr
+        # Do the same for retract
+        Retr.Force += ZeroForceRetr
     if (ZeroSep):
         MinSep = np.min(TimeSepForceObject.Separation)
         Appr.Separation -= MinSep
@@ -30,8 +48,8 @@ def _ApproachRetractCurve(TimeSepForceObject,FilterN=100,ZeroForceFraction=0.1,
         Appr.Force *= -1
         Retr.Force *= -1
     # plot the separation and force, with their filtered counterparts
-    ApprFiltered = FEC_Util.GetFilteredForce(Appr,FilterN)
-    RetrFiltered = FEC_Util.GetFilteredForce(Retr,FilterN)
+    ApprFiltered = FEC_Util.GetFilteredForce(Appr,NFilterPoints)
+    RetrFiltered = FEC_Util.GetFilteredForce(Retr,NFilterPoints)
     plt.plot(Appr.Separation,Appr.Force,color='r',alpha=0.3)
     plt.plot(Appr.Separation,ApprFiltered.Force,color='r',label=ApproachLabel)
     plt.plot(Retr.Separation,Retr.Force,color='b',alpha=0.3)
