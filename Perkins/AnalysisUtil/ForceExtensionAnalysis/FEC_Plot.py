@@ -37,9 +37,14 @@ def _ApproachRetractCurve(TimeSepForceObject,NFilterPoints=100,
                                                   Fraction=ZeroForceFraction,
                                                   FilterPoints=NFilterPoints,
                                                   ZeroAtStart=False)
-        Appr.Force += ZeroForceRetr
+        _,ZeroForceAppr = FEC_Util.\
+                          GetSurfaceIndexAndForce(Appr,
+                                                  Fraction=ZeroForceFraction,
+                                                  FilterPoints=NFilterPoints,
+                                                  ZeroAtStart=True)
+        Appr.Force += ZeroForceAppr
         # Do the same for retract
-        Retr.Force += ZeroForceRetr
+        Retr.Force += ZeroForceAppr
     if (ZeroSep):
         MinSep = np.min(TimeSepForceObject.Separation)
         Appr.Separation -= MinSep

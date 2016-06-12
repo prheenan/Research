@@ -25,7 +25,7 @@ def run():
     mObjs = FEC_Util.ReadInData(FullName)
     # get where the surface of this object is
     Tmp = mObjs[0]
-    _,Retract = FEC_Util.GetApproachRetract(Tmp)
+    Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
     NearSurface =  FEC_Util.GetFECPullingRegion(Retract,
                                                 MetersAfterTouchoff=640e-9)
     Bounds = GetBoundsDict(**dict(Lp=[35e-9,60e-9],
@@ -37,6 +37,8 @@ def run():
     Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=20,
                         Bounds=Bounds)
     Pred = Fit.Predict(SepNear)
+    # offset the WLC, in pN
+    Pred += 10e-12
     # plot the data and the prediction
     fig = plt.figure()
     FEC_Plot.FEC(Tmp,NFilterPoints=40)
