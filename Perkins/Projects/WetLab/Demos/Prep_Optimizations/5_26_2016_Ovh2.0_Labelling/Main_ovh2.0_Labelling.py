@@ -18,6 +18,22 @@ def LinearRadiusOfGyration(a,L):
     return a * np.sqrt(( L/(3*a) -1 + 2*a/L 
                          -2 * (a/L)**2 * (1 - np.exp(-L/a))))
 
+def CircularRadiusOfGyration(a,L):
+    """
+    Equation 8 from:
+    Latulippe, David R., and Andrew L. Zydney. 
+    "Radius of Gyration of Plasmid DNA Isoforms from Static Light Scattering." 
+    Biotechnology and Bioengineering 107, 2010
+    """
+    alpha = 0.5
+    k2 = 0.5
+    k3 = 0.25
+    a_alph = a * alpha
+    return np.sqrt( (2*a + (22*a**2)/(3*L)) * \
+                    (L/12 - 2*(a_alph)**2/L +  8 * (a_alph)**3/(3*(L**2)))\
+                    - a**2 + 4*alpha*(a**3)/L + 8*(a_alph**3)/L * \
+                    (1/3 - alpha/6 + k2 * alpha**2/5 + k3*(alpha**3)/6))
+
 
 def run():
     # get our actual sequence weight
@@ -62,11 +78,13 @@ def run():
     # as a 'length' of the polymer to find the radius of gyration
     Lp_nm = 43
     NumPersistence = DNASizeNanoMeters/Lp_nm
-    RadiusOfGyration = Lp_nm * np.sqrt(np.ceil(NumPersistence))/np.sqrt(6)
     # at least N radii of gyration away. Should be more than 2 to prevent
     # overlap
+    RadiusOfGyr = LinearRadiusOfGyration(Lp_nm,
+                                         DNASizeNanoMeters)
+
     NumAway = 2.5
-    MinimumSeparationNanoMeters = NumAway*RadiusOfGyration
+    MinimumSeparationNanoMeters = NumAway*RadiusOfGyr
     # plots!
     fig = pPlotUtil.figure(figsize=(8,8))
     ax1 = plt.subplot(1,1,1)
@@ -114,20 +132,38 @@ def run():
     "Radius of Gyration of Plasmid DNA Isoforms from Static Light Scattering." 
     Biotechnology and Bioengineering 107, 2010
     """
-    fig = pPlotUtil.figure()
-    BasePairs = np.logspace(2,3.5)
+    BasePairs = np.logspace(3.1,3.5)
     LengthsNm = BasePairs * NanometersPerBp
     # get the plot the DNA radii of gyration
     RadiusOfGyr = LinearRadiusOfGyration(Lp_nm,LengthsNm)
-    # get our specific radius of gyration
-    RadiusCircularDNA = LinearRadiusOfGyration(Lp_nm,DNASizeNanoMeters)
+    RadiusOfGyrCirc = CircularRadiusOfGyration(Lp_nm,LengthsNm)
+    NaiveRadiusOfGyr = np.sqrt(LengthsNm/Lp_nm) * Lp_nm / np.sqrt(6)
+    # get the specific radii for our DNA for the model
+    CircularSequenceRadiusCirc = CircularRadiusOfGyration(Lp_nm,
+                                                          DNASizeNanoMeters)
+    CircularSequenceRadiusLinear = LinearRadiusOfGyration(Lp_nm,
+                                                          DNASizeNanoMeters)
     NumBasePairsCirc = KbpPerConstr*1000
-    plt.plot(BasePairs,RadiusOfGyr)
-    plt.plot(NumBasePairsCirc,RadiusCircularDNA,'ro')
-    plt.axhline(RadiusCircularDNA,color='g',linestyle='--')
+    # plot everything
+    StyleLin = dict(color='b',linewidth=2)
+    StyleCirc = dict(color='r',linewidth=2)
+    fig = pPlotUtil.figure()
+    plt.plot(BasePairs,RadiusOfGyr,label="Linear WLC: {:d}nm".\
+             format(int(CircularSequenceRadiusLinear)),**StyleLin)
+    plt.plot(BasePairs,RadiusOfGyrCirc,
+             label="Circular WLC: {:d}nm".\
+             format(int(CircularSequenceRadiusCirc)),
+             **StyleCirc)
+    plt.axvline(NumBasePairsCirc,color='g',linewidth=2)
+    XStart = plt.xlim()[0]
+    ArrX = [XStart,NumBasePairsCirc]
+    ArrY1 = [CircularSequenceRadiusCirc,CircularSequenceRadiusCirc]
+    ArrY2 = [CircularSequenceRadiusLinear,CircularSequenceRadiusLinear]
+    plt.plot(ArrX,ArrY1,linestyle="--",**StyleCirc)
+    plt.plot(ArrX,ArrY2,linestyle="--",**StyleLin)
     pPlotUtil.lazyLabel("Base Pairs","Radius of Gyration (nm)",
-                        "Radius of Gyration of My DNA is {:.0}nm".\
-                        format(RadiusCircularDNA))
+                        "Circular DNA construct radius of gyration < 90nm",
+                        frameon=True)
     pPlotUtil.savefig(fig,"Gyration.png")
 
 if __name__ == "__main__":
