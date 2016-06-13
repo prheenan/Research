@@ -4,6 +4,8 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from mpl_toolkits.mplot3d import Axes3D
+
 
 
 sys.path.append("../../../../..")
@@ -67,29 +69,35 @@ def GetAllExtensionsAndForce(RetractList,Touchoff,IwtObjects,Base):
     ext = []
     force = []
     for i,(Retract,Touch) in enumerate(zip(RetractList,Touchoff)):
-        fig = plt.figure()
+        fig = pPlotUtil.figure(figsize=(8,12))
         ForZ = Retract
         RetractZ = Retract.Zsnsr
         RetractZ -= np.min(RetractZ)
         plt.subplot(NPlots,1,1)
-        plt.plot(toNano(RetractZ),toPn(Retract.Force),alpha=0.3)
-        plt.ylabel("Force (pN)")
+        # normalize and flip the force, XXX move to utility...
+        ForceRetractPlot = toPn(Retract.Force)
+        ForceRetractPlot *= -1
+        N = ForceRetractPlot.size
+        fraction = 0.2
+        ForceRetractPlot -= np.median(ForceRetractPlot[-int(fraction*N):])
+        plt.plot(toNano(RetractZ),ForceRetractPlot,alpha=0.3)
+        pPlotUtil.lazyLabel("Z stage Position (nm), Absolute","Force (pN)",
+                            "Determining Work and Force for FEC")
         plt.subplot(NPlots,1,2)
         Z = Touch.Zsnsr
         plt.plot(toNano(Z),toPn(Touch.Force),alpha=0.3)
         plt.xlim(xlim_nm)
         # force bounds in pN
         plt.ylim([-25,30])
-        plt.ylabel("Force (pN)")
+        pPlotUtil.lazyLabel("","Force (pN)","")
         plt.subplot(NPlots,1,3)
         plt.plot(toNano(Z),IwtObjects[i].Work/(4.1e-21),
                  alpha=0.3)
         plt.xlim(xlim_nm)
         plt.ylim([-2,20])
-        plt.xlabel("Separation (nm)")
-        plt.ylabel("Work (kbT)")
-        fig.savefig(Base + "{:d}.png".format(i))
-        plt.close('all')
+        pPlotUtil.lazyLabel("Z stage Position (nm), relative to touchoff",
+                            "Work (kbT)","")
+        pPlotUtil.savefig(fig,Base + "{:d}.png".format(i))
         ext.extend(toNano(Z))
         force.extend(toPn(Touch.Force))
     return ext,force
@@ -104,18 +112,34 @@ def run():
                                      False,Base,FullName)
     ext,force  = pCheckUtil.getCheckpoint(Base + "ExtAndForce.pkl",
                                           GetAllExtensionsAndForce,
-                                          False,RetractList,Touchoff,IwtObjects,
+                                          True,RetractList,Touchoff,IwtObjects,
                                           Base)
+    # bin the force by extensions
+    fig = pPlotUtil.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    H,xedges,yedges = np.histogram2d(force,ext,bins=20)
+    NumX = xedges.size-1
+    colors = ['r','g','b','y','m']
+    NumColors = len(colors)
+    for i in range(NumX):
+        z = H[i,:]
+        x = np.ones(z.size) * xedges[i]
+        ax.bar(left=x,height=z,
+               zs=yedges[:-1],zdir='y',alpha=0.7,color=colors[i%NumColors])
+    pPlotUtil.lazyLabel("Force (pN)","Extension (nm)","",zlab="Count")
+    pPlotUtil.savefig(fig,Base + "Hist2d.png")
     toNano = lambda x : x * 1e9
     toPn = lambda x: x * 1e12
-    fig = plt.figure()
     nBins = 40
-    plt.hist2d(ext, force, bins=nBins)
+    fig = plt.figure()
+    ax = plt.subplot(1,1,1)
+    cax = plt.hist2d(ext, force, bins=nBins,cmap='afmhot')
     pPlotUtil.lazyLabel("Tip-Bilayer Separation [nm]",
                         "Force [pN]",
                         "Two-Dimensional Force-Separation Histogram")
-    plt.colorbar()
-    fig.savefig(Base + "HeatMap.png")
+    cbar = plt.colorbar()
+    cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
+    pPlotUtil.savefig(fig,Base + "HeatMap.png")
     fig = pPlotUtil.figure(figsize=(8,12))
     xlim = [-1,7]
     plt.subplot(2,1,1)
@@ -126,7 +150,7 @@ def run():
     pPlotUtil.lazyLabel("","G0",
                         "DeltaG for lipid rupture is approximately 1kT")
     plt.subplot(2,1,2)
-    FOneHalf = 7.5e-12
+    FOneHalf = 8e-12
     TiltedEnergy = (FreeEnergyEq - LandscapeObj.Extensions * FOneHalf)
     TiltedEnergy -= (TiltedEnergy[0])
     plt.plot(NanoExt,TiltedEnergy * LandscapeObj.Beta)

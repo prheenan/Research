@@ -63,13 +63,15 @@ def _ApproachRetractCurve(TimeSepForceObject,NFilterPoints=100,
 def FEC(TimeSepForceObj,
         ConvertX=lambda x : x*1e9,
         ConvertY=lambda y : y*1e12,
+        GetX = lambda x : x.Separation,
+        GetY = lambda x : x.Force,
         XLabel="Separation (nm)",
         YLabel="Force (pN)",
         **kwargs):
     # convert the x and y
     ObjCopy = copy.deepcopy(TimeSepForceObj)
-    ObjCopy.Force = ConvertY(ObjCopy.Force)
-    ObjCopy.Separation = ConvertX(ObjCopy.Separation)
+    ObjCopy.Force = ConvertY(GetY(ObjCopy))
+    ObjCopy.Separation = ConvertX(GetX(ObjCopy))
     _ApproachRetractCurve(ObjCopy,**kwargs)
     pPlotUtil.lazyLabel(XLabel,YLabel,"")
     pPlotUtil.legend()
