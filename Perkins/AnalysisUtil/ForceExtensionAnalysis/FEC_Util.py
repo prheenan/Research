@@ -122,7 +122,10 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
     o = TimeSepForceObj
     ForceArray = o.Force
     SepArray = o.Separation
-    ForceFilter = SavitskyFilter(o.Force,nSmooth=FilterPoints)
+    if (FilterPoints > 1):
+        ForceFilter = SavitskyFilter(o.Force,nSmooth=FilterPoints)
+    else:
+        ForceFilter = o.Force
     # Flip the sign of the force
     ForceSign = -1 * ForceFilter 
     N = ForceSign.size
@@ -151,14 +154,14 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
     ZeroIdx,MedRetr =  GetSurfaceIndexAndForce(o,fraction,FilterPoints,
                                                ZeroAtStart=False)
     if (MetersAfterTouchoff is not None):
-        ZSnsr,_ = o.ZsnsrAndDeflV
-        N = ZSnsr.size
+        XToUse  = o.Zsnsr
+        N = XToUse.size
         # Get just that part of the Retract
-        StartRetractX = ZSnsr[ZeroIdx]
+        StartRetractX = XToUse[ZeroIdx]
         EndRetractX = StartRetractX + MetersAfterTouchoff
         Index = np.arange(0,N)
         # XXX build in approach/retract
-        StopIdxArr = np.where( (ZSnsr > EndRetractX) &
+        StopIdxArr = np.where( (XToUse > EndRetractX) &
                                (Index > ZeroIdx))[0][0]
     else:
         # just get eveything
@@ -168,9 +171,9 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
     # sign correct and offset the force
     MyObj.Force = MyObj.Force * -1
     MyObj.Force -= MedRetr
-    MyObj.Separation -= MyObj.Separation[0] 
+    MyObj.Separation -= MyObj.Separation[0]
+    MyObj.Zsnsr -= MyObj.Zsnsr[0]
     return MyObj
-
 def GetAroundTouchoff(Objects,**kwargs):
     """
     Gets the data 'MetersAfterTouchoff' meters after (in ZSnsr)the surface 
@@ -188,6 +191,6 @@ def GetAroundTouchoff(Objects,**kwargs):
     """
     ToRet = []
     for o in Objects:
-        ToRet.append(GetFECPullingRegion(o))
+        ToRet.append(GetFECPullingRegion(o,**kwargs))
     return ToRet
 
