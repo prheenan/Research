@@ -35,13 +35,30 @@ def ToIWTObjects(TimeSepForceObjects):
     InverseWeierstrass.SetAllWorkOfObjects(Objs)
     return Objs
 
-def GetIWTObj(Base,FullName):
+def ReadInAllFiles(FileNames,Limit):
+    """
+    Given a list of pxp files, reads them all into a list as 
+    TimeSepForce Objcts
+
+    Args:
+        FileNames: List of .pxp full paths to data
+        Limit: maximum number of curves to return
+    """
+    toRet = []
+    for f in FileNames:
+        toRet.extend(FEC_Util.ReadInData(f))
+    return toRet[:Limit]
+
+def GetIWTObj(Base,FullNames,Force):
+    """
+    Given files, returns a listo f 
+    """ 
     Limit=150
-    mObjs = pCheckUtil.getCheckpoint(Base + "cache.pkl",FEC_Util.ReadInData,
-                                     False,FullName,Limit)
+    mObjs = pCheckUtil.getCheckpoint(Base + "cache.pkl",ReadInAllFiles,
+                                     Force,FullNames,Limit)
     ApproachList,RetractList = FEC_Util.BreakUpIntoApproachAndRetract(mObjs)
     # filter all the retractions
-    PastZeroExt = 8e-9
+    PastZeroExt = 60e-9
     FilterPoints = 30
     # get just after the touchoff
     FilterToMeters = 0.25e-9
@@ -54,8 +71,8 @@ def GetIWTObj(Base,FullName):
     IwtObjects = ToIWTObjects(Touchoff)
     return IwtObjects,RetractList,Touchoff
 
-def GetObjectsAndIWT(Base,FullName):
-    IwtObjects,RetractList,Touchoff = GetIWTObj(Base,FullName)
+def GetObjectsAndIWT(Base,FullName,Force):
+    IwtObjects,RetractList,Touchoff = GetIWTObj(Base,FullName,Force)
     # get the IWT
     LandscapeObj = InverseWeierstrass.FreeEnergyAtZeroForce(IwtObjects,
                                                             NumBins=100)
@@ -65,9 +82,22 @@ def GetAllExtensionsAndForce(RetractList,Touchoff,IwtObjects,Base):
     toNano = lambda x : x * 1e9
     toPn = lambda x: x * 1e12
     NPlots = 3
-    xlim_nm = [0,10]
+    xlim_nm = [0,60]
     ext = []
     force = []
+    MaxForce = max([np.max(t.Force) for t in Touchoff])
+    MinForce = min([np.min(t.Force) for t in Touchoff])
+    MaxX = max([t.Zsnsr[-1] for t in Touchoff])
+    MaxWork = max([np.max(t.Work) for t in IwtObjects])
+    # convert all the maxes to plot-friendly units
+    MaxX_nm = MaxX * 1e9
+    MaxWork_kbT = MaxWork/(4.1e-21)
+    MaxForce_pN = MaxForce * 1e12
+    MinForce_pN = MinForce * 1e12
+    # get the limits
+    ForceLim_pN = [MinForce_pN,MaxForce_pN]
+    XLim_nm = [0,MaxX_nm]
+    WorkLim_kbT = [0, MaxWork_kbT]
     for i,(Retract,Touch) in enumerate(zip(RetractList,Touchoff)):
         fig = pPlotUtil.figure(figsize=(8,12))
         ForZ = Retract
@@ -86,15 +116,15 @@ def GetAllExtensionsAndForce(RetractList,Touchoff,IwtObjects,Base):
         plt.subplot(NPlots,1,2)
         Z = Touch.Zsnsr
         plt.plot(toNano(Z),toPn(Touch.Force),alpha=0.3)
-        plt.xlim(xlim_nm)
+        plt.xlim(XLim_nm)
         # force bounds in pN
-        plt.ylim([-25,30])
+        plt.ylim(ForceLim_pN)
         pPlotUtil.lazyLabel("","Force (pN)","")
         plt.subplot(NPlots,1,3)
         plt.plot(toNano(Z),IwtObjects[i].Work/(4.1e-21),
                  alpha=0.3)
-        plt.xlim(xlim_nm)
-        plt.ylim([-2,20])
+        plt.xlim(XLim_nm)
+        plt.ylim(WorkLim_kbT)
         pPlotUtil.lazyLabel("Z stage Position (nm), relative to touchoff",
                             "Work (kbT)","")
         pPlotUtil.savefig(fig,Base + "{:d}.png".format(i))
@@ -105,15 +135,20 @@ def GetAllExtensionsAndForce(RetractList,Touchoff,IwtObjects,Base):
 def run():
     Base = "/Users/patrickheenan/Documents/education/boulder_files/" +\
            "rotations_year_1/3_perkins/reports/2016_Bio-DOPC-Energy-Landscape/"
-    FullName = Base + "prh_cleaned_2016-6-4-micah-1ppm-biolever-long-" +\
-               "strept-saved-data.pxp"
+    FullNames = [
+    Base +"2016-6-3-micah-1-part-per-million-biolevel-long-strept-coated.pxp",
+    Base +"2016-6-4-micah-1ppm-biolever-long-strept-saved-data.pxp",
+    Base +"2016-6-5-micah-1ppm-biolever-long-strept-saved-data.pxp"
+    ]
+    ForceReRead = False
+    ForceRePlot = False
     IwtObjects,RetractList,Touchoff,LandscapeObj  = \
             pCheckUtil.getCheckpoint(Base + "IWT.pkl",GetObjectsAndIWT,
-                                     False,Base,FullName)
+                                     ForceReRead,Base,FullNames,ForceReRead)
     ext,force  = pCheckUtil.getCheckpoint(Base + "ExtAndForce.pkl",
                                           GetAllExtensionsAndForce,
-                                          True,RetractList,Touchoff,IwtObjects,
-                                          Base)
+                                          ForceRePlot,RetractList,Touchoff,
+                                          IwtObjects,Base)
     # bin the force by extensions
     fig = pPlotUtil.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -141,20 +176,17 @@ def run():
     cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
     pPlotUtil.savefig(fig,Base + "HeatMap.png")
     fig = pPlotUtil.figure(figsize=(8,12))
-    xlim = [-1,7]
     plt.subplot(2,1,1)
     NanoExt =toNano(LandscapeObj.Extensions)
     FreeEnergyEq = LandscapeObj.EnergyLandscape
     plt.plot(NanoExt,FreeEnergyEq * LandscapeObj.Beta)
-    plt.xlim(xlim)
     pPlotUtil.lazyLabel("","G0",
-                        "DeltaG for lipid rupture is approximately 1kT")
+                        "Reconstructed Energy Landscape for lipid Bilayer")
     plt.subplot(2,1,2)
-    FOneHalf = 8e-12
+    FOneHalf = 4e-12
     TiltedEnergy = (FreeEnergyEq - LandscapeObj.Extensions * FOneHalf)
     TiltedEnergy -= (TiltedEnergy[0])
     plt.plot(NanoExt,TiltedEnergy * LandscapeObj.Beta)
-    plt.xlim(xlim)
     pPlotUtil.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
                         "")
     fig.savefig(Base + "IWT.png")

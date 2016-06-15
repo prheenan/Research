@@ -50,6 +50,23 @@ def Sanitize(Seq):
     """
     return Seq.strip().upper()
 
+def GetIdtAlignments(Seq1,Seq2,MismatchScore=IDT_DEF_GAP_MIS,
+                     GapOpen=IDT_DEF_GAP_MIS,
+                     GapExtend=0,**kwargs):
+    """
+    Gets the alignment scores for two sequences,using (by default) IDTs
+    
+
+    Args:
+        Seq1,Seq2: align Seq1 to Seq2
+        Other args: see GetBestSelfDimerAlignmentScore
+    Returns:
+        maximum over all alignment scores
+    """
+    alignments = AlignmentScores(Seq1,Seq2,MismatchScore=MismatchScore,
+                                 GapOpen=GapOpen,GapExtend=GapExtend,**kwargs)
+    return alignments
+
 def GetBestSelfDimerAlignmentScore(Seq,MismatchScore=IDT_DEF_GAP_MIS,
                                    GapOpen=IDT_DEF_GAP_MIS,
                                    GapExtend=0,**kwargs):

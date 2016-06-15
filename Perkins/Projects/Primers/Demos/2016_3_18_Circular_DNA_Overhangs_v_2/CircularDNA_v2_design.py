@@ -16,6 +16,7 @@ import Util.EmbossUtil as EmbossUtil
 import Util.KmerUtil as KmerUtil
 import Util.IdtUtil as IdtUtil
 import Util.CommonPrimerUtil as CommonPrimerUtil
+import Util.AlignUtil as AlignUtil
 
 from itertools import product
 
@@ -39,6 +40,8 @@ def run():
                                 MakeLabelledFile=True,
                                 CheckAfterChoosing=True,
                                 ChooseFunc = lambda x: x[0])
+
+    
 
 if __name__ == "__main__":
     run()

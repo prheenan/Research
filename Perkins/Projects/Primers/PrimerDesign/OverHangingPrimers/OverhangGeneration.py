@@ -551,10 +551,11 @@ def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
     """
     # determine the best overhang (low self-dimerization, close to desired
     # melting temperature)
-    print(desiredMeltTemp)
     inf = GetBestOverhangs(inputFile,desiredPrimerLen,desiredMeltTemp)
     # get the actual best primers
     primers = inf.BestPrimers
+    InStr = EmbossUtil.ReadSimpleSeqFile(inputFile)
+    # XXX check global alignments with entire plasmid.
     bestPrimer = ChooseFunc(primers)
     # re-calculate the alignment and temperature, in case we did something
     # funky
