@@ -84,6 +84,27 @@ def run():
                   YieldVol=[35],
                   MethodV=Method.FREEZE_SQUEEZE_5MIN,
                   Descr="Ovh2.0 Circular Band"),
+             # 6/14/2016
+             Prep(Construct=Constructs.CIRCULAR_1p8KB_OVH2p0,
+                  # note: all volumes in uL, all masses in ng
+                  ConcLoaded=46,
+                  # loaded 2*190 gels
+                  VolumeLoaded=180,
+                  YieldConc=[22],
+                  AgarosePct=1,
+                  YieldVol=[35],
+                  MethodV=Method.FREEZE_SQUEEZE_5MIN,
+                  Descr="Ovh2.0 Circular Band"),
+             Prep(Construct=Constructs.CIRCULAR_1p8KB_OVH2p0,
+                  # note: all volumes in uL, all masses in ng
+                  ConcLoaded=23,
+                  # loaded 2*190 gels
+                  VolumeLoaded=180,
+                  YieldConc=[17],
+                  AgarosePct=1,
+                  YieldVol=[35],
+                  MethodV=Method.FREEZE_SQUEEZE_5MIN,
+                  Descr="Ovh2.0 Circular Band"),
              ]
     fig = plt.figure()
     ax = plt.subplot(1,1,1)

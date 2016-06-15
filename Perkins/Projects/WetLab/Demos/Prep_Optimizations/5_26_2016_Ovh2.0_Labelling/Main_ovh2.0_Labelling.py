@@ -46,7 +46,8 @@ def run():
                                                     double_stranded=True,
                                                     circular=True)
     LengthDoubleStrandedBasePairs = len(Seq)
-    MassGramsPerMolecule= MolecularWeight/6.022e23
+    Avogadro = 6.022e23
+    MassGramsPerMolecule= MolecularWeight/Avogadro
     MoleculesPerCircularMicrogram = 1e-6/MassGramsPerMolecule
     KbpPerConstr = len(Seq)/1000
     # #get the mean distance between molecules on an afm slide
@@ -60,7 +61,6 @@ def run():
     LoadConcentrationNgPerUl = (MicrogramsLoaded * 1e3)/LoadVolumeMicroliters
     # get many molecules that mass translates into
     MoleculesLoaded = MoleculesPerCircularMicrogram * MicrogramsLoaded
-    Avogadro = 6.022e23
     MolarityLoaded =(MoleculesLoaded/(LoadVolumeMicroliters * 1e-6))/Avogadro
     NanoMolarLoaded = MolarityLoaded * 1e9
     # get the expected mean distance between molecules, assuming 100%
@@ -80,11 +80,13 @@ def run():
     NumPersistence = DNASizeNanoMeters/Lp_nm
     # at least N radii of gyration away. Should be more than 2 to prevent
     # overlap
-    RadiusOfGyr = LinearRadiusOfGyration(Lp_nm,
-                                         DNASizeNanoMeters)
+    RadiusOfGyrLinearNanoMeters = LinearRadiusOfGyration(Lp_nm,
+                                                         DNASizeNanoMeters)
+    RadiusOfGyrNanoMeters = CircularRadiusOfGyration(Lp_nm,
+                                           DNASizeNanoMeters)
 
     NumAway = 2.5
-    MinimumSeparationNanoMeters = NumAway*RadiusOfGyr
+    MinimumSeparationNanoMeters = NumAway*RadiusOfGyrNanoMeters
     # plots!
     fig = pPlotUtil.figure(figsize=(8,8))
     ax1 = plt.subplot(1,1,1)
@@ -105,10 +107,12 @@ def run():
                 alpha=0.3)
     plt.axhspan(ymin=DNASizeNanoMeters,ymax=plt.ylim()[-1],color='k',alpha=0.3,
                 label="Suboptimal for AFM")
+    IdealLoad = ((MeanDistNano > MinimumSeparationNanoMeters) &
+                 (LowerEfficiency < DNASizeNanoMeters))
+    WhereIdealIdx = np.where(IdealLoad)
     plt.fill_between(LoadConcentrationNgPerUl,y1=MeanDistNano,
                      y2=LowerEfficiency,
-                     where=((MeanDistNano > MinimumSeparationNanoMeters) &
-                            (LowerEfficiency < DNASizeNanoMeters)),
+                     where=IdealLoad,
                      facecolor='k')
     plt.plot([], [], color='black', linewidth=15,label="Ideal Loading")
     # bit of a hack to get the label working
@@ -126,6 +130,67 @@ def run():
     plt.xlabel("Molarity (nM)")
     plt.tight_layout()
     fig.savefig("DepositionAdvice.png")
+    """
+    We load the 20uL into xuL of TE and heat; what volume should we use?
+    """
+    MaxMolarity = MolarityLoaded[WhereIdealIdx[0][0]]
+    MinVolLog = np.log10(LoadVolumeMicroliters * 1e-6)
+    MaxVolLog = np.log10(LoadVolumeMicroliters* 1e-6 * 20)
+    DepositionVolumesLiters = np.logspace(MinVolLog,MaxVolLog)
+    # get the total number of molecules, given we load XXuL
+    TotalMolecules = (MaxMolarity*Avogadro)*(LoadVolumeMicroliters*1e-6)
+    # get the spacing of these, as a function of the volume
+    LoadVolumesMeters = DepositionVolumesLiters * 1e-3
+    MeanVolume = LoadVolumesMeters/TotalMolecules
+    MeanSpacingMeters = (MeanVolume * (3/(4*np.pi)))**(1/3)
+    MeanSpacingNanoMeters = MeanSpacingMeters*1e9
+    MeanSpacingRadiusOfGyr = MeanSpacingNanoMeters/RadiusOfGyrLinearNanoMeters
+    # plot the mean spacing, in terms of radius of gyration, in terms of the
+    # deposition volume
+    fig = pPlotUtil.figure()
+    NumRadii = 20
+    ExtraMicroLiters = 30
+    plt.plot(DepositionVolumesLiters * 1e6,MeanSpacingRadiusOfGyr,
+             label="Mean spacing between DNA")
+    plt.axvline(LoadVolumeMicroliters+ExtraMicroLiters,linewidth=3,color='r',
+                label="20uL (Sample) + {:d}uL (TE) deposition".\
+                format(ExtraMicroLiters))
+    plt.axhline(NumRadii,linewidth=3,color='b',
+                label="{:d} Radii of Gyration (Linear DNA)".format(NumRadii))
+    plt.axhline(DNASizeNanoMeters/RadiusOfGyrLinearNanoMeters,
+                linestyle="--",color='g',
+                label="Contour Length")
+    pPlotUtil.\
+        lazyLabel("Microliters for Deposition",
+                  "Mean Spacing (# of Linear Radii of Gyration)",
+                  "With {:d}uL extra TE, DNA spaced >{:d} * Rg away".\
+                  format(ExtraMicroLiters,NumRadii),
+                  frameon=True)
+    pPlotUtil.savefig(fig,"SpacingPerDeposition.png")
+    """
+    How long should we deposit for, assuming we want uniform coverage, taking
+    into account the diffusion coefficient of the DNA?
+    """
+    """
+    Diffusion Coefficient from Figure 1a (lower bound for 1um DNA), converted
+    to m^2/s
+    Robertson, Rae M., Stephan Laib, and Douglas E. Smith. 
+    "Diffusion of Isolated DNA Molecules: Dependence on Length and Topology."
+    PNAS, 2006
+    """
+    DiffusionCoeffMetersSquaredPerSec = 2e-12
+    # 1mm to 100mm
+    DistancesMeters = np.logspace(-4,-3)
+    # use 2-D diffusion equation, worst-case
+    TimeToDiffuse = lambda D,r : (r**2)/(4*D)
+    TimesSeconds = TimeToDiffuse(DiffusionCoeffMetersSquaredPerSec,
+                                 DistancesMeters)
+    TimesHours = TimesSeconds/3600
+    fig = pPlotUtil.figure()
+    plt.plot(DistancesMeters*1e6,TimesHours)
+    pPlotUtil.lazyLabel("Distance (um)","Time to diffuse (hours)",\
+        "DNA can't diffuse more than 0.5mm in a reasonable amount of time")
+    pPlotUtil.savefig(fig,"DiffusionTimes.png")
     """
     Figure 4/equation 7 from
     Latulippe, David R., and Andrew L. Zydney. 
