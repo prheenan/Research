@@ -135,7 +135,7 @@ def run():
     """
     MaxMolarity = MolarityLoaded[WhereIdealIdx[0][0]]
     MinVolLog = np.log10(LoadVolumeMicroliters * 1e-6)
-    MaxVolLog = np.log10(LoadVolumeMicroliters* 1e-6 * 20)
+    MaxVolLog = np.log10(LoadVolumeMicroliters* 1e-6 * 100)
     DepositionVolumesLiters = np.logspace(MinVolLog,MaxVolLog)
     # get the total number of molecules, given we load XXuL
     TotalMolecules = (MaxMolarity*Avogadro)*(LoadVolumeMicroliters*1e-6)

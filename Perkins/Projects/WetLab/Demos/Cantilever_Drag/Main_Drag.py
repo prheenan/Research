@@ -72,11 +72,17 @@ def run():
     for i,f in enumerate(Forces):
         ForcePn = f *1e12
         plt.plot(VelNmPerSec,ForcePn,label="Drag on " + Levers[i].Name)
-    # write down the rupture force in pN based on XXX
-    RuptureForce = 15
+    # write down the rupture force in pN based on
+    """
+    Hatch, K., Danilowicz, C., Coljee, V., and Prentiss, M. (2008).
+    Demonstration that the shear force required to separate short 
+    double-stranded DNA does not increase significantly with sequence length 
+    for sequences longer than 25 base pairs. Phys. Rev. E 78, 011920.
+    """
+    RuptureForce = 20
     plt.axhline(RuptureForce,linewidth=3.0,linestyle="--",
                 label="{:d}pN (Circular Rupture)".format(RuptureForce))
-    TargetVel = 50
+    TargetVel = 150
     plt.axvline(TargetVel,linewidth=3.0,linestyle="--",
                 label="V={:d}nm/s".format(TargetVel))
     pPlotUtil.lazyLabel("Velocity (nm/s)","Force (pN)",
