@@ -10,44 +10,14 @@ import GeneralUtil.python.PlotUtilities as pPlotUtil
 import GeneralUtil.python.GenUtilities as pGenUtil
 import os
 from Research.Perkins.AnalysisUtil.Gels.ImageJUtil import \
-    GetImageJData,GetImageJMeasurements
+    GetImageJData,GetImageJMeasurements,ReadFileToOverhangObj
 from collections import OrderedDict
 
 class DistributionObj:
-
     def __init__(self,Linear,Circular,Concat):
         self.Linear = Linear
         self.Circular = Circular
         self.Concat = Concat
-
-class OverhangLane:
-    """
-    Class to keep track of the bands in an overhang lane
-    """
-    def __init__(self,Linear,Circular,*Concat):
-        self.LinearBand=Linear
-        self.CircularBand = Circular
-        self.Concatemers = Concat
-        self.Total = Linear + Circular + sum(Concat)
-    def _Norm(self,x):
-        return x/self.Total
-    @property
-    def LinearRelative(self):
-        return self._Norm(self.LinearBand)
-    @property
-    def CircularRelative(self):
-        return self._Norm(self.CircularBand)
-    @property
-    def ConcatemerRelative(self):
-        return self._Norm(sum(self.Concatemers))
-    def __str__(self):
-        return "Lin:{:3.2f},Circ:{:3.2f},Concat:{:3.2f}".\
-            format(self.LinearRelative,
-                   self.CircularRelative,
-                   self.ConcatemerRelative)
-    def __repr__(self):
-        return str(self)
-
 
     
 def ConvertToOverhangObjects(Voltages):
@@ -65,9 +35,7 @@ def ConvertToOverhangObjects(Voltages):
         TmpObjs = []
         # go through each file (lane)
         for f in Files:
-            # get this lanes data, reverse so it goes linear,circular,conat
-            DataTmp = GetImageJMeasurements(f)[::-1]
-            ThisLane = OverhangLane(*DataTmp)
+            ThisLane = ReadFileToOverhangObj(f)
             TmpObjs.append(ThisLane)
         # record all the lanes for this object
         ObjectsByVoltage[Volt] = TmpObjs
