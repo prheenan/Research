@@ -9,6 +9,8 @@ sys.path.append("../../../../../../..")
 import GeneralUtil.python.PlotUtilities as pPlotUtil
 import GeneralUtil.python.GenUtilities as pGenUtil
 import os
+from Research.Perkins.AnalysisUtil.Gels.ImageJUtil import \
+    GetImageJData,GetImageJMeasurements
 from collections import OrderedDict
 
 class DistributionObj:
@@ -47,37 +49,7 @@ class OverhangLane:
         return str(self)
 
 
-def GetImageJData(DataDirBase,ext=".xls"):
-    """
-    Given a base data directory, finds all files with ext in each subdirectory
-
-    Args:
-        DataDirBase: base data directory. Each subdirectory has files with 
-        extension 'ext'
-       
-        ext: file extension
-    Returns:
-        ordered dictionary of <subdir:fullpaths>
-    """
-    Voltages = OrderedDict()
-    for f in sorted(os.listdir(DataDirBase)):
-        PossibleSubDir = DataDirBase + f +"/"
-        if (os.path.isdir(PossibleSubDir)):
-            Files = pGenUtil.getAllFiles(PossibleSubDir,".xls")
-            Voltages[f] =Files
-    return Voltages
-
-def GetImageJMeasurements(File):
-    """
-    Returns the in-order values of the intensity column in the ImageJ xls file
-
-    Args:
-        File: to read from
-    Returns:
-        intensity column
-    """
-    return np.loadtxt(File,skiprows=1,usecols=(1,))
-
+    
 def ConvertToOverhangObjects(Voltages):
     """
     Given a dictionary of voltage:Filenames pairs (filenames are the lanes),
@@ -149,7 +121,8 @@ def run():
     PlotDist(FlatCirc,CirProps)
     PlotDist(FlatConcat,ConcatProps)
     pPlotUtil.lazyLabel("Voltage (V)","Intensity Fraction",
-                        "DNA Populations as a function of voltage",frameon=True)
+                        "Circular DNA fraction saturates at low voltage",
+                        frameon=True)
     plt.xlim([0,np.max(VoltageFloats)*1.1])
     pPlotUtil.savefig(fig,"BoxPlots.png")
     
