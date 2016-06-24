@@ -12,12 +12,11 @@ def run():
     """
     Utility file: we write down our stocks and desired concentrations
     """
-    stocks = np.array([74,154.4])
-    # essentially, how many tubes did we combine?
-    volumes = np.array([75,33*4])
-    # For loading prep gel, dont want more than 20ug=20e3ng in 125uL, giving
-    # 160 ng/uL
-    DesiredConc = 100
+    stocks = np.array([13.2,54])
+    # what volume are the stocks
+    volumes = np.array([5,2])
+    # what the post-dilution amount is 
+    DesiredConc = 0.2
     obj = DilutionUtil.PrintDilutions(stocks,volumes,DesiredConc)
 
 if __name__ == "__main__":

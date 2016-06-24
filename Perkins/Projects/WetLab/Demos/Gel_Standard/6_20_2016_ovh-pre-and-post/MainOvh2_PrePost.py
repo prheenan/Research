@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("../../../../../../../")
-from Research.Perkins.AnalysisUtil.Gels.ImageJUtil import ReadFileToLaneObj
+from Research.Perkins.AnalysisUtil.Gels.ImageJUtil import \
+    ReadFileToOverhangObj,GetLaneTrialsMatchingName
 import GeneralUtil.python.PlotUtilities as pPlotUtil
 
 def run():
@@ -14,41 +15,65 @@ def run():
     that the linear band is mostly linear
     """
     BaseDir = "./Data/"
-    LinearPreFile = "Lane3_Linear_Only.xls"
-    LinearPostFile = "Lane4_Linear_Post.xls"
-    CircularPreFile = "Lane5_Circular_Pre.xls"
-    CircularPostFile = "Lane6_Circular_Post.xls"
-    LinearPreObj = ReadFileToLaneObj(BaseDir + LinearPreFile)
-    LinearPostObj = ReadFileToLaneObj(BaseDir + LinearPostFile)
-    CircularPreObj = ReadFileToLaneObj(BaseDir + CircularPreFile)
-    CircularPostObj = ReadFileToLaneObj(BaseDir + CircularPostFile)
-    # # Get the linear pre and post as a bar plot
-    # only index in linear pre is the linear band
-    LinearPre = LinearPreObj.Normalized(0)
-    # post Linear has both linear and Circular
-    print(LinearPostObj)
-    LinearPost_Circular = LinearPostObj.Normalized(0)
-    LinearPost_Linear = LinearPostObj.Normalized(1)
-    # pre circular has concat, circular, linear in that order
-    CircularPre_Concat = CircularPreObj.Normalized(0)
-    CircularPre_Circular = CircularPreObj.Normalized(2)
-    CircularPre_Linear = CircularPreObj.Normalized(2)
-    # post circular has concat, circular, linear in that ordr
-    CircularPost_Concat = CircularPostObj.Normalized(0)
-    CircularPost_Circular = CircularPostObj.Normalized(1)
-    CircularPost_Linear = CircularPostObj.Normalized(2)
-    # plot them all
-    N = 3
-    fig = pPlotUtil.figure()
-    ax = plt.subplot()
+    Files = ["Lane3_Linear_Only.xls","Lane5_Circular_Pre.xls",
+             "Lane4_Linear_Post.xls",
+             "Lane6_Circular_Post.xls"]
+    Labels = ["Linear","Circular DNA, Pre: mixed",
+              "Linear Band, Post: mostly linear",
+              "Circular Band, Post: mostly Circular",
+              "Hot Ligation","Cold Ligation"]
+    styles = [dict(color='r',alpha=1),
+              dict(color='b',alpha=1.0),
+              dict(color='b',alpha=0.6),
+              dict(color='b',alpha=0.2)]
+    Bins = ["Linear","Circular","Concatemer"]
+    Objects = [ReadFileToOverhangObj(BaseDir + f) for f in Files]
+    # get the ligaation objects, which have error (multiple trials)
+    LigationCold = GetLaneTrialsMatchingName(BaseDir,r""".+Hot_Ligation.+""")
+    LigationHot = GetLaneTrialsMatchingName(BaseDir,r""".+Cold_Ligation.+""")
+    Objects.extend([LigationHot,LigationCold])
+    # construct all the bins
+    x_vals = []
+    heights = []
+    labels = []
     width = 0.4
-    Data = [LinearPre,LinearPost_Circular,LinearPost_Linear,
-            CircularPre_Concat,CircularPre_Circular,CircularPre_Linear,
-            CircularPost_Concat,CircularPost_Circular,CircularPost_Linear]
-    tick_labels = ["PreLinear","PostLinear-Circular","PostLinearLinear",
-                   "","","","","",""]
-    ax.bar(left=np.arange(len(Data)),
-           tick_label=tick_labels,facecolor='yellow',edgecolor='gray')
+    # plot them all
+    fig = pPlotUtil.figure(figsize=(10,10))
+    ax = plt.subplot()
+    for i,o in enumerate(Objects):
+        intensities = [o.LinearRelative,
+                       o.CircularRelative,
+                       o.ConcatemerRelative]
+        N = len(intensities)
+        x = np.arange(0,N) + float(N*i)
+        x_vals.extend(x)
+        LaneLabel = Labels[i]
+        labels.extend([BinLabel
+                       for BinLabel in Bins])
+        heights.extend(intensities)
+        style_idx = i % len(styles)
+        try:
+            errs = o.GetErrors()
+            error_kw = dict(ecolor='k',linewidth=3)
+        except AttributeError:
+            errs = 0
+            error_kw = dict()
+        plt.bar(left=x,height=intensities,yerr=errs,error_kw=error_kw,
+                edgecolor='gray',label=LaneLabel,
+                **(styles[style_idx]))
+    span_style = [dict(color='k',alpha=0.3),
+                  dict(color='w',alpha=0.0)]
+    label_x = np.array( x_vals) + width
+    plt.xticks(label_x,labels,rotation=60)
+    plt.ylim([0,1.15])
+    pPlotUtil.lazyLabel("Population","Population Fraction by Intensity",
+                "Purifying circular DNA reveals a dominantly linear population",
+                        frameon=True)
+    for i,_ in enumerate(Objects):
+        start = N*i
+        end = N*(i+1)
+        color = 'k' if (i % 2) == 0 else "w"
+        plt.axvspan(start,end,color=color,alpha=0.2)
     pPlotUtil.savefig(fig,"./out.png")
     
 
