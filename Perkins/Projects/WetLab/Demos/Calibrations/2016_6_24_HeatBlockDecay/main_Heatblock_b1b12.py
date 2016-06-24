@@ -14,8 +14,8 @@ def run():
     Data taken on heatblock, SN 00151 on 2016-6-24,
     with inner six wells filled with water (90% filled) 
     """
-    # note: ambient temperature is 22C
-    AmbientTemp = 22
+    # note: ambient temperature is 22.5C
+    AmbientTemp = 22.5
     # recording minutes, seconds, and temperature in centigrade, in that
     # order
     MinutesSecondsTemperature  =\
@@ -27,6 +27,12 @@ def run():
                                    [16,10,59],
                                    [19,04,55.5],
                                    [24,00,51],
+                                   [28,40,48],
+                                   [34,00,45],
+                                   [41,15,41],
+                                   [45,25,39],
+                                   [51,45,36.5],
+                                   [69,00,32],
                                  ]
     # get just the times and temperatures
     Times = np.array([ t[0]*60 + t[1] for t in MinutesSecondsTemperature])
@@ -38,18 +44,20 @@ def run():
     LogTemp = np.log(TemperatureRel)
     # fit to an exponential decay
     coeffs = np.polyfit(x=TimeRel,y=LogTemp,deg=1)
-    pred_log = np.polyval(coeffs,TimeRel)
-    pred_temp = np.exp(pred_log) + AmbientTemp
     # get the tau (decay constant) in seconds
     tau= -1/coeffs[0]
+    pred_times = np.linspace(0,tau*3)
+    pred_log = np.polyval(coeffs, pred_times)
+    pred_temp = np.exp(pred_log) + AmbientTemp
     tau_minutes = tau/60
     # plot the exponential decay
     fig = pPlotUtil.figure()
     TimeMinutes = Times/60
+    PredTimesMinutes =  pred_times/60
     plt.errorbar(TimeMinutes,Temperature,yerr=0.5,fmt='bo-')
-    plt.plot(TimeMinutes,pred_temp,'r',linewidth=3,
-             label=r"Exponential Decay, $\tau$={:.1f} minutes".\
-             format(tau_minutes))
+    plt.plot(PredTimesMinutes,pred_temp,'r',linewidth=3,
+             label=r"Exponential Decay, $\tau$={:d} minutes".\
+             format(int(tau_minutes)))
     plt.axhline(AmbientTemp,label="Ambient Temperature",
                 color="g",linestyle="--",linewidth=3)
     pPlotUtil.lazyLabel("Time (minutes)",r"Temperature ($^\circ$C)","")
