@@ -7,10 +7,13 @@ import sys
 sys.path.append("../../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,\
     FEC_Plot
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection.\
+    CorrectionMethods import CorrectForcePullByMetaInformation
 
 from FitUtil.WormLikeChain.Python.Code.WLC_Fit import BoundedWlcFit
 from FitUtil.FitUtils.Python.FitClasses import GetBoundsDict
 from GeneralUtil.python import PlotUtilities as pPlotUtil
+import copy
 
 
 def run():
@@ -19,16 +22,18 @@ def run():
     """
     OutFile = ""
     Limit = 2
-    "ContourLengthExperiment.pxp"
     FullName = "ContourLengthExperiment.pxp"
     mObjs = FEC_Util.ReadInData(FullName)
     # get where the surface of this object is
     Tmp = mObjs[0]
+    Corrected, CorrectionInfo = CorrectForcePullByMetaInformation(Tmp)
+    # work with the corrected version
+    Tmp = Corrected
     Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
     NearSurface =  FEC_Util.GetFECPullingRegion(Retract,
                                                 MetersAfterTouchoff=640e-9)
     Bounds = GetBoundsDict(**dict(Lp=[35e-9,60e-9],
-                                  L0=[600e-9,700e-9],
+                                  L0=[100e-9,700e-9],
                                   K0=[1000e-12,1400e-12],
                                   kbT=[0,np.inf]))
     SepNear = NearSurface.Separation
