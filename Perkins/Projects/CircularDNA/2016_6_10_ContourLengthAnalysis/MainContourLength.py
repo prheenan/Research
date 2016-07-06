@@ -17,7 +17,6 @@ def run():
     """
     Runs contour length analysis
     """
-    InFile = ".pxp"
     OutFile = ""
     Limit = 2
     "ContourLengthExperiment.pxp"

@@ -11,32 +11,48 @@ import GeneralUtil.python.PlotUtilities as pPlotUtil
 
 def run():
     """
-    Data taken on heatblock, SN 00151 on 2016-6-24,
+    Data taken on heatblock, SN 00151, date marked below
     with inner six wells filled with water (90% filled) 
     """
     # note: ambient temperature is 22.5C
-    AmbientTemp = 22.5
+    AmbientTemp = 22
     # recording minutes, seconds, and temperature in centigrade, in that
     # order
     MinutesSecondsTemperature  =\
-                                 [ [0,0,80.5],
-                                   [2,0,78],
-                                   [4,0,75],
-                                   [7,15,70],
-                                   [11,20,62],
-                                   [16,10,59],
-                                   [19,04,55.5],
-                                   [24,00,51],
-                                   [28,40,48],
-                                   [34,00,45],
-                                   [41,15,41],
-                                   [45,25,39],
-                                   [51,45,36.5],
-                                   [69,00,32],
-                                 ]
+                                 [
+                                # 6/24/2016
+                                [0,0,80.5],
+                                [2,0,78],
+                                [4,0,75],
+                                [7,15,70],
+                                [11,20,62],
+                                [16,10,59],
+                                [19,04,55.5],
+                                [24,00,51],
+                                [28,40,48],
+                                [34,00,45],
+                                [41,15,41],
+                                [45,25,39],
+                                [51,45,36.5],
+                                [69,00,32],
+                                [84,00,29],
+                                # 6/27/2016
+                                [0,0,79],
+                                [6,0,72],
+                                [16,30,59],
+                                [25,13,51],
+                                [81,0,29.5],
+                                [97,10,27],
+                                [116,30,25.5],
+                                [200,30,22.5]
+                            ]
     # get just the times and temperatures
     Times = np.array([ t[0]*60 + t[1] for t in MinutesSecondsTemperature])
     Temperature = np.array([t[-1] for t in MinutesSecondsTemperature])
+    # sort the times and temperature
+    SortIdx = np.argsort(Times)
+    Times = Times[SortIdx]
+    Temperature = Temperature[SortIdx]
     # get the temperature, relative to ambient
     TemperatureRel = Temperature - AmbientTemp
     TimeRel = Times - Times[0]
@@ -46,7 +62,7 @@ def run():
     coeffs = np.polyfit(x=TimeRel,y=LogTemp,deg=1)
     # get the tau (decay constant) in seconds
     tau= -1/coeffs[0]
-    pred_times = np.linspace(0,tau*3)
+    pred_times = np.linspace(0,tau*5)
     pred_log = np.polyval(coeffs, pred_times)
     pred_temp = np.exp(pred_log) + AmbientTemp
     tau_minutes = tau/60

@@ -18,9 +18,9 @@ def run():
     Files = ["Lane3_Linear_Only.xls","Lane5_Circular_Pre.xls",
              "Lane4_Linear_Post.xls",
              "Lane6_Circular_Post.xls"]
-    Labels = ["Linear","Pre-Purification: mixed",
-              r"Linear Band $\approx$ linear",
-              r"Circular Band $\approx$ circular",
+    Labels = ["Linear","Pre-Purification is mixed",
+              r"Linear Band is linear",
+              r"Circular Band is circular",
               "Ligation, Hot Gel","Ligation, Cold Gel"]
     styles = [dict(color='r',alpha=1),
               dict(color='b',alpha=1.0),
@@ -42,7 +42,7 @@ def run():
                        o.ConcatemerRelative]
     bins_x = np.arange(NumObjects)
     bins_y = np.arange(NumTypes)
-    fig = pPlotUtil.figure(figsize=(12,10))
+    fig = pPlotUtil.figure(figsize=(14,10))
     ax = plt.subplot(1,1,1)
     heatmap = plt.pcolor(Matrix,cmap=plt.cm.afmhot)
     # put the major ticks at the middle of each cell
@@ -62,9 +62,22 @@ def run():
     cbar.set_label('Fraction of population in lane',
                    labelpad=20,rotation=270,size=22)
     cbar.ax.tick_params(labelsize=18)
-    pPlotUtil.lazyLabel("DNA Population","Gel Type",
-                "Linear band remains linear after purification or ligation",
-                        frameon=True,titley=1.02)
+    title = r"Some DNA remains linear after purification or ligation, " +\
+            "suggesting non-annealing DNA"
+    pPlotUtil.lazyLabel("DNA Population","Gel Contents",
+                        title,frameon=True,titley=1.02)
+    plt.tick_params(
+        axis='x',          # changes apply to the x-axis
+        which='both',      # both major and minor ticks are affected
+        bottom='off',      # ticks along the bottom edge are off
+        top='off',         # ticks along the top edge are off
+        labelbottom='on') # labels along the bottom edge are off
+    plt.tick_params(
+        axis='y',          # changes apply to the x-axis
+        which='both',      # both major and minor ticks are affected
+        left='off',      # ticks along the bottom edge are off
+        right='off',         # ticks along the top edge are off
+        labelleft='on') # labels along the bottom edge are off
     pPlotUtil.savefig(fig,"./out.png")
     
 
