@@ -48,6 +48,89 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
                                copy.deepcopy(Obj.Meta))
     return ToRet
 
+
+def UnitConvert(TimeSepForceObj,
+                ConvertX=lambda x : x,
+                ConvertY=lambda y : y,
+                GetX = lambda x : x.Separation,
+                GetY = lambda x : x.Force):
+    """
+    Converts the 'X' and 'Y' using the specified units and properties 
+    of the object passed in 
+
+    Args:
+        TimeSepForceObj : see ApproachRetractCurve
+        ConvertX: method to convert the X values into whatever units we want
+        ConvertY: metohod to convery the Y values into whatever units we want
+        GetX: gets the x values (assumed separation for plotting XXX TODO)
+        GetY: gets the y values (assumed force for plotting XXX TODO)
+    Returns: 
+        deep *copy* of original object in the specified units
+    """
+    ObjCopy = copy.deepcopy(TimeSepForceObj)
+    ObjCopy.Force = ConvertY(GetY(ObjCopy))
+    ObjCopy.Separation = ConvertX(GetX(ObjCopy))
+    return ObjCopy
+
+
+def PreProcessFEC(TimeSepForceObject,NFilterPoints=100,
+                  ZeroForceFraction=0.2,
+                  ZeroSep=True,FlipY=True):
+    """
+    Returns the pre-processed (zeroed, flipped, etc) approach and retract
+    
+    Args:
+        TimeSepForceObject: the object we are dealing with. copied, not changed
+        NFilterPoints: number of points for finding the surface
+        ZeroForceFraction: if not None, fraction of points near the retract end
+        to filter to
+        
+        ZeroSep: if true, zeros the separation to its minima
+        FlipY: if true, multiplies Y (force) by -1 before plotting
+    Returns:
+        tuple of <Appr,Retr>, both pre-processed TimeSepFOrce objects for
+        the appropriate reason
+    """
+    Appr,Retr = GetApproachRetract(TimeSepForceObject)
+    if (ZeroForceFraction is not None):
+        # then we need to offset the force
+        # XXX assume offset is the same for both
+        _,ZeroForceRetr = GetSurfaceIndexAndForce(Retr,
+                                                  Fraction=ZeroForceFraction,
+                                                  FilterPoints=NFilterPoints,
+                                                  ZeroAtStart=False)
+        _,ZeroForceAppr = GetSurfaceIndexAndForce(Appr,
+                                                  Fraction=ZeroForceFraction,
+                                                  FilterPoints=NFilterPoints,
+                                                  ZeroAtStart=True)
+        Appr.Force += ZeroForceAppr
+        # Do the same for retract
+        Retr.Force += ZeroForceAppr
+    if (ZeroSep):
+        MinSep = np.min(TimeSepForceObject.Separation)
+        Appr.Separation -= MinSep
+        Retr.Separation -= MinSep
+    if (FlipY):
+        Appr.Force *= -1
+        Retr.Force *= -1
+    return Appr,Retr
+
+def SplitAndProcess(TimeSepForceObj,ConversionOpts=dict(),
+                    NFilterPoints=100,**kwargs):
+    """
+    Args:
+        TimeSepForceObj: see PreProcessFEC
+        ConversionOpts: passed to UnitConvert
+        NFilterPoints: see PreProcessFEC
+        **kwargs: passed to PreProcessFEC
+    """
+    # convert the x and y to sensible units
+    ObjCopy = UnitConvert(TimeSepForceObj,**ConversionOpts)
+    # pre-process (to, for example, flip the axes and zero everything out
+    Appr,Retr = PreProcessFEC(ObjCopy,NFilterPoints=NFilterPoints,**kwargs)
+    return Appr,Retr
+
+
 def GetApproachRetract(o):
     """
     Get the approach and retraction curves of a TimeSepForceObject
@@ -60,7 +143,7 @@ def GetApproachRetract(o):
     """
     ForceArray = o.Force
     # note: force is 'upside down' by default, so high force (near surface
-    # is actually high)
+    # is actually high) is what we are looking for
     MinForceIdx = np.argmax(ForceArray)
     # get the different slices
     SliceAppr = slice(0,MinForceIdx)

@@ -41,20 +41,37 @@ def run():
     Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=20,
                         Bounds=Bounds)
     Pred = Fit.Predict(SepNear)
+    # the fit was to 'NearSurface', which is zeroed. There can be an offset
+    # due to hydrodynamic drag on the cantilever (typically <20pN)
+    # to find this, we each
+    Appr,Retr = FEC_Util.SplitAndProcess(Tmp)
+    # how much of the retract should we use to figure out the zero?
+    fraction = 0.05
+    N = int(np.ceil(fraction*Retr.Force.size))
+    # get the two zeros, and offset the fit by their different (retract
+    # should almost certainly be higher)
+    ZeroAppr = np.median(Appr.Force[:N])
+    ZeroRetr = np.median(Retr.Force[-N:])
+    Offset = ZeroRetr - ZeroAppr
     # offset the WLC, in pN
-    Pred += 10e-12
+    Pred += Offset
     # plot the data and the prediction
     fig = plt.figure()
     FEC_Plot.FEC(Tmp,NFilterPoints=40)
-    plt.axhline(65,linewidth=3.0,color='k',linestyle="--",label="65pN")
+    ExpectedOverstretch_pN = 65
+    plt.axhline(ExpectedOverstretch_pN,
+                linewidth=3.0,color='k',linestyle="--",label="65pN")
     ToNm = lambda x: x*1e9
     ToPn = lambda x: x*1e12
+    L0 = int(ToNm(Fit.Info.ParamVals.ParamDict["L0"].Value))
+    Lp = int(ToNm(Fit.Info.ParamVals.ParamDict["Lp"].Value))
     plt.plot(ToNm(SepNear),ToPn(Pred),color='g',linestyle='--',linewidth=5.0,
-             label="Extensible WLC")
-    pPlotUtil.legend(frameon=True)
+             label="WLC (Extensible)\n" +\
+             r"$L_0$={:d}nm, $L_p$={:d}nm".format(L0,Lp))
+    pPlotUtil.legend(frameon=True,loc='upper left')
     # note: limits are in nm and pN
-    plt.ylim([-30,150])
-    plt.xlim([-10,plt.xlim()[-1]])
+    plt.ylim([-30,175])
+    plt.xlim([-20,plt.xlim()[-1]])
     pPlotUtil.savefig(fig,"WLC_Tmp.png")
     # Read in the pxp (assume each 'name-group' with the same numerical
     # suffix represents a valid wave with a WLC of interest)
