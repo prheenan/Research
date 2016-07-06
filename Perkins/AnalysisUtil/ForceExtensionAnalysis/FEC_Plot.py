@@ -9,24 +9,16 @@ import GeneralUtil.python.PlotUtilities as pPlotUtil
 
 import copy
 
-def _ApproachRetractCurve(TimeSepForceObject,NFilterPoints=100,
-                          ZeroForceFraction=0.2,
-                          ZeroSep=True,FlipY=True,
-                          ApproachLabel="Approach",
-                          RetractLabel="Retract"):
+def PreProcessFEC(TimeSepForceObject,NFilterPoints=100,
+                  ZeroForceFraction=0.2,
+                  ZeroSep=True,FlipY=True):
     """
-    Most of the brains for the approach/retract curve. does *not* show anything
-
-    Args:
-        TimeSepForceObject: what we are plotting
-        NFilterPoints: how many points to filter down
         ZeroForceFraction: if not None, fraction of points near the retract end
         to filter to
         
         ZeroSep: if true, zeros the separation to its minima
         FlipY: if true, multiplies Y (force) by -1 before plotting
-        ApproachLabel: label to put on the approach
-        RetractLabel: label to put on the retract
+
     """
     Appr,Retr = FEC_Util.GetApproachRetract(TimeSepForceObject)
     if (ZeroForceFraction is not None):
@@ -52,6 +44,20 @@ def _ApproachRetractCurve(TimeSepForceObject,NFilterPoints=100,
     if (FlipY):
         Appr.Force *= -1
         Retr.Force *= -1
+    return Appr,Retr
+
+def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
+                          ApproachLabel="Approach",
+                          RetractLabel="Retract"):
+    """
+    Most of the brains for the approach/retract curve. does *not* show anything
+
+    Args:
+        TimeSepForceObject: what we are plotting
+        NFilterPoints: how many points to filter down
+        ApproachLabel: label to put on the approach
+        RetractLabel: label to put on the retract
+    """
     # plot the separation and force, with their filtered counterparts
     ApprFiltered = FEC_Util.GetFilteredForce(Appr,NFilterPoints)
     RetrFiltered = FEC_Util.GetFilteredForce(Retr,NFilterPoints)
@@ -65,19 +71,37 @@ def UnitConvert(TimeSepForceObj,
                 ConvertY=lambda y : y*1e12,
                 GetX = lambda x : x.Separation,
                 GetY = lambda x : x.Force):
+    """
+    Converts the 'X' and 'Y' using the specified units and properties 
+    of the object passed in 
+
+    Args:
+        TimeSepForceObj : see ApproachRetractCurve
+        ConvertX: method to convert the X values into whatever units we want
+        ConvertY: metohod to convery the Y values into whatever units we want
+        GetX: gets the x values (assumed separation for plotting XXX TODO)
+        GetY: gets the y values (assumed force for plotting XXX TODO)
+    Returns: 
+        deep *copy* of original object in the specified units
+    """
     ObjCopy = copy.deepcopy(TimeSepForceObj)
     ObjCopy.Force = ConvertY(GetY(ObjCopy))
     ObjCopy.Separation = ConvertX(GetX(ObjCopy))
     return ObjCopy
-
     
 def FEC(TimeSepForceObj,
         XLabel="Separation (nm)",
         YLabel="Force (pN)",
         ConversionOpts=dict(),
+        PlotLabelOpts=dict(),
+        NFilterPoints=50,
         **kwargs):
+    
     # convert the x and y to sensible units
     ObjCopy = UnitConvert(TimeSepForceObj,**ConversionOpts)
-    _ApproachRetractCurve(ObjCopy,**kwargs)
+    # pre-process (to, for example, flip the axes and zero everything out
+    Appr,Retr = PreProcessFEC(ObjCopy,NFilterPoints=NFilterPoints,**kwargs)
+    # actually plot, with the filtered versions
+    _ApproachRetractCurve(Appr,Retr,NFilterPoints=NFilterPoints,**PlotLabelOpts)
     pPlotUtil.lazyLabel(XLabel,YLabel,"")
     pPlotUtil.legend()
