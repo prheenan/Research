@@ -13,7 +13,13 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection.\
 from FitUtil.WormLikeChain.Python.Code.WLC_Fit import BoundedWlcFit
 from FitUtil.FitUtils.Python.FitClasses import GetBoundsDict
 from GeneralUtil.python import PlotUtilities as pPlotUtil
+from GeneralUtil.python import CheckpointUtilities as pCheckUtil
 import copy
+
+def ReadInData(FullName,idx):
+    mObjs = FEC_Util.ReadInData(FullName)
+    # return the specific object we want
+    return mObjs[idx]
 
 
 def run():
@@ -22,17 +28,20 @@ def run():
     """
     OutFile = ""
     Limit = 2
-    FullName = "ContourLengthExperiment.pxp"
-    mObjs = FEC_Util.ReadInData(FullName)
-    # get where the surface of this object is
-    Tmp = mObjs[0]
-    Corrected, CorrectionInfo = CorrectForcePullByMetaInformation(Tmp)
-    # work with the corrected version
+    FullName = "2016_7_5_hot_depositition_" +\
+               "water-sealed-better-efficiency-still-non-circular.pxp"
+    idx = 0
+    Tmp = pCheckUtil.getCheckpoint("Tmp.pkl",ReadInData,False,FullName,idx)
+    MaxFittingArray= [410e-9]
+    CorrectionArray = [False]
+    Corrected,_ = CorrectForcePullByMetaInformation(Tmp)
     Tmp = Corrected
+    # work with the corrected version
     Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
-    NearSurface =  FEC_Util.GetFECPullingRegion(Retract,
-                                                MetersAfterTouchoff=640e-9)
-    Bounds = GetBoundsDict(**dict(Lp=[35e-9,60e-9],
+    MaxForFitting = MaxFittingArray[idx]
+    NearSurface =  FEC_Util.\
+            GetFECPullingRegion(Retract,MetersAfterTouchoff=MaxForFitting)
+    Bounds = GetBoundsDict(**dict(Lp=[20e-9,60e-9],
                                   L0=[100e-9,700e-9],
                                   K0=[1000e-12,1400e-12],
                                   kbT=[0,np.inf]))
@@ -43,7 +52,8 @@ def run():
     Pred = Fit.Predict(SepNear)
     # the fit was to 'NearSurface', which is zeroed. There can be an offset
     # due to hydrodynamic drag on the cantilever (typically <20pN)
-    # to find this, we each
+    # to find this (in order for the retract-offsetted WLC fit to match),
+    # we each
     Appr,Retr = FEC_Util.SplitAndProcess(Tmp)
     # how much of the retract should we use to figure out the zero?
     fraction = 0.05
@@ -53,26 +63,35 @@ def run():
     ZeroAppr = np.median(Appr.Force[:N])
     ZeroRetr = np.median(Retr.Force[-N:])
     Offset = ZeroRetr - ZeroAppr
-    # offset the WLC, in pN
+    # offset the WLC 
     Pred += Offset
     # plot the data and the prediction
-    fig = plt.figure()
-    FEC_Plot.FEC(Tmp,NFilterPoints=40)
+    fig = pPlotUtil.figure()
+    FEC_Plot.FEC(Tmp)
+    # now plot some meta information. The expected overstretch
     ExpectedOverstretch_pN = 65
     plt.axhline(ExpectedOverstretch_pN,
                 linewidth=3.0,color='k',linestyle="--",label="65pN")
     ToNm = lambda x: x*1e9
     ToPn = lambda x: x*1e12
-    L0 = int(ToNm(Fit.Info.ParamVals.ParamDict["L0"].Value))
-    Lp = int(ToNm(Fit.Info.ParamVals.ParamDict["Lp"].Value))
+    # get the contour length (L0) and the persistence length (Lp) in nm
+    # and as integers (ie: dont care about 2%
+    L0_nm = int(ToNm(Fit.Info.ParamVals.ParamDict["L0"].Value))
+    Lp_nm = int(ToNm(Fit.Info.ParamVals.ParamDict["Lp"].Value))
+    plt.axvline(ToNm(MaxForFitting))
+    # plot the WLC prediction, label...
     plt.plot(ToNm(SepNear),ToPn(Pred),color='g',linestyle='--',linewidth=5.0,
              label="WLC (Extensible)\n" +\
-             r"$L_0$={:d}nm, $L_p$={:d}nm".format(L0,Lp))
-    pPlotUtil.legend(frameon=True,loc='upper left')
+             r"$L_0$={:d}nm, $L_p$={:d}nm".format(L0_nm,Lp_nm))
+    pPlotUtil.legend(frameon=True)
     # note: limits are in nm and pN
-    plt.ylim([-30,175])
+    MaxY_pN = np.max(ToPn(Pred[np.where(np.isfinite(Pred))]))
+    MaxY_pN = max(MaxY_pN,ToPn(np.max(Retr.Force)))
+    MinY_pN = -MaxY_pN/5
+    plt.ylim([MinY_pN,MaxY_pN])
     plt.xlim([-20,plt.xlim()[-1]])
-    pPlotUtil.savefig(fig,"WLC_Tmp.png")
+    Name = "WLC" + Tmp.Meta.Name
+    pPlotUtil.savefig(fig,Name + ".png")
     # Read in the pxp (assume each 'name-group' with the same numerical
     # suffix represents a valid wave with a WLC of interest)
 

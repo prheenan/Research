@@ -237,7 +237,7 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
     ZeroIdx,MedRetr =  GetSurfaceIndexAndForce(o,fraction,FilterPoints,
                                                ZeroAtStart=False)
     if (MetersAfterTouchoff is not None):
-        XToUse  = o.Zsnsr
+        XToUse  = o.Separation
         N = XToUse.size
         # Get just that part of the Retract
         StartRetractX = XToUse[ZeroIdx]

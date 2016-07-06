@@ -210,7 +210,7 @@ def GetCorrectionSlices(idxLowStart,idxHighStart):
     return sliceLow,sliceHigh
 
 
-def CorrectForcePullByMetaInformation(Object,deg=60):
+def CorrectForcePullByMetaInformation(Object,deg=20):
     """
     Corrects a TimeSepForce-like object using its meta data (ie: trigger time
     and dwell time -- really only useful for low resolution data)
@@ -223,7 +223,7 @@ def CorrectForcePullByMetaInformation(Object,deg=60):
     """
     Force = Object.Force
     Time = Object.Time
-    Time = Object.Time
+    Separation = Object.Separation
     Force = Object.Force
     Meta = Object.Meta
     TriggerTime = Meta.TriggerTime
@@ -233,7 +233,12 @@ def CorrectForcePullByMetaInformation(Object,deg=60):
     Corrected = copy.deepcopy(Object)
     # fit a polynomial to the approach portion ('reversed')
     ApproachSlice = slice(TriggerIndex,0,-1)
-    coeffs = np.polyfit(x=Time[ApproachSlice],y=Force[ApproachSlice],deg=deg)
+    FittingX = Separation[ApproachSlice]
+    FittingY = Force[ApproachSlice]
+    FittingX -= min(FittingX)
+    FittingY -= min(FittingY)
+    coeffs = np.polyfit(x=FittingX,
+                        y=FittingY,deg=deg)
     # get the index where we leave the surface
     LeaveTime = TriggerTime+DwellTime
     LeaveIndex = np.argmin(np.abs(Time-LeaveTime))
@@ -246,7 +251,7 @@ def CorrectForcePullByMetaInformation(Object,deg=60):
     # update the retract slice, with the actual size we used
     RetractSlice = slice(LeaveIndex,LeaveIndex+RetractForceSize,1)
     # get the fitted values to the *approach*. 
-    FitToApproach = np.polyval(coeffs,x=Time[ApproachSlice])
+    FitToApproach = np.polyval(coeffs,x=Separation[ApproachSlice])
     # correct the approach and retract; approach is easy, just lop off the
     # thing we just fit
     Corrected.Force[ApproachSlice] -= FitToApproach
