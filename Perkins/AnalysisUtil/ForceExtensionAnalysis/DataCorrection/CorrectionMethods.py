@@ -210,7 +210,7 @@ def GetCorrectionSlices(idxLowStart,idxHighStart):
     return sliceLow,sliceHigh
 
 
-def CorrectForcePullByMetaInformation(Object,deg=20):
+def CorrectForcePullByMetaInformation(Object,deg=50):
     """
     Corrects a TimeSepForce-like object using its meta data (ie: trigger time
     and dwell time -- really only useful for low resolution data)
@@ -227,39 +227,48 @@ def CorrectForcePullByMetaInformation(Object,deg=20):
     Force = Object.Force
     Meta = Object.Meta
     TriggerTime = Meta.TriggerTime
-    DwellTime = Meta.DwellTime
+    DwellTime = Object.SurfaceDwellTime
     TriggerIndex = np.argmin(np.abs(Time-TriggerTime))
     # we will make a deep copy to work with, the 'corrected' version
     Corrected = copy.deepcopy(Object)
     # fit a polynomial to the approach portion ('reversed')
     ApproachSlice = slice(TriggerIndex,0,-1)
-    FittingX = Separation[ApproachSlice]
-    FittingY = Force[ApproachSlice]
+    FittingX = Separation[ApproachSlice].copy()
+    FittingY = Force[ApproachSlice].copy()
+    MinY = min(FittingY)
     FittingX -= min(FittingX)
-    FittingY -= min(FittingY)
-    coeffs = np.polyfit(x=FittingX,
-                        y=FittingY,deg=deg)
+    FittingY -= MinY
+    Bad = True
+    while Bad:
+        try:
+            coeffs = np.polyfit(x=FittingX,
+                                y=FittingY,deg=deg)
+            Bad = False
+        except ValueError:
+            # badly conditioned matrix; too high of a degree
+            deg -= 1
+    # add back in the DC offset
+    coeffs[-1] += MinY
     # get the index where we leave the surface
     LeaveTime = TriggerTime+DwellTime
     LeaveIndex = np.argmin(np.abs(Time-LeaveTime))
-    RetractSlice = slice(LeaveIndex,LeaveIndex+TriggerIndex,1)
+    RetractMax = min(LeaveIndex+TriggerIndex,Corrected.Force.size)
+    RetractSlice = slice(LeaveIndex,RetractMax,1)
     # the retract might be a different size than the approach. We *really*
     # have to be careful to stay in region where the polynomial fit is valid
-    RetractSize = abs(RetractSlice.start-RetractSlice.stop)+1
     RetractForce = Corrected.Force[RetractSlice]
     RetractForceSize = RetractForce.size
-    # update the retract slice, with the actual size we used
-    RetractSlice = slice(LeaveIndex,LeaveIndex+RetractForceSize,1)
-    # get the fitted values to the *approach*. 
-    FitToApproach = np.polyval(coeffs,x=Separation[ApproachSlice])
+    # get the fitted values to the *approach*.
+    ApprSep = Separation[ApproachSlice]
+    RetrSep = Separation[RetractSlice]
+    FitToApproach = np.polyval(coeffs,x=ApprSep-min(ApprSep))
+    FitToRetract = np.polyval(coeffs,x=RetrSep-min(RetrSep))
     # correct the approach and retract; approach is easy, just lop off the
     # thing we just fit
     Corrected.Force[ApproachSlice] -= FitToApproach
-    # the retract goes the opposite way in time, so reverse
-    FitToRetract = FitToApproach[::-1]
     # further, we only want to correct up to an including however
     # long the actual retract is
-    RetractForce -= FitToRetract[:RetractForceSize]
+    RetractForce -= FitToRetract
     CorrectionInf = CorrectionInfo(coeffs,"PolynomialFit",
                                    ApproachSlice,
                                    RetractSlice,ApproachSlice,RetractSlice)
