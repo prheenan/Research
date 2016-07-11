@@ -28,10 +28,13 @@ def run():
     """
     OutFile = ""
     Limit = 2
-    FullName = "2016_7_5_hot_depositition_" +\
-               "water-sealed-better-efficiency-still-non-circular.pxp"
-    DataArray = pCheckUtil.getCheckpoint("Tmp.pkl",ReadInData,False,FullName)
-    NoTriggerDistance = 100e-9
+    FullNames = ["2016_7_10_1ng_ul_50C_4hour_depo_circ_dna_Strept_tip_I.pxp",
+                 "2016_7_10_1ng_ul_50C_4hour_depo_circ_dna_Strept_tip_II.pxp"]
+    DataArray = []
+    for i,Name in enumerate(FullNames):
+        DataArray.extend(pCheckUtil.getCheckpoint("Tmp{:d}.pkl".format(i),
+                                                  ReadInData,False,Name))
+    NoTriggerDistance = 200e-9
     for Tmp in DataArray:
         idx = 0
         Corrected,_ = CorrectForcePullByMetaInformation(Tmp)

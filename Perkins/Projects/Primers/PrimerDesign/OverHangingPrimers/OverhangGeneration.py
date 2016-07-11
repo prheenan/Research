@@ -415,6 +415,42 @@ def GetPrimersSortedByAlignmentScore(mInfo):
     allSeq = mInfo.AllPrimers
     return GetSortedScores(allSeq)
 
+def ConcatToPrimers(PrimerStr,ForwardPrimer,ReversePrimer,
+                    addSpacer=False,addDbcoAndBio=False,
+                    **kwargs):
+    """
+    see ConcatPrimerTo1607Fand3520R for arguments
+
+    XXX todo: docs
+    """
+    revComp = KmerUtil.ReverseComplement(PrimerStr)
+    if (addSpacer or addDbcoAndBio):
+        # convert the strings to lists
+        func = lambda x: list(x)
+    else:
+        func = lambda x : x
+    if (not addSpacer):
+        # nothing funny, just concat the strings
+        add = ""
+    else:
+        add = [IdtUtil.IdSpacer()]
+    # do we need to add the dbco and biotin?
+    if (not addDbcoAndBio):
+        AddFwdPre = ""
+        AddRevPre = ""
+    else:
+        AddFwdPre = [IdtUtil.Dbco5Prime()]
+        AddRevPre = [IdtUtil.Biotin5Prime()]
+    fwd = func(AddFwdPre) + func(PrimerStr) + func(add) + func(ForwardPrimer)
+    rev = func(AddRevPre) + func(revComp) + func(add) + func(ReversePrimer)
+    # may need to ignore spacers, etc....
+    offset = len(AddFwdPre)
+    # check and make sure we didn't screw anything up...
+    AssertPrimersAndOverhangCorrect(fwd[offset:],rev[offset:],
+                                    PrimerStr,ForwardPrimer,ReversePrimer)
+    return fwd,rev
+    
+
 def ConcatPrimerTo1607Fand3520R(primerStr,
                                 addSpacer=False,
                                 addDbcoAndBio=False,**kwargs):
@@ -435,32 +471,9 @@ def ConcatPrimerTo1607Fand3520R(primerStr,
     returns:
        The forward and reverse primer
     """
-    revComp = KmerUtil.ReverseComplement(primerStr)
     pFwd,pRev = CommonPrimerUtil.Get1607FAnd3520R(**kwargs)
-    if (addSpacer or addDbcoAndBio):
-        # convert the strings to lists
-        func = lambda x: list(x)
-    else:
-        func = lambda x : x
-    if (not addSpacer):
-        # nothing funny, just concat the strings
-        add = ""
-    else:
-        add = [IdtUtil.IdSpacer()]
-    # do we need to add the dbco and biotin?
-    if (not addDbcoAndBio):
-        AddFwdPre = ""
-        AddRevPre = ""
-    else:
-        AddFwdPre = [IdtUtil.Dbco5Prime()]
-        AddRevPre = [IdtUtil.Biotin5Prime()]
-    fwd = func(AddFwdPre) + func(primerStr) + func(add) + func(pFwd)
-    rev = func(AddRevPre) + func(revComp) + func(add) + func(pRev)
-    offset = len(AddFwdPre)
-    # check and make sure we didn't screw anything up...
-    AssertPrimersAndOverhangCorrect(fwd[offset:],rev[offset:],
-                                    primerStr,pFwd,pRev)
-    return fwd,rev
+    return ConcatToPrimers(primerStr,pFwd,pRev,addSpacer,addDbcoAndBio,
+                           **kwargs)
 
 def AssertPrimersAndOverhangCorrect(fwdToCheck,revToCheck,ovh,fwd,rev):
     """
@@ -492,6 +505,25 @@ def AssertPrimersAndOverhangCorrect(fwdToCheck,revToCheck,ovh,fwd,rev):
     assert sanit(fwdToCheck[:lenOvh]) == sanit(ovh)
     assert sanit(revToCheck[:lenOvh]) == sanit(revComp)
 
+def ConcatAndSave(mPrimer,baseDir,Name,
+                  ForwardSequence,ReverseSequence,
+                  addSpacer=False,addDbcoAndBio=False,
+                  **kwargs):
+    fwdSpacer,revSpacer = ConcatToPrimers(mPrimer,ForwardSequence,
+                                          ReverseSequence,
+                                          addSpacer,addDbcoAndBio,**kwargs)
+    # make orders, including the spaces
+    spacerStr = "_Spacer" if addSpacer else ""
+    spacerStr += ("_DBCO_BIO" if addDbcoAndBio else "")
+    mOrders = [[fwdSpacer,"F_" + Name + spacerStr],
+               [revSpacer,"R_" + Name + spacerStr]]
+    # must have 100nm scale for IdSp as of 4/1/2016
+    scales = IdtUtil.Scales
+    scale = scales._100NM if (addSpacer) else scales._25NM
+    spacerOrders = IdtUtil.SequencesAndNamesTuplesToOrder(mOrders,
+                                                          Scale=scale)
+    IdtUtil.PrintAndSave(spacerOrders,"./" + Name + spacerStr + ".txt")
+
 
 def ConcatTo1607FAnd3520RAndSave(mPrimer,baseDir,Name,addSpacer=False,
                                  addDbcoAndBio=False,**kwargs):
@@ -511,21 +543,10 @@ def ConcatTo1607FAnd3520RAndSave(mPrimer,baseDir,Name,addSpacer=False,
         and reverse primers,respectively
     Returns: nothing
     """
-    # next, get the sequences with the forward and reverse primer
-    fwdSpacer,revSpacer =\
-        ConcatPrimerTo1607Fand3520R(mPrimer,addSpacer=addSpacer,
-                                    addDbcoAndBio=addDbcoAndBio,base=baseDir)
-    # make orders, including the spaces
-    spacerStr = "_Spacer" if addSpacer else ""
-    spacerStr += ("_DBCO_BIO" if addDbcoAndBio else "")
-    mOrders = [[fwdSpacer,"1607F" + Name + spacerStr],
-               [revSpacer,"3520R" + Name + spacerStr]]
-    # must have 100nm scale for IdSp as of 4/1/2016
-    scales = IdtUtil.Scales
-    scale = scales._100NM if (addSpacer) else scales._25NM
-    spacerOrders = IdtUtil.SequencesAndNamesTuplesToOrder(mOrders,
-                                                          Scale=scale)
-    IdtUtil.PrintAndSave(spacerOrders,"./" + Name + spacerStr + ".txt")
+    pFwd,pRev = CommonPrimerUtil.Get1607FAnd3520R(**kwargs)
+    ConcatAndSave(mPrimer,baseDir,Name,
+                  pFwd,pRev,addSpacer,addDbcoAndBio,
+                  **kwargs)
     
 def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
                             Name,MakeSpacerFile=False,MakeLabelledFile=False,
