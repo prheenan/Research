@@ -71,7 +71,7 @@ def run():
     Science 2012
     """
     CreatePrimer(Plasmid,ProductLength,
-                 SliceOther=SliceReverse,OtherIsReverse=True,PrimerLength=23,
+                 SliceOther=SliceFoward,OtherIsReverse=False,PrimerLength=23,
                  Overhang=Overhang,Name="ovh2.7_200nt")
 
 if __name__ == "__main__":
