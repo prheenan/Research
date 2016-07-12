@@ -39,8 +39,14 @@ def run():
     # get our actual sequence weight
     Primer = "AGAGTGGTCCTA"
     # get the sequence from 1607 to 3520, tack on the primer
+    PrimerStartLoc = 3346
+    PrimerEndLoc = 3520
     with open("mp13_plasmid_plasmid_seq.txt") as f:
-        Seq = Primer + "".join([l for l in f.readlines()])[1607:3520]
+        Seq = Primer + "".join([l for l in f.readlines()])
+        Seq = Seq[PrimerStartLoc:PrimerEndLoc]
+    # add in the overhang
+    Overhang = "TAGGACCACTCT"
+    Seq = Overhang + Seq 
     MolecularWeight = Bio.SeqUtils.molecular_weight(Seq,
                                                     seq_type="DNA",
                                                     double_stranded=True,
