@@ -32,18 +32,25 @@ def CreatePrimer(Plasmid,ProductLength,
     else:
         Start = StartOther+ LengthOtherPrimer + DistanceBetweenPrimers
     End = Start + PrimerLength
-    PrimerSlice = slice(Start,End)
+    PrimerSlice = slice(Start,End,1)
+    # determine which slice goes where
     if (OtherIsReverse):
         ReverseSlice = SliceOther
         ForwardSlice = PrimerSlice
     else:
         ReverseSlice = PrimerSlice
         ForwardSlice = SliceOther
+    # cool, now just print out the sequences
     PrimerForwardSeq = Plasmid[ForwardSlice]
     PrimerReverseSeq = KmerUtil.ReverseComplement(Plasmid[ReverseSlice])
-    print(ForwardSlice)
-    print(ReverseSlice)
-    OverhangUtil.ConcatAndSave(Overhang,baseDir="./",Name="200nt_ovh2.5",
+    print("Forward Slice is: {:s}".format(ForwardSlice))
+    print("Reverse Slice is: {:s}".format(ReverseSlice))
+    # for without the overhang, dont add *anything*
+    OverhangUtil.ConcatAndSave("",baseDir="./",Name=Name,
+                               ForwardSequence=PrimerForwardSeq,
+                               ReverseSequence=PrimerReverseSeq,
+                               addSpacer=False,addDbcoAndBio=False)
+    OverhangUtil.ConcatAndSave(Overhang,baseDir="./",Name=Name,
                                ForwardSequence=PrimerForwardSeq,
                                ReverseSequence=PrimerReverseSeq,
                                addSpacer=True,addDbcoAndBio=False)
@@ -60,7 +67,7 @@ def run():
     Overhang = KmerUtil.ReverseComplement("TAGGACCACTCT")
     SliceReverse = slice(3490,3520,1)
     SliceForward = slice(1606,1606+27,1)
-    ProductLength = 200
+    ProductLength = 201
     """
     The following shows 200 should work well, *including* the nick/abasic site
     (j factor is a mechanical property)
@@ -71,7 +78,7 @@ def run():
     Science 2012
     """
     CreatePrimer(Plasmid,ProductLength,
-                 SliceOther=SliceFoward,OtherIsReverse=False,PrimerLength=23,
+                 SliceOther=SliceForward,OtherIsReverse=False,PrimerLength=22,
                  Overhang=Overhang,Name="ovh2.7_200nt")
 
 if __name__ == "__main__":
