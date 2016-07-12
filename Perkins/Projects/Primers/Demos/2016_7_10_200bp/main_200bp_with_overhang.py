@@ -20,17 +20,17 @@ def CreatePrimer(Plasmid,ProductLength,
     StartOther = SliceOther.start
     EndOther = SliceOther.stop
     LengthOtherPrimer = abs(EndOther-StartOther)+1
+    TotalPrimerLength = PrimerLength +LengthOtherPrimer +OverhangLength
     # get the remaining length
-    DistanceBetweenPrimers = ProductLength-LengthOtherPrimer-OverhangLength
+    DistanceBetweenPrimers = ProductLength-TotalPrimerLength
+    print(DistanceBetweenPrimers)
+    # figure out where *this* primer should start
     if (OtherIsReverse):
-        Direction = -1
-        Buffer = DistanceBetweenPrimers+LengthOtherPrimer
-        ReverseComplement = False
+        # get the start
+        StartOfOther = min(StartOther,EndOther)
+        Start = StartOfOther - DistanceBetweenPrimers - PrimerLength
     else:
-        Direction = 1
-        Buffer = DistanceBetweenPrimers+PrimerLength
-        ReverseComplement = True
-    Start = EndOther+ Direction * Buffer
+        Start = StartOther+ LengthOtherPrimer + DistanceBetweenPrimers
     End = Start + PrimerLength
     PrimerSlice = slice(Start,End)
     if (OtherIsReverse):
@@ -59,6 +59,7 @@ def run():
     Plasmid = EmbossUtil.ReadSimpleSeqFile(inputFile)
     Overhang = KmerUtil.ReverseComplement("TAGGACCACTCT")
     SliceReverse = slice(3490,3520,1)
+    SliceForward = slice(1606,1606+27,1)
     ProductLength = 200
     """
     The following shows 200 should work well, *including* the nick/abasic site
@@ -70,7 +71,7 @@ def run():
     Science 2012
     """
     CreatePrimer(Plasmid,ProductLength,
-                 SliceReverse,OtherIsReverse=True,PrimerLength=23,
+                 SliceOther=SliceReverse,OtherIsReverse=True,PrimerLength=23,
                  Overhang=Overhang,Name="ovh2.7_200nt")
 
 if __name__ == "__main__":
