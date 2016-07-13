@@ -45,7 +45,7 @@ def run():
     for i,Name in enumerate(FullNames):
         DataArray.extend(pCheckUtil.getCheckpoint("Tmp{:d}.pkl".format(i),
                                                   ReadInData,False,Name))
-    for Tmp in DataArray:
+    for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
         Force = Approach.Force
         Separation = Approach.Separation
@@ -96,7 +96,7 @@ def run():
         plt.plot(ToXPlot(SeparationZeroed),ToYPlot(WithoutWiggles))
         pPlotUtil.lazyLabel("Separation","Force","")
         plt.ylim(y_lim_fixed)
-        pPlotUtil.savefig(fig,"out.png")
+        pPlotUtil.savefig(fig,"out{:d}.png".format(i))
         
 
 if __name__ == "__main__":
