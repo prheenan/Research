@@ -133,7 +133,8 @@ def SplitAndProcess(TimeSepForceObj,ConversionOpts=dict(),
 
 def GetApproachRetract(o):
     """
-    Get the approach and retraction curves of a TimeSepForceObject
+    Get the approach and retraction curves of a TimeSepForceObject. Does *not*
+    include the dwell portion
     
     Args:
         o: the TimeSepForce Object, assumed 'raw' (ie: invols peak at top)
@@ -142,12 +143,17 @@ def GetApproachRetract(o):
         Approach and Retract regions
     """
     ForceArray = o.Force
+    TimeEndOfApproach = o.TriggerTime
+    TimeStartOfRetract = TimeEndOfApproach + o.SurfaceDwellTime
+    # figure out where the indices we want are
+    Time = o.Time
+    IdxEndOfApproach = np.argmin(np.abs(Time-TimeEndOfApproach))
+    IdxStartOfRetract = np.argmin(np.abs(Time-TimeStartOfRetract))
     # note: force is 'upside down' by default, so high force (near surface
     # is actually high) is what we are looking for
-    MinForceIdx = np.argmax(ForceArray)
     # get the different slices
-    SliceAppr = slice(0,MinForceIdx)
-    SliceRetr = slice(MinForceIdx,None)
+    SliceAppr = slice(0,IdxEndOfApproach)
+    SliceRetr = slice(IdxStartOfRetract,None)
     # Make a new object with the given force and separation
     # at approach and retract
     Appr = MakeTimeSepForceFromSlice(o,SliceAppr)

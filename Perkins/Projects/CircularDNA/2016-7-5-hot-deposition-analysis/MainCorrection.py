@@ -17,7 +17,8 @@ from GeneralUtil.python import CheckpointUtilities as pCheckUtil
 import copy
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 from scipy.fftpack import rfft,irfft
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d 
+from FitUtil.FitUtils.Python.FitUtil import GenFit
 
 class CorrectionObject:
     def __init__(self,DecayConstants,FourierCoefficients):
@@ -30,9 +31,6 @@ def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
     return mObjs
 
-def GetFittingObject(Obj):
-
-    return CorrectionObject()
     
 def run():
     """
@@ -47,14 +45,31 @@ def run():
                                                   ReadInData,False,Name))
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
+        print(Approahc.Meta.__dict__)
         Force = Approach.Force
+        Time = Approach.Time
         Separation = Approach.Separation
         N = Force.size
         NumForOffset = int(N/10)
+        # get the y offset, 'true zero'
         offset = np.median(Force[:NumForOffset])
         ForceZeroed = Force-offset
+        A = max(ForceZeroed)
         SeparationZeroed = Separation - min(Separation)
+        FittingFunction = lambda t,tau :  A * np.exp(-t/tau)
+        # for fitting, flip time around
+        TimeFit = Time[::-1]
+        # figure out the first time we are close to zero, as an upper bound for
+        # tau
+        FitZeroIdx = np.where(ForceZeroed <= 0)[0][-1]
+        MaxTau = abs(Time[0] - TimeFit[FitZeroIdx])
+        params,_,pred = \
+            GenFit(TimeFit,ForceZeroed,model=FittingFunction,
+                   bounds=(0,MaxTau))
+        # tau is the first (only) parameter
+        tau = params[0]
         MaxForce = max(ForceZeroed)
+        Prediction = A*np.exp(-TimeFit/tau)
         # get the residuals (essentially, no 'invols') part
         MaxFourierSpaceComponent = 100e-9
         NumFourierTerms = int(max(SeparationZeroed)/MaxFourierSpaceComponent)
@@ -62,7 +77,7 @@ def run():
         # uniform gridding
         linear_grid = np.linspace(0,max(SeparationZeroed),N*10)
         # how many actual terms does that translate into?
-        ForceWithoutInvols = ForceZeroed
+        ForceWithoutInvols = ForceZeroed-Prediction
         ForceInterp =interp1d(x=SeparationZeroed,
                               y=ForceWithoutInvols,kind='linear')
         fft_coeffs = rfft(ForceInterp(linear_grid))
