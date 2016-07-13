@@ -45,7 +45,6 @@ def run():
                                                   ReadInData,False,Name))
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
-        print(Approahc.Meta.__dict__)
         Force = Approach.Force
         Time = Approach.Time
         Separation = Approach.Separation
@@ -54,18 +53,22 @@ def run():
         # get the y offset, 'true zero'
         offset = np.median(Force[:NumForOffset])
         ForceZeroed = Force-offset
+        ArbOffset = max(np.abs(ForceZeroed))
         A = max(ForceZeroed)
         SeparationZeroed = Separation - min(Separation)
-        FittingFunction = lambda t,tau :  A * np.exp(-t/tau)
+        # adding in the arbitrary offset actually helps quite a bit.
+        # we fit versus time, which also helps.
+        FittingFunction = lambda t,tau :  np.log(A * np.exp(-t/tau)+ArbOffset)
         # for fitting, flip time around
         TimeFit = Time[::-1]
         # figure out the first time we are close to zero, as an upper bound for
-        # tau
-        FitZeroIdx = np.where(ForceZeroed <= 0)[0][-1]
-        MaxTau = abs(Time[0] - TimeFit[FitZeroIdx])
-        params,_,pred = \
-            GenFit(TimeFit,ForceZeroed,model=FittingFunction,
-                   bounds=(0,MaxTau))
+        # tau. Generally, we shouldnt have more than 100nm (~400pN@4pN/nm)
+        # for any reasonable invols, for DNA experiments
+        MaxInvolsSizeMeters = 100e-9
+        MaxTau = MaxInvolsSizeMeters/Approach.ApproachVelocity
+        params,_,pred = GenFit(TimeFit,np.log(ForceZeroed+ArbOffset),
+                               model=FittingFunction,
+                               bounds=(0,MaxTau))
         # tau is the first (only) parameter
         tau = params[0]
         MaxForce = max(ForceZeroed)
