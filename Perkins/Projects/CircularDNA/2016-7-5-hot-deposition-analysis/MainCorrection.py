@@ -148,6 +148,8 @@ class CorrectionObject:
                                             IsApproach=True)
         # make a prediction without the wiggles
         Approach.Force -= fft_pred
+        # just for clarities sake, the approach has now been corrected
+        ApproachCorrected = Approach
         InvolsPredictionRetract = self.PredictInvols(Retract,
                                                               IsApproach=False)
         RetractNoInvols = copy.deepcopy(Retract)
@@ -157,7 +159,7 @@ class CorrectionObject:
                                                     IsApproach=False)
         RetractCorrected = copy.deepcopy(RetractNoInvols)
         RetractCorrected.Force -= fft_pred_retract
-        return RetractCorrected,Approach
+        return ApproachCorrected,RetractCorrected
 
 def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
@@ -190,6 +192,10 @@ def run():
     # with the wiggle correction. The lower this is, the higher-order
     # the frequency correction is. Too high, and you will pick up noise. 
     MaxFourierSpaceComponent = 20e-9
+    set_y_lim = lambda :  plt.ylim([-50,200])
+    set_x_lim = lambda :  plt.xlim([-10,1300])
+    PlotOptions = dict(PreProcess=True,
+                       LegendOpts=dict(loc='upper left',frameon=True))
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
         CorrectionObj = CorrectionObject()
@@ -197,11 +203,15 @@ def run():
                 CorrectionObj.CorrectApproachAndRetract(Tmp)
         fig = pPlotUtil.figure()
         plt.subplot(2,1,1)
-        plt.plot(Approach.Separation,Approach.Force)
-        plt.plot(Retract.Separation,Retract.Force)
+        FEC_Plot.FEC_AlreadySplit(Approach,Retract,XLabel="",**PlotOptions)
+        set_y_lim()
+        set_x_lim()
         plt.subplot(2,1,2)
-        plt.plot(ApproachCorrected.Separation,ApproachCorrected.Force)
-        plt.plot(RetractCorrected.Separation,RetractCorrected.Force)
+        FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
+                                  **PlotOptions)
+        plt.axhline(65,label="65pN",linewidth=3.0,linestyle='--')
+        set_y_lim()
+        set_x_lim()
         pPlotUtil.savefig(fig,"./tmp{:d}.png".format(i))
 
 if __name__ == "__main__":

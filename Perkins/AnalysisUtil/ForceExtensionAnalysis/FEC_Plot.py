@@ -30,30 +30,54 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
     plt.plot(Retr.Separation,Retr.Force,color='b',alpha=0.3)
     plt.plot(Retr.Separation,RetrFiltered.Force,color='b',label=RetractLabel)
 
-def FEC(TimeSepForceObj,
-        XLabel="Separation (nm)",
-        YLabel="Force (pN)",
-        ConversionOpts=dict(ConvertX = lambda x: x*1e9,
-                            ConvertY = lambda y: y*1e12),
-        PlotLabelOpts=dict(),
-        NFilterPoints=50,
-        **kwargs):
+def FEC_AlreadySplit(Appr,Retr,
+                     XLabel = "Separation (nm)",
+                     YLabel = "Force (pN)",
+                     ConversionOpts=dict(ConvertX = lambda x: x*1e9,
+                                         ConvertY = lambda y: y*1e12),
+                     PlotLabelOpts=dict(),
+                     PreProcess=False,
+                     NFilterPoints=50,
+                     LegendOpts=dict(loc='best'),
+                     **kwargs):
     """
-    Plots a force extension curve. Very flexible
 
     Args:
-        TimeSepForceObj: 'Raw' TimeSepForce Object
         XLabel: label for x axis
         YLabel: label for y axis
         ConversionOpts: see FEC_Util.SplitAndProcess
         PlotLabelOpts: see arguments after filtering of ApproachRetractCurve
+        PreProcess: if true, pre-processes the approach and retract separately
+        (ie: to zero and flip the y axis).
         NFilterPoints: see FEC_Util.SplitAndProcess, for Savitsky-golay
-        **kwargs: passed directly to FEC_Util.SplitAndProcess
+        PreProcess: passed to 
+
     """
-    Appr,Retr= FEC_Util.SplitAndProcess(TimeSepForceObj,
-                                        ConversionOpts=ConversionOpts,
-                                        NFilterPoints=NFilterPoints,**kwargs)
-    # actually plot, with the filtered versions
-    _ApproachRetractCurve(Appr,Retr,NFilterPoints=NFilterPoints,**PlotLabelOpts)
+    ApprCopy = FEC_Util.UnitConvert(Appr,**ConversionOpts)
+    RetrCopy = FEC_Util.UnitConvert(Retr,**ConversionOpts)
+    if (PreProcess):
+        ApprCopy,RetrCopy = FEC_Util.PreProcessApproachAndRetract(ApprCopy,
+                                                                  RetrCopy,
+                                                                  **kwargs)
+    _ApproachRetractCurve(ApprCopy,RetrCopy,
+                          NFilterPoints=NFilterPoints,**PlotLabelOpts)
     pPlotUtil.lazyLabel(XLabel,YLabel,"")
-    pPlotUtil.legend()
+    pPlotUtil.legend(**LegendOpts)
+    
+def FEC(TimeSepForceObj,
+        PreProcessDict=dict(),
+        **kwargs):
+    """
+    Plots a force extension curve. Splits the curve into approach and 
+    Retract and pre-processes by default
+
+    Args:
+        TimeSepForceObj: 'Raw' TimeSepForce Object
+        PreProcessDict: passed directly to FEC_Util.PreProcessFEC
+        **kwargs: passed directly to FEC_Plot.FEC_AlreadySplit
+    """
+    Appr,Retr= FEC_Util.PreProcessFEC(TimeSepForceObj,
+                                      NFilterPoints=NFilterPoints,
+                                      **PreProcessDict)
+    # plot the approach and retract with the appropriate units
+    FEC_AlreadySplit(Appr,Retr,**kwargs)

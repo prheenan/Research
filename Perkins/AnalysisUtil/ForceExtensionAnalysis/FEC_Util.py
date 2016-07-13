@@ -73,14 +73,16 @@ def UnitConvert(TimeSepForceObj,
     return ObjCopy
 
 
-def PreProcessFEC(TimeSepForceObject,NFilterPoints=100,
-                  ZeroForceFraction=0.2,
-                  ZeroSep=True,FlipY=True):
+def PreProcessApproachAndRetract(Approach,Retract,
+                                 NFilterPoints=100,
+                                 ZeroForceFraction=0.2,
+                                 ZeroSep=True,FlipY=True):
     """
-    Returns the pre-processed (zeroed, flipped, etc) approach and retract
-    
+    Given and already-split approach and retract curve, pre=processes it.
+    This *modifies the original array* (ie: in-place)
+
     Args:
-        TimeSepForceObject: the object we are dealing with. copied, not changed
+        Approach,Retract: output of GetApproachRetract 
         NFilterPoints: number of points for finding the surface
         ZeroForceFraction: if not None, fraction of points near the retract end
         to filter to
@@ -91,28 +93,46 @@ def PreProcessFEC(TimeSepForceObject,NFilterPoints=100,
         tuple of <Appr,Retr>, both pre-processed TimeSepFOrce objects for
         the appropriate reason
     """
-    Appr,Retr = GetApproachRetract(TimeSepForceObject)
     if (ZeroForceFraction is not None):
         # then we need to offset the force
         # XXX assume offset is the same for both
-        _,ZeroForceRetr = GetSurfaceIndexAndForce(Retr,
+        _,ZeroForceRetr = GetSurfaceIndexAndForce(Retract,
                                                   Fraction=ZeroForceFraction,
                                                   FilterPoints=NFilterPoints,
                                                   ZeroAtStart=False)
-        _,ZeroForceAppr = GetSurfaceIndexAndForce(Appr,
+        _,ZeroForceAppr = GetSurfaceIndexAndForce(Approach,
                                                   Fraction=ZeroForceFraction,
                                                   FilterPoints=NFilterPoints,
                                                   ZeroAtStart=True)
-        Appr.Force += ZeroForceAppr
+        # add, because the sign diffreent presummably hasnt been fixed
+        # (See below)
+        Approach.Force += ZeroForceRetr
         # Do the same for retract
-        Retr.Force += ZeroForceAppr
+        Retract.Force += ZeroForceRetr
     if (ZeroSep):
-        MinSep = np.min(TimeSepForceObject.Separation)
-        Appr.Separation -= MinSep
-        Retr.Separation -= MinSep
+        MinSep = min(np.min(Approach.Separation),
+                     np.min(Retract.Separation))
+        Approach.Separation -= MinSep
+        Retract.Separation -= MinSep
     if (FlipY):
-        Appr.Force *= -1
-        Retr.Force *= -1
+        Approach.Force *= -1
+        Retract.Force *= -1
+    return Approach,Retract
+    
+def PreProcessFEC(TimeSepForceObject,**kwargs):
+    """
+    Returns the pre-processed (zeroed, flipped, etc) approach and retract
+    
+    Args:
+        TimeSepForceObject: the object we are dealing with. copied, not changed
+        **kwargs: passed directly to PreProcessApproachAndRetract
+    Returns: 
+        tuple of pre-processed approach and retract, see 
+        PreProcessApproachAndRetract
+    """
+    Appr,Retr = GetApproachRetract(TimeSepForceObject)
+    # now pre-process and overwrite them
+    Appr,Retr = PreProcessApproachAndRetract(Appr,Retr)
     return Appr,Retr
 
 def SplitAndProcess(TimeSepForceObj,ConversionOpts=dict(),
