@@ -111,12 +111,12 @@ class CorrectionObject:
         # get the fourier transform in *space*. Need to interpolate onto
         # uniform gridding
         N = SeparationZeroed.size
-        linear_grid = np.linspace(0,max(SeparationZeroed),
-                                  N*self.SpatialGridUpSample)
+        self.linear_grid = np.linspace(0,max(SeparationZeroed),
+                                       N*self.SpatialGridUpSample)
         # how many actual terms does that translate into?
         ForceInterp =interp1d(x=SeparationZeroed,
                               y=Approach.Force,kind='linear')
-        self.fft_coeffs = rfft(ForceInterp(linear_grid))
+        self.fft_coeffs = rfft(ForceInterp(self.linear_grid))
         # remove all the high-frequecy stuff
         NumTotalTermsPlusDC = int(2*NumFourierTerms+1)
         self.fft_coeffs[NumTotalTermsPlusDC:] = 0 
@@ -125,13 +125,39 @@ class CorrectionObject:
         SeparationZeroed,_  = self.ZeroForceAndSeparation(Obj,
                                                           IsApproach)
         N = SeparationZeroed.size
-        linear_grid = np.linspace(0,max(SeparationZeroed),
-                                  N*self.SpatialGridUpSample)
         fft_representation = irfft(self.fft_coeffs)
-        fft_pred = interp1d(x=linear_grid,
+        fft_pred = interp1d(x=self.linear_grid,
                             y=fft_representation)(SeparationZeroed)
         return fft_pred
-        
+    def CorrectApproachAndRetract(self,Obj):
+        """
+        Given an object, corrects and returns the approach and retract
+        portions of the curve (dwell excepted)
+        """
+        Approach,Retract = FEC_Util.GetApproachRetract(Obj)
+        SeparationZeroed,ForceZeroed = self.\
+                    ZeroForceAndSeparation(Approach,IsApproach=True)
+        # fit the invols
+        self.FitInvols(Obj)
+        # predict the invols -- we can subtract this off. 
+        InvolsPrediction = self.PredictInvols(Approach,IsApproach=True)
+        Approach.Force -= InvolsPrediction
+        # now correct the interference artifct 
+        self.FitInterference(Approach)
+        fft_pred = self.PredictInterference(Approach,
+                                            IsApproach=True)
+        # make a prediction without the wiggles
+        Approach.Force -= fft_pred
+        InvolsPredictionRetract = self.PredictInvols(Retract,
+                                                              IsApproach=False)
+        RetractNoInvols = copy.deepcopy(Retract)
+        RetractNoInvols.Force -= InvolsPredictionRetract
+        # now correct the FFT stuff 
+        fft_pred_retract = self.PredictInterference(RetractNoInvols,
+                                                    IsApproach=False)
+        RetractCorrected = copy.deepcopy(RetractNoInvols)
+        RetractCorrected.Force -= fft_pred_retract
+        return RetractCorrected,Approach
 
 def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
@@ -167,49 +193,16 @@ def run():
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
         CorrectionObj = CorrectionObject()
-        SeparationZeroed,ForceZeroed = CorrectionObj.\
-                        ZeroForceAndSeparation(Approach,IsApproach=True)
-        # fit the invols
-        CorrectionObj.FitInvols(Tmp)
-        # predict the invols -- we can subtract this off. 
-        InvolsPrediction = CorrectionObj.PredictInvols(Approach,IsApproach=True)
-        NoInvolsObj = copy.deepcopy(Tmp)
-        # actually correct everything...
-        InvolsCorrectionSlice = slice(0,InvolsPrediction.size,1)
-        NoInvolsObj.Force[InvolsCorrectionSlice] -= InvolsPrediction
-        # now correct the interference artifct 
-        CorrectionObj.FitInterference(NoInvolsObj)
-        ApproachNoInvols,RetractNoInvols = FEC_Util.GetApproachRetract(Tmp)
-        fft_pred = CorrectionObj.PredictInterference(ApproachNoInvols,
-                                                     IsApproach=True)
-        # make a prediction without the wiggles
-        WithoutWiggles = ApproachNoInvols.Force - fft_pred
-        fig = pPlotUtil.figure(figsize=(6,12))
-        ToXPlot = lambda x: x * 1e6
-        ToYPlot = lambda y: y * 1e12
-        NumPlots = 3
-        y_lim_fixed = [-20,20]
-        x_lim_fixed = [-0.1,2.5]
-        plt.subplot(NumPlots,1,1)
-        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(ForceZeroed),
-                 color='k',alpha=0.3)
-        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(InvolsPrediction),
-                 linewidth=4,linestyle='--')
-        pPlotUtil.lazyLabel("","Force","")
-        plt.xlim([-0.01,0.05])
-        plt.subplot(NumPlots,1,2)
-        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(ApproachNoInvols.Force))
-        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(fft_pred))
-        #plt.ylim(y_lim_fixed)
-        plt.xlim(x_lim_fixed)
-        pPlotUtil.lazyLabel("","Force","")
-        plt.subplot(NumPlots,1,3)
-        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(WithoutWiggles))
-        pPlotUtil.lazyLabel("Separation","Force","")
-        plt.ylim(y_lim_fixed)
-        plt.xlim(x_lim_fixed)
-        pPlotUtil.savefig(fig,"out{:d}.png".format(i))
-        
+        ApproachCorrected,RetractCorrected = \
+                CorrectionObj.CorrectApproachAndRetract(Tmp)
+        fig = pPlotUtil.figure()
+        plt.subplot(2,1,1)
+        plt.plot(Approach.Separation,Approach.Force)
+        plt.plot(Retract.Separation,Retract.Force)
+        plt.subplot(2,1,2)
+        plt.plot(ApproachCorrected.Separation,ApproachCorrected.Force)
+        plt.plot(RetractCorrected.Separation,RetractCorrected.Force)
+        pPlotUtil.savefig(fig,"./tmp{:d}.png".format(i))
 
 if __name__ == "__main__":
     run()
