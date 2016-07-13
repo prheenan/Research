@@ -38,19 +38,22 @@ def CircularRadiusOfGyration(a,L):
 def run():
     # get our actual sequence weight
     Primer = "AGAGTGGTCCTA"
-    # get the sequence from 1607 to 3520, tack on the primer
-    PrimerStartLoc = 3346
-    PrimerEndLoc = 3520
+    # get the sequence, tack on the overhang
+    ProductStartLoc = 1606
+    ProductEndLoc = 1794
     with open("mp13_plasmid_plasmid_seq.txt") as f:
         Seq = Primer + "".join([l for l in f.readlines()])
-        Seq = Seq[PrimerStartLoc:PrimerEndLoc]
-    # add in the overhang
-    Overhang = "TAGGACCACTCT"
-    Seq = Overhang + Seq 
+        Seq = Seq[ProductStartLoc:ProductEndLoc]
+    # add in the overhang, note I also add an 'A' to represent the abasic site
+    Overhang = "TAGGACCACTCT" + "A"
+    Seq = Overhang + Seq
+    SeqLen = len(Seq)
     MolecularWeight = Bio.SeqUtils.molecular_weight(Seq,
                                                     seq_type="DNA",
                                                     double_stranded=True,
                                                     circular=True)
+    print("The Molecular weight of your {:d}bp sequence is {:.1f}kDa".\
+          format(SeqLen,MolecularWeight/1000.))
     LengthDoubleStrandedBasePairs = len(Seq)
     Avogadro = 6.022e23
     MassGramsPerMolecule= MolecularWeight/Avogadro
@@ -96,28 +99,31 @@ def run():
     # plots!
     fig = pPlotUtil.figure(figsize=(8,8))
     ax1 = plt.subplot(1,1,1)
-    efficiency = 1./3
-    plt.loglog(LoadConcentrationNgPerUl,MeanDistNano,'g-',linewidth=3,
+    efficiency = 1./5
+    PerfectEfficiency = MeanDistNano
+    plt.loglog(LoadConcentrationNgPerUl,PerfectEfficiency,'g-',linewidth=3,
                label="100% efficiency")
     # if we have lower efficiency, we are just lowering the number of molecules
     # available; singe the mean distance goes like 1/Sqrt(N), then if N_eff is
     # N/10 (meaning 10% efficiency), then the mean distance increases by
     # sqrt(10)~3
     LowerEfficiency= MeanDistNano*np.sqrt(1/efficiency)
+    LowerBoundDist = 5*RadiusOfGyrLinearNanoMeters
+    UpperBoundDist = 15*RadiusOfGyrLinearNanoMeters
     plt.loglog(LoadConcentrationNgPerUl,LowerEfficiency,
                'm.-',linewidth=3,
                label="{:d}% efficiency".format(int(efficiency*100)))
     plt.axvspan(xmin=MaxConcNgPerUl,xmax=plt.xlim()[-1],color='r',alpha=0.3,
                 label="Impossible prep")
-    plt.axhspan(ymin=plt.ylim()[0],ymax=MinimumSeparationNanoMeters,color='k',
+    plt.axhspan(ymin=plt.ylim()[0],ymax=LowerBoundDist,color='k',
                 alpha=0.3)
-    plt.axhspan(ymin=DNASizeNanoMeters,ymax=plt.ylim()[-1],color='k',alpha=0.3,
+    plt.axhspan(ymin=UpperBoundDist,ymax=plt.ylim()[-1],color='k',alpha=0.3,
                 label="Suboptimal for AFM")
-    IdealLoad = ((MeanDistNano > MinimumSeparationNanoMeters) &
-                 (LowerEfficiency < DNASizeNanoMeters))
+    IdealLoad = ((PerfectEfficiency > LowerBoundDist) &
+                 (LowerEfficiency < UpperBoundDist))
     WhereIdealIdx = np.where(IdealLoad)
-    plt.fill_between(LoadConcentrationNgPerUl,y1=MeanDistNano,
-                     y2=LowerEfficiency,
+    plt.fill_between(LoadConcentrationNgPerUl,y1=LowerEfficiency,
+                     y2=PerfectEfficiency,
                      where=IdealLoad,
                      facecolor='k')
     plt.plot([], [], color='black', linewidth=15,label="Ideal Loading")
@@ -128,7 +134,7 @@ def run():
                         titley=1.1)
     # our circular DNA is roughly 607nm
     plt.axhline(DNASizeNanoMeters,linewidth=4,linestyle='--',
-                label="L0={:.1f}".format(DNASizeNanoMeters))
+                label="L0={:.1f}nm".format(DNASizeNanoMeters))
     pPlotUtil.legend(loc='lower left',frameon=True)
     Molar= [NanoMolarLoaded[0],NanoMolarLoaded[-1]]
     pPlotUtil.secondAxis(ax1,"Molarity (nM)",limits=Molar,color="Blue",
@@ -203,7 +209,8 @@ def run():
     "Radius of Gyration of Plasmid DNA Isoforms from Static Light Scattering." 
     Biotechnology and Bioengineering 107, 2010
     """
-    BasePairs = np.logspace(3.1,3.5)
+    
+    BasePairs = np.logspace(2.3,3.5)
     LengthsNm = BasePairs * NanometersPerBp
     # get the plot the DNA radii of gyration
     RadiusOfGyr = LinearRadiusOfGyration(Lp_nm,LengthsNm)
@@ -233,7 +240,7 @@ def run():
     plt.plot(ArrX,ArrY1,linestyle="--",**StyleCirc)
     plt.plot(ArrX,ArrY2,linestyle="--",**StyleLin)
     pPlotUtil.lazyLabel("Base Pairs","Radius of Gyration (nm)",
-                        "Circular DNA construct radius of gyration < 90nm",
+                        "Circular DNA construct radius of gyration < 20nm",
                         frameon=True)
     pPlotUtil.savefig(fig,"Gyration.png")
 

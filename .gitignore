@@ -26,3 +26,6 @@
 *.bak
 *.hdf
 *.pxp
+*.csv
+*.txt
+*.xls
