@@ -55,8 +55,6 @@ def run():
         ForceZeroed = Force-offset
         SeparationZeroed = Separation - min(Separation)
         MaxForce = max(ForceZeroed)
-        # XXX hand-picked exponential for now...
-        Prediction = MaxForce*np.exp(-SeparationZeroed/1e-9)
         # get the residuals (essentially, no 'invols') part
         MaxFourierSpaceComponent = 100e-9
         NumFourierTerms = int(max(SeparationZeroed)/MaxFourierSpaceComponent)
@@ -64,7 +62,7 @@ def run():
         # uniform gridding
         linear_grid = np.linspace(0,max(SeparationZeroed),N*10)
         # how many actual terms does that translate into?
-        ForceWithoutInvols = ForceZeroed-Prediction
+        ForceWithoutInvols = ForceZeroed
         ForceInterp =interp1d(x=SeparationZeroed,
                               y=ForceWithoutInvols,kind='linear')
         fft_coeffs = rfft(ForceInterp(linear_grid))
