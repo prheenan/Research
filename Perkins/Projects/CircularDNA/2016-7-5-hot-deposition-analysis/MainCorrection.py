@@ -194,8 +194,9 @@ def run():
     MaxFourierSpaceComponent = 20e-9
     set_y_lim = lambda :  plt.ylim([-50,200])
     set_x_lim = lambda :  plt.xlim([-10,1300])
+    LegendOpts = dict(loc='upper left',frameon=True)
     PlotOptions = dict(PreProcess=True,
-                       LegendOpts=dict(loc='upper left',frameon=True))
+                       LegendOpts=LegendOpts)
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
         CorrectionObj = CorrectionObject()
@@ -209,9 +210,10 @@ def run():
         plt.subplot(2,1,2)
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
-        plt.axhline(65,label="65pN",linewidth=3.0,linestyle='--')
+        plt.axhline(65,label="65pN",linewidth=5.0,color='g',linestyle='--')
         set_y_lim()
         set_x_lim()
+        pPlotUtil.legend(**LegendOpts)
         pPlotUtil.savefig(fig,"./tmp{:d}.png".format(i))
 
 if __name__ == "__main__":
