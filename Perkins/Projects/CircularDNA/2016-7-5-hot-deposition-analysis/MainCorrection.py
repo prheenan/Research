@@ -21,11 +21,52 @@ from scipy.interpolate import interp1d
 from FitUtil.FitUtils.Python.FitUtil import GenFit
 
 class CorrectionObject:
-    def __init__(self,DecayConstants,FourierCoefficients):
-        self.DecayConstants = DecayConstants
-        self.FourierCoefficients = FourierCoefficients
-    def Correct(self,Separation,Force):
+    def __init__(self,MaxInvolsSizeMeters = 40e-9,FractionForOffset = 0.1,
+                 SpatialGridUpSample = 5,MaxFourierSpaceComponent=20e-9):
+        self.MaxInvolsSizeMeters = 40e-9
+        self.FractionForOffset = FractionForOffset
+        self.SpatialGridUpSample = SpatialGridUpSample
+        self.MaxFourierSpaceComponent = MaxFourierSpaceComponent
+    def CalculateOffset(self,Obj,Slice):
+        return np.median(Obj.Force[Slice])
+    def ZeroForceAndSeparation(self,Obj,IsApproach):
+        Separation = Obj.Separation
+        Time = Obj.Time
+        SeparationZeroed = Separation - min(Separation)
+        N = SeparationZeroed.size
+        NOffsetPoints = int(np.ceil(N * self.FractionForOffset))
+        if (IsApproach):
+            SliceV = slice(0,NOffsetPoints,1)
+        else:
+            SliceV = slice(-NOffsetPoints,None,1)
+        Offset = self.CalculateOffset(Obj,SliceV)
+        return SeparationZeroed.copy(),(Obj.Force - Offset).copy()
+    def FitInvols(self,Obj):
+        Approach,Retract = FEC_Util.GetApproachRetract(Obj)
+        # get the zeroed force and separation
+        SeparationZeroed,ForceZeroed  = self.ZeroForceAndSeparation(Approach,
+                                                                    True)
+        ArbOffset = max(np.abs(ForceZeroed))
+        A = max(ForceZeroed)
+        # adding in the arbitrary offset actually helps quite a bit.
+        # we fit versus time, which also helps.
+        FittingFunction = lambda t,tau :  np.log(A * np.exp(-t/tau)+ArbOffset)
+        # for fitting, flip time around
+        MaxTau = self.MaxInvolsSizeMeters
+        params,_,_ = GenFit(SeparationZeroed,np.log(ForceZeroed+ArbOffset),
+                            model=FittingFunction,
+                            bounds=(0,MaxTau))
+        # tau is the first (only) parameter
+        self.Lambda= params[0]
+        self.MaxForceForDecay = max(ForceZeroed)
+    def PredictInvols(self,Obj,IsApproach):
+        SeparationZeroed,_ = self.ZeroForceAndSeparation(Obj,IsApproach)
+        return self.MaxForceForDecay * np.exp(-SeparationZeroed/self.Lambda)
+    def FitInterference(self,Obj):
         pass
+    def PredictInterference(self,Obj):
+        pass
+        
 
 def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
@@ -60,39 +101,23 @@ def run():
     MaxFourierSpaceComponent = 20e-9
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
-        Force = Approach.Force
-        Time = Approach.Time
-        Separation = Approach.Separation
-        N = Force.size
-        NumForOffset = int(N*FractionForOffset)
-        # get the y offset, 'true zero'
-        offset = np.median(Force[:NumForOffset])
-        ForceZeroed = Force-offset
-        ArbOffset = max(np.abs(ForceZeroed))
-        A = max(ForceZeroed)
-        SeparationZeroed = Separation - min(Separation)
-        # adding in the arbitrary offset actually helps quite a bit.
-        # we fit versus time, which also helps.
-        FittingFunction = lambda t,tau :  np.log(A * np.exp(-t/tau)+ArbOffset)
-        # for fitting, flip time around
-        TimeFit = Time[::-1]
-        MaxTau = MaxInvolsSizeMeters
-        params,_,pred = GenFit(SeparationZeroed,np.log(ForceZeroed+ArbOffset),
-                               model=FittingFunction,
-                               bounds=(0,MaxTau))
-        # tau is the first (only) parameter
-        tau = params[0]
-        MaxForce = max(ForceZeroed)
-        Prediction = A*np.exp(-SeparationZeroed/tau)
+        CorrectionObj = CorrectionObject()
+        SeparationZeroed,ForceZeroed = CorrectionObj.\
+                        ZeroForceAndSeparation(Approach,IsApproach=True)
+        # fit the invols
+        CorrectionObj.FitInvols(Tmp)
+        # predict the invols
+        InvolsPrediction = CorrectionObj.PredictInvols(Approach,IsApproach=True)
         # get the residuals (essentially, no 'invols') part
         FourierComponents = max(SeparationZeroed)/MaxFourierSpaceComponent
         NumFourierTerms = int(np.ceil(FourierComponents/SpatialGridUpSample))
         # down-spample the number of terms to match the grid
         # get the fourier transform in *space*. Need to interpolate onto
         # uniform gridding
+        N = SeparationZeroed.size
         linear_grid = np.linspace(0,max(SeparationZeroed),N*SpatialGridUpSample)
         # how many actual terms does that translate into?
-        ForceWithoutInvols = ForceZeroed-Prediction
+        ForceWithoutInvols = ForceZeroed-InvolsPrediction
         ForceInterp =interp1d(x=SeparationZeroed,
                               y=ForceWithoutInvols,kind='linear')
         fft_coeffs = rfft(ForceInterp(linear_grid))
@@ -112,7 +137,7 @@ def run():
         plt.subplot(NumPlots,1,1)
         plt.plot(ToXPlot(SeparationZeroed),ToYPlot(ForceZeroed),
                  color='k',alpha=0.3)
-        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(Prediction),
+        plt.plot(ToXPlot(SeparationZeroed),ToYPlot(InvolsPrediction),
                  linewidth=4,linestyle='--')
         pPlotUtil.lazyLabel("","Force","")
         plt.subplot(NumPlots,1,2)
