@@ -43,13 +43,28 @@ def run():
     for i,Name in enumerate(FullNames):
         DataArray.extend(pCheckUtil.getCheckpoint("Tmp{:d}.pkl".format(i),
                                                   ReadInData,False,Name))
+    # figure out the first time we are close to zero, as an upper bound for
+    # tau (spatial decay).
+    #Generally, we shouldnt have more than 40nm (~160pN@4pN/nm)
+    # for any reasonable invols, for DNA experiments
+    MaxInvolsSizeMeters = 40e-9
+    # fraction of start of approach we use for fitting
+    FractionForOffset = 0.1
+    # amount to up-sample for getting a uniform grid in space (For the Fourier
+    # series
+    SpatialGridUpSample = 5
+    # maximum spatial resolution of Fourier series. This is 1/(2*f_nyquist),
+    # where f_nyquist is the 'frequency' (inverse spatial component) associated
+    # with the wiggle correction. The lower this is, the higher-order
+    # the frequency correction is. Too high, and you will pick up noise. 
+    MaxFourierSpaceComponent = 20e-9
     for i,Tmp in enumerate(DataArray):
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
         Force = Approach.Force
         Time = Approach.Time
         Separation = Approach.Separation
         N = Force.size
-        NumForOffset = int(N/10)
+        NumForOffset = int(N*FractionForOffset)
         # get the y offset, 'true zero'
         offset = np.median(Force[:NumForOffset])
         ForceZeroed = Force-offset
@@ -61,24 +76,21 @@ def run():
         FittingFunction = lambda t,tau :  np.log(A * np.exp(-t/tau)+ArbOffset)
         # for fitting, flip time around
         TimeFit = Time[::-1]
-        # figure out the first time we are close to zero, as an upper bound for
-        # tau. Generally, we shouldnt have more than 100nm (~400pN@4pN/nm)
-        # for any reasonable invols, for DNA experiments
-        MaxInvolsSizeMeters = 100e-9
-        MaxTau = MaxInvolsSizeMeters/Approach.ApproachVelocity
-        params,_,pred = GenFit(TimeFit,np.log(ForceZeroed+ArbOffset),
+        MaxTau = MaxInvolsSizeMeters
+        params,_,pred = GenFit(SeparationZeroed,np.log(ForceZeroed+ArbOffset),
                                model=FittingFunction,
                                bounds=(0,MaxTau))
         # tau is the first (only) parameter
         tau = params[0]
         MaxForce = max(ForceZeroed)
-        Prediction = A*np.exp(-TimeFit/tau)
+        Prediction = A*np.exp(-SeparationZeroed/tau)
         # get the residuals (essentially, no 'invols') part
-        MaxFourierSpaceComponent = 100e-9
-        NumFourierTerms = int(max(SeparationZeroed)/MaxFourierSpaceComponent)
+        FourierComponents = max(SeparationZeroed)/MaxFourierSpaceComponent
+        NumFourierTerms = int(np.ceil(FourierComponents/SpatialGridUpSample))
+        # down-spample the number of terms to match the grid
         # get the fourier transform in *space*. Need to interpolate onto
         # uniform gridding
-        linear_grid = np.linspace(0,max(SeparationZeroed),N*10)
+        linear_grid = np.linspace(0,max(SeparationZeroed),N*SpatialGridUpSample)
         # how many actual terms does that translate into?
         ForceWithoutInvols = ForceZeroed-Prediction
         ForceInterp =interp1d(x=SeparationZeroed,
