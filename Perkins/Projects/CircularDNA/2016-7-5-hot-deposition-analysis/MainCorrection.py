@@ -23,6 +23,20 @@ from FitUtil.FitUtils.Python.FitUtil import GenFit
 class CorrectionObject:
     def __init__(self,MaxInvolsSizeMeters = 10e-9,FractionForOffset = 0.2,
                  SpatialGridUpSample = 5,MaxFourierSpaceComponent=10e-9):
+        """
+        Creates a sklearn-style object for correcting data
+
+        Args
+           MaxInvolsSizeMeters: Maximum possible decay constant (in separation)
+           from trigger point to zero. 
+           FractionForOffset: how much of the approach/retract curve is used for
+           offsetting
+           SpatialGridUpSample: how much to up-sample the separation grid, to 
+           get a uniform fourier series
+           MaxFourierSpaceComponent: the maximum spatial component to the 
+           Fourier series. This is 1/(2*f_nyquist), where f_nyquist is the
+           nysquist 'frequency' (inverse sptial dimension)
+        """
         self.MaxInvolsSizeMeters = MaxInvolsSizeMeters
         self.FractionForOffset = FractionForOffset
         self.SpatialGridUpSample = SpatialGridUpSample
@@ -100,6 +114,14 @@ class CorrectionObject:
         SeparationZeroed,_ = self.ZeroForceAndSeparation(Obj,IsApproach)
         return self.MaxForceForDecay * np.exp(-SeparationZeroed/self.Lambda)
     def FitInterference(self,Obj):
+        """
+        Given a TimeSepForce Object, fits to the interference artifact
+
+        Args:
+            Obj: TImeSepForceObject
+        Returns:
+            Nothing, but sets internal state for future predict
+        """
         Approach,_ = FEC_Util.GetApproachRetract(Obj)
         # get the zeroed force and separation
         SeparationZeroed,ForceZeroed  = self.ZeroForceAndSeparation(Approach,
@@ -121,6 +143,16 @@ class CorrectionObject:
         NumTotalTermsPlusDC = int(2*NumFourierTerms+1)
         self.fft_coeffs[NumTotalTermsPlusDC:] = 0 
     def PredictInterference(self,Obj,IsApproach):
+        """
+        Given a previous PredictIntereference, returns the prediction of the 
+        fft (ie: at each spatial point in Obj.Force, returns the prediction)
+
+        Args:
+           Obj: See FitInterference
+           IsApproach: True if we are predicting the approach
+        Returns:
+           prediction of fft coefficients
+        """
         # interpolate back to the original grid
         SeparationZeroed,_  = self.ZeroForceAndSeparation(Obj,
                                                           IsApproach)
@@ -133,6 +165,12 @@ class CorrectionObject:
         """
         Given an object, corrects and returns the approach and retract
         portions of the curve (dwell excepted)
+
+        Args:
+            Obj: see FitInterference
+        Returns:
+            Tuple of two TimeSepForce Objects, one for approach, one for 
+            Retract. Throws out the dwell portion
         """
         Approach,Retract = FEC_Util.GetApproachRetract(Obj)
         SeparationZeroed,ForceZeroed = self.\
@@ -150,8 +188,9 @@ class CorrectionObject:
         Approach.Force -= fft_pred
         # just for clarities sake, the approach has now been corrected
         ApproachCorrected = Approach
+        # now the retract needs to be corrected.
         InvolsPredictionRetract = self.PredictInvols(Retract,
-                                                              IsApproach=False)
+                                                     IsApproach=False)
         RetractNoInvols = copy.deepcopy(Retract)
         RetractNoInvols.Force -= InvolsPredictionRetract
         # now correct the FFT stuff 
@@ -165,7 +204,16 @@ def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
     return mObjs
 
-    
+def GetCorrectedFECs(DataArray):
+    Corrected = []
+    for i,Tmp in enumerate(DataArray):
+        CorrectionObj = CorrectionObject()
+        ApproachCorrected,RetractCorrected = \
+                CorrectionObj.CorrectApproachAndRetract(Tmp)
+        Corrected.append([ApproachCorrected,RetractCorrected])
+    return Corrected
+
+
 def run():
     """
     Runs contour length analysis
@@ -174,40 +222,22 @@ def run():
     Limit = 2
     FullNames = ["2016_7_10_1ng_ul_50C_4hour_depo_circ_dna_Strept_tip_I.pxp"]
     DataArray = []
+    # read in all the data
     for i,Name in enumerate(FullNames):
         DataArray.extend(pCheckUtil.getCheckpoint("Tmp{:d}.pkl".format(i),
                                                   ReadInData,False,Name))
-    # figure out the first time we are close to zero, as an upper bound for
-    # tau (spatial decay).
-    #Generally, we shouldnt have more than 40nm (~160pN@4pN/nm)
-    # for any reasonable invols, for DNA experiments
-    MaxInvolsSizeMeters = 40e-9
-    # fraction of start of approach we use for fitting
-    FractionForOffset = 0.1
-    # amount to up-sample for getting a uniform grid in space (For the Fourier
-    # series
-    SpatialGridUpSample = 5
-    # maximum spatial resolution of Fourier series. This is 1/(2*f_nyquist),
-    # where f_nyquist is the 'frequency' (inverse spatial component) associated
-    # with the wiggle correction. The lower this is, the higher-order
-    # the frequency correction is. Too high, and you will pick up noise. 
-    MaxFourierSpaceComponent = 20e-9
+    # get all the corrected objects
+    Corrected= pCheckUtil.getCheckpoint("Corrected.pkl",GetCorrectedFECs,
+                                        False,DataArray)
+    # get all the fits to the corrected WLCs
+    # POST: have everything corrected...
     set_y_lim = lambda :  plt.ylim([-50,200])
     set_x_lim = lambda :  plt.xlim([-10,1300])
     LegendOpts = dict(loc='upper left',frameon=True)
     PlotOptions = dict(PreProcess=True,
                        LegendOpts=LegendOpts)
-    for i,Tmp in enumerate(DataArray):
-        Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
-        CorrectionObj = CorrectionObject()
-        ApproachCorrected,RetractCorrected = \
-                CorrectionObj.CorrectApproachAndRetract(Tmp)
+    for i,(ApproachCorrected,RetractCorrected) in enumerate(Corrected):
         fig = pPlotUtil.figure()
-        plt.subplot(2,1,1)
-        FEC_Plot.FEC_AlreadySplit(Approach,Retract,XLabel="",**PlotOptions)
-        set_y_lim()
-        set_x_lim()
-        plt.subplot(2,1,2)
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
         plt.axhline(65,label="65pN",linewidth=5.0,color='g',linestyle='--')
