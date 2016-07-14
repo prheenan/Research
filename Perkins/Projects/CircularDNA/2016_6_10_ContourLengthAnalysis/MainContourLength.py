@@ -43,7 +43,8 @@ def run():
         # work with the corrected version
         Approach,Retract = FEC_Util.GetApproachRetract(Tmp)
         EntireRetract = FEC_Util.\
-                        GetFECPullingRegion(Retract,MetersAfterTouchoff=None)
+                        GetFECPullingRegion(Retract,MetersAfterTouchoff=None,
+                                            Correct=True)
         FilterFactor =10
         NFilterPoints = int(np.ceil(EntireRetract.Force.size/FilterFactor))
         FilteredForce = FEC_Util.GetFilteredForce(EntireRetract,NFilterPoints)

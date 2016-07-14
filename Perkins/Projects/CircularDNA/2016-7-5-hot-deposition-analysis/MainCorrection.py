@@ -9,196 +9,15 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,\
     FEC_Plot
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection.\
     CorrectionMethods import CorrectForcePullByMetaInformation
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection\
+    import CorrectionByFFT
 
 from FitUtil.WormLikeChain.Python.Code.WLC_Fit import BoundedWlcFit
 from FitUtil.FitUtils.Python.FitClasses import GetBoundsDict
 from GeneralUtil.python import PlotUtilities as pPlotUtil
 from GeneralUtil.python import CheckpointUtilities as pCheckUtil
-import copy
 from GeneralUtil.python.IgorUtil import SavitskyFilter
-from scipy.fftpack import rfft,irfft
-from scipy.interpolate import interp1d 
-from FitUtil.FitUtils.Python.FitUtil import GenFit
 
-class CorrectionObject:
-    def __init__(self,MaxInvolsSizeMeters = 10e-9,FractionForOffset = 0.2,
-                 SpatialGridUpSample = 5,MaxFourierSpaceComponent=10e-9):
-        """
-        Creates a sklearn-style object for correcting data
-
-        Args
-           MaxInvolsSizeMeters: Maximum possible decay constant (in separation)
-           from trigger point to zero. 
-           FractionForOffset: how much of the approach/retract curve is used for
-           offsetting
-           SpatialGridUpSample: how much to up-sample the separation grid, to 
-           get a uniform fourier series
-           MaxFourierSpaceComponent: the maximum spatial component to the 
-           Fourier series. This is 1/(2*f_nyquist), where f_nyquist is the
-           nysquist 'frequency' (inverse sptial dimension)
-        """
-        self.MaxInvolsSizeMeters = MaxInvolsSizeMeters
-        self.FractionForOffset = FractionForOffset
-        self.SpatialGridUpSample = SpatialGridUpSample
-        self.MaxFourierSpaceComponent = MaxFourierSpaceComponent
-    def CalculateOffset(self,Obj,Slice):
-        """
-        Calculates the force Offset for the given object and slice
-        """
-        return np.median(Obj.Force[Slice])
-    def ZeroForceAndSeparation(self,Obj,IsApproach):
-        """
-        Given an object and whether it is the approach or retract, zeros it
-        out 
-
-        Args:
-            Obj: TimeSepForce Object
-            IsApproach: True if this represents the approach portion of the 
-            Curve.
-        Returns:
-            Tuple of <Zeroed Separation, Zeroed Force>
-        """
-        Separation = Obj.Separation
-        Time = Obj.Time
-        SeparationZeroed = Separation - min(Separation)
-        N = SeparationZeroed.size
-        NOffsetPoints = int(np.ceil(N * self.FractionForOffset))
-        # approach's zero is at the beginning (far from the surface)
-        # retract is at the end (ibid)
-        if (IsApproach):
-            SliceV = slice(0,NOffsetPoints,1)
-        else:
-            SliceV = slice(-NOffsetPoints,None,1)
-        # get the actual offset assocaiated with this object
-        Offset = self.CalculateOffset(Obj,SliceV)
-        return SeparationZeroed.copy(),(Obj.Force - Offset).copy()
-    def FitInvols(self,Obj):
-        """
-        Fit to the invols on the (approach!) portion of Obj
-
-        Args:
-            Obj: TimeSepForceObject. We get just the approach from it and
-            fit to that
-        Returns:
-            Nothing, but sets the object for future predicts
-        """
-        Approach,Retract = FEC_Util.GetApproachRetract(Obj)
-        # get the zeroed force and separation
-        SeparationZeroed,ForceZeroed  = self.ZeroForceAndSeparation(Approach,
-                                                                    True)
-        ArbOffset = max(np.abs(ForceZeroed))
-        A = max(ForceZeroed)
-        # adding in the arbitrary offset actually helps quite a bit.
-        # we fit versus time, which also helps.
-        FittingFunction = lambda t,tau :  np.log(A * np.exp(-t/tau)+ArbOffset)
-        # for fitting, flip time around
-        MaxTau = self.MaxInvolsSizeMeters
-        params,_,_ = GenFit(SeparationZeroed,np.log(ForceZeroed+ArbOffset),
-                            model=FittingFunction,
-                            bounds=(0,MaxTau))
-        # tau is the first (only) parameter
-        self.Lambda= params[0]
-        self.MaxForceForDecay = max(ForceZeroed)
-    def PredictInvols(self,Obj,IsApproach):
-        """
-        Given an object, predicts the invols portion of its curve. *must* call
-        after a fit
-
-        Args:
-            Obj: see FitInvols, except this is *either* the approach
-            or retract
-            IsApproach: see FitInvols
-        Returns:
-            Predicted, Zero-offset invols decay for Obj
-        """
-        SeparationZeroed,_ = self.ZeroForceAndSeparation(Obj,IsApproach)
-        return self.MaxForceForDecay * np.exp(-SeparationZeroed/self.Lambda)
-    def FitInterference(self,Obj):
-        """
-        Given a TimeSepForce Object, fits to the interference artifact
-
-        Args:
-            Obj: TImeSepForceObject
-        Returns:
-            Nothing, but sets internal state for future predict
-        """
-        Approach,_ = FEC_Util.GetApproachRetract(Obj)
-        # get the zeroed force and separation
-        SeparationZeroed,ForceZeroed  = self.ZeroForceAndSeparation(Approach,
-                                                                    True)
-        # get the residuals (essentially, no 'invols') part
-        FourierComponents = max(SeparationZeroed)/self.MaxFourierSpaceComponent
-        NumFourierTerms = np.ceil(FourierComponents/self.SpatialGridUpSample)
-        # down-spample the number of terms to match the grid
-        # get the fourier transform in *space*. Need to interpolate onto
-        # uniform gridding
-        N = SeparationZeroed.size
-        self.linear_grid = np.linspace(0,max(SeparationZeroed),
-                                       N*self.SpatialGridUpSample)
-        # how many actual terms does that translate into?
-        ForceInterp =interp1d(x=SeparationZeroed,
-                              y=Approach.Force,kind='linear')
-        self.fft_coeffs = rfft(ForceInterp(self.linear_grid))
-        # remove all the high-frequecy stuff
-        NumTotalTermsPlusDC = int(2*NumFourierTerms+1)
-        self.fft_coeffs[NumTotalTermsPlusDC:] = 0 
-    def PredictInterference(self,Obj,IsApproach):
-        """
-        Given a previous PredictIntereference, returns the prediction of the 
-        fft (ie: at each spatial point in Obj.Force, returns the prediction)
-
-        Args:
-           Obj: See FitInterference
-           IsApproach: True if we are predicting the approach
-        Returns:
-           prediction of fft coefficients
-        """
-        # interpolate back to the original grid
-        SeparationZeroed,_  = self.ZeroForceAndSeparation(Obj,
-                                                          IsApproach)
-        N = SeparationZeroed.size
-        fft_representation = irfft(self.fft_coeffs)
-        fft_pred = interp1d(x=self.linear_grid,
-                            y=fft_representation)(SeparationZeroed)
-        return fft_pred
-    def CorrectApproachAndRetract(self,Obj):
-        """
-        Given an object, corrects and returns the approach and retract
-        portions of the curve (dwell excepted)
-
-        Args:
-            Obj: see FitInterference
-        Returns:
-            Tuple of two TimeSepForce Objects, one for approach, one for 
-            Retract. Throws out the dwell portion
-        """
-        Approach,Retract = FEC_Util.GetApproachRetract(Obj)
-        SeparationZeroed,ForceZeroed = self.\
-                    ZeroForceAndSeparation(Approach,IsApproach=True)
-        # fit the invols
-        self.FitInvols(Obj)
-        # predict the invols -- we can subtract this off. 
-        InvolsPrediction = self.PredictInvols(Approach,IsApproach=True)
-        Approach.Force -= InvolsPrediction
-        # now correct the interference artifct 
-        self.FitInterference(Approach)
-        fft_pred = self.PredictInterference(Approach,
-                                            IsApproach=True)
-        # make a prediction without the wiggles
-        Approach.Force -= fft_pred
-        # just for clarities sake, the approach has now been corrected
-        ApproachCorrected = Approach
-        # now the retract needs to be corrected.
-        InvolsPredictionRetract = self.PredictInvols(Retract,
-                                                     IsApproach=False)
-        RetractNoInvols = copy.deepcopy(Retract)
-        RetractNoInvols.Force -= InvolsPredictionRetract
-        # now correct the FFT stuff 
-        fft_pred_retract = self.PredictInterference(RetractNoInvols,
-                                                    IsApproach=False)
-        RetractCorrected = copy.deepcopy(RetractNoInvols)
-        RetractCorrected.Force -= fft_pred_retract
-        return ApproachCorrected,RetractCorrected
 
 def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
@@ -207,12 +26,32 @@ def ReadInData(FullName):
 def GetCorrectedFECs(DataArray):
     Corrected = []
     for i,Tmp in enumerate(DataArray):
-        CorrectionObj = CorrectionObject()
+        CorrectionObj = CorrectionByFFT.CorrectionObject()
         ApproachCorrected,RetractCorrected = \
                 CorrectionObj.CorrectApproachAndRetract(Tmp)
         Corrected.append([ApproachCorrected,RetractCorrected])
     return Corrected
 
+def GetWLCFits(CorrectedApproachAndRetracts):
+    # get all the fits to the corrected WLCs
+    ToRet = []
+    for Approach,Retract in CorrectedApproachAndRetracts:
+        _,RetractProcessed = FEC_Util.PreProcessApproachAndRetract(Approach,
+                                                                   Retract)
+        # get the zerod and corrected Force extension curve
+        WLCFitFEC = FEC_Util.GetRegionForWLCFit(RetractProcessed)
+        # actually fit the WLC
+        Bounds = GetBoundsDict(**dict(Lp=[30e-9,55e-9],
+                                      L0=[150e-9,700e-9],
+                                      K0=[1000e-12,1400e-12],
+                                      kbT=[0,np.inf]))
+        SepNear = WLCFitFEC.Separation
+        ForceNear = WLCFitFEC.Force
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=40,
+                            Bounds=Bounds)
+        Pred = Fit.Predict(SepNear)
+        ToRet.append([SepNear,Fit])
+    return ToRet
 
 def run():
     """
@@ -229,17 +68,32 @@ def run():
     # get all the corrected objects
     Corrected= pCheckUtil.getCheckpoint("Corrected.pkl",GetCorrectedFECs,
                                         False,DataArray)
-    # get all the fits to the corrected WLCs
-    # POST: have everything corrected...
+    # Get all the WLCs
+    ListOfSepAndFits= pCheckUtil.getCheckpoint("WLC.pkl",GetWLCFits,
+                                               False,Corrected)
+
+    # POST: have everything corrected, fit...
     set_y_lim = lambda :  plt.ylim([-50,200])
     set_x_lim = lambda :  plt.xlim([-10,1300])
     LegendOpts = dict(loc='upper left',frameon=True)
-    PlotOptions = dict(PreProcess=True,
+    # note: we want to pre-process (convert to sensible units etc) but no
+    # need to correct (ie: flip and such)
+    PlotOptions = dict(FlipY=True,
+                       PreProcess=True,
                        LegendOpts=LegendOpts)
     for i,(ApproachCorrected,RetractCorrected) in enumerate(Corrected):
+        SepNear,FitObj = ListOfSepAndFits[i]
+        # get the WLC prediction
+        WLC_Pred = FitObj.Predict(SepNear)
+        # convert to plotting units
+        WLC_Force_pN = WLC_Pred  * 1e12
+        WLC_Separation_nm = SepNear * 1e9
         fig = pPlotUtil.figure()
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
+        plt.plot(WLC_Separation_nm,
+                 WLC_Force_pN,linewidth=3,color='g',linestyle='--',
+                 label="WLC PRediction")
         plt.axhline(65,label="65pN",linewidth=5.0,color='g',linestyle='--')
         set_y_lim()
         set_x_lim()

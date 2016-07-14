@@ -73,6 +73,39 @@ def UnitConvert(TimeSepForceObj,
     return ObjCopy
 
 
+def CalculateOffset(Obj,Slice):
+    """
+    Calculates the force Offset for the given object and slice
+    """
+    return np.median(Obj.Force[Slice])
+
+def ZeroForceAndSeparation(Obj,IsApproach,FractionForOffset=0.1):
+    """
+    Given an object and whether it is the approach or retract, zeros it
+    out 
+
+    Args:
+        Obj: TimeSepForce Object
+        IsApproach: True if this represents the approach portion of the 
+        Curve.
+    Returns:
+        Tuple of <Zeroed Separation, Zeroed Force>
+    """
+    Separation = Obj.Separation
+    Time = Obj.Time
+    SeparationZeroed = Separation - min(Separation)
+    N = SeparationZeroed.size
+    NOffsetPoints = int(np.ceil(N))
+    # approach's zero is at the beginning (far from the surface)
+    # retract is at the end (ibid)
+    if (IsApproach):
+        SliceV = slice(0,NOffsetPoints,1)
+    else:
+        SliceV = slice(-NOffsetPoints,None,1)
+    # get the actual offset assocaiated with this object
+    Offset = CalculateOffset(Obj,SliceV)
+    return SeparationZeroed.copy(),(Obj.Force - Offset).copy()
+
 def PreProcessApproachAndRetract(Approach,Retract,
                                  NFilterPoints=100,
                                  ZeroForceFraction=0.2,
@@ -251,14 +284,15 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
     return ZeroIdx,MedRetr
 
 def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
-                        MetersAfterTouchoff=None):
+                        MetersAfterTouchoff=None,Correct=False):
     """
-    fraction: Amount to average to determine the zero point for the force. 
-    FilterPoints: how many points to filter to find the zero, from the 
-    *start* of the array forward
-
-    MetersFromTouchoff: gets this many meters away from the surface. If
-    None, just returns all the data
+    Args:
+        fraction: Amount to average to determine the zero point for the force. 
+        FilterPoints: how many points to filter to find the zero, from the 
+        *start* of the array forward
+        MetersFromTouchoff: gets this many meters away from the surface. If
+        None, just returns all the data
+        Correct: if true, corrects the data by flipping it and zeroing it out. 
     """
     ZeroIdx,MedRetr =  GetSurfaceIndexAndForce(o,fraction,FilterPoints,
                                                ZeroAtStart=False)
@@ -277,12 +311,15 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
         StopIdxArr = None
     NewSlice = slice(ZeroIdx,StopIdxArr)
     MyObj = MakeTimeSepForceFromSlice(o,NewSlice)
-    # sign correct and offset the force
-    MyObj.Force = MyObj.Force * -1
-    MyObj.Force -= MedRetr
-    MyObj.Separation -= MyObj.Separation[0]
-    MyObj.Zsnsr -= MyObj.Zsnsr[0]
+    if (Correct):
+        # sign correct and offset the force
+        MyObj.Force = MyObj.Force * -1
+        MyObj.Force -= MedRetr
+        MyObj.Separation -= MyObj.Separation[0]
+        MyObj.Zsnsr -= MyObj.Zsnsr[0]
     return MyObj
+
+
 def GetAroundTouchoff(Objects,**kwargs):
     """
     Gets the data 'MetersAfterTouchoff' meters after (in ZSnsr)the surface 
@@ -302,4 +339,57 @@ def GetAroundTouchoff(Objects,**kwargs):
     for o in Objects:
         ToRet.append(GetFECPullingRegion(o,**kwargs))
     return ToRet
+
+def GetRegionForWLCFit(RetractOriginal,
+                       NFilterFraction=0.1,
+                       NoTriggerDistance=150e-9):
+    """
+    Given a (pre-processed, so properly 'flipped' and zeroed) WLC, gets the 
+    approximate region for WLC fitting (ie: roughly the first curve up to 
+    but not including the overstretching transition
+
+    Args:
+        RetractOriginal: pre-processed retract
+        NFilterFraction: fraction of RetractOriginal.size to use for filtering
+        NoTriggerDistance: to avoid adhesion, dont start looking at anything
+        before this distance in meters
+    Returns:
+        TimeSepForce Object of the portion of the curve to fit 
+    """
+    Retract = copy.deepcopy(RetractOriginal)
+    N = Retract.Force.size
+    NFilterPoints = int(np.ceil(NFilterFraction*N))
+    RetractZeroSeparation = Retract.Separation
+    RetractZeroForce = Retract.Force
+    FilteredForce = GetFilteredForce(Retract,NFilterPoints)
+    FilteredForceGradient = np.gradient(FilteredForce.Force)
+    NoAdhesionMask = RetractZeroSeparation > NoTriggerDistance
+    OnlyPositive = FilteredForceGradient[NoAdhesionMask]
+    q75, q25 = np.percentile(OnlyPositive, [75 ,25])
+    iqr = q75-q25
+    # q75 + 1.5 * iqr is a good metric for outliers
+    IsOutlier = lambda x: x > q75 + 1.5 * iqr
+    # being less than q75 is a good sign we are normal-ish
+    IsNormal = lambda x: x <= q75
+    # where does the first WLC start?
+    FirstOutlier = np.where(IsOutlier(FilteredForceGradient) & \
+                                      NoAdhesionMask)[0][0]
+    IdxArr = np.arange(0,FilteredForceGradient.size)
+    # first worm like chain ends where we past the max no longer an outlier
+    Outliers = np.where( IsNormal(FilteredForceGradient) & 
+                         (IdxArr > FirstOutlier))
+    EndOfFirstWLC = Outliers[0][0]
+    # determine the maximum point between the two outliers; this is likely
+    # the linear (ie: stretching) point of the WLC
+    MiddleOfFirstWLC = FirstOutlier + \
+                    np.argmax(FilteredForceGradient[FirstOutlier:EndOfFirstWLC])
+    IndexForWLCFit = int(np.mean([MiddleOfFirstWLC,EndOfFirstWLC]))
+    MetersAfterTouchoff = RetractZeroSeparation[IndexForWLCFit]
+    # *dont* sign correct anything.
+    NearSurface = GetFECPullingRegion(Retract,
+                                      MetersAfterTouchoff=MetersAfterTouchoff,
+                                      Correct=False)
+    return NearSurface
+
+    
 
