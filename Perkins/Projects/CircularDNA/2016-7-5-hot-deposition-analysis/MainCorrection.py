@@ -20,10 +20,28 @@ from GeneralUtil.python import CheckpointUtilities as pCheckUtil
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 
 def ReadInData(FullName):
+    """
+    Given a file name, reads in its data as TimeSepForce Objects
+    
+    Args:
+        FullName: full path to the file
+    Returns:
+        List of TimeSepForce Objects
+    """
     mObjs = FEC_Util.ReadInData(FullName)
     return mObjs
 
 def GetCorrectedFECs(DataArray):
+    """
+    Given a (raw) data, gets the corrected (ie: zero offset, flipped, and 
+    interference corrected) data
+    
+    Args:
+         DataArray: output of ReadInData
+    Returns:
+         List, each element is tuple of <Approach,Retract> which are the
+         corresponding parts of the curve
+    """
     Corrected = []
     for i,Tmp in enumerate(DataArray):
         CorrectionObj = CorrectionByFFT.CorrectionObject()
@@ -35,6 +53,14 @@ def GetCorrectedFECs(DataArray):
     return Corrected
 
 def GetWLCFits(CorrectedApproachAndRetracts):
+    """
+    Gets the WLC Fits and associated FirObjects
+
+    Args:
+        see GetTransitionForces
+    Returns:
+        List of tuples, each tuple is like <Separation for WLC fit, FitObject>
+    """
     # get all the fits to the corrected WLCs
     ToRet = []
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
@@ -56,6 +82,17 @@ def GetWLCFits(CorrectedApproachAndRetracts):
     return ToRet
 
 def GetTransitionForces(CorrectedApproachAndRetracts):
+    """
+    Gets the transition forces associated with the WLC curves. We assume they
+    make it all the way through the first and second WLC portions (ie: 
+    two enthaulpic regions
+
+    Args:
+        CorrectedApproachAndRetracts: List of tuples, each of which is 
+        <Corrected Approach, Corrected Retract> TimeSepForce Objectd
+    Returns:
+        List, each element is (hopefully) the transition region
+    """
     ToRet = []
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the (entire) zerod and corrected retract curve
@@ -80,6 +117,16 @@ def GetTransitionForces(CorrectedApproachAndRetracts):
     return ToRet
 
 def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
+    """
+    Plots the WLC fits into ./Out/
+
+    Args:
+        Corrected: list of tuples, each of which is an approach/corrected
+        TimeSepForce Object 
+        ListOfSepAndFits: see output of GetWLCFits
+       
+        TransitionForces: see output of GetTransitionForces
+    """
     # get all of the transition forces 
     # POST: have everything corrected, fit...
     set_y_lim = lambda :  plt.ylim([-50,150])
@@ -116,6 +163,39 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         pPlotUtil.legend(**LegendOpts)
         pPlotUtil.savefig(fig,"./Out/FEC{:d}.png".format(i))
 
+def ScatterPlot(TransitionForces,ListOfSepAndFits):
+    """
+    Makes a scatter plot of the contour length and transition forces
+
+    Args:
+        TransitionForces: array, each element the transition region for curve i
+        ListOfSepAndFits: array, each element the output of GetWLCFits
+    """
+    L0Arr = []
+    TxArr = []
+    for (SepNear,FitObj),TransitionFoces in zip(ListOfSepAndFits,
+                                                TransitionForces):
+        MedianTx = np.median(TransitionFoces)
+        L0,Lp,_,_ = FitObj.Params()
+        L0Arr.append(L0)
+        TxArr.append(MedianTx)
+    # go ahead an throw out ridiculous data from the WLC
+    GoodIdx = np.where(np.array(TxArr) > 10e-12)
+    print(GoodIdx)
+    # convert to useful units
+    L0Plot = np.array(L0Arr)[GoodIdx] * 1e9
+    TxPlot =  np.array(TxArr)[GoodIdx] * 1e12
+    fig = pPlotUtil.figure()
+    plt.plot(L0Plot,TxPlot,'ro',label="Data")
+    plt.axhspan(62,68,color='r',label="62 to 68 pN",alpha=0.3)
+    plt.axvspan(620,680,color='b',label="620 to 680 nm",alpha=0.3)
+    fudge = 1.05
+    plt.xlim([0,max(L0Plot)*fudge])
+    plt.ylim([0,max(TxPlot)*fudge])
+    pPlotUtil.lazyLabel("Contour Length, L0 (nm)","Overstretching Force (pN)",
+                        "Not all DNA is pulled perpendicularly",frameon=True)
+    pPlotUtil.savefig(fig,"./Out/ScatterL0vsFTx.png")
+
 def run():
     """
     Runs contour length analysis
@@ -141,6 +221,9 @@ def run():
     TransitionForces= pCheckUtil.getCheckpoint("./Cache/Transition.pkl",
                                                GetTransitionForces,
                                                ForceWLC,Corrected)
+    # make a scatter plot of L0 and the overstrectching force. 
+    ScatterPlot(TransitionForces,ListOfSepAndFits)
+    # plot the WLC fits
     PlotFits(Corrected,ListOfSepAndFits,TransitionForces)
 
 if __name__ == "__main__":

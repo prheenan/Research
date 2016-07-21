@@ -370,6 +370,18 @@ def GetFECPullingRegionAlreadyFlipped(Retract,NFilterFraction=0.02):
     return Retract
 
 def FilteredGradient(Retract,NFilterFraction):
+    """
+    Get the filtered gradient of an object
+
+    The force is filtered, the gradient is taken, the gradient is filtered
+
+    Args:
+       Retract: TimeSepForce Objectr
+       NFilterFraction: see GetGradientOutliersAndNormalsAfterAdhesion
+
+    Returns:
+       Array of same size as Retract.force which is the fitlered gradient.
+    """
     N = Retract.Force.size
     NFilterPoints = int(np.ceil(NFilterFraction*N))
     RetractZeroSeparation = Retract.Separation
@@ -380,6 +392,19 @@ def FilteredGradient(Retract,NFilterFraction):
 
 def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
                                                NoTriggerDistance=150e-9):
+    """
+    Returns where we are past the notrigger distance, where we are outlying
+    and where we are normal, according to a filtered first derivative
+
+    Args:
+        Retract: TimeSepForce Object to use, assumed zeroed
+        NFilterFraction: [0,1], how much to use for Savitsky Filtering
+        NoTriggerDistance: how long (in meters) not to trigger
+        after reaching the surface
+    Returns:
+        Tuple of <Indices after adhesion, Indices outlying q75+iqr,Indices
+         within q75>
+    """
     RetractZeroSeparation = Retract.Separation
     FilteredForceGradient = FilteredGradient(Retract,NFilterFraction)
     NoAdhesionMask = RetractZeroSeparation > NoTriggerDistance
@@ -389,7 +414,7 @@ def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
     # q75 + 1.5 * iqr is a good metric for outliers
     IsOutlier = lambda x: x > q75 + 1.5 * iqr
     # being less than q75 is a good sign we are normal-ish
-    IsNormal = lambda x:  ((x <= q75) &  (x>= q25))
+    IsNormal = lambda x:  (x <= q75)
     # where does the first WLC start?
     Outliers = np.where(IsOutlier(FilteredForceGradient) & \
                         NoAdhesionMask)
@@ -399,6 +424,15 @@ def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
     return NoAdhesionMask,Outliers[0],NormalPoints[0]
 
 def GetWLCPoints(NoAdhesionMask,Outliers,Normal,Object):
+    """
+    Gets the indices associated with (near) the start and end of the WLC
+    
+    Args:
+       see GetWlcIdxObject
+    Returns:
+        tuple of <start idx 1, end idx 1, start idx 2, end idx 2> where
+        the numbers refer to the WLC region
+    """
     FirstBackToNormalPost = lambda Point: Normal[np.where( (Normal > Point))][0]
     # first WLC starts with the first outlier
     FirstWlcStart = Outliers[0]
@@ -419,6 +453,15 @@ def GetWLCPoints(NoAdhesionMask,Outliers,Normal,Object):
     return FirstWlcStart,EndOfFirstWLC,StartOfSecondWLC,EndOfSecondWLC
 
 def GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,Retract):
+    """
+    Returns the DNAWlcPoints associated with the object
+
+    Args:
+        Retract: the rertract object used
+        others: See output of GetGradientOutliersAndNormalsAfterAdhesion
+    Returns:
+        DNAWlcPoints object associated
+    """
     Points = GetWLCPoints(NoAdhesionMask,Outliers,Normal,Retract)
     return DNAWlcPoints(*Points,TimeSepForceObj=Retract)
     
