@@ -15,9 +15,70 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection\
 from FitUtil.WormLikeChain.Python.Code.WLC_Fit import BoundedWlcFit
 from FitUtil.FitUtils.Python.FitClasses import GetBoundsDict
 from GeneralUtil.python import PlotUtilities as pPlotUtil
+from GeneralUtil.python import GenUtilities as pGenUtil
 from GeneralUtil.python import CheckpointUtilities as pCheckUtil
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 
+
+def ReadInData(FullName):
+    mObjs = FEC_Util.ReadInData(FullName)
+    return mObjs
+
+def GetCorrectedFECs(DataArray):
+    Corrected = []
+    for i,Tmp in enumerate(DataArray):
+        CorrectionObj = CorrectionByFFT.CorrectionObject()
+        Approach,Retract = CorrectionObj.CorrectApproachAndRetract(Tmp)
+        # zero out the forces, pre-process...
+        ApproachCorrected,RetractCorrected =\
+            FEC_Util.PreProcessApproachAndRetract(Approach,Retract)
+        Corrected.append([ApproachCorrected,RetractCorrected])
+    return Corrected
+
+def GetWLCFits(CorrectedApproachAndRetracts):
+    # get all the fits to the corrected WLCs
+    ToRet = []
+    for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
+        # get the zerod and corrected Force extension curve
+        WLCFitFEC = FEC_Util.GetRegionForWLCFit(Retract)
+        # actually fit the WLC
+        Bounds = GetBoundsDict(**dict(Lp=[0.3e-9,70e-9],
+                                      L0=[150e-9,700e-9],
+                                      K0=[1000e-12,1400e-12],
+                                      kbT=[0,np.inf]))
+        SepNear = WLCFitFEC.Separation
+        ForceNear = WLCFitFEC.Force
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=40,
+                            Bounds=Bounds)
+        Pred = Fit.Predict(SepNear)
+        ToRet.append([SepNear,Fit])
+        print("{:d}/{:d}".format(i,len(CorrectedApproachAndRetracts)))
+        print(Fit)
+    return ToRet
+
+def GetTransitionForces(CorrectedApproachAndRetracts):
+    ToRet = []
+    for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
+        # get the (entire) zerod and corrected retract curve
+        RetractPull =  FEC_Util.GetFECPullingRegionAlreadyFlipped(Retract)
+        # get the normal points and outliers
+        NoAdhesionMask,Outliers,Normal =  FEC_Util.\
+                GetGradientOutliersAndNormalsAfterAdhesion(RetractPull,
+                                                           NFilterFraction=0.05)
+        # get the WLC index object
+        Idx = FEC_Util.GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,
+                                       RetractPull)
+        # the transition point is from the end of the first WLC to the start
+        # of the secon
+        StartIdx = Idx.FirstWLC.end
+        EndIdx = Idx.SecondWLC.start
+        # get that region
+        TransitionRegionSlice =slice(StartIdx,EndIdx,1)
+        RetractTx = Idx.TimeSepForceObject
+        TransitionForce = RetractTx.Force[TransitionRegionSlice]
+        TransitionSeparation = RetractTx.Separation[TransitionRegionSlice]
+        ToRet.append(TransitionForce)
+    return ToRet
 
 def ReadInData(FullName):
     mObjs = FEC_Util.ReadInData(FullName)
@@ -85,7 +146,8 @@ def run():
     """
     OutFile = ""
     Limit = 2
-    FullNames = ["2016_7_10_1ng_ul_50C_4hour_depo_circ_dna_Strept_tip_I.pxp"]
+    DataDir ="./Data/"
+    FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     DataArray = []
     # read in all the data
     for i,Name in enumerate(FullNames):
