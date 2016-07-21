@@ -47,7 +47,7 @@ def GetWLCFits(CorrectedApproachAndRetracts):
                                       kbT=[0,np.inf]))
         SepNear = WLCFitFEC.Separation
         ForceNear = WLCFitFEC.Force
-        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=10,
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=40,
                             Bounds=Bounds)
         Pred = Fit.Predict(SepNear)
         ToRet.append([SepNear,Fit])
@@ -59,12 +59,14 @@ def GetTransitionForces(CorrectedApproachAndRetracts):
     ToRet = []
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the (entire) zerod and corrected retract curve
-        WLCFitFEC = FEC_Util.GetRegionForWLCFit(Retract)
-        RetractPull = GetFECPullingRegionAlreadyFlipped(WLCFitFEC)
+        RetractPull =  FEC_Util.GetFECPullingRegionAlreadyFlipped(Retract)
         # get the normal points and outliers
-        Outliers,Normal = GetGradientOutliersAndNormalsAfterAdhesion(Retract)
+        NoAdhesionMask,Outliers,Normal =  FEC_Util.\
+                GetGradientOutliersAndNormalsAfterAdhesion(RetractPull,
+                                                           NFilterFraction=0.05)
         # get the WLC index object
-        Idx = GetWlcIdxObject(Outliers,Normal,Retract)
+        Idx = FEC_Util.GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,
+                                       RetractPull)
         # the transition point is from the end of the first WLC to the start
         # of the secon
         StartIdx = Idx.FirstWLC.end
@@ -73,11 +75,8 @@ def GetTransitionForces(CorrectedApproachAndRetracts):
         TransitionRegionSlice =slice(StartIdx,EndIdx,1)
         RetractTx = Idx.TimeSepForceObject
         TransitionForce = RetractTx.Force[TransitionRegionSlice]
-        TransitionSeparation = RetractTx.Force[TransitionRegionSlice]
-        plt.plot(RetractPull.Separation,RetractPull.Force)
-        plt.plot(TransitionSeparation,TransitionForce)
-        plt.show()
-        
+        TransitionSeparation = RetractTx.Separation[TransitionRegionSlice]
+        ToRet.append(TransitionForce)
     return ToRet
 
 def run():
@@ -97,10 +96,11 @@ def run():
                                         False,DataArray)
     # Get all the WLC (initial)
     ListOfSepAndFits= pCheckUtil.getCheckpoint("WLC.pkl",GetWLCFits,
-                                               False,Corrected)
+                                               True,Corrected)
+    TransitionForces = GetTransitionForces(Corrected)
     # get all of the transition forces 
     # POST: have everything corrected, fit...
-    set_y_lim = lambda :  plt.ylim([-50,100])
+    set_y_lim = lambda :  plt.ylim([-50,130])
     set_x_lim = lambda :  plt.xlim([-10,1300])
     LegendOpts = dict(loc='upper left',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
@@ -111,8 +111,10 @@ def run():
         # get the WLC prediction
         WLC_Pred = FitObj.Predict(SepNear)
         # convert to plotting units
-        WLC_Force_pN = WLC_Pred  * 1e12
-        WLC_Separation_nm = SepNear * 1e9
+        ToYUnits = lambda y : y*1e12
+        ToXUnits = lambda x: x*1e9
+        WLC_Force_pN = ToYUnits(WLC_Pred)
+        WLC_Separation_nm = ToXUnits(SepNear)
         # Get the fit parameters
         L0,Lp,_,_ = FitObj.Params()
         fig = pPlotUtil.figure()
@@ -123,9 +125,10 @@ def run():
                  label="WLC: L0={:.1f}nm".format(L0*1e9))
         plt.axvline(650,label=r'L$_{\rm Contour}$=650nm',
                     linewidth=5.0,color='g',linestyle='--')
-
+        
         plt.axhline(65,label=r'F$_{\rm Overstretch}$=65pN',
                     linewidth=5.0,color='k',linestyle='-')
+        plt.axhline(ToYUnits(np.median(TransitionForces[i])),linestyle='--')
         set_y_lim()
         set_x_lim()
         pPlotUtil.legend(**LegendOpts)
