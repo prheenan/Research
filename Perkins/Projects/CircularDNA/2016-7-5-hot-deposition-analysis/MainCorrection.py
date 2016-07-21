@@ -55,6 +55,31 @@ def GetWLCFits(CorrectedApproachAndRetracts):
         print(Fit)
     return ToRet
 
+def GetTransitionForces(CorrectedApproachAndRetracts):
+    ToRet = []
+    for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
+        # get the (entire) zerod and corrected retract curve
+        WLCFitFEC = FEC_Util.GetRegionForWLCFit(Retract)
+        RetractPull = GetFECPullingRegionAlreadyFlipped(WLCFitFEC)
+        # get the normal points and outliers
+        Outliers,Normal = GetGradientOutliersAndNormalsAfterAdhesion(Retract)
+        # get the WLC index object
+        Idx = GetWlcIdxObject(Outliers,Normal,Retract)
+        # the transition point is from the end of the first WLC to the start
+        # of the secon
+        StartIdx = Idx.FirstWLC.end
+        EndIdx = Idx.SecondWLC.start
+        # get that region
+        TransitionRegionSlice =slice(StartIdx,EndIdx,1)
+        RetractTx = Idx.TimeSepForceObject
+        TransitionForce = RetractTx.Force[TransitionRegionSlice]
+        TransitionSeparation = RetractTx.Force[TransitionRegionSlice]
+        plt.plot(RetractPull.Separation,RetractPull.Force)
+        plt.plot(TransitionSeparation,TransitionForce)
+        plt.show()
+        
+    return ToRet
+
 def run():
     """
     Runs contour length analysis
@@ -72,7 +97,7 @@ def run():
                                         False,DataArray)
     # Get all the WLC (initial)
     ListOfSepAndFits= pCheckUtil.getCheckpoint("WLC.pkl",GetWLCFits,
-                                               True,Corrected)
+                                               False,Corrected)
     # get all of the transition forces 
     # POST: have everything corrected, fit...
     set_y_lim = lambda :  plt.ylim([-50,100])

@@ -13,6 +13,15 @@ from IgorUtil.PythonAdapter.WaveDataGroup import WaveDataGroup
 from IgorUtil.PythonAdapter.TimeSepForceObj import TimeSepForceObj,Bunch
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 
+class DNAWlcPoints:
+    class BoundingIdx:
+        def __init__(self,start,end):
+            self.start = start
+            self.end = end
+    def __init__(self,Wlc1Start,Wlc1End,Wlc2Start,Wlc2End,TimeSepForceObj):
+        self.FirstWLC = DNAWlcPoints.BoundingIdx(Wlc1Start,Wlc1End)
+        self.SecondWLC = DNAWlcPoints.BoundingIdx(Wlc2Start,Wlc2End)
+        self.TimeSepForceObject = TimeSepForceObj
 
 def ReadInData(FullName,Limit=None):
     """
@@ -390,7 +399,23 @@ def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction=0.1,
     # return the indices of the outliers and normal points
     return Outliers[0],NormalPoints[0]
 
+def GetWLCPoints(Outliers,Normal):
+    FirstBackToNormalPost = lambda Point: \
+            Normal[np.where(Normal > Point)][0]
+    # first WLC starts with the first outlier
+    FirstWlcStart = Outliers[0]
+    # first WLC ends after we are back to 'normal'
+    EndOfFirstWLC = FirstBackToNormalPost(FirstWlcStart)
+    # second WLC starts when we are an outlier again
+    StartOfSecondWLC = Outliers[np.where(Outliers > EndOfFirstWLC)][0]
+    # ends when we ae back to normal 
+    EndOfSecondWLC = FirstBackToNormalPost(StartOfSecondWLC)
+    return FirstWlcStart,EndOfFirstWLC,StartOfSecondWLC,EndOfSecondWLC
 
+def GetWlcIdxObject(Outliers,Normal,Retract):
+    Points = GetWLCPoints(Outliers,Normal)
+    return DNAWlcPoints(*Points,TimeSepForceObj=Retract)
+    
 def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.05,**kwargs):
     """
     Given a (pre-processed, so properly 'flipped' and zeroed) WLC, gets the 
@@ -411,9 +436,10 @@ def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.05,**kwargs):
     Outliers,NormalPoints = \
         GetGradientOutliersAndNormalsAfterAdhesion(Retract,
                                                    NFilterFraction)
-    FirstOutlier = Outliers[0]
+    Idx = GetWlcIdxObject(Outliers,NormalPoints,Retract)
+    FirstOutlier = Idx.FirstWLC.start
+    EndOfFirstWLC = Idx.FirstWLC.end
     N = RetractOriginal.Force.size
-    EndOfFirstWLC = NormalPoints[np.where(NormalPoints > FirstOutlier)][0]
     # determine the maximum point between the two outliers; this is likely
     # the linear (ie: stretching) point of the WLC
     MiddleOfFirstWLC = FirstOutlier + \
