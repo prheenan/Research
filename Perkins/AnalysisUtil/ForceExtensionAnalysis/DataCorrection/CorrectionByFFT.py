@@ -124,8 +124,19 @@ class CorrectionObject:
                                                           IsApproach)
         N = SeparationZeroed.size
         fft_representation = irfft(self.fft_coeffs)
-        fft_pred = interp1d(x=self.linear_grid,
-                            y=fft_representation)(SeparationZeroed)
+        MaxGrid = np.max(self.linear_grid)
+        # should only interpolate (correct) out to however much approach
+        # data we have
+        GoodInterpolationIndices = np.where(SeparationZeroed <= MaxGrid)
+        BadIdx = np.where(SeparationZeroed > MaxGrid)
+        fft_pred = np.zeros(SeparationZeroed.size)
+        # determine the interpolator -- should be able to use everywhere
+        # we are within range
+        GoodInterpolator = interp1d(x=self.linear_grid,y=fft_representation)
+        fft_pred[GoodInterpolationIndices] =\
+            GoodInterpolator(SeparationZeroed[GoodInterpolationIndices])
+        # everything else just gets the DC offset, which is the 0-th component
+        fft_pred[BadIdx] = fft_representation[0]
         return fft_pred
     def CorrectApproachAndRetract(self,Obj):
         """
@@ -141,12 +152,7 @@ class CorrectionObject:
         Approach,Retract = FEC_Util.GetApproachRetract(Obj)
         SeparationZeroed,ForceZeroed = self.\
                     ZeroForceAndSeparation(Approach,IsApproach=True)
-        # fit the invols
-        self.FitInvols(Obj)
-        # predict the invols -- we can subtract this off. 
-        InvolsPrediction = self.PredictInvols(Approach,IsApproach=True)
-        Approach.Force -= InvolsPrediction
-        # now correct the interference artifct 
+        # fit the interference artifact
         self.FitInterference(Approach)
         fft_pred = self.PredictInterference(Approach,
                                             IsApproach=True)
@@ -154,12 +160,7 @@ class CorrectionObject:
         Approach.Force -= fft_pred
         # just for clarities sake, the approach has now been corrected
         ApproachCorrected = Approach
-        # now the retract needs to be corrected.
-        InvolsPredictionRetract = self.PredictInvols(Retract,
-                                                     IsApproach=False)
-        RetractNoInvols = copy.deepcopy(Retract)
-        RetractNoInvols.Force -= InvolsPredictionRetract
-        # now correct the FFT stuff 
+        RetractNoInvols = Retract
         fft_pred_retract = self.PredictInterference(RetractNoInvols,
                                                     IsApproach=False)
         RetractCorrected = copy.deepcopy(RetractNoInvols)
