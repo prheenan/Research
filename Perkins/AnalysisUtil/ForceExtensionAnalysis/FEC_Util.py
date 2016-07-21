@@ -348,34 +348,31 @@ def GetAroundTouchoff(Objects,**kwargs):
         ToRet.append(GetFECPullingRegion(o,**kwargs))
     return ToRet
 
-def GetRegionForWLCFit(RetractOriginal,SurfaceFilterFraction=0.02,
-                       NFilterFraction=0.1,
-                       NoTriggerDistance=150e-9):
+def GetFECPullingRegionAlreadyFlipped(Retract,SurfaceFilterFraction=0.02):
     """
-    Given a (pre-processed, so properly 'flipped' and zeroed) WLC, gets the 
-    approximate region for WLC fitting (ie: roughly the first curve up to 
-    but not including the overstretching transition
-
-    Args:
-        RetractOriginal: pre-processed retract
-        NFilterFraction: fraction of RetractOriginal.size to use for filtering
-        NoTriggerDistance: to avoid adhesion, dont start looking at anything
-        before this distance in meters
-    Returns:
-        TimeSepForce Object of the portion of the curve to fit 
+    Adapter to GetFECPullingRegion, gets the retract after, assuming things
+    have already been flipped
     """
-    Retract = copy.deepcopy(RetractOriginal)
     # now, get just the 'post touchoff' region. We *dont* want to flip
     # the sign when doing this
     SurfaceNPoints = int(np.ceil(Retract.Force.size *SurfaceFilterFraction))
     Retract = GetFECPullingRegion(Retract,FlipSign=False,
                                   FilterPoints=SurfaceNPoints)
+    return Retract
+
+def FilteredGradient(Retract,NFilterFraction):
     N = Retract.Force.size
     NFilterPoints = int(np.ceil(NFilterFraction*N))
     RetractZeroSeparation = Retract.Separation
     RetractZeroForce = Retract.Force
     FilteredForce = GetFilteredForce(Retract,NFilterPoints)
     FilteredForceGradient = np.gradient(FilteredForce.Force)
+    return FilteredForceGradient
+
+def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction=0.1,
+                                               NoTriggerDistance=150e-9):
+    RetractZeroSeparation = Retract.Separation
+    FilteredForceGradient = FilteredGradient(Retract,NFilterFraction)
     NoAdhesionMask = RetractZeroSeparation > NoTriggerDistance
     OnlyPositive = FilteredForceGradient[NoAdhesionMask]
     q75, q25 = np.percentile(OnlyPositive, [75 ,25])
@@ -383,15 +380,40 @@ def GetRegionForWLCFit(RetractOriginal,SurfaceFilterFraction=0.02,
     # q75 + 1.5 * iqr is a good metric for outliers
     IsOutlier = lambda x: x > q75 + 1.5 * iqr
     # being less than q75 is a good sign we are normal-ish
-    IsNormal = lambda x: x <= q75
+    IsNormal = lambda x:  ((x <= q75) &  (x>= q25))
     # where does the first WLC start?
-    FirstOutlier = np.where(IsOutlier(FilteredForceGradient) & \
-                                      NoAdhesionMask)[0][0]
-    IdxArr = np.arange(0,FilteredForceGradient.size)
-    # first worm like chain ends where we past the max no longer an outlier
-    Outliers = np.where( IsNormal(FilteredForceGradient) & 
-                         (IdxArr > FirstOutlier))
-    EndOfFirstWLC = Outliers[0][0]
+    Outliers = np.where(IsOutlier(FilteredForceGradient) & \
+                       NoAdhesionMask)
+    # determine where the normal, non adhesion points are
+    NormalPoints = np.where( IsNormal(FilteredForceGradient) &
+                             NoAdhesionMask )
+    # return the indices of the outliers and normal points
+    return Outliers[0],NormalPoints[0]
+
+
+def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.05,**kwargs):
+    """
+    Given a (pre-processed, so properly 'flipped' and zeroed) WLC, gets the 
+    approximate region for WLC fitting (ie: roughly the first curve up to 
+    but not including the overstretching transition
+
+    Args:
+        RetractOriginal: pre-processed retract
+        **kwargs: passed to GetFECPullingRegionAlreadyFlipped
+    Returns:
+        TimeSepForce Object of the portion of the curve to fit 
+    """
+    Retract = GetFECPullingRegionAlreadyFlipped(RetractOriginal,
+                                                **kwargs)
+    RetractZeroSeparation = Retract.Separation
+    FilteredForceGradient = FilteredGradient(Retract,
+                                             NFilterFraction=NFilterFraction)
+    Outliers,NormalPoints = \
+        GetGradientOutliersAndNormalsAfterAdhesion(Retract,
+                                                   NFilterFraction)
+    FirstOutlier = Outliers[0]
+    N = RetractOriginal.Force.size
+    EndOfFirstWLC = NormalPoints[np.where(NormalPoints > FirstOutlier)][0]
     # determine the maximum point between the two outliers; this is likely
     # the linear (ie: stretching) point of the WLC
     MiddleOfFirstWLC = FirstOutlier + \

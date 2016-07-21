@@ -47,7 +47,7 @@ def GetWLCFits(CorrectedApproachAndRetracts):
                                       kbT=[0,np.inf]))
         SepNear = WLCFitFEC.Separation
         ForceNear = WLCFitFEC.Force
-        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=20,
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=10,
                             Bounds=Bounds)
         Pred = Fit.Predict(SepNear)
         ToRet.append([SepNear,Fit])
@@ -72,7 +72,8 @@ def run():
                                         False,DataArray)
     # Get all the WLC (initial)
     ListOfSepAndFits= pCheckUtil.getCheckpoint("WLC.pkl",GetWLCFits,
-                                               False,Corrected)
+                                               True,Corrected)
+    # get all of the transition forces 
     # POST: have everything corrected, fit...
     set_y_lim = lambda :  plt.ylim([-50,100])
     set_x_lim = lambda :  plt.xlim([-10,1300])
