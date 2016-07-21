@@ -41,7 +41,7 @@ def GetWLCFits(CorrectedApproachAndRetracts):
         # get the zerod and corrected Force extension curve
         WLCFitFEC = FEC_Util.GetRegionForWLCFit(Retract)
         # actually fit the WLC
-        Bounds = GetBoundsDict(**dict(Lp=[20e-9,200e-9],
+        Bounds = GetBoundsDict(**dict(Lp=[0.3e-9,70e-9],
                                       L0=[150e-9,700e-9],
                                       K0=[1000e-12,1400e-12],
                                       kbT=[0,np.inf]))
@@ -53,7 +53,6 @@ def GetWLCFits(CorrectedApproachAndRetracts):
         ToRet.append([SepNear,Fit])
         print("{:d}/{:d}".format(i,len(CorrectedApproachAndRetracts)))
         print(Fit)
-        break
     return ToRet
 
 def run():
@@ -71,10 +70,9 @@ def run():
     # get all the corrected, force-zeroed objects
     Corrected= pCheckUtil.getCheckpoint("Corrected.pkl",GetCorrectedFECs,
                                         False,DataArray)
-    # Get all the WLCs
+    # Get all the WLC (initial)
     ListOfSepAndFits= pCheckUtil.getCheckpoint("WLC.pkl",GetWLCFits,
-                                               True,Corrected)
-
+                                               False,Corrected)
     # POST: have everything corrected, fit...
     set_y_lim = lambda :  plt.ylim([-50,100])
     set_x_lim = lambda :  plt.xlim([-10,1300])
@@ -89,12 +87,14 @@ def run():
         # convert to plotting units
         WLC_Force_pN = WLC_Pred  * 1e12
         WLC_Separation_nm = SepNear * 1e9
+        # Get the fit parameters
+        L0,Lp,_,_ = FitObj.Params()
         fig = pPlotUtil.figure()
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=3,color='g',linestyle='--',
-                 label="WLC Prediction")
+                 label="WLC: L0={:.1f}nm".format(L0*1e9))
         plt.axvline(650,label=r'L$_{\rm Contour}$=650nm',
                     linewidth=5.0,color='g',linestyle='--')
 
