@@ -108,8 +108,8 @@ def run():
     # N/10 (meaning 10% efficiency), then the mean distance increases by
     # sqrt(10)~3
     LowerEfficiency= MeanDistNano*np.sqrt(1/efficiency)
-    LowerBoundDist = 5*RadiusOfGyrLinearNanoMeters
-    UpperBoundDist = 15*RadiusOfGyrLinearNanoMeters
+    LowerBoundDist = 2.5*DNASizeNanoMeters
+    UpperBoundDist = 8*DNASizeNanoMeters
     plt.loglog(LoadConcentrationNgPerUl,LowerEfficiency,
                'm.-',linewidth=3,
                label="{:d}% efficiency".format(int(efficiency*100)))
@@ -130,7 +130,7 @@ def run():
     # bit of a hack to get the label working
     pPlotUtil.lazyLabel("Concentration [ng/uL] (20uL Deposition)",
                         "Expected Mean DNA distance [nm]",\
-                    "Deposit 20uL at a concentration of 0.2 ng/uL to 1ng/uL",
+                        "Tuning Deposition Concentration to avoid dimerization",
                         titley=1.1)
     # our circular DNA is roughly 607nm
     plt.axhline(DNASizeNanoMeters,linewidth=4,linestyle='--',
@@ -141,7 +141,7 @@ def run():
                          secondY=False)
     plt.xlabel("Molarity (nM)")
     plt.tight_layout()
-    fig.savefig("DepositionAdvice.png")
+    pPlotUtil.savefig(fig,"DepositionAdvice.png")
     """
     We load the 20uL into xuL of TE and heat; what volume should we use?
     """
@@ -209,7 +209,6 @@ def run():
     "Radius of Gyration of Plasmid DNA Isoforms from Static Light Scattering." 
     Biotechnology and Bioengineering 107, 2010
     """
-    
     BasePairs = np.logspace(2.3,3.5)
     LengthsNm = BasePairs * NanometersPerBp
     # get the plot the DNA radii of gyration
@@ -232,7 +231,16 @@ def run():
              label="Circular WLC: {:d}nm".\
              format(int(CircularSequenceRadiusCirc)),
              **StyleCirc)
-    plt.axvline(NumBasePairsCirc,color='g',linewidth=2)
+    plt.axvline(NumBasePairsCirc,color='g',
+                label="200bp, R={:d}".format(int(CircularSequenceRadiusCirc)),
+                                             linewidth=2)
+    LongerConstructBp = 1800
+    LongerConstructNm = NanometersPerBp*LongerConstructBp
+    LongerConstructCircularRadiusNm = \
+        int(CircularRadiusOfGyration(Lp_nm,LongerConstructNm))
+    plt.axvline(LongerConstructBp,color='r',linestyle='--',
+                label="1800bp, R={:d}".format(LongerConstructCircularRadiusNm),
+                linewidth=2)
     XStart = plt.xlim()[0]
     ArrX = [XStart,NumBasePairsCirc]
     ArrY1 = [CircularSequenceRadiusCirc,CircularSequenceRadiusCirc]
@@ -240,7 +248,7 @@ def run():
     plt.plot(ArrX,ArrY1,linestyle="--",**StyleCirc)
     plt.plot(ArrX,ArrY2,linestyle="--",**StyleLin)
     pPlotUtil.lazyLabel("Base Pairs","Radius of Gyration (nm)",
-                        "Circular DNA construct radius of gyration < 20nm",
+    "Circular radius of gyration converges to linear for small constructs",
                         frameon=True)
     pPlotUtil.savefig(fig,"Gyration.png")
 

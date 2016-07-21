@@ -64,7 +64,7 @@ def FEC_AlreadySplit(Appr,Retr,
     pPlotUtil.lazyLabel(XLabel,YLabel,"")
     pPlotUtil.legend(**LegendOpts)
     
-def FEC(TimeSepForceObj,
+def FEC(TimeSepForceObj,NFilterPoints=50,
         PreProcessDict=dict(),
         **kwargs):
     """

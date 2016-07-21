@@ -105,18 +105,18 @@ def run():
         # and as integers (ie: dont care about 2%
         L0_nm = int(ToNm(Fit.Info.ParamVals.ParamDict["L0"].Value))
         Lp_nm = int(ToNm(Fit.Info.ParamVals.ParamDict["Lp"].Value))
-        plt.axvline(ToNm(MetersAfterTouchoff))
         # plot the WLC prediction, label...
+        """
         plt.plot(ToNm(SepNear),ToPn(Pred),color='g',linestyle='--',
                  linewidth=5.0,
-                 label="WLC (Extensible)\n" +\
-                 r"$L_0$={:d}nm, $L_p$={:d}nm".format(L0_nm,Lp_nm))
+                 label="WLC (Extensible)\n")
+        """
         pPlotUtil.legend(frameon=True)
         # note: limits are in nm and pN
         MaxY_pN = np.max(ToPn(Pred[np.where(np.isfinite(Pred))]))
         MaxY_pN = max(MaxY_pN,ToPn(np.max(Retr.Force)))
         MinY_pN = -MaxY_pN/5
-        plt.ylim([MinY_pN,MaxY_pN])
+        plt.ylim([-40,MaxY_pN])
         plt.xlim([-20,plt.xlim()[-1]])
         Name = "WLC" + Tmp.Meta.Name
         pPlotUtil.savefig(fig,Name + ".png")

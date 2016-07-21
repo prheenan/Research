@@ -27,30 +27,33 @@ def GetCorrectedFECs(DataArray):
     Corrected = []
     for i,Tmp in enumerate(DataArray):
         CorrectionObj = CorrectionByFFT.CorrectionObject()
-        ApproachCorrected,RetractCorrected = \
-                CorrectionObj.CorrectApproachAndRetract(Tmp)
+        Approach,Retract = CorrectionObj.CorrectApproachAndRetract(Tmp)
+        # zero out the forces, pre-process...
+        ApproachCorrected,RetractCorrected =\
+            FEC_Util.PreProcessApproachAndRetract(Approach,Retract)
         Corrected.append([ApproachCorrected,RetractCorrected])
     return Corrected
 
 def GetWLCFits(CorrectedApproachAndRetracts):
     # get all the fits to the corrected WLCs
     ToRet = []
-    for Approach,Retract in CorrectedApproachAndRetracts:
-        _,RetractProcessed = FEC_Util.PreProcessApproachAndRetract(Approach,
-                                                                   Retract)
+    for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the zerod and corrected Force extension curve
-        WLCFitFEC = FEC_Util.GetRegionForWLCFit(RetractProcessed)
+        WLCFitFEC = FEC_Util.GetRegionForWLCFit(Retract)
         # actually fit the WLC
-        Bounds = GetBoundsDict(**dict(Lp=[30e-9,55e-9],
+        Bounds = GetBoundsDict(**dict(Lp=[20e-9,200e-9],
                                       L0=[150e-9,700e-9],
                                       K0=[1000e-12,1400e-12],
                                       kbT=[0,np.inf]))
         SepNear = WLCFitFEC.Separation
         ForceNear = WLCFitFEC.Force
-        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=40,
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=20,
                             Bounds=Bounds)
         Pred = Fit.Predict(SepNear)
         ToRet.append([SepNear,Fit])
+        print("{:d}/{:d}".format(i,len(CorrectedApproachAndRetracts)))
+        print(Fit)
+        break
     return ToRet
 
 def run():
@@ -65,22 +68,20 @@ def run():
     for i,Name in enumerate(FullNames):
         DataArray.extend(pCheckUtil.getCheckpoint("Tmp{:d}.pkl".format(i),
                                                   ReadInData,False,Name))
-    # get all the corrected objects
+    # get all the corrected, force-zeroed objects
     Corrected= pCheckUtil.getCheckpoint("Corrected.pkl",GetCorrectedFECs,
                                         False,DataArray)
     # Get all the WLCs
     ListOfSepAndFits= pCheckUtil.getCheckpoint("WLC.pkl",GetWLCFits,
-                                               False,Corrected)
+                                               True,Corrected)
 
     # POST: have everything corrected, fit...
-    set_y_lim = lambda :  plt.ylim([-50,200])
+    set_y_lim = lambda :  plt.ylim([-50,100])
     set_x_lim = lambda :  plt.xlim([-10,1300])
     LegendOpts = dict(loc='upper left',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
     # need to correct (ie: flip and such)
-    PlotOptions = dict(FlipY=True,
-                       PreProcess=True,
-                       LegendOpts=LegendOpts)
+    PlotOptions = dict(LegendOpts=LegendOpts)
     for i,(ApproachCorrected,RetractCorrected) in enumerate(Corrected):
         SepNear,FitObj = ListOfSepAndFits[i]
         # get the WLC prediction
@@ -93,8 +94,12 @@ def run():
                                   **PlotOptions)
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=3,color='g',linestyle='--',
-                 label="WLC PRediction")
-        plt.axhline(65,label="65pN",linewidth=5.0,color='g',linestyle='--')
+                 label="WLC Prediction")
+        plt.axvline(650,label=r'L$_{\rm Contour}$=650nm',
+                    linewidth=5.0,color='g',linestyle='--')
+
+        plt.axhline(65,label=r'F$_{\rm Overstretch}$=65pN',
+                    linewidth=5.0,color='k',linestyle='-')
         set_y_lim()
         set_x_lim()
         pPlotUtil.legend(**LegendOpts)

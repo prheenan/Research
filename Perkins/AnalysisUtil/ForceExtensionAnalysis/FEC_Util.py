@@ -246,7 +246,7 @@ def GetFilteredForce(Obj,NFilterPoints):
     return ToRet
 
 def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
-                            ZeroAtStart=True):
+                            ZeroAtStart=True,FlipSign=True):
     """
     Given a retraction curve, a fraction of end-points to take the median of,
     and a filtering for the entire curve, determines the surface location
@@ -258,6 +258,9 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
         FilterPoints: see GetAroundTouchoff
         ZeroAtStart: if true, uses the first 'fraction' points; otherwise 
         uses the last 'fraction' points
+
+        FlipSign: if true (default), assumes the data is 'raw', so that
+        Dwell happens at positive force. Set to false if already fixed
     Returns: 
         Tuple of (Integer surface index,Zero Force)
     """
@@ -269,7 +272,10 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
     else:
         ForceFilter = o.Force
     # Flip the sign of the force
-    ForceSign = -1 * ForceFilter 
+    if (FlipSign):
+        ForceSign = -1 * ForceFilter
+    else:
+        ForceSign = ForceFilter
     N = ForceSign.size
     NumMed = int(N*Fraction)
     if (ZeroAtStart):
@@ -284,7 +290,7 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
     return ZeroIdx,MedRetr
 
 def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
-                        MetersAfterTouchoff=None,Correct=False):
+                        MetersAfterTouchoff=None,Correct=False,**kwargs):
     """
     Args:
         fraction: Amount to average to determine the zero point for the force. 
@@ -293,9 +299,11 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
         MetersFromTouchoff: gets this many meters away from the surface. If
         None, just returns all the data
         Correct: if true, corrects the data by flipping it and zeroing it out. 
+
+        **kwargs: passed on to GetSurfaceIndexAndForce
     """
     ZeroIdx,MedRetr =  GetSurfaceIndexAndForce(o,fraction,FilterPoints,
-                                               ZeroAtStart=False)
+                                               ZeroAtStart=False,**kwargs)
     if (MetersAfterTouchoff is not None):
         XToUse  = o.Separation
         N = XToUse.size
@@ -340,7 +348,7 @@ def GetAroundTouchoff(Objects,**kwargs):
         ToRet.append(GetFECPullingRegion(o,**kwargs))
     return ToRet
 
-def GetRegionForWLCFit(RetractOriginal,
+def GetRegionForWLCFit(RetractOriginal,SurfaceFilterFraction=0.02,
                        NFilterFraction=0.1,
                        NoTriggerDistance=150e-9):
     """
@@ -357,6 +365,11 @@ def GetRegionForWLCFit(RetractOriginal,
         TimeSepForce Object of the portion of the curve to fit 
     """
     Retract = copy.deepcopy(RetractOriginal)
+    # now, get just the 'post touchoff' region. We *dont* want to flip
+    # the sign when doing this
+    SurfaceNPoints = int(np.ceil(Retract.Force.size *SurfaceFilterFraction))
+    Retract = GetFECPullingRegion(Retract,FlipSign=False,
+                                  FilterPoints=SurfaceNPoints)
     N = Retract.Force.size
     NFilterPoints = int(np.ceil(NFilterFraction*N))
     RetractZeroSeparation = Retract.Separation
@@ -388,7 +401,7 @@ def GetRegionForWLCFit(RetractOriginal,
     # *dont* sign correct anything.
     NearSurface = GetFECPullingRegion(Retract,
                                       MetersAfterTouchoff=MetersAfterTouchoff,
-                                      Correct=False)
+                                      Correct=False,FlipSign=False)
     return NearSurface
 
     
