@@ -150,6 +150,8 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         SaveNameIncremental = lambda j : "./Out/FEC{:d}_{:d}.png".format(i,j)
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
+        set_y_lim()
+        set_x_lim()
         pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0))
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=3,color='g',linestyle='--',
@@ -160,8 +162,6 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         plt.axhline(65,label=r'F$_{\rm Overstretch}$=65pN',
                     linewidth=5.0,color='k',linestyle='-')
         plt.axhline(ToYUnits(np.median(TransitionForces[i])),linestyle='--')
-        set_y_lim()
-        set_x_lim()
         pPlotUtil.legend(**LegendOpts)
         pPlotUtil.savefig(fig,SaveNameIncremental(2))
 
