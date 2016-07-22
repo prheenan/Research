@@ -69,9 +69,16 @@ def run():
     VelNmPerSec = Velocities * 1e9
     fig = pPlotUtil.figure(figsize=(8,8))
     ax = plt.subplot(1,1,1)
+    ax.set_yscale('log')
+    pPlotUtil.lazyLabel("Velocity (nm/s)","Force (pN)",
+                        "V~1um/s in water likely to " +
+                        "rupture circular DNA",loc='lower right',frameon=True)
+    plt.ylim([1e-4,1e3])
     for i,f in enumerate(Forces):
         ForcePn = f *1e12
         plt.plot(VelNmPerSec,ForcePn,label="Drag on " + Levers[i].Name)
+        pPlotUtil.LegendAndSave(fig,"Drag{:d}.png".format(i),
+                                loc="lower right")
     # write down the rupture force in pN based on
     """
     Hatch, K., Danilowicz, C., Coljee, V., and Prentiss, M. (2008).
@@ -83,12 +90,7 @@ def run():
     plt.axhline(RuptureForce,linewidth=3.0,linestyle="--",
                 label="{:d}pN (Circular Rupture)".format(RuptureForce))
     TargetVel = 150
-    plt.axvline(TargetVel,linewidth=3.0,linestyle="--",
-                label="V={:d}nm/s".format(TargetVel))
-    pPlotUtil.lazyLabel("Velocity (nm/s)","Force (pN)",
-                        "V~1um/s in water likely to " +
-                        "rupture circular DNA",loc='lower right',frameon=True)
-    ax.set_yscale('log')
+    pPlotUtil.legend(loc="lower right",frameon=True)
     pPlotUtil.savefig(fig,"DragForceAtVelocities.png")
     
 

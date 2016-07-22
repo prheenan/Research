@@ -129,7 +129,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
     """
     # get all of the transition forces 
     # POST: have everything corrected, fit...
-    set_y_lim = lambda :  plt.ylim([-50,150])
+    set_y_lim = lambda :  plt.ylim([-40,150])
     set_x_lim = lambda :  plt.xlim([-10,1500])
     LegendOpts = dict(loc='upper left',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
@@ -147,21 +147,23 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         # Get the fit parameters
         L0,Lp,_,_ = FitObj.Params()
         fig = pPlotUtil.figure()
+        SaveNameIncremental = lambda j : "./Out/FEC{:d}_{:d}.png".format(i,j)
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
+        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0))
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=3,color='g',linestyle='--',
                  label="WLC: L0={:.1f}nm".format(L0*1e9))
+        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1))
         plt.axvline(650,label=r'L$_{\rm Contour}$=650nm',
                     linewidth=5.0,color='g',linestyle='--')
-        
         plt.axhline(65,label=r'F$_{\rm Overstretch}$=65pN',
                     linewidth=5.0,color='k',linestyle='-')
         plt.axhline(ToYUnits(np.median(TransitionForces[i])),linestyle='--')
         set_y_lim()
         set_x_lim()
         pPlotUtil.legend(**LegendOpts)
-        pPlotUtil.savefig(fig,"./Out/FEC{:d}.png".format(i))
+        pPlotUtil.savefig(fig,SaveNameIncremental(2))
 
 def ScatterPlot(TransitionForces,ListOfSepAndFits):
     """
@@ -181,7 +183,6 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits):
         TxArr.append(MedianTx)
     # go ahead an throw out ridiculous data from the WLC
     GoodIdx = np.where(np.array(TxArr) > 10e-12)
-    print(GoodIdx)
     # convert to useful units
     L0Plot = np.array(L0Arr)[GoodIdx] * 1e9
     TxPlot =  np.array(TxArr)[GoodIdx] * 1e12
