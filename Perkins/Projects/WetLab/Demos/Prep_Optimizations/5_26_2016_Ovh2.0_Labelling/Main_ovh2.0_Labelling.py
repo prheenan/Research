@@ -34,6 +34,9 @@ def CircularRadiusOfGyration(a,L):
                     - a**2 + 4*alpha*(a**3)/L + 8*(a_alph**3)/L * \
                     (1/3 - alpha/6 + k2 * alpha**2/5 + k3*(alpha**3)/6))
 
+def LegendAndSave(Fig,SaveName,LegendLoc="upper right"):
+    pPlotUtil.legend(loc=LegendLoc,frameon=True)
+    pPlotUtil.savefig(Fig,SaveName,close=False)
 
 def run():
     # get our actual sequence weight
@@ -113,12 +116,22 @@ def run():
     plt.loglog(LoadConcentrationNgPerUl,LowerEfficiency,
                'm.-',linewidth=3,
                label="{:d}% efficiency".format(int(efficiency*100)))
+    # bit of a hack to get the label working
+    pPlotUtil.lazyLabel("Concentration [ng/uL] (20uL Deposition)",
+                        "Expected Mean DNA distance [nm]",\
+                        "Tuning Deposition Concentration to avoid dimerization",
+                        titley=1.1)
+    LegendAndSave(fig,"DepositionAdvice1.png")
     plt.axvspan(xmin=MaxConcNgPerUl,xmax=plt.xlim()[-1],color='r',alpha=0.3,
                 label="Impossible prep")
     plt.axhspan(ymin=plt.ylim()[0],ymax=LowerBoundDist,color='k',
                 alpha=0.3)
     plt.axhspan(ymin=UpperBoundDist,ymax=plt.ylim()[-1],color='k',alpha=0.3,
                 label="Suboptimal for AFM")
+    # our circular DNA is roughly 607nm
+    plt.axhline(DNASizeNanoMeters,linewidth=4,linestyle='--',
+                label="L0={:.1f}nm".format(DNASizeNanoMeters))
+    LegendAndSave(fig,"DepositionAdvice2.png")
     IdealLoad = ((PerfectEfficiency > LowerBoundDist) &
                  (LowerEfficiency < UpperBoundDist))
     WhereIdealIdx = np.where(IdealLoad)
@@ -127,21 +140,13 @@ def run():
                      where=IdealLoad,
                      facecolor='k')
     plt.plot([], [], color='black', linewidth=15,label="Ideal Loading")
-    # bit of a hack to get the label working
-    pPlotUtil.lazyLabel("Concentration [ng/uL] (20uL Deposition)",
-                        "Expected Mean DNA distance [nm]",\
-                        "Tuning Deposition Concentration to avoid dimerization",
-                        titley=1.1)
-    # our circular DNA is roughly 607nm
-    plt.axhline(DNASizeNanoMeters,linewidth=4,linestyle='--',
-                label="L0={:.1f}nm".format(DNASizeNanoMeters))
-    pPlotUtil.legend(loc='lower left',frameon=True)
+    LegendAndSave(fig,"DepositionAdvice3.png")
     Molar= [NanoMolarLoaded[0],NanoMolarLoaded[-1]]
     pPlotUtil.secondAxis(ax1,"Molarity (nM)",limits=Molar,color="Blue",
                          secondY=False)
     plt.xlabel("Molarity (nM)")
     plt.tight_layout()
-    pPlotUtil.savefig(fig,"DepositionAdvice.png")
+    pPlotUtil.savefig(fig,"DepositionAdvice4.png")
     """
     We load the 20uL into xuL of TE and heat; what volume should we use?
     """
@@ -225,31 +230,35 @@ def run():
     StyleLin = dict(color='b',linewidth=2)
     StyleCirc = dict(color='r',linewidth=2)
     fig = pPlotUtil.figure()
-    plt.plot(BasePairs,RadiusOfGyr,label="Linear WLC: {:d}nm".\
-             format(int(CircularSequenceRadiusLinear)),**StyleLin)
-    plt.plot(BasePairs,RadiusOfGyrCirc,
-             label="Circular WLC: {:d}nm".\
-             format(int(CircularSequenceRadiusCirc)),
-             **StyleCirc)
+    ax = plt.subplot()
+    plt.plot(BasePairs,RadiusOfGyr,label="Linear WLC",linestyle="--",**StyleLin)
+    plt.plot(BasePairs,RadiusOfGyrCirc,label="Circular WLC",**StyleCirc)
     plt.axvline(NumBasePairsCirc,color='g',
-                label="200bp, R={:d}".format(int(CircularSequenceRadiusCirc)),
+                label="200bp, R={:d}nm".format(int(CircularSequenceRadiusCirc)),
                                              linewidth=2)
-    LongerConstructBp = 1800
+    LongerConstructBp = (3520-1607)+12+2
     LongerConstructNm = NanometersPerBp*LongerConstructBp
-    LongerConstructCircularRadiusNm = \
+    LongerConstructRadiusNm = \
         int(CircularRadiusOfGyration(Lp_nm,LongerConstructNm))
-    plt.axvline(LongerConstructBp,color='r',linestyle='--',
-                label="1800bp, R={:d}".format(LongerConstructCircularRadiusNm),
+    plt.axvline(LongerConstructBp,color='r',linestyle='-',
+                label="{:d}bp, R={:d}nm".format(LongerConstructBp,
+                                                LongerConstructRadiusNm),
                 linewidth=2)
+    SizeLimitsNanoMeters = \
+        np.array([0,plt.xlim()[-1]])*NanometersPerBp
     XStart = plt.xlim()[0]
     ArrX = [XStart,NumBasePairsCirc]
     ArrY1 = [CircularSequenceRadiusCirc,CircularSequenceRadiusCirc]
     ArrY2 = [CircularSequenceRadiusLinear,CircularSequenceRadiusLinear]
-    plt.plot(ArrX,ArrY1,linestyle="--",**StyleCirc)
-    plt.plot(ArrX,ArrY2,linestyle="--",**StyleLin)
-    pPlotUtil.lazyLabel("Base Pairs","Radius of Gyration (nm)",
+    plt.plot(ArrX,ArrY1,linestyle="-.",**StyleCirc)
+    plt.plot(ArrX,ArrY2,linestyle="-.",**StyleLin)
+    pPlotUtil.lazyLabel("DNA Size, Base Pairs","Radius of Gyration (nm)",
     "Circular radius of gyration converges to linear for small constructs",
-                        frameon=True)
+                        frameon=True,titley=1.1)
+    pPlotUtil.secondAxis(ax,"Size (nm)",limits=SizeLimitsNanoMeters,
+                         color="Blue",
+                         secondY=False)
+    pPlotUtil.xlabel("Size (nm)")
     pPlotUtil.savefig(fig,"Gyration.png")
 
 if __name__ == "__main__":
