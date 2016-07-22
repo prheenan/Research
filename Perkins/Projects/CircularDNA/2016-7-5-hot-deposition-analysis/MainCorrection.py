@@ -152,18 +152,20 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
                                   **PlotOptions)
         set_y_lim()
         set_x_lim()
-        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0))
+        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0),loc="upper left")
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=3,color='g',linestyle='--',
                  label="WLC: L0={:.1f}nm".format(L0*1e9))
-        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1))
+        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1),loc="upper left")
         plt.axvline(650,label=r'L$_{\rm Contour}$=650nm',
                     linewidth=5.0,color='g',linestyle='--')
         plt.axhline(65,label=r'F$_{\rm Overstretch}$=65pN',
                     linewidth=5.0,color='k',linestyle='-')
         plt.axhline(ToYUnits(np.median(TransitionForces[i])),linestyle='--')
         pPlotUtil.legend(**LegendOpts)
-        pPlotUtil.savefig(fig,SaveNameIncremental(2))
+        pPlotUtil.savefig(fig,SaveNameIncremental(2),loc="upper left")
+        plt.close(fig)
+
 
 def ScatterPlot(TransitionForces,ListOfSepAndFits):
     """
