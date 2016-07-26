@@ -110,10 +110,11 @@ def run():
                                                        Times4,Ratio4)
     # make our figure
     fig = pPlotUtil.figure()
-    LabelThree = "1 minute cutoff library\n" + \
-                 r"$\tau$={:.1f} minutes".format(ThreeParams[0])
-    LabelFour =  "90 minute cutoff library\n" + \
-                 r"$\tau$={:.1f} minutes".format(FourParams[0])
+    LabelFunc = lambda descr,params : descr + "\n" + \
+                r'$\tau$ =' + '{:.1f} min, '.format(params[0]) +\
+                           'f$_{saturated}$' + '={:.2f}'.format(params[1])
+    LabelThree = LabelFunc("1 minute looping",ThreeParams)
+    LabelFour =  LabelFunc("90 minute looping",FourParams)
     plt.plot(Times3,Ratio3,'ro',label=LabelThree)
     plt.plot(Times4,Ratio4,'bs',label=LabelFour)
     plt.plot(ThreeX,ThreeY,'r-',linewidth=2)
@@ -121,7 +122,8 @@ def run():
     MaxT = max(np.max(Times3),np.max(Times4))*1.01
     plt.xlim([-1,MaxT])
     pPlotUtil.lazyLabel("Time (minutes)","Population fraction in high fret",
-                        "Lower cutoff library loops faster",frameon=True)
+                "Lower pre-digestion looping time sample circularizes faster",
+                        frameon=True)
 
     pPlotUtil.savefig(fig,"Out.png")
     
