@@ -11,12 +11,23 @@ sys.path.append("../../../../")
 import re
 
 class LaneObject(object):
+    """
+    Class to keep track of (generalized) lanes
+    """
     def __init__(self,*lanes):
         self.Lanes = np.array(list(lanes))
         self.TotalIntensity = np.sum(self.Lanes)
     def Normalized(self,LaneIndex):
+        """
+        Returns the normalized pixel intensity in laneindex "LaneIndex"
+        """
         assert LaneIndex < len(self.Lanes) , "Asked for a lane we dont have"
         return self.Lanes[LaneIndex]/self.TotalIntensity
+    def NormalizedIntensities(self):
+        """
+        Returns a list of all the normalized intensities
+        """
+        return [self.Normalized(i) for i in range(len(self.Lanes))]
     def __str__(self):
         return "\n".join("Lane{:03d}={:.2f}".format(i,self.Normalized(i))
                          for i in range(self.Lanes.size))
@@ -36,12 +47,21 @@ class OverhangLane(LaneObject):
         return x/self.TotalIntensity
     @property
     def LinearRelative(self):
+        """
+        Gets the relative linear intensity
+        """
         return self._Norm(self.LinearBand)
     @property
     def CircularRelative(self):
+        """
+        Gets the relative circular intensity
+        """
         return self._Norm(self.CircularBand)
     @property
     def ConcatemerRelative(self):
+        """
+        Gets the relative concatemer intensity
+        """
         return self._Norm(self.Concatemers)
     def __str__(self):
         return "Lin:{:3.2f},Circ:{:3.2f},Concat:{:3.2f}".\
@@ -59,8 +79,14 @@ class LaneTrialObject(object):
     def __init__(self,lanes):
         self.lanes = lanes
     def MeanLane(self,idx):
+        """
+        Get the mean value of all the lane 'copies', for a given lane
+        """
         return np.mean([l.Normalized(idx) for l in self.lanes])
     def StdevLane(self,idx):
+        """
+        Get standard deviation of all the lane 'copies', for a given lane
+        """
         return np.std([l.Normalized(idx) for l in self.lanes])
     def MeanStdev(self,idx):
         return self.MeanLane(idx),self.StdevLane(idx)
@@ -72,23 +98,44 @@ class OverhangTrialObject(LaneTrialObject):
         super(OverhangTrialObject,self).__init__(lanes)
     @property
     def LinearMeanStdev(self):
+        """
+        Returns a tuple of the mean and standard deviation for the linear lane
+        """
         return self.MeanStdev(0)
     @property
     def CircularMeanStdev(self):
+        """
+        Returns a tuple of the mean and standard deviation for the circular lane
+        """
         return self.MeanStdev(1)
     @property
     def ConcatemerMeanStdev(self):
+        """
+        Returns a tuple of mean and standard deviation for concatemer lane(s)
+        """
         return self.MeanStdev(2)
     @property
     def LinearRelative(self):
+        """
+        Returns the mean for the linear lane
+        """
         return self.LinearMeanStdev[0]
     @property
     def CircularRelative(self):
+        """
+        Returns the mean for the circular lane
+        """
         return self.CircularMeanStdev[0]
     @property
     def ConcatemerRelative(self):
+        """
+        Returns the mean for the concatemer lane
+        """
         return self.ConcatemerMeanStdev[0]
     def GetErrors(self):
+        """
+        Returns a list of the stdevs for linear, circular, and concatemer
+        """
         props = [self.LinearMeanStdev,self.CircularMeanStdev,
                  self.ConcatemerMeanStdev]
         return [p[1] for p in props]

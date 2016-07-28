@@ -28,7 +28,16 @@
 *.csv
 *.txt
 *.xls
-
+*.csv
+*.ti*
+*.m
+*.dat
+*.xls
+*.png
+*.JPG
+*.txt
+*.traces
+*.pks
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
