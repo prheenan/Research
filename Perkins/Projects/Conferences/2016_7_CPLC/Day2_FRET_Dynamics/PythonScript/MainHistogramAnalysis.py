@@ -12,6 +12,9 @@ import matplotlib.gridspec as gridspec
 import copy
 
 def ReadNaCl(BaseFolder):
+    """
+    See: ReadKCl, except with NaCl data instead
+    """
     files = sorted(pGenUtil.getAllFiles(BaseFolder,ext=".dat"))
     data = []
     for f in files:
@@ -21,6 +24,12 @@ def ReadNaCl(BaseFolder):
     return data
 
 def ReadKCl(BaseFolder):
+    """
+    Args:
+         Basefolder: location of where the KCL .csv files are
+    Returns:
+         list, each element is the column of FRET values from all moleculars. 
+    """
     files = sorted(pGenUtil.getAllFiles(BaseFolder,ext=".csv"))
     data = []
     for f in files:
@@ -28,6 +37,15 @@ def ReadKCl(BaseFolder):
     return data
 
 def AxesDefault(ylim,title,ylabel,UseYTicks):
+    """
+    Default options for stacking plots, for the current plot
+
+    Args:
+        ylim: limits for the y 
+        title: for the subplot
+        ylabel: for the y axis
+        USeYTicks: if true, douesnt hide the y tickso r numbers
+    """
     ax = plt.gca()
     plt.setp(ax.get_xticklabels(),visible=False)
     if (not UseYTicks):
@@ -38,13 +56,7 @@ def AxesDefault(ylim,title,ylabel,UseYTicks):
     
 def run():
     """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
+    Generates FRET histograms from NaCl and KCl data
     """
     data = ReadNaCl("./Data/NaCl")
     dataKcl = ReadKCl("./Data/KCl")
@@ -63,6 +75,7 @@ def run():
     for i,TmpDict in enumerate(StyleDictKCL):
         TmpDict['label'] = TmpDict['label'].replace("NaCl","KCl")
         TmpDict['alpha'] = 0.7
+        TmpDict['linewidth'] = 0.5
     # determine the bounds for the FRET
     MinFret = -0.25
     MaxFretFromData = np.max([max(arr) for arr in data])
@@ -74,7 +87,7 @@ def run():
     ylim = [MinBin,MaxBin]
     bins = np.arange(MinFret,MaxFret,StepFret)
     for i,histogram in enumerate(data):
-        title = "Higher salt induces G-Quadruplex folding" \
+        title = "High salt induces GQ folding" \
                 if i == 0 else ""
         # plot the NaCl data
         plt.subplot(NumHists,2,(2*i+1))
