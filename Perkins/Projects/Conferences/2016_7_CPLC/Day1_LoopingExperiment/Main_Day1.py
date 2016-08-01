@@ -98,6 +98,11 @@ def run():
     offFour = off
     Times4 = [0,offFour+0,offFour+3,offFour+8,offFour+11,offFour+20,
               offFour+25,offFour+33,offFour+37,offFour+47,offFour+59]
+    # Followsing times and data taken by Group B on single species DNA
+    RatiosMisMatch = [0,0.110000000000000,0.250000000000000,0.330000000000000,
+                      0.430000000000000,0.440000000000000,0.450000000000000,
+                      0.500000000000000,0.480000000000000,0.450000000000000]
+    TimesMisMatch = [0,1,2,6,7,11,13,18,27,33]
     # get the population ratio
     Ratio3 = np.array(Numer3)/np.array(Denom3)
     Ratio4 = np.array(Numer4)/np.array(Denom4)
@@ -108,24 +113,51 @@ def run():
                                                            Times3,Ratio3)
     FourX,FourY,FourParams,FourStd = GetExponentialFit(MinTau,MaxTau,
                                                        Times4,Ratio4)
+    # get the decays for the Mismatch
+    MisX,MisY,MisParams,MisStd = GetExponentialFit(MinTau,MaxTau,
+                                                   TimesMisMatch,RatiosMisMatch)
     # make our figure
     fig = pPlotUtil.figure()
     LabelFunc = lambda descr,params : descr + "\n" + \
-                r'$\tau$ =' + '{:.1f} min, '.format(params[0]) +\
+                r'$\tau$ =' + '{:.1f} min'.format(params[0]) +"\n" +\
                            'f$_{saturated}$' + '={:.2f}'.format(params[1])
     LabelThree = LabelFunc("1 minute looping",ThreeParams)
     LabelFour =  LabelFunc("90 minute looping",FourParams)
-    plt.plot(Times3,Ratio3,'ro',label=LabelThree)
-    plt.plot(Times4,Ratio4,'bs',label=LabelFour)
-    plt.plot(ThreeX,ThreeY,'r-',linewidth=2)
-    plt.plot(FourX,FourY,'b--',linewidth=2)
-    MaxT = max(np.max(Times3),np.max(Times4))*1.01
-    plt.xlim([-1,MaxT])
-    pPlotUtil.lazyLabel("Time (minutes)","Population fraction in high fret",
+    LegendLoc = "lower right"
+    XLabel = "Time (minutes)"
+    YLabel = "Population fraction in high fret"
+    LazyOpts = dict(frameon=True,loc=LegendLoc)
+    pPlotUtil.lazyLabel(XLabel,YLabel,
                 "Lower pre-digestion looping time sample circularizes faster",
-                        frameon=True)
-
-    pPlotUtil.savefig(fig,"Out.png")
+                        **LazyOpts)
+    # add the y limits before saving, to allow for space for the legend
+    MaxT = max(np.max(Times3),np.max(Times4))*1.1
+    MaxY = 1.05
+    Limits = lambda: plt.ylim([-0.1,MaxY]) and plt.xlim([-1,MaxT])
+    plt.plot(Times3,Ratio3,'ro',label=LabelThree)
+    plt.plot(ThreeX,ThreeY,'r-',linewidth=2)
+    Limits()
+    pPlotUtil.LegendAndSave(fig,"Out1.png",loc=LegendLoc)
+    plt.plot(Times4,Ratio4,'bs',label=LabelFour)
+    plt.plot(FourX,FourY,'b--',linewidth=2)
+    Limits()
+    pPlotUtil.LegendAndSave(fig,"Out2.png",loc=LegendLoc)
+    # add in the mismatch
+    plt.plot(TimesMisMatch,RatiosMisMatch,'go',label=LabelFunc("Single Species",
+                                                               MisParams))
+    plt.plot(MisX,MisY,'g-.')
+    Limits()
+    pPlotUtil.legend(frameon=True,loc=LegendLoc)
+    pPlotUtil.savefig(fig,"Out3.png")
+    # make the mismatch graph
+    fig = pPlotUtil.figure()
+    plt.plot(TimesMisMatch,RatiosMisMatch,'go',label=LabelFunc("Single Species",
+                                                               MisParams))
+    plt.plot(MisX,MisY,'g-.')
+    pPlotUtil.lazyLabel(XLabel,YLabel,
+                         "Single fast-folding species",**LazyOpts)
+    Limits()
+    pPlotUtil.savefig(fig,"Out4_MisMatch.png")
     
 if __name__ == "__main__":
     run()
