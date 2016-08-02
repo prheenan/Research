@@ -1,0 +1,10 @@
+[red-pitaya-ubuntu]
+description=Red Pitaya Debian/Ubuntu OS image
+type=file
+file=/home/patrick/RedPitaya/redpitaya_ubuntu-latest.tar.gz
+users=patrick,perkins
+root-users=patrick,perkins
+root-groups=root
+profile=desktop
+personality=linux
+preserve-environment=true
