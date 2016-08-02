@@ -73,7 +73,7 @@ def GetWLCFits(CorrectedApproachAndRetracts):
                                       kbT=[0,np.inf]))
         SepNear = WLCFitFEC.Separation
         ForceNear = WLCFitFEC.Force
-        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=60,
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=150,
                             Bounds=Bounds)
         Pred = Fit.Predict(SepNear)
         ToRet.append([SepNear,Fit])
