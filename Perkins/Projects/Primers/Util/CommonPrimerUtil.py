@@ -10,7 +10,7 @@ import EmbossUtil
 DataSubDir = "PlasmidData"
 CircularSubDir = "CircularDNA"
 
-def Get1607FAnd3520R(base="./"):
+def Get1607FAnd3520R(base):
     """
     Args:
         base: where the primer ("PlasmidData") directory is located

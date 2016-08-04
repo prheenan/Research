@@ -78,7 +78,7 @@ def GetEmbossPrimers(mCycle,outDir,maxPsuedoLen=None,**kwargs):
     i and i+1 isnt in our primer), gets the primers associated with an emboss
     run. These are (nominally) within the melting temperature we want
     Args:
-        Cycle: list of primers, e.g. output of GetBestCycle
+        Cycle: list of primers 
         maxPsuedoLen: maximum pesueoPrimer Length. if non, we done have one
         outDir : where to put the eprimer32 .fasta output
         **kwargs: fed directly into emboss; see the Scripts.Emboss.EmbossAdapter
@@ -102,33 +102,6 @@ def GetEmbossPrimers(mCycle,outDir,maxPsuedoLen=None,**kwargs):
     # get just the unique ones, by sequence
     unique = list(set(allPrimers))
     return unique
-
-def GetBestCycle(plasmidStr,kmerLen,mGraph):
-    """
-    Gets the 'path' of kmers (e.g. ['AB','BA']) which dont have any 
-    overlap between them (a 'psuedo-plasmid', which we can draw primers from).
-
-    Args:
-        plasmidStr: the plasmid to read in
-        mGraph: output of GetKmerGraph. Nodes are kmers, edges represent
-        valid concatenations
-    
-        kmerLen: length of the kmers to get
-
-    Returns:
-        the in-order list of the kmers representing the best cycle through
-        the graph. Concatenated, this is a 'psuedo plasmid' we can use
-        to get other properties (e.g. melting temp) we might want
-    """
-    # make all the edges -1, so we search for the longest path
-    bestCycle = GraphUtil.GetPathThroughKmers(mGraph)
-    # write down the 'super' string, concatenating the cycle kmers
-    superStr = "".join(bestCycle)
-    # assert our (single) primer is valid
-    KmerUtil.AssertPrimersValid(plasmidStr,kmerLen,[superStr])
-    # get its kmers
-    #POST: we have *a* possible super kmer solution
-    return bestCycle
 
 def ReadFileAsPlasmid(inputFile):
     """
@@ -173,28 +146,14 @@ def GetPossibleKmersFromGraph(mGraph,desiredPrimerLen):
         allPrimers = [ KmerUtil.Kmers(e[0]+e[1],desiredPrimerLen)
                        for e in edges]
         # return the flattened list
-        return [ Primer(k,None) for listV in allPrimers for k in listV]
-    # POST: more work to do
-    # get the minimum number of nodes in the graph to get a primer
-    # of the length we want.
-    minNumNodes = int(np.ceil(desiredPrimerLen/kmerLen))
-    # get all pairs of the shortest paths (heuristic)
-    paths = networkx.all_pairs_shortest_path(G=mGraph)
-    allDictsKeyPairs =  paths.items()
-    pathsPerNode = [ pathDict
-                     for key,pathDict in allDictsKeyPairs]
-    # heuristic; only look at paths greater than the ones we care about...
-    allPaths = [ path for dictV in pathsPerNode
-                 for path in dictV.values() if len(path) >= minNumNodes ]
-    # for each path, join it together into a psuedo primer
-    allGreater = ["".join(p) for p in allPaths ]
-    # get all kmers from each of the possible primers
-    allPrimers = [KmerUtil.Kmers(p,desiredPrimerLen) for p in allGreater]
-    # flatten the list of kmers, get the unique ones
-    allPrimers =sorted(list(set([k for listV in allPrimers for k in listV])))
-    # create primer objects, will fill in temperatures later
-    allPrimers = [Primer(k,None) for k in allPrimers]
-    return allPrimers
+        Primers = [ Primer(k,None) for listV in allPrimers for k in listV]
+    else:
+        # POST: more work to do
+        # use the GraphUtil method to enumerate all simple paths between
+        # all pairs of nodes,then get what we need from those
+        Primers = [Primer(k,None) for k in
+                   GraphUtil.GetValidPrimersFromGraph(mGraph,desiredPrimerLen)]
+    return Primers
 
 def GetOverhangingPrimersGraphAndCycle(inputFile,primerLen,kmerLen):
     """
@@ -297,7 +256,7 @@ def GetMink(mPlasmid,thresh=50,CheckCircular=True):
                                            CheckCircular=CheckCircular)
 
 
-def GetBestOverhangs(inputFile,primerLen,DesiredMelt,kmerLen=None):
+def GetBestOverhangs(inputFile,primerLen,DesiredMelt,kmerLen=None,fudge=0):
     """
     Gets the 'best' overhangs, where best is lowest self-dimerization, no
     'kmerLen'-mers in common with the plasmid, and close to DesiredMelt.
@@ -311,6 +270,7 @@ def GetBestOverhangs(inputFile,primerLen,DesiredMelt,kmerLen=None):
         desiredMelt: desired melting temperature
         kmerLen: see GenerateOverhangingPrimers. If none, figures out
         the minimum kmer which is reasonable, by 'GetMinkK'
+        fudge: see GetSequencesWithMinimumDimerization
     Returns:
         OverhangPrimerInfo object, '.AllPrimers' is a sorted list of 
         all possible, '.BestPrimers' are those with low self-dimerization
@@ -321,7 +281,8 @@ def GetBestOverhangs(inputFile,primerLen,DesiredMelt,kmerLen=None):
     # are OK )
     info = GenerateOverhangingPrimers(inputFile,primerLen,kmerLen)
     # now we filter by dimerization score...
-    minSeq,scores = GetSequencesWithMinimumDimerization(info.AllPrimers)
+    minSeq,scores = GetSequencesWithMinimumDimerization(info.AllPrimers,
+                                                        fudge=fudge)
     for seq,score in zip(minSeq,scores):
         seq.SetAlignment(score)
     # and by melting temperature
@@ -543,7 +504,8 @@ def ConcatTo1607FAnd3520RAndSave(mPrimer,baseDir,Name,addSpacer=False,
         and reverse primers,respectively
     Returns: nothing
     """
-    pFwd,pRev = CommonPrimerUtil.Get1607FAnd3520R(**kwargs)
+    pFwd,pRev = CommonPrimerUtil.Get1607FAnd3520R(base=baseDir,
+                                                  **kwargs)
     ConcatAndSave(mPrimer,baseDir,Name,
                   pFwd,pRev,addSpacer,addDbcoAndBio,
                   **kwargs)
@@ -551,12 +513,16 @@ def ConcatTo1607FAnd3520RAndSave(mPrimer,baseDir,Name,addSpacer=False,
 def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
                             Name,MakeSpacerFile=False,MakeLabelledFile=False,
                             CheckAfterChoosing=True,
-                            ChooseFunc = lambda x: x[0]):
+                            ChooseFunc = lambda x: x[0],
+                            MaxPlasmidAlignment=None,**kwargs):
     """
     Args:
         inputFile: where the primer file lives
         BaseDir: see ConcatTo1607FAnd3520RAndSave
         Name: see ConcatTo1607FAnd3520RAndSave
+        desiredMeltTemp : what melting temperature we want; tries to 
+        get as close as the other constraints allow
+
         MakeSpacerFile: if true, makes a file with spacers bewteen, see 
         ConcatTo1607FAnd3520RAndSave
 
@@ -569,14 +535,34 @@ def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
 
         CheckAfterChoosing: If true, checks that the primer returned is still
         OK (ie: no kmer-overlaps with the plasmid) after we return
+
+        MaxPlasmidAlignment: maximum idt alignment score between a valid
+        overhanging primer and the plasmid. If none, defaults to the kmer size
+    
+        kwargs: passed to GetBestOverhangs
     """
     # determine the best overhang (low self-dimerization, close to desired
     # melting temperature)
-    inf = GetBestOverhangs(inputFile,desiredPrimerLen,desiredMeltTemp)
+    inf = GetBestOverhangs(inputFile,desiredPrimerLen,desiredMeltTemp,
+                           **kwargs)
     # get the actual best primers
-    primers = inf.BestPrimers
+    PrimersRaw = inf.BestPrimers
+    if (MaxPlasmidAlignment is None):
+        MaxPlasmidAlignment = inf.AlphabetK
+    # XXX TODO check global alignments with entire plasmid.
+    """
     InStr = EmbossUtil.ReadSimpleSeqFile(inputFile)
-    # XXX check global alignments with entire plasmid.
+    AlignFunc = AlignUtil.GetIdtAlignments
+    print("acqui...")
+    print("n={:d}".format(len(PrimersRaw)))
+    Scores = [AlignFunc(InStr,str(p),one_alignment_only=True)
+              for p in PrimersRaw]
+    print("alla...")
+    primers = [p for i,p in enumerate(PrimerRaw)
+               if Scores[i] <= MaxPlasmidAlignment]
+    """
+    primers = PrimersRaw
+    # POST: all overhangs align poorly with the plasmid. Yay!
     bestPrimer = ChooseFunc(primers)
     # re-calculate the alignment and temperature, in case we did something
     # funky
@@ -594,6 +580,7 @@ def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
         ConcatTo1607FAnd3520RAndSave(idtStr,baseDir,addSpacer=True,
                                      addDbcoAndBio=True,
                                      Name=Name)
+    return inf,bestPrimer
 
 def ChooseFirstWithout3PrimeGC(primers):
     mList = [p for p in primers if (p[-1].upper()) not in ["G","C"]]

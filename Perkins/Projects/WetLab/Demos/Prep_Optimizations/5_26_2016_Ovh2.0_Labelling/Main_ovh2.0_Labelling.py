@@ -111,7 +111,9 @@ def run():
     # N/10 (meaning 10% efficiency), then the mean distance increases by
     # sqrt(10)~3
     LowerEfficiency= MeanDistNano*np.sqrt(1/efficiency)
-    LowerBoundDist = 2.5*DNASizeNanoMeters
+    # N*L0 should be totally sufficient: DNA at site A must reach all the way
+    # to site B (tether is complemtary region)
+    LowerBoundDist = 1.5*DNASizeNanoMeters
     UpperBoundDist = 8*DNASizeNanoMeters
     plt.loglog(LoadConcentrationNgPerUl,LowerEfficiency,
                'm.-',linewidth=3,
@@ -195,16 +197,40 @@ def run():
     "Diffusion of Isolated DNA Molecules: Dependence on Length and Topology."
     PNAS, 2006
     """
-    DiffusionCoeffMetersSquaredPerSec = 2e-12
+    DiffusionCoeffMetersSquaredPerSec = 3*(1e-6)**2
     # 1mm to 100mm
-    DistancesMeters = np.logspace(-4,-3)
+    DistancesMeters = np.logspace(-5,-3)
     # use 2-D diffusion equation, worst-case
     TimeToDiffuse = lambda D,r : (r**2)/(4*D)
     TimesSeconds = TimeToDiffuse(DiffusionCoeffMetersSquaredPerSec,
                                  DistancesMeters)
     TimesHours = TimesSeconds/3600
+    # write down the common surface depositions we use
+    # 100uL deposition
+    VolumeDepoLiters = 40e-6
+    VolumeDepositions = [20e-6,40e-6]
+    LabelDepositions = ["Mica","AFM"]
+    # write down the depositions names, volumes (uL) and radii (m)
+    # used, below, to plot
+    Depositions = [["Mica",10e-6,9.5e-3/2],
+                   ["AFM",80e-6,13e-3/2]]
+    PlottingData = []
+    for name,VolumeDepoLiters,RadiusMeters in Depositions:
+        VolumeDepoMetersCubed = VolumeDepoLiters/1000
+        # determine the effective average height of the bubble
+        SurfaceAreaMetersSquared = np.pi * RadiusMeters**2
+        HeightMeters = VolumeDepoMetersCubed/SurfaceAreaMetersSquared
+        HeightMicrons = HeightMeters*1e6
+        TimeDiffuseSecondsAFM = TimeToDiffuse(DiffusionCoeffMetersSquaredPerSec,
+                                              HeightMeters)
+        TimeDiffuseHoursAFM = TimeDiffuseSecondsAFM/3600
+        Label = "{:s} Diffusion Time for {:d}uL deposition ~ {:.1f}hrs".\
+                format(name,int(VolumeDepoLiters*1e6),TimeDiffuseHoursAFM)
+        PlottingData.append([Label,HeightMicrons,TimeDiffuseHoursAFM])
     fig = pPlotUtil.figure()
     plt.plot(DistancesMeters*1e6,TimesHours)
+    for Label,Height,Time in PlottingData:
+        plt.plot(Height,Time,'ro',label=Label)
     pPlotUtil.lazyLabel("Distance (um)","Time to diffuse (hours)",\
         "DNA can't diffuse more than 0.5mm in a reasonable amount of time")
     pPlotUtil.savefig(fig,"DiffusionTimes.png")

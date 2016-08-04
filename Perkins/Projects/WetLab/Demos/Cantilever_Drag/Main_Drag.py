@@ -56,7 +56,8 @@ def run():
         # See:
         # omega.albany.edu:8008/calc3/vector-functions-dir/dna-solution-m2h.html
         Cantilever(Name="DNA",
-                   Length=650e-9,
+                   # 0.338nm/np for 201 bp
+                   Length=0.338e-9*201,
                    Radius=1e-9,
                    Height=2e-9)
         ]

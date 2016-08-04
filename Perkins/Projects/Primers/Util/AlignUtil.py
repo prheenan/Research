@@ -56,7 +56,6 @@ def GetIdtAlignments(Seq1,Seq2,MismatchScore=IDT_DEF_GAP_MIS,
     """
     Gets the alignment scores for two sequences,using (by default) IDTs
     
-
     Args:
         Seq1,Seq2: align Seq1 to Seq2
         Other args: see GetBestSelfDimerAlignmentScore
@@ -118,7 +117,8 @@ def AlignSelfWithReverseComplement(Seq,MismatchScore=IDT_DEF_GAP_MIS,
                            GapOpen=GapOpen,GapExtend=GapExtend,**kwargs)
 
 def AlignmentScores(Seq1,Seq2,MatchScore=DEF_MATCH,MismatchScore=DEF_MISMATCH,
-                    GapOpen=DEF_GAP,GapExtend=DEF_GAP,SanitizeSeqs=True):
+                    GapOpen=DEF_GAP,GapExtend=DEF_GAP,SanitizeSeqs=True,
+                    **kwargs):
     """
     Align two sequences locally. 
 
@@ -133,6 +133,7 @@ def AlignmentScores(Seq1,Seq2,MatchScore=DEF_MATCH,MismatchScore=DEF_MISMATCH,
         GapOpen : Amount to add per gap Open. Usually <0
         GapExtend: Amount to add per gap extension (given open). Usually <0
         SanitizeSeqs: If true, calls the sanitize function on input strings
+        **kwargs: passed to localms
     Returns:
         List of possible Alignments as AlignmentInfo objects
     """
@@ -142,7 +143,7 @@ def AlignmentScores(Seq1,Seq2,MatchScore=DEF_MATCH,MismatchScore=DEF_MISMATCH,
         Seq1 = Sanitize(Seq1)
         Seq2 = Sanitize(Seq2)
     alignments =  pairwise2.align.localms(Seq1,Seq2,MatchScore,MismatchScore,
-                                          GapOpen,GapExtend)
+                                          GapOpen,GapExtend,**kwargs)
     if (len(alignments) == 0):
         # no alignment possible
         return [AlignmentInfo(Seq1,Seq2,None,None,None)]

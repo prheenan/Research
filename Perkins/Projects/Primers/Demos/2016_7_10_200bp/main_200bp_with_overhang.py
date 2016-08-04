@@ -23,7 +23,6 @@ def CreatePrimer(Plasmid,ProductLength,
     TotalPrimerLength = PrimerLength +LengthOtherPrimer +OverhangLength
     # get the remaining length
     DistanceBetweenPrimers = ProductLength-TotalPrimerLength
-    print(DistanceBetweenPrimers)
     # figure out where *this* primer should start
     if (OtherIsReverse):
         # get the start
@@ -54,6 +53,11 @@ def CreatePrimer(Plasmid,ProductLength,
                                ForwardSequence=PrimerForwardSeq,
                                ReverseSequence=PrimerReverseSeq,
                                addSpacer=True,addDbcoAndBio=False)
+    OverhangUtil.ConcatAndSave(Overhang,baseDir="./",Name=Name,
+                               ForwardSequence=PrimerForwardSeq,
+                               ReverseSequence=PrimerReverseSeq,
+                               addSpacer=True,addDbcoAndBio=True)
+
 
 def run():
     """
@@ -80,6 +84,10 @@ def run():
     CreatePrimer(Plasmid,ProductLength,
                  SliceOther=SliceForward,OtherIsReverse=False,PrimerLength=22,
                  Overhang=Overhang,Name="ovh2.7_200nt")
+    CreatePrimer(Plasmid,ProductLength,
+                 SliceOther=SliceReverse,OtherIsReverse=True,PrimerLength=22,
+                 Overhang=Overhang,Name="ovh2.5_200nt")
+
 
 if __name__ == "__main__":
     run()
