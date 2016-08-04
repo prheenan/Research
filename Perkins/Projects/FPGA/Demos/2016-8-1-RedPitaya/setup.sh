@@ -20,16 +20,24 @@ sudo ln -s /usr/bin/make /usr/bin/gmake
 sudo apt-get install qemu qemu-user qemu-user-static
 # download schroot for emulation
 sudo apt-get install schroot
+# download emulation help
+sudo apt-get install lib32ncurses5
+sudo apt-get install lib32z1
+sudo apt-get install libc6-i386
+sudo apt-get install lib32stdc++6
+sudo apt-get install curl
+sudo apt-get install libcurl4-gnutls-dev
 # remember where we ran this from, to get the config file
 Dir=`pwd`
 # build in the home directory
 cd ~
-git clone https://github.com/RedPitaya/RedPitaya.git 
+sudo git clone https://github.com/RedPitaya/RedPitaya.git 
 cd RedPitaya
+. settings.sh
 # get ready for downloads
 sudo mkdir -p dl
 export DL=$PWD/dl
 # download everything, change the permissions how we want them to be changed
-wget http://downloads.redpitaya.com/ubuntu/redpitaya_ubuntu-latest.tar.gz
+sudo wget http://downloads.redpitaya.com/ubuntu/redpitaya_ubuntu-latest.tar.gz
 sudo chown root:root redpitaya_ubuntu-latest.tar.gz
 sudo chmod 664 redpitaya_ubuntu-latest.tar.gz

@@ -9,6 +9,8 @@ cd ~
 cd RedPitaya
 # source the settings
 . settings.sh
+# assume the downloads folder exists
+export DL=$PWD/dl
 # create the 'magic' configuration file we want
 MagicFile="/etc/schroot/chroot.d/red-pitaya-ubuntu.conf"
 ConfigFile="schroot_config"
@@ -16,7 +18,7 @@ sudo cp $Dir/$ConfigFile $MagicFile
 # create the configuraton file we need in this directory 
 # build everything
 sudo make -f Makefile.x86
-schroot -c red-pitaya-ubuntu <<- EOL_CHROOT
-make -f Makefile.arm CROSS_COMPILE="" REVISION=$GIT_COMMIT_SHORT
-EOL_CHROOT
-sudo make zip
+#schroot -c red-pitaya-ubuntu <<- EOL_CHROOT
+#make -f Makefile.arm CROSS_COMPILE="" REVISION=$GIT_COMMIT_SHORT
+#EOL_CHROOT
+#sudo make zip
