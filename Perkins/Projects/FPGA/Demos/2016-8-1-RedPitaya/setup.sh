@@ -18,7 +18,7 @@ sudo ln -s /usr/bin/make /usr/bin/gmake
 # for ARM emulation, if we are using a x86 CPU, we need the fllowing package
 # (Correspondence with Iztok.Jeras@redpitaya.com, prh, 8/3/2016)
 sudo apt-get install qemu qemu-user qemu-user-static
-# download schroot
+# download schroot for emulation
 sudo apt-get install schroot
 # remember where we ran this from, to get the config file
 Dir=`pwd`
