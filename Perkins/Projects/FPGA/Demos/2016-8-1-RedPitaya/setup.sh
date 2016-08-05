@@ -4,10 +4,11 @@
 
 #  Currently, the configuration file assumes that 'patrick' and 'perkins'
 # are the two users needed. If you have a different username, add it to the
-# config file "schroot_config" to the relevant csv-separated lists
+# config file "schroot_config" to the relevant csv-separated lists. Same logic
+# applies for the .tar.gz 'file' variable (really a path)
+# in schroot_config; if you use a different path, then change it
 
-# note: you *must* have downloaded Xilinx (the 'setup' script can be run to 
-# create the directories needed
+# note: you *must* have downloaded Xilinx 
 # generic dependencies
 sudo apt-get install make curl xz-utils
 # U-Boot build dependencies
@@ -20,11 +21,7 @@ sudo ln -s /usr/bin/make /usr/bin/gmake
 sudo apt-get install qemu qemu-user qemu-user-static
 # download schroot for emulation
 sudo apt-get install schroot
-# download emulation help
-sudo apt-get install lib32ncurses5
-sudo apt-get install lib32z1
-sudo apt-get install libc6-i386
-sudo apt-get install lib32stdc++6
+# curl tools needeed for compilation
 sudo apt-get install curl
 sudo apt-get install libcurl4-gnutls-dev
 # remember where we ran this from, to get the config file
