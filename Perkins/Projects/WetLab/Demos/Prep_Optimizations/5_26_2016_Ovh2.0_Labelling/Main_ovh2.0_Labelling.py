@@ -263,7 +263,7 @@ def run():
                 label="200bp, R={:d}nm".format(int(CircularSequenceRadiusCirc)),
                                              linewidth=2)
     LongerConstructBp = (3520-1607)+12+2
-    LongerConstructNm = NanometersPerBp*LongerConstructBp
+      LongerConstructNm = NanometersPerBp*LongerConstructBp
     LongerConstructRadiusNm = \
         int(CircularRadiusOfGyration(Lp_nm,LongerConstructNm))
     plt.axvline(LongerConstructBp,color='r',linestyle='-',

@@ -593,4 +593,21 @@ def ChooseFirstPrimerMatching(primers,ToMatch,
     toRet = mList[0]
     toRet.seq = AddTo5Prime + toRet.seq + AddTo3Prime
     return toRet
+
+def ChooseOverhangByBothEnds(primers):
+    Size = 5
+    MaxGCThreePrime = 1
+    MinGCFivePrime = 3
+    # Get the GC Content
+    CountFunc = lambda x: x.upper().count("C") + x.upper().count("G")
+    ThreePrimeEnds = [CountFunc(p[-Size:]) for p in primers]
+    FivePrimeEnds = [CountFunc(p[:Size]) for p in primers]
+    # get only those meeting the recquirements
+    mList = [p for i,p in enumerate(primers) if
+             (ThreePrimeEnds[i] <= MaxGCThreePrime)
+             and
+             (FivePrimeEnds[i] >= MinGCFivePrime)]
+    return mList[0]
+
+             
         
