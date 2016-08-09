@@ -609,5 +609,80 @@ def ChooseOverhangByBothEnds(primers):
              (FivePrimeEnds[i] >= MinGCFivePrime)]
     return mList[0]
 
+
+def GetPrimersWithoutOverhangs(Plasmid,ProductLength,
+                               SliceOther,OtherIsReverse,PrimerLength,Overhang,
+                               Name):
+    """
+    Args: see CreatePrimer
+    """
+    # overhang is length + abasic site
+    OverhangLength = len(Overhang) + 1
+    # need zero based to get thi
+    StartOther = SliceOther.start
+    EndOther = SliceOther.stop
+    LengthOtherPrimer = abs(EndOther-StartOther)+1
+    TotalPrimerLength = PrimerLength +LengthOtherPrimer +OverhangLength
+    # get the remaining length
+    DistanceBetweenPrimers = ProductLength-TotalPrimerLength
+    # figure out where *this* primer should start
+    if (OtherIsReverse):
+        # get the start
+        StartOfOther = min(StartOther,EndOther)
+        Start = StartOfOther - DistanceBetweenPrimers - PrimerLength
+    else:
+        Start = StartOther+ LengthOtherPrimer + DistanceBetweenPrimers
+    End = Start + PrimerLength
+    PrimerSlice = slice(Start,End,1)
+    # determine which slice goes where
+    if (OtherIsReverse):
+        ReverseSlice = SliceOther
+        ForwardSlice = PrimerSlice
+    else:
+        ReverseSlice = PrimerSlice
+        ForwardSlice = SliceOther
+    # cool, now just print out the sequences
+    PrimerForwardSeq = Plasmid[ForwardSlice]
+    PrimerReverseSeq = KmerUtil.ReverseComplement(Plasmid[ReverseSlice])
+    return PrimerForwardSeq,PrimerReverseSeq,ForwardSlice,ReverseSlice
+
+def CreatePrimer(Plasmid,ProductLength,
+                 SliceOther,OtherIsReverse,PrimerLength,Overhang,Name):
+    """
+    Given an overhang and desired length, creates the primers needed
+    (full 'suite': normal, overhang, etc
+
+    Args:
+        Plamid: full plasmid we want
+        Product Length: how long the product should be, *including* the 
+        abasic site and overhang
+        SliceOther: indices for the other primer
+        OtherIsReverse: if true, other is reverse complement of its slice
+        Otherwise, this primer is reverse complement
+        PrimerLength: how long the (new) primer should be, without the 
+        overhang
+        Overhang: sequence of the overhang
+        Name: base name for this construct
+    """
+    PrimerForwardSeq,PrimerReverseSeq,ForwardSlice,ReverseSlice = \
+        GetPrimersWithoutOverhangs(Plasmid,ProductLength,
+                                   SliceOther,OtherIsReverse,PrimerLength,
+                                   Overhang,Name)
+    # for without the overhang, dont add *anything*
+    ConcatAndSave("",baseDir="./",Name=Name,
+                  ForwardSequence=PrimerForwardSeq,
+                  ReverseSequence=PrimerReverseSeq,
+                  addSpacer=False,addDbcoAndBio=False)
+    # add the overhangs and labels
+    ConcatAndSave(Overhang,baseDir="./",Name=Name,
+                  ForwardSequence=PrimerForwardSeq,
+                  ReverseSequence=PrimerReverseSeq,
+                  addSpacer=True,addDbcoAndBio=False)
+    ConcatAndSave(Overhang,baseDir="./",Name=Name,
+                  ForwardSequence=PrimerForwardSeq,
+                  ReverseSequence=PrimerReverseSeq,
+                  addSpacer=True,addDbcoAndBio=True)
+
+
              
         

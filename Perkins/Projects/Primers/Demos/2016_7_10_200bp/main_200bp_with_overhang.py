@@ -10,62 +10,8 @@ sys.path.append(baseDir)
 inputFile = baseDir + "PlasmidData/Plasmids/mp13_plasmid_plasmid_seq.txt"
 import Util.EmbossUtil as EmbossUtil
 import Util.KmerUtil as KmerUtil
-import PrimerDesign.OverHangingPrimers.OverhangGeneration as OverhangUtil
-
-def GetPrimersWithoutOverhangs(Plasmid,ProductLength,
-                               SliceOther,OtherIsReverse,PrimerLength,Overhang,
-                               Name):
-    # overhang is length + abasic site
-    OverhangLength = len(Overhang) + 1
-    # need zero based to get thi
-    StartOther = SliceOther.start
-    EndOther = SliceOther.stop
-    LengthOtherPrimer = abs(EndOther-StartOther)+1
-    TotalPrimerLength = PrimerLength +LengthOtherPrimer +OverhangLength
-    # get the remaining length
-    DistanceBetweenPrimers = ProductLength-TotalPrimerLength
-    # figure out where *this* primer should start
-    if (OtherIsReverse):
-        # get the start
-        StartOfOther = min(StartOther,EndOther)
-        Start = StartOfOther - DistanceBetweenPrimers - PrimerLength
-    else:
-        Start = StartOther+ LengthOtherPrimer + DistanceBetweenPrimers
-    End = Start + PrimerLength
-    PrimerSlice = slice(Start,End,1)
-    # determine which slice goes where
-    if (OtherIsReverse):
-        ReverseSlice = SliceOther
-        ForwardSlice = PrimerSlice
-    else:
-        ReverseSlice = PrimerSlice
-        ForwardSlice = SliceOther
-    # cool, now just print out the sequences
-    PrimerForwardSeq = Plasmid[ForwardSlice]
-    PrimerReverseSeq = KmerUtil.ReverseComplement(Plasmid[ReverseSlice])
-    return PrimerForwardSeq,PrimerReverseSeq,ForwardSlice,ReverseSlice
-
-def CreatePrimer(Plasmid,ProductLength,
-                 SliceOther,OtherIsReverse,PrimerLength,Overhang,Name):
-    PrimerForwardSeq,PrimerReverseSeq,ForwardSlice,ReverseSlice = \
-        GetPrimersWithoutOverhangs(Plasmid,ProductLength,
-                                   SliceOther,OtherIsReverse,PrimerLength,
-                                   Overhang,Name)
-    print("Forward Slice is: {:s}".format(ForwardSlice))
-    print("Reverse Slice is: {:s}".format(ReverseSlice))
-    # for without the overhang, dont add *anything*
-    OverhangUtil.ConcatAndSave("",baseDir="./",Name=Name,
-                               ForwardSequence=PrimerForwardSeq,
-                               ReverseSequence=PrimerReverseSeq,
-                               addSpacer=False,addDbcoAndBio=False)
-    OverhangUtil.ConcatAndSave(Overhang,baseDir="./",Name=Name,
-                               ForwardSequence=PrimerForwardSeq,
-                               ReverseSequence=PrimerReverseSeq,
-                               addSpacer=True,addDbcoAndBio=False)
-    OverhangUtil.ConcatAndSave(Overhang,baseDir="./",Name=Name,
-                               ForwardSequence=PrimerForwardSeq,
-                               ReverseSequence=PrimerReverseSeq,
-                               addSpacer=True,addDbcoAndBio=True)
+from PrimerDesign.OverHangingPrimers.OverhangGeneration \
+    import CreatePrimer
 
 
 def run():
