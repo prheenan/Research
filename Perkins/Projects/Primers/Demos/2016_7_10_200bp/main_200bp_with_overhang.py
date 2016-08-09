@@ -12,9 +12,9 @@ import Util.EmbossUtil as EmbossUtil
 import Util.KmerUtil as KmerUtil
 import PrimerDesign.OverHangingPrimers.OverhangGeneration as OverhangUtil
 
-
-def CreatePrimer(Plasmid,ProductLength,
-                 SliceOther,OtherIsReverse,PrimerLength,Overhang,Name):
+def GetPrimersWithoutOverhangs(Plasmid,ProductLength,
+                               SliceOther,OtherIsReverse,PrimerLength,Overhang,
+                               Name):
     # overhang is length + abasic site
     OverhangLength = len(Overhang) + 1
     # need zero based to get thi
@@ -43,6 +43,14 @@ def CreatePrimer(Plasmid,ProductLength,
     # cool, now just print out the sequences
     PrimerForwardSeq = Plasmid[ForwardSlice]
     PrimerReverseSeq = KmerUtil.ReverseComplement(Plasmid[ReverseSlice])
+    return PrimerForwardSeq,PrimerReverseSeq,ForwardSlice,ReverseSlice
+
+def CreatePrimer(Plasmid,ProductLength,
+                 SliceOther,OtherIsReverse,PrimerLength,Overhang,Name):
+    PrimerForwardSeq,PrimerReverseSeq,ForwardSlice,ReverseSlice = \
+        GetPrimersWithoutOverhangs(Plasmid,ProductLength,
+                                   SliceOther,OtherIsReverse,PrimerLength,
+                                   Overhang,Name)
     print("Forward Slice is: {:s}".format(ForwardSlice))
     print("Reverse Slice is: {:s}".format(ReverseSlice))
     # for without the overhang, dont add *anything*
