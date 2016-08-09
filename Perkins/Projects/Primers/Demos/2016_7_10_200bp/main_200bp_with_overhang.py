@@ -12,6 +12,7 @@ import Util.EmbossUtil as EmbossUtil
 import Util.KmerUtil as KmerUtil
 import PrimerDesign.OverHangingPrimers.OverhangGeneration as OverhangUtil
 
+
 def CreatePrimer(Plasmid,ProductLength,
                  SliceOther,OtherIsReverse,PrimerLength,Overhang,Name):
     # overhang is length + abasic site
