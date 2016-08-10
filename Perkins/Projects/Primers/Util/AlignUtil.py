@@ -1,3 +1,4 @@
+import Bio.SubsMat.MatrixInfo
 from Bio import pairwise2
 import KmerUtil
 from Bio.pairwise2 import format_alignment
@@ -7,6 +8,14 @@ DEF_MISMATCH = -1
 DEF_GAP = -1
  # idt evidentally uses -2 for opening a gap or mismatching
 IDT_DEF_GAP_MIS = -2
+# Parameters from European Bioinformatics Institute,
+# http://www.ebi.ac.uk/Tools/psa/emboss_needle/nucleotide.html
+# 2016-8-9:
+EBI_GAP_OPEN = -10
+EBI_GAP_EXTEND = -0.5
+# see : http://osdir.com/ml/science.biology.emboss/2005-12/msg00028.html
+EBI_MISMATCH = -4
+EBI_MATCH = 5
 
 class AlignmentInfo:
     def __init__(self,s1,s2,score,startIdx,endIdx):
@@ -54,10 +63,10 @@ def GetIdtAlignments(Seq1,Seq2,MismatchScore=IDT_DEF_GAP_MIS,
                      GapOpen=IDT_DEF_GAP_MIS,
                      GapExtend=0,**kwargs):
     """
-    Gets the alignment scores for two sequences,using (by default) IDTs
+    Gets the alignment scores for two sequences,using (by default) IDT's params,
     
     Args:
-        Seq1,Seq2: align Seq1 to Seq2
+        Seq1,Seq2: align Seq1 to Seq2. *both should be DNA
         Other args: see GetBestSelfDimerAlignmentScore
     Returns:
         maximum over all alignment scores
@@ -65,6 +74,23 @@ def GetIdtAlignments(Seq1,Seq2,MismatchScore=IDT_DEF_GAP_MIS,
     alignments = AlignmentScores(Seq1,Seq2,MismatchScore=MismatchScore,
                                  GapOpen=GapOpen,GapExtend=GapExtend,**kwargs)
     return alignments
+
+
+def GetEbiAlignments(Seq1,Seq2):
+    """
+    Gets the EBI (European Bioinformatics Institute) local alignment on DNA,
+    using defaults listed on 
+    ebi.ac.uk/Tools/psa/emboss_needle/help/index-nucleotide.html
+    
+    Args: 
+        See AlignmentScores: both are DNA
+    """
+    return AlignmentScores(Seq1,Seq2,
+                           MatchScore=EBI_MATCH,
+                           MismatchScore=EBI_MISMATCH,
+                           GapOpen=EBI_GAP_OPEN,
+                           GapExtend=EBI_GAP_EXTEND)
+
 
 def GetBestSelfDimerAlignmentScore(Seq,MismatchScore=IDT_DEF_GAP_MIS,
                                    GapOpen=IDT_DEF_GAP_MIS,
@@ -115,6 +141,7 @@ def AlignSelfWithReverseComplement(Seq,MismatchScore=IDT_DEF_GAP_MIS,
     ReverseComp = KmerUtil.ReverseComplement(Seq)
     return AlignmentScores(Seq,ReverseComp,MismatchScore=MismatchScore,
                            GapOpen=GapOpen,GapExtend=GapExtend,**kwargs)
+                           
 
 def AlignmentScores(Seq1,Seq2,MatchScore=DEF_MATCH,MismatchScore=DEF_MISMATCH,
                     GapOpen=DEF_GAP,GapExtend=DEF_GAP,SanitizeSeqs=True,

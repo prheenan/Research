@@ -10,6 +10,11 @@ import EmbossUtil
 DataSubDir = "PlasmidData"
 CircularSubDir = "CircularDNA"
 
+# 1607F and 3520R slice (not: they are both on the plasmid, from the 5' to
+# 3' of the *plasmid*)
+SliceReverse = slice(3490,3520,1)
+SliceForward = slice(1606,1606+27,1)
+
 def Get1607FAnd3520R(base):
     """
     Args:

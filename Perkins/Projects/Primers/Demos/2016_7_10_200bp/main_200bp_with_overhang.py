@@ -9,6 +9,7 @@ baseDir = "../../"
 sys.path.append(baseDir)
 inputFile = baseDir + "PlasmidData/Plasmids/mp13_plasmid_plasmid_seq.txt"
 import Util.EmbossUtil as EmbossUtil
+import Util.CommonPrimerUtil as CommonPrimerUtil
 import Util.KmerUtil as KmerUtil
 from PrimerDesign.OverHangingPrimers.OverhangGeneration \
     import CreatePrimer
@@ -24,8 +25,8 @@ def run():
     """
     Plasmid = EmbossUtil.ReadSimpleSeqFile(inputFile)
     Overhang = KmerUtil.ReverseComplement("TAGGACCACTCT")
-    SliceReverse = slice(3490,3520,1)
-    SliceForward = slice(1606,1606+27,1)
+    SliceReverse = CommonPrimerUtil.SliceReverse
+    SliceForward = CommonPrimerUtil.SliceForward
     ProductLength = 201
     """
     The following shows 200 should work well, *including* the nick/abasic site

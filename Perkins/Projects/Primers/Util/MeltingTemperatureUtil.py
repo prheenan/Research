@@ -22,11 +22,13 @@ DEF_NN_TABLE = NEAREST_N_ALLAWI_LUCIA_1997
 DEF_SALT=SALT_MONO_Owczarzy_2004 
 # default concentrations
 DEF_K =0
-DEF_dNTPs=0.8
+# 10uL of 8mM (2mM per dNTP) in 100uL, converted to uM
+DEF_dNTPs=10*2/100 * 1000
 # all concentrations below in mM, unless otherwise noted
 DEF_NA=50
 DEF_TRIS=0
-Mg=DEF_Mg=0
+# 6uL of 25mM in 100uL
+DEF_Mg=(6*25/100)
 # oligo concentrations, in nM
 DEF_OLIGO = 250
 DEF_OTHER = 0
