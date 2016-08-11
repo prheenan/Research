@@ -235,7 +235,8 @@ def GetSequenceAndSortByMeltingTemp(Sequences,DesiredMelt):
     # now get all the scores
     meltingTemps = []
     for i,s in enumerate(Sequences):
-        s.temp = MeltingUtil.GetIdtMeltingTemperature(str(s))
+        temperature = MeltingUtil.GetIdtMeltingTemperatureForPCR(str(s))
+        s.SetTemperature(temperature)
         meltingTemps.append(s.temp)
     # sort by the mean...
     sortIdx = np.argsort( (np.array(meltingTemps)-DesiredMelt)**2 )
@@ -567,7 +568,8 @@ def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
     # re-calculate the alignment and temperature, in case we did something
     # funky
     bestPrimer.SetAlignment()
-    bestPrimer.SetTemperature()
+    PrimerTemp = MeltingUtil.GetIdtMeltingTemperatureForPCR(str(bestPrimer))
+    bestPrimer.SetTemperature(PrimerTemp)
     print("We Picked (Primer, Melting temperature, Alignment)")
     print(bestPrimer.seq,bestPrimer.temp,bestPrimer.SelfAlignment)
     if(CheckAfterChoosing):
@@ -595,6 +597,15 @@ def ChooseFirstPrimerMatching(primers,ToMatch,
     return toRet
 
 def ChooseOverhangByBothEnds(primers):
+    """
+    Chooses overhang to have a GC-rich 5' end, and a GC-poor 3' end 
+    (endsureing 
+
+    Args:
+        primers: list of primers.
+    Returns:
+        first primer in list matching what we want 
+    """
     Size = 5
     MaxGCThreePrime = 1
     MinGCFivePrime = 3
@@ -616,8 +627,11 @@ def GetPrimersWithoutOverhangs(Plasmid,ProductLength,
     """
     Args: see CreatePrimer
     """
-    # overhang is length + abasic site
-    OverhangLength = len(Overhang) + 1
+    # overhang is length + *both* abasic site (the overhangs will anneal like
+    # 5'                      -- overhang -- abasic -- Forward - 3'
+    # 3' -- Reverse -- abasic -- overhang -- 5'
+    # so the abasic sites add an effective TWO base pairs
+    OverhangLength = len(Overhang) + 2
     # need zero based to get thi
     StartOther = SliceOther.start
     EndOther = SliceOther.stop

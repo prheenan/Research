@@ -8,20 +8,38 @@ import sys
 sys.path.append("../../")
 import Util.MeltingTemperatureUtil as melt
 
-def run():
+def TestMeltingTemperatures(Seqs,TemperatureFunction,abstol=1.4,rtol=0,
+                            **kwargs):
     """
-    <Description>
+    Seq: list of tuples, like <Sequence, expected temperature in celcius>
 
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
+    TemperatureFunction: function which takes in a sequence, gives back
+    a temperature
+     
+    abstol: asbolute  temperature in celcius. Defaults to idt's specified error
+    for DNA/DNA hybridization, see http://www.idtdna.com/calc/analyzer
+
+    rtol: relative tolerance, defaults to zero
+    kwargs: passed directly to assert_allclose
     """
+    for i,(seq,expected)  in enumerate(Seqs):
+        actual = TemperatureFunction(seq)
+        print(i,seq,expected,actual,abs(expected-actual))
+        np.testing.assert_allclose(actual,expected,atol=abstol,
+                                   rtol=rtol,**kwargs)
+        
+def TestPCRMeltingTemperatures():
+    idt = lambda x: melt.GetIdtMeltingTemperatureForPCR(x)
+    SeqsExpected = [
+        # 2016-8-10
+        ["TAC GAC TAG GCC TAG AT",55],
+        ["CTC CTA GTC GTA CGA CTA",56.1],
+        ["AAG TGG TCC TAG TCG TAC",57.1],
+        ]
+    TestMeltingTemperatures(SeqsExpected,idt)
+        
+def TestBufferMeltingTemperatures():
     idt = lambda x : melt.GetIdtMeltingTemperature(x)
-    # idt's specified error for DNA/DNA hybridization, see
-    # http://www.idtdna.com/calc/analyzer
-    abstol = 1.4
     # tested these sequences on IDTs website, with date as given
     seqsExpected = [
         # 12-mers (3/16/2016)
@@ -41,11 +59,24 @@ def run():
         ["CGG ACC ACT CTG",43.1],
         ["GGC AGA GTG GTC CTA",49.8],
         ["GAC AGA GTG GTC CTA",45.8],
-        ["CGG GAC CAC TCT",44.9]
+        ["CGG GAC CAC TCT",44.9],
+        ["CGG GAC CAC TCT",44.9],
     ]
-    for seq,expected  in seqsExpected:
-        actual = idt(seq)
-        np.testing.assert_allclose(actual,expected,rtol=0,atol=abstol) 
+    TestMeltingTemperatures(seqsExpected,idt)
 
+
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    TestBufferMeltingTemperatures()
+    TestPCRMeltingTemperatures()
+    
 if __name__ == "__main__":
     run()

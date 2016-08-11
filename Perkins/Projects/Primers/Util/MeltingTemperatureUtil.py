@@ -19,16 +19,16 @@ SALT_DIV_Owczarzy_2008 = 7
 
 # tables
 DEF_NN_TABLE = NEAREST_N_ALLAWI_LUCIA_1997
-DEF_SALT=SALT_MONO_Owczarzy_2004 
+DEF_SALT=SALT_DIV_Owczarzy_2008
 # default concentrations
 DEF_K =0
 # 10uL of 8mM (2mM per dNTP) in 100uL, converted to uM
-DEF_dNTPs=10*2/100 * 1000
+DEF_dNTPs=10*2/100 
 # all concentrations below in mM, unless otherwise noted
 DEF_NA=50
 DEF_TRIS=0
 # 6uL of 25mM in 100uL
-DEF_Mg=(6*25/100)
+DEF_Mg=(6*25/100.)
 # oligo concentrations, in nM
 DEF_OLIGO = 250
 DEF_OTHER = 0
@@ -87,7 +87,7 @@ idtTable = NEAREST_N_ALLAWI_LUCIA_1997
 # Divalent cation correction 	+/- 0.5C (Owczarzy '08) 
 # Triphosphate correction 	        +/- 0.0C (Owczarzy '08)
 # Note: monovalent must be done post; see GetIdtMeltingTemp, Below
-idtSaltCorr = SALT_MONO_Owczarzy_2004
+idtSaltCorr = SALT_DIV_Owczarzy_2008
 # default oligo concentration, nM
 idtDnaOligoConc = 250
 """ ibid:
@@ -105,6 +105,25 @@ IdtParams = MeltingParams(Na=50, # 50mM by default
                           nn_table=idtTable,
                           dnac1=idtDnaOligoConc,
                           dnac2=idtOtherConc,selfcomp=True)
+
+"""
+2016/8/10: see http://www.idtdna.com/calc/analyzer,
+select 'qPCR' parameter set
+"""
+
+IdtParams_qPCR = MeltingParams(Na=50,       
+                               Tris=0,
+                               # 0.8 mM, for *all* dTNPS
+                               dNTPs=0.8,   
+                               # mM
+                               Mg=3,        
+                               K=0,
+                               saltcorr=idtSaltCorr,
+                               nn_table=idtTable,
+                                # 200nM
+                               dnac1=200,  
+                               dnac2=200/6, # see ibid
+                               selfcomp=True)
     
 # all possible salt corrrections
 # from
@@ -154,25 +173,45 @@ def GetAllMeltingTemperatures(sequence,**kwargs):
             toRet[i,j] = MeltingTemperature(sequence,saltcorr=saltcorr,
                                             nn_table=nn_table,**kwargs)
     return toRet
-    
 
-def GetIdtMeltingTemperature(sequence,**kwargs):
+def GetCorrectedIdtTemperature(Sequence,Params):
     """
-    Gets the melting temperature of a primer, using what IDT does
+    Given a DNA sequence and parameters, uses salt correction tables to
+    correct it, using IDTs table (see CorrectIdtMeltingTemp)
+
+    Args:
+        Sequence: string to use. DNA
+        Params: for correction and getting hte melting temperature. instance
+        of MeltingParams
+    Returns:
+        float, corrected temperature
+    """
+    mParamDict = Params.__dict__
+    melting_temp = MeltingTemperature(Sequence,**mParamDict)
+    return melting_temp
+
+
+def GetIdtMeltingTemperature(sequence):
+    """
+    Gets the melting temperature of a primer, using what IDT does. This s 
+    essentially just DNA in a (weak) salt solution
     
     Args:
         sequence: see GetAllMeltingTemperatures
-        **kwargs: see GetAllMeltingTemperatures
     Returns:
         the melting temperature, according to IDT
     """
-    mParams = IdtParams
-    mParamDict = mParams.__dict__
-    rawMelt = MeltingTemperature(sequence,**mParamDict)
-    # idt actually uses two different corrections, one for monovalent
-    # See discussion at top, also:
-    #biopython.org/DIST/docs/api/Bio.SeqUtils.MeltingTemp-module.html#Tm_NN
-    # and bottom of http://www.idtdna.com/calc/analyzer
-    corr = mt.salt_correction(method=SALT_DIV_Owczarzy_2008,
-                              seq=sequence,**mParams.concdict())
-    return 1/(1/(rawMelt)+corr)
+    return GetCorrectedIdtTemperature(sequence,IdtParams)
+
+def GetIdtMeltingTemperatureForPCR(sequence):
+    """
+    Gets the melting temperature of a primer, using what IDT does
+    for its 'PCR' parameter set
+    
+    Args:
+        sequence: see GetAllMeltingTemperatures
+    Returns:
+        the melting temperature, according to IDT
+    """
+    return GetCorrectedIdtTemperature(sequence,IdtParams_qPCR)
+
