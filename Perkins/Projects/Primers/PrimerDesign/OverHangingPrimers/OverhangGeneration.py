@@ -513,7 +513,7 @@ def ConcatTo1607FAnd3520RAndSave(mPrimer,baseDir,Name,addSpacer=False,
     
 def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
                             Name,MakeSpacerFile=False,MakeLabelledFile=False,
-                            CheckAfterChoosing=True,
+                            CheckAfterChoosing=True,MakePrimerFile=True,
                             ChooseFunc = lambda x: x[0],
                             MaxPlasmidAlignment=None,**kwargs):
     """
@@ -575,7 +575,8 @@ def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
     if(CheckAfterChoosing):
         KmerUtil.AssertPrimersValid(inf.Plasmid,inf.AlphabetK,[bestPrimer])
     idtStr = str(bestPrimer)
-    ConcatTo1607FAnd3520RAndSave(idtStr,baseDir,addSpacer=False,Name=Name)
+    if MakePrimerFile:
+        ConcatTo1607FAnd3520RAndSave(idtStr,baseDir,addSpacer=False,Name=Name)
     if (MakeSpacerFile):
         ConcatTo1607FAnd3520RAndSave(idtStr,baseDir,addSpacer=True,Name=Name)
     if (MakeLabelledFile):
