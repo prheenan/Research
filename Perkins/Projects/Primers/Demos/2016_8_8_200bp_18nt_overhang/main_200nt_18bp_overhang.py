@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+sys.path.append("../../../../../../")
 sys.path.append("../../")
 import PrimerDesign.OverHangingPrimers.OverhangGeneration as Overhang
 import Util.GraphUtil as GraphUtil
@@ -13,7 +14,14 @@ import Util.MeltingTemperatureUtil as MeltUtil
 import Util.AlignUtil as AlignUtil
 import Util.CommonPrimerUtil as CommonPrimerUtil
 import networkx as nx
+import GeneralUtil.python.CheckpointUtilities as pCheckUtil
 
+def GetPossiblePrimers(InFile,OverhangLen,KmerLen,BaseDir,Choose,SliceForward,
+                       ProductLength):
+    inf,best= Overhang.CreateOverhangsFor1607F(InFile,BaseDir,OverhangLen,40,
+                                               "",ChooseFunc=Choose,
+                                               fudge=3,MakePrimerFile=False)
+    return inf,best
 
 def run():
     """
@@ -26,10 +34,13 @@ def run():
     Choose = lambda x : x[0]
     SliceForward = CommonPrimerUtil.SliceForward
     ProductLength = 200
-    inf,best = Overhang.CreateOverhangsFor1607F(InFile,BaseDir,OverhangLen,40,
-                                                "Tmp",ChooseFunc=Choose,
-                                                fudge=3,MakePrimerFile=False)
+    kwargs = dict(InFile=InFile,OverhangLen=OverhangLen,KmerLen=KmerLen,
+                  BaseDir=BaseDir,Choose=Choose,SliceForward=SliceForward,
+                  ProductLength=ProductLength)
+    inf,best = pCheckUtil.getCheckpoint("Primers.pkl",
+                                        GetPossiblePrimers,True,**kwargs)
     Plasmid = inf.Plasmid
+    # next, determine all the alignments
     # determine the minimum expected number of bases we would have in common
     NumBases = 4
     # this is how many bases we would expect to have in common for
@@ -37,6 +48,7 @@ def run():
     NumBaseBits = np.ceil(np.log(len(Plasmid))/np.log(NumBases))
     # get the first (best) alignment score
     AlignmentScore = AlignUtil.GetEbiAlignments(str(best),Plasmid)[0].score
+
     print("Overhang has a plasmid alignment score of {:.2f}/{:.2f}/{:.2f}".\
           format(AlignmentScore,5*OverhangLen,NumBaseBits*5))
     PrimerLenAmplify = 28

@@ -56,6 +56,15 @@ class OverhangPrimerInfo:
             BestPrimers: list of primer objects
         """
         self.BestPrimers=BestPrimers
+    def SetAllPossiblePrimers(self,PossiblePrimers):
+        """
+        Sets the instance variable AllPrimers to the possible primers, 
+        by virtue of having no k-mers in common with the plasmid
+        
+        Args:
+            PossiblePrimers: list of all primers
+        """
+        self.AllPrimers = PossiblePrimers
     
 def GetValidKmers(plasmidStr,kmer):
     """
@@ -583,6 +592,7 @@ def CreateOverhangsFor1607F(inputFile,baseDir,desiredPrimerLen,desiredMeltTemp,
         ConcatTo1607FAnd3520RAndSave(idtStr,baseDir,addSpacer=True,
                                      addDbcoAndBio=True,
                                      Name=Name)
+    inf.SetAllPossiblePrimers(primers)
     return inf,bestPrimer
 
 def ChooseFirstWithout3PrimeGC(primers):
@@ -620,6 +630,21 @@ def ChooseOverhangByBothEnds(primers):
              and
              (FivePrimeEnds[i] >= MinGCFivePrime)]
     return mList[0]
+
+def GetBestAlignmentsWithPlasmid(inf):
+    """
+    Given return of CreateOverhangsFor1607F, gets *all* the alignment scores
+    associated with the plasmid
+    """
+    scores = []
+    Plasmid = inf.Plasmid
+    n = len(inf.AllPrimers)
+    for primer in inf.AllPrimers:
+        score = AlignUtil.GetEbiAlignments(primer,Plasmid,
+                                           one_alignment_only=True)[0].score
+        scores.append(score)
+        print("{:d}/{:d}:{:s} {:.1f}".format(i,n,str(primer),score))
+    return scores
 
 
 def GetPrimersWithoutOverhangs(Plasmid,ProductLength,

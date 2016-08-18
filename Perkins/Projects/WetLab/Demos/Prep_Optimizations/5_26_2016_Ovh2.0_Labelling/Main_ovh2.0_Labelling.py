@@ -205,15 +205,10 @@ def run():
     TimesSeconds = TimeToDiffuse(DiffusionCoeffMetersSquaredPerSec,
                                  DistancesMeters)
     TimesHours = TimesSeconds/3600
-    # write down the common surface depositions we use
-    # 100uL deposition
-    VolumeDepoLiters = 40e-6
-    VolumeDepositions = [20e-6,40e-6]
-    LabelDepositions = ["Mica","AFM"]
     # write down the depositions names, volumes (uL) and radii (m)
     # used, below, to plot
     Depositions = [["Mica",10e-6,9.5e-3/2],
-                   ["AFM",80e-6,13e-3/2]]
+                   ["AFM",60e-6,13e-3/2]]
     PlottingData = []
     for name,VolumeDepoLiters,RadiusMeters in Depositions:
         VolumeDepoMetersCubed = VolumeDepoLiters/1000
@@ -263,7 +258,7 @@ def run():
                 label="200bp, R={:d}nm".format(int(CircularSequenceRadiusCirc)),
                                              linewidth=2)
     LongerConstructBp = (3520-1607)+12+2
-      LongerConstructNm = NanometersPerBp*LongerConstructBp
+    LongerConstructNm = NanometersPerBp*LongerConstructBp
     LongerConstructRadiusNm = \
         int(CircularRadiusOfGyration(Lp_nm,LongerConstructNm))
     plt.axvline(LongerConstructBp,color='r',linestyle='-',

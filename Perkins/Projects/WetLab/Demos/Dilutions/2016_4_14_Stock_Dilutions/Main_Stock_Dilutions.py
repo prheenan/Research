@@ -12,11 +12,11 @@ def run():
     """
     Utility file: we write down our stocks and desired concentrations
     """
-    stocks = np.array([133])
+    stocks = np.array([54,5,2])
     # what volume are the stocks, in uL
-    volumes = np.array([135])
+    volumes = np.array([2,10,10])
     # what the post-dilution concenration is, ng/uL
-    DesiredConc = 100
+    DesiredConc = np.array([5,2,0.5])
     obj = DilutionUtil.PrintDilutions(stocks,volumes,DesiredConc)
 
 if __name__ == "__main__":

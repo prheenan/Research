@@ -76,7 +76,7 @@ def GetIdtAlignments(Seq1,Seq2,MismatchScore=IDT_DEF_GAP_MIS,
     return alignments
 
 
-def GetEbiAlignments(Seq1,Seq2):
+def GetEbiAlignments(Seq1,Seq2,**kwargs):
     """
     Gets the EBI (European Bioinformatics Institute) local alignment on DNA,
     using defaults listed on 
@@ -84,6 +84,7 @@ def GetEbiAlignments(Seq1,Seq2):
     
     Args: 
         See AlignmentScores: both are DNA
+        **kwargs: passed to AlignmentScores
     """
     return AlignmentScores(Seq1,Seq2,
                            MatchScore=EBI_MATCH,
