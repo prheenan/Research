@@ -145,12 +145,16 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
     LegendOpts = dict(loc='upper left',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
     # need to correct (ie: flip and such)
-    FilterX = ExpectedContourLengthNm/50
-    NFilterPoints = int(np.ceil(MaxX/FilterX))
-    PlotOptions = dict(LegendOpts=LegendOpts,
-                       NFilterPoints=NFilterPoints)
+    FilterSpatialResolution = ExpectedContourLength/50
     for i,(ApproachCorrected,RetractCorrected) in enumerate(Corrected):
         SepNear,FitObj = ListOfSepAndFits[i]
+        # get the number of filter points needed for whatever spatial resolution
+        # we want
+        DeltaX = max(SepNear)/SepNear.size
+        NFilterPoints = int(np.ceil(FilterSpatialResolution/DeltaX))
+        PlotOptions = dict(LegendOpts=LegendOpts,
+                           NFilterPoints=NFilterPoints)
+        
         # get the WLC prediction
         WLC_Pred = FitObj.Predict(SepNear)
         # convert to plotting units
@@ -229,12 +233,15 @@ def run():
     Force = True
     ForceWLC = True
     MetersPerBp = 0.338e-9
-    Bp = 201
+    # primer locations, plus overhang, plus abasic sites
+    Bp = (3520-1607+1)+12+2
     ExpectedContourLength =MetersPerBp*Bp
     NoTriggerDistance = ExpectedContourLength/5
-    WlcParams = dict(MaxContourLength=ExpectedContourLength*1.1,
+    GridResolution = 150
+    # maximum contour length should take into account linkers, tip (~30nm)
+    WlcParams = dict(MaxContourLength=ExpectedContourLength*1.1+30e-9,
                      NoTriggerDistance=NoTriggerDistance,
-                     Ns=100)
+                     Ns=GridResolution)
     # read in all the data
     for i,Name in enumerate(FullNames):
         FileName = Name[len(DataDir):]
