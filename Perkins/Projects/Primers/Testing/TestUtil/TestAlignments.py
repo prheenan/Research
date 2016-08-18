@@ -8,6 +8,21 @@ sys.path.append("../../")
 
 import Util.AlignUtil as AlignUtil
 
+def TestEbiScores():
+    """
+    Test local alignment scores to mp13 plasmid using EBI DNAFUll matrix.
+
+    See: ebi.ac.uk/Tools/psa/emboss_water/nucleotide.html
+    """
+    
+    SeqAndScores = [
+        # Following obtained 2016-8-18, using 'Matrix: EDNAFULL'
+        ['GTACGACTAGGACCACTT',38.0],
+        ['TACGACTAGGACCACTCT',40.5],
+        ['GTACGACTAGGACCACTC',38],
+        ['GTAGGCCTAGGACCACTT',38.5]
+    ]
+    
 def TestReverseComplementAlignments():
     """
     Using data fed into http://www.idtdna.com/calc/analyzer,

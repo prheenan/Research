@@ -20,8 +20,10 @@ def GetPossiblePrimers(InFile,OverhangLen,KmerLen,BaseDir,Choose,SliceForward,
                        ProductLength):
     inf,best= Overhang.CreateOverhangsFor1607F(InFile,BaseDir,OverhangLen,40,
                                                "",ChooseFunc=Choose,
-                                               fudge=3,MakePrimerFile=False)
-    return inf,best
+                                               fudge=3,MakePrimerFile=False,
+                                               kmerLen=KmerLen)
+    scores = Overhang.GetBestAlignmentsWithPlasmid(inf)
+    return inf,best,scores
 
 def run():
     """
@@ -37,8 +39,8 @@ def run():
     kwargs = dict(InFile=InFile,OverhangLen=OverhangLen,KmerLen=KmerLen,
                   BaseDir=BaseDir,Choose=Choose,SliceForward=SliceForward,
                   ProductLength=ProductLength)
-    inf,best = pCheckUtil.getCheckpoint("Primers.pkl",
-                                        GetPossiblePrimers,True,**kwargs)
+    inf,best,scores = pCheckUtil.getCheckpoint("Primers.pkl",
+                                               GetPossiblePrimers,True,**kwargs)
     Plasmid = inf.Plasmid
     # next, determine all the alignments
     # determine the minimum expected number of bases we would have in common
