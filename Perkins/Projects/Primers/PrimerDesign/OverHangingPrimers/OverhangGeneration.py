@@ -638,7 +638,6 @@ def GetBestAlignmentsWithPlasmid(inf):
     """
     scores = []
     Plasmid = inf.Plasmid
-    n = len(inf.AllPrimers)
     for i,primer in enumerate(inf.AllPrimers):
         score = AlignUtil.GetEbiAlignments(str(primer),Plasmid,
                                            one_alignment_only=True)[0].score

@@ -43,8 +43,10 @@ def run():
                                                GetPossiblePrimers,False,
                                                **kwargs)
     BestScore = np.inf
-    BestNum = 0 
-    for i,primer in inf.AllPrimers:
+    BestNum = 0
+    n = len(inf.AllPrimers)
+    for i,primer in enumerate(inf.AllPrimers):
+        score = scores[i]
         BestNum = i if (score < BestScore) else BestNum
         BestScore = min(BestScore,score)
         print("{:d}/{:d}:{:s} score={:.1f}, Tm={:.1f}, (Best: {:.1f}, #{:d})".\

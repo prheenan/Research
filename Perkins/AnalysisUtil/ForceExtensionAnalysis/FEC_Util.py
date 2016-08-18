@@ -391,7 +391,7 @@ def FilteredGradient(Retract,NFilterFraction):
     return FilteredForceGradient
 
 def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
-                                               NoTriggerDistance=150e-9):
+                                               NoTriggerDistance):
     """
     Returns where we are past the notrigger distance, where we are outlying
     and where we are normal, according to a filtered first derivative
@@ -465,7 +465,8 @@ def GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,Retract):
     Points = GetWLCPoints(NoAdhesionMask,Outliers,Normal,Retract)
     return DNAWlcPoints(*Points,TimeSepForceObj=Retract)
     
-def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.1,**kwargs):
+def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.1,
+                       NoTriggerDistance=150e-9,**kwargs):
     """
     Given a (pre-processed, so properly 'flipped' and zeroed) WLC, gets the 
     approximate region for WLC fitting (ie: roughly the first curve up to 
@@ -473,6 +474,8 @@ def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.1,**kwargs):
 
     Args:
         RetractOriginal: pre-processed retract
+        NoTriggerDistance: how long before we allow the first WLC to happen;
+        points before this distance are ignored
         **kwargs: passed to GetFECPullingRegionAlreadyFlipped
     Returns:
         TimeSepForce Object of the portion of the curve to fit 
@@ -483,9 +486,11 @@ def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.1,**kwargs):
     RetractZeroSeparation = Retract.Separation
     FilteredForceGradient = FilteredGradient(Retract,
                                              NFilterFraction=NFilterFraction)
+    AdhesionArgs = dict(Retract=Retract,
+                        NoTriggerDistance=NoTriggerDistance,
+                        NFilterFraction=NFilterFraction)
     NoAdhesionMask,Outliers,NormalPoints = \
-        GetGradientOutliersAndNormalsAfterAdhesion(Retract,
-                                                   NFilterFraction)
+        GetGradientOutliersAndNormalsAfterAdhesion(**AdhesionArgs)
     Idx = GetWlcIdxObject(NoAdhesionMask,Outliers,NormalPoints,Retract)
     FirstOutlier = Idx.FirstWLC.start
     EndOfFirstWLC = Idx.FirstWLC.end

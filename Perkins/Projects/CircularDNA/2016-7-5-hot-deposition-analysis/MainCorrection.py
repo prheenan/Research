@@ -52,12 +52,15 @@ def GetCorrectedFECs(DataArray):
         Corrected.append([ApproachCorrected,RetractCorrected])
     return Corrected
 
-def GetWLCFits(CorrectedApproachAndRetracts):
+def GetWLCFits(CorrectedApproachAndRetracts,NoTriggerDistance,
+               MaxContourLength,Ns=30):
     """
     Gets the WLC Fits and associated FirObjects
 
     Args:
-        see GetTransitionForces
+        see GetTransitionForces, except...
+        MaxContourLength: maximum contour length to allow
+        Ns: number of points on the Lp vs L0 grid (fitting grid)
     Returns:
         List of tuples, each tuple is like <Separation for WLC fit, FitObject>
     """
@@ -65,15 +68,16 @@ def GetWLCFits(CorrectedApproachAndRetracts):
     ToRet = []
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the zerod and corrected Force extension curve
-        WLCFitFEC = FEC_Util.GetRegionForWLCFit(Retract)
+        WLCFitFEC = FEC_Util.\
+            GetRegionForWLCFit(Retract,NoTriggerDistance=NoTriggerDistance)
         # actually fit the WLC
-        Bounds = GetBoundsDict(**dict(Lp=[0.3e-9,80e-9],
-                                      L0=[120e-9,700e-9],
+        Bounds = GetBoundsDict(**dict(Lp=[30e-9,60e-9],
+                                      L0=[0,MaxContourLength],
                                       K0=[1000e-12,1400e-12],
                                       kbT=[0,np.inf]))
         SepNear = WLCFitFEC.Separation
         ForceNear = WLCFitFEC.Force
-        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=150,
+        Fit = BoundedWlcFit(SepNear,ForceNear,VaryL0=True,VaryLp=True,Ns=Ns,
                             Bounds=Bounds)
         Pred = Fit.Predict(SepNear)
         ToRet.append([SepNear,Fit])
@@ -81,7 +85,8 @@ def GetWLCFits(CorrectedApproachAndRetracts):
         print(Fit)
     return ToRet
 
-def GetTransitionForces(CorrectedApproachAndRetracts):
+def GetTransitionForces(CorrectedApproachAndRetracts,
+                        NoTriggerDistance):
     """
     Gets the transition forces associated with the WLC curves. We assume they
     make it all the way through the first and second WLC portions (ie: 
@@ -90,6 +95,8 @@ def GetTransitionForces(CorrectedApproachAndRetracts):
     Args:
         CorrectedApproachAndRetracts: List of tuples, each of which is 
         <Corrected Approach, Corrected Retract> TimeSepForce Objectd
+      
+        NoTriggerDistance: distance where adhesions may be happening; ignore
     Returns:
         List, each element is (hopefully) the transition region
     """
@@ -98,9 +105,11 @@ def GetTransitionForces(CorrectedApproachAndRetracts):
         # get the (entire) zerod and corrected retract curve
         RetractPull =  FEC_Util.GetFECPullingRegionAlreadyFlipped(Retract)
         # get the normal points and outliers
+        AdhesionArgs = dict(Retract=RetractPull,
+                            NFilterFraction=0.05,
+                            NoTriggerDistance=NoTriggerDistance)
         NoAdhesionMask,Outliers,Normal =  FEC_Util.\
-                GetGradientOutliersAndNormalsAfterAdhesion(RetractPull,
-                                                           NFilterFraction=0.05)
+                GetGradientOutliersAndNormalsAfterAdhesion(**AdhesionArgs)
         # get the WLC index object
         Idx = FEC_Util.GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,
                                        RetractPull)
@@ -116,7 +125,7 @@ def GetTransitionForces(CorrectedApproachAndRetracts):
         ToRet.append(TransitionForce)
     return ToRet
 
-def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
+def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
     """
     Plots the WLC fits into ./Out/
 
@@ -124,17 +133,22 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         Corrected: list of tuples, each of which is an approach/corrected
         TimeSepForce Object 
         ListOfSepAndFits: see output of GetWLCFits
-       
         TransitionForces: see output of GetTransitionForces
+        ExpectedContourLength: expected contour length, in meters
     """
-    # get all of the transition forces 
+    # get all of the transition forces
+    ExpectedContourLengthNm = ExpectedContourLength * 1e9
     # POST: have everything corrected, fit...
+    MaxX = ExpectedContourLengthNm*3
     set_y_lim = lambda :  plt.ylim([-40,150])
-    set_x_lim = lambda :  plt.xlim([-10,1500])
+    set_x_lim = lambda :  plt.xlim([-10,MaxX])
     LegendOpts = dict(loc='upper left',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
     # need to correct (ie: flip and such)
-    PlotOptions = dict(LegendOpts=LegendOpts)
+    FilterX = ExpectedContourLengthNm/50
+    NFilterPoints = int(np.ceil(MaxX/FilterX))
+    PlotOptions = dict(LegendOpts=LegendOpts,
+                       NFilterPoints=NFilterPoints)
     for i,(ApproachCorrected,RetractCorrected) in enumerate(Corrected):
         SepNear,FitObj = ListOfSepAndFits[i]
         # get the WLC prediction
@@ -155,9 +169,11 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0),loc="upper left")
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=3,color='g',linestyle='--',
-                 label="WLC: L0={:.1f}nm".format(L0*1e9))
+                 label="WLC: L0={:4.1f}nm".format(L0*1e9))
         pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1),loc="upper left")
-        plt.axvline(650,label=r'L$_{\rm Contour}$=650nm',
+        ContourLengthLabel = r"""L$_0$={:4.1f}nm""".\
+                             format(ExpectedContourLengthNm)
+        plt.axvline(ExpectedContourLengthNm,label=ContourLengthLabel,
                     linewidth=5.0,color='g',linestyle='--')
         plt.axhline(65,label=r'F$_{\rm Overstretch}$=65pN',
                     linewidth=5.0,color='k',linestyle='-')
@@ -167,7 +183,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces):
         plt.close(fig)
 
 
-def ScatterPlot(TransitionForces,ListOfSepAndFits):
+def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
     """
     Makes a scatter plot of the contour length and transition forces
 
@@ -183,18 +199,22 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits):
         L0,Lp,_,_ = FitObj.Params()
         L0Arr.append(L0)
         TxArr.append(MedianTx)
-    # go ahead an throw out ridiculous data from the WLC
+    # go ahead an throw out ridiculous data from the WLC, where transition
+    # force is less  than 10pN (XXX fix...)
     GoodIdx = np.where(np.array(TxArr) > 10e-12)
+    # normalize the contour length to L0
+    L0Arr = np.array(L0Arr)/ExpectedContourLength
     # convert to useful units
-    L0Plot = np.array(L0Arr)[GoodIdx] * 1e9
+    L0Plot = np.array(L0Arr)[GoodIdx]
     TxPlot =  np.array(TxArr)[GoodIdx] * 1e12
     fig = pPlotUtil.figure()
     plt.plot(L0Plot,TxPlot,'ro',label="Data")
     plt.axhspan(62,68,color='r',label="62 to 68 pN",alpha=0.3)
-    plt.axvspan(620,680,color='b',label="620 to 680 nm",alpha=0.3)
+    plt.axvspan(0.9,1.1,color='b',
+                label=r"(0.9,1.1) $\times$ L$_0$",alpha=0.3)
     fudge = 1.05
     plt.xlim([0,max(L0Plot)*fudge])
-    plt.ylim([0,max(TxPlot)*fudge])
+    plt.ylim([0,max(max(TxPlot)*fudge,68)])
     pPlotUtil.lazyLabel("Contour Length, L0 (nm)","Overstretching Force (pN)",
                         "Not all DNA is pulled perpendicularly",frameon=True)
     pPlotUtil.savefig(fig,"./Out/ScatterL0vsFTx.png")
@@ -206,8 +226,15 @@ def run():
     DataDir ="./Data/"
     FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     DataArray = []
-    Force = False
-    ForceWLC = False
+    Force = True
+    ForceWLC = True
+    MetersPerBp = 0.338e-9
+    Bp = 201
+    ExpectedContourLength =MetersPerBp*Bp
+    NoTriggerDistance = ExpectedContourLength/5
+    WlcParams = dict(MaxContourLength=ExpectedContourLength*1.1,
+                     NoTriggerDistance=NoTriggerDistance,
+                     Ns=100)
     # read in all the data
     for i,Name in enumerate(FullNames):
         FileName = Name[len(DataDir):]
@@ -220,14 +247,20 @@ def run():
                                         Force,DataArray)
     # Get all the WLC (initial)
     ListOfSepAndFits= pCheckUtil.getCheckpoint("./Cache/WLC.pkl",GetWLCFits,
-                                               ForceWLC,Corrected)
+                                               (ForceWLC or Force),
+                                               Corrected,**WlcParams)
+    TransitionArgs = dict(NoTriggerDistance=NoTriggerDistance,
+                          CorrectedApproachAndRetracts=Corrected)
     TransitionForces= pCheckUtil.getCheckpoint("./Cache/Transition.pkl",
                                                GetTransitionForces,
-                                               ForceWLC,Corrected)
+                                               (ForceWLC or Force),
+                                               **TransitionArgs)
     # make a scatter plot of L0 and the overstrectching force. 
-    ScatterPlot(TransitionForces,ListOfSepAndFits)
+    ScatterPlot(TransitionForces,ListOfSepAndFits,
+                ExpectedContourLength=ExpectedContourLength)
     # plot the WLC fits
-    PlotFits(Corrected,ListOfSepAndFits,TransitionForces)
+    PlotFits(Corrected,ListOfSepAndFits,TransitionForces,
+             ExpectedContourLength=ExpectedContourLength)
 
 if __name__ == "__main__":
     run()
