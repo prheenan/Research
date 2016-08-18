@@ -40,7 +40,16 @@ def run():
                   BaseDir=BaseDir,Choose=Choose,SliceForward=SliceForward,
                   ProductLength=ProductLength)
     inf,best,scores = pCheckUtil.getCheckpoint("Primers.pkl",
-                                               GetPossiblePrimers,True,**kwargs)
+                                               GetPossiblePrimers,False,
+                                               **kwargs)
+    BestScore = np.inf
+    BestNum = 0 
+    for i,primer in inf.AllPrimers:
+        BestNum = i if (score < BestScore) else BestNum
+        BestScore = min(BestScore,score)
+        print("{:d}/{:d}:{:s} score={:.1f}, Tm={:.1f}, (Best: {:.1f}, #{:d})".\
+              format(i,n,str(primer),score,primer.temp,
+                     BestScore,BestNum))
     Plasmid = inf.Plasmid
     # next, determine all the alignments
     # determine the minimum expected number of bases we would have in common
@@ -53,7 +62,7 @@ def run():
 
     print("Overhang has a plasmid alignment score of {:.2f}/{:.2f}/{:.2f}".\
           format(AlignmentScore,5*OverhangLen,NumBaseBits*5))
-    PrimerLenAmplify = 28
+    PrimerLenAmplify = 30
     Name = "200nt_{:d}o_fwd".format(OverhangLen)
     Overhang.CreatePrimer(Plasmid,ProductLength,SliceOther=SliceForward,
                           OtherIsReverse=False,PrimerLength=PrimerLenAmplify,

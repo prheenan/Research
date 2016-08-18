@@ -639,17 +639,10 @@ def GetBestAlignmentsWithPlasmid(inf):
     scores = []
     Plasmid = inf.Plasmid
     n = len(inf.AllPrimers)
-    BestScore = np.inf
-    BestNum = 0 
     for i,primer in enumerate(inf.AllPrimers):
         score = AlignUtil.GetEbiAlignments(str(primer),Plasmid,
                                            one_alignment_only=True)[0].score
-        BestNum = i if (score < BestScore) else BestNum
-        BestScore = min(BestScore,score)
         scores.append(score)
-        print("{:d}/{:d}:{:s} score={:.1f}, Tm={:.1f}, (Best: {:.1f}, #{:d})".\
-              format(i,n,str(primer),score,primer.temp,
-                     BestScore,BestNum))
     return scores
 
 
