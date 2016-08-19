@@ -71,7 +71,7 @@ def GetWLCFits(CorrectedApproachAndRetracts,NoTriggerDistance,
         WLCFitFEC = FEC_Util.\
             GetRegionForWLCFit(Retract,NoTriggerDistance=NoTriggerDistance)
         # actually fit the WLC
-        Bounds = GetBoundsDict(**dict(Lp=[20e-9,60e-9],
+        Bounds = GetBoundsDict(**dict(Lp=[0.3e-9,60e-9],
                                       L0=[0,MaxContourLength],
                                       K0=[1000e-12,1400e-12],
                                       kbT=[0,np.inf]))
@@ -159,8 +159,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         DeltaX = max(SepNear)/SepNear.size
         NFilterPoints = int(np.ceil(FilterSpatialResolution/DeltaX))
         PlotOptions = dict(LegendOpts=LegendOpts,
-                           NFilterPoints=NFilterPoints,
-        )
+                           NFilterPoints=NFilterPoints)
         # get the wlc predition a little 'out' 
         PlotFudge = 1.3
         MaxSep = max(SepNear)
@@ -250,15 +249,15 @@ def run():
     DataDir ="./Data/"
     FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     DataArray = []
-    Force = False
-    ForceWLC = False
-    ForceTransition = False
+    Force = True
+    ForceWLC = True
+    ForceTransition = True
     MetersPerBp = 0.338e-9
     # primer locations, plus overhang, plus abasic sites
     Bp = 201
     ExpectedContourLength =MetersPerBp*Bp
-    NoTriggerDistance = ExpectedContourLength/2
-    GridResolution = 100
+    NoTriggerDistance = ExpectedContourLength/4
+    GridResolution = 200
     # maximum contour length should take into account linkers, tip (~30nm)
     WlcParams = dict(MaxContourLength=ExpectedContourLength*1.1+30e-9,
                      NoTriggerDistance=NoTriggerDistance,
