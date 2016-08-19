@@ -146,9 +146,9 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
     ExpectedContourLengthNm = ExpectedContourLength * 1e9
     # POST: have everything corrected, fit...
     MaxX = ExpectedContourLengthNm*3
-    set_y_lim = lambda :  plt.ylim([-40,150])
+    set_y_lim = lambda :  plt.ylim([-50,170])
     set_x_lim = lambda :  plt.xlim([-10,MaxX])
-    LegendOpts = dict(loc='upper left',frameon=True)
+    LegendOpts = dict(loc='upper right',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
     # need to correct (ie: flip and such)
     FilterSpatialResolution = 0.5e-9
@@ -156,15 +156,9 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         SepNear,FitObj = ListOfSepAndFits[i]
         # get the number of filter points needed for whatever spatial resolution
         # we want
-        DeltaX = max(SepNear)/SepNear.size
-        NFilterPoints = int(np.ceil(FilterSpatialResolution/DeltaX))
+        NFilterPoints = 75
         PlotOptions = dict(LegendOpts=LegendOpts,
                            NFilterPoints=NFilterPoints)
-        # get the wlc predition a little 'out' 
-        PlotFudge = 1.3
-        MaxSep = max(SepNear)
-        SepPredExtrapolate = np.linspace(MaxSep,MaxSep*PlotFudge,num=20)
-        WlcPredExtrapolate =  FitObj.Predict(SepPredExtrapolate)
         # get the WLC prediction for the region we fit
         SepPred = np.linspace(0,max(SepNear),num=50)
         WLC_Pred = FitObj.Predict(SepPred)
@@ -181,16 +175,11 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
                                   **PlotOptions)
         set_y_lim()
         set_x_lim()
-        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0),loc="upper left")
+        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0),**LegendOpts)
         plt.plot(WLC_Separation_nm,
                  WLC_Force_pN,linewidth=1.5,color='g',linestyle='-',
                  label="WLC: L0={:4.1f}nm".format(L0*1e9))
-        plt.plot(ToXUnits(SepPredExtrapolate),
-                 ToYUnits(WlcPredExtrapolate),linewidth=3,color='g',
-                 linestyle='--')
-
-
-        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1),loc="upper left")
+        pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1),**LegendOpts)
         ContourLengthLabel = r"""L$_0$={:4.1f}nm""".\
                              format(ExpectedContourLengthNm)
         plt.axvline(ExpectedContourLengthNm,label=ContourLengthLabel,
@@ -199,7 +188,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
                     linewidth=5.0,color='k',linestyle='-')
         plt.axhline(ToYUnits(np.median(TransitionForces[i])),linestyle='--')
         pPlotUtil.legend(**LegendOpts)
-        pPlotUtil.savefig(fig,SaveNameIncremental(2),loc="upper left")
+        pPlotUtil.savefig(fig,SaveNameIncremental(2),**LegendOpts)
         plt.close(fig)
 
 
@@ -225,18 +214,18 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
     # convert to useful units
     L0Plot = np.array(L0Arr)
     TxPlot =  np.array(TxArr) * 1e12
-    fig = pPlotUtil.figure()
+    fig = pPlotUtil.figure(figsize=(12,12))
     plt.subplot(2,2,1)
     plt.plot(L0Plot,TxPlot,'go',label="Data")
     alpha = 0.3
     ColorForce = 'r'
     ColorLength = 'b'
-    plt.axhspan(62,68,color=ColorForce,label=r"$F_{\rm tx, exp}$ $\pm$ 5%",
+    plt.axhspan(62,68,color=ColorForce,label=r"$F_{\rm tx}$ $\pm$ 5%",
                 alpha=alpha)
     L0BoxMin = 0.9
     L0BoxMax = 1.1
     plt.axvspan(L0BoxMin,L0BoxMax,color=ColorLength,
-                label=r"L$_{\rm 0, exp}$ $\pm$ 10%",alpha=alpha)
+                label=r"L$_{\rm 0}$ $\pm$ 10%",alpha=alpha)
     fudge = 1.05
     # make the plot boundaries OK
     MaxX = max(L0BoxMax,max(L0Plot))*fudge
@@ -257,7 +246,7 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
     plt.subplot(2,2,3)
     ContourBins = np.linspace(0,MaxX)
     plt.hist(L0Plot,bins=ContourBins,color=ColorLength,**HistOpts)
-    pPlotUtil.lazyLabel(r"Contour Length, L$_0$ (nm)","Count","")
+    pPlotUtil.lazyLabel(r"$\frac{L_{\rm WLC}}{L_0}$","Count","")
     plt.xlim([0,MaxX])
     pPlotUtil.savefig(fig,"./Out/ScatterL0vsFTx.png")
 
@@ -273,7 +262,7 @@ def run():
     ForceTransition = False
     MetersPerBp = 0.338e-9
     # primer locations, plus overhang, plus abasic sites
-    Bp = 201
+    Bp = 3520-1607+12+3
     ExpectedContourLength =MetersPerBp*Bp
     NoTriggerDistance = ExpectedContourLength/4
     GridResolution = 200
