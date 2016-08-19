@@ -220,26 +220,45 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
         L0Arr.append(L0)
         TxArr.append(MedianTx)
     # go ahead an throw out ridiculous data from the WLC, where transition
-    # force is less  than 10pN (XXX fix...)
-    GoodIdx = np.where(np.array(TxArr) > 10e-12)
     # normalize the contour length to L0
     L0Arr = np.array(L0Arr)/ExpectedContourLength
     # convert to useful units
-    L0Plot = np.array(L0Arr)[GoodIdx]
-    TxPlot =  np.array(TxArr)[GoodIdx] * 1e12
+    L0Plot = np.array(L0Arr)
+    TxPlot =  np.array(TxArr) * 1e12
     fig = pPlotUtil.figure()
-    plt.plot(L0Plot,TxPlot,'ro',label="Data")
-    plt.axhspan(62,68,color='r',label="62 to 68 pN",alpha=0.3)
+    plt.subplot(2,2,1)
+    plt.plot(L0Plot,TxPlot,'go',label="Data")
+    alpha = 0.3
+    ColorForce = 'r'
+    ColorLength = 'b'
+    plt.axhspan(62,68,color=ColorForce,label=r"$F_{\rm tx, exp}$ $\pm$ 5%",
+                alpha=alpha)
     L0BoxMin = 0.9
     L0BoxMax = 1.1
-    plt.axvspan(L0BoxMin,L0BoxMax,color='b',
-                label=r"(0.9,1.1) $\times$ L$_0$",alpha=0.3)
+    plt.axvspan(L0BoxMin,L0BoxMax,color=ColorLength,
+                label=r"L$_{\rm 0, exp}$ $\pm$ 10%",alpha=alpha)
     fudge = 1.05
     # make the plot boundaries OK
-    plt.xlim([0,max(L0BoxMax,max(L0Plot))*fudge])
-    plt.ylim([0,max(max(TxPlot),68)*fudge])
-    pPlotUtil.lazyLabel("Contour Length, L0 (nm)","Overstretching Force (pN)",
-                        "Not all DNA is pulled perpendicularly",frameon=True)
+    MaxX = max(L0BoxMax,max(L0Plot))*fudge
+    MaxY = max(max(TxPlot),68)*fudge
+    plt.xlim([0,MaxX])
+    plt.ylim([0,MaxY])
+    pPlotUtil.lazyLabel("",r"F$_{\rm overstretch}$ (pN)",
+                        "DNA Characterization Histograms ",frameon=True)
+    ## now make 1-D histograms of everything
+    # subplot of histogram of transition force
+    HistOpts = dict(alpha=alpha,linewidth=0)
+    plt.subplot(2,2,2)
+    TransitionForceBins = np.linspace(0,MaxY)
+    plt.hist(TxPlot,bins=TransitionForceBins,orientation="horizontal",
+             color=ColorForce,**HistOpts)
+    pPlotUtil.lazyLabel("Count","","")
+    plt.ylim([0,MaxY])
+    plt.subplot(2,2,3)
+    ContourBins = np.linspace(0,MaxX)
+    plt.hist(L0Plot,bins=ContourBins,color=ColorLength,**HistOpts)
+    pPlotUtil.lazyLabel(r"Contour Length, L$_0$ (nm)","Count","")
+    plt.xlim([0,MaxX])
     pPlotUtil.savefig(fig,"./Out/ScatterL0vsFTx.png")
 
 def run():
@@ -249,9 +268,9 @@ def run():
     DataDir ="./Data/"
     FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     DataArray = []
-    Force = True
-    ForceWLC = True
-    ForceTransition = True
+    Force = False
+    ForceWLC = False
+    ForceTransition = False
     MetersPerBp = 0.338e-9
     # primer locations, plus overhang, plus abasic sites
     Bp = 201
