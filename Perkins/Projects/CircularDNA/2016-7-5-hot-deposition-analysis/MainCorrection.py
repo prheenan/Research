@@ -71,7 +71,7 @@ def GetWLCFits(CorrectedApproachAndRetracts,NoTriggerDistance,
         WLCFitFEC = FEC_Util.\
             GetRegionForWLCFit(Retract,NoTriggerDistance=NoTriggerDistance)
         # actually fit the WLC
-        Bounds = GetBoundsDict(**dict(Lp=[30e-9,60e-9],
+        Bounds = GetBoundsDict(**dict(Lp=[20e-9,60e-9],
                                       L0=[0,MaxContourLength],
                                       K0=[1000e-12,1400e-12],
                                       kbT=[0,np.inf]))
@@ -86,7 +86,8 @@ def GetWLCFits(CorrectedApproachAndRetracts,NoTriggerDistance,
     return ToRet
 
 def GetTransitionForces(CorrectedApproachAndRetracts,
-                        NoTriggerDistance):
+                        NoTriggerDistance,
+                        ContourLength):
     """
     Gets the transition forces associated with the WLC curves. We assume they
     make it all the way through the first and second WLC portions (ie: 
@@ -96,23 +97,28 @@ def GetTransitionForces(CorrectedApproachAndRetracts,
         CorrectedApproachAndRetracts: List of tuples, each of which is 
         <Corrected Approach, Corrected Retract> TimeSepForce Objectd
       
-        NoTriggerDistance: distance where adhesions may be happening; ignore
+        NoTriggerDistance: distance where adhesions may be happening; ignore 
+        before
+        
+        ContourLength: 
     Returns:
         List, each element is (hopefully) the transition region
     """
     ToRet = []
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the (entire) zerod and corrected retract curve
-        RetractPull =  FEC_Util.GetFECPullingRegionAlreadyFlipped(Retract)
+        NFilterPoints = 10
+        Retract =  FEC_Util.\
+            GetFECPullingRegionAlreadyFlipped(Retract,
+                                              NFilterPoints=NFilterPoints)
         # get the normal points and outliers
-        AdhesionArgs = dict(Retract=RetractPull,
-                            NFilterFraction=0.05,
+        AdhesionArgs = dict(Retract=Retract,
+                            NFilterPoints=NFilterPoints,
                             NoTriggerDistance=NoTriggerDistance)
-        NoAdhesionMask,Outliers,Normal =  FEC_Util.\
-                GetGradientOutliersAndNormalsAfterAdhesion(**AdhesionArgs)
+        WlcObj =  FEC_Util.\
+                  GetGradientOutliersAndNormalsAfterAdhesion(**AdhesionArgs)
         # get the WLC index object
-        Idx = FEC_Util.GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,
-                                       RetractPull)
+        Idx = FEC_Util.GetWlcIdxObject(WlcObj,Retract)
         # the transition point is from the end of the first WLC to the start
         # of the secon
         StartIdx = Idx.FirstWLC.end
@@ -145,7 +151,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
     LegendOpts = dict(loc='upper left',frameon=True)
     # note: we want to pre-process (convert to sensible units etc) but no
     # need to correct (ie: flip and such)
-    FilterSpatialResolution = ExpectedContourLength/50
+    FilterSpatialResolution = 0.5e-9
     for i,(ApproachCorrected,RetractCorrected) in enumerate(Corrected):
         SepNear,FitObj = ListOfSepAndFits[i]
         # get the number of filter points needed for whatever spatial resolution
@@ -214,11 +220,14 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
     fig = pPlotUtil.figure()
     plt.plot(L0Plot,TxPlot,'ro',label="Data")
     plt.axhspan(62,68,color='r',label="62 to 68 pN",alpha=0.3)
-    plt.axvspan(0.9,1.1,color='b',
+    L0BoxMin = 0.9
+    L0BoxMax = 1.1
+    plt.axvspan(L0BoxMin,L0BoxMax,color='b',
                 label=r"(0.9,1.1) $\times$ L$_0$",alpha=0.3)
     fudge = 1.05
-    plt.xlim([0,max(L0Plot)*fudge])
-    plt.ylim([0,max(max(TxPlot)*fudge,68)])
+    # make the plot boundaries OK
+    plt.xlim([0,max(L0BoxMax,max(L0Plot))*fudge])
+    plt.ylim([0,max(max(TxPlot),68)*fudge])
     pPlotUtil.lazyLabel("Contour Length, L0 (nm)","Overstretching Force (pN)",
                         "Not all DNA is pulled perpendicularly",frameon=True)
     pPlotUtil.savefig(fig,"./Out/ScatterL0vsFTx.png")
@@ -232,12 +241,13 @@ def run():
     DataArray = []
     Force = True
     ForceWLC = True
+    ForceTransition = True
     MetersPerBp = 0.338e-9
     # primer locations, plus overhang, plus abasic sites
-    Bp = (3520-1607+1)+12+2
+    Bp = 201
     ExpectedContourLength =MetersPerBp*Bp
-    NoTriggerDistance = ExpectedContourLength/5
-    GridResolution = 150
+    NoTriggerDistance = ExpectedContourLength/2
+    GridResolution = 100
     # maximum contour length should take into account linkers, tip (~30nm)
     WlcParams = dict(MaxContourLength=ExpectedContourLength*1.1+30e-9,
                      NoTriggerDistance=NoTriggerDistance,
@@ -254,13 +264,14 @@ def run():
                                         Force,DataArray)
     # Get all the WLC (initial)
     ListOfSepAndFits= pCheckUtil.getCheckpoint("./Cache/WLC.pkl",GetWLCFits,
-                                               (ForceWLC or Force),
+                                               (ForceWLC),
                                                Corrected,**WlcParams)
     TransitionArgs = dict(NoTriggerDistance=NoTriggerDistance,
-                          CorrectedApproachAndRetracts=Corrected)
+                          CorrectedApproachAndRetracts=Corrected,
+                          ContourLength=ExpectedContourLength)
     TransitionForces= pCheckUtil.getCheckpoint("./Cache/Transition.pkl",
                                                GetTransitionForces,
-                                               (ForceWLC or Force),
+                                               ForceTransition,
                                                **TransitionArgs)
     # make a scatter plot of L0 and the overstrectching force. 
     ScatterPlot(TransitionForces,ListOfSepAndFits,

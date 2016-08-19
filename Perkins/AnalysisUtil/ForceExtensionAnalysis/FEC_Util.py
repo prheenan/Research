@@ -23,6 +23,15 @@ class DNAWlcPoints:
         self.SecondWLC = DNAWlcPoints.BoundingIdx(Wlc2Start,Wlc2End)
         self.TimeSepForceObject = TimeSepForceObj
 
+class WlcCharacerizationMask:
+    def __init__(self,NoAdhesion,ForceOutliers,GradientOutliers,
+                 NumFilterPoints):
+        self.NoAdhesion = NoAdhesion
+        self.ForceOutliers = ForceOutliers
+        self.GradientOutliers = GradientOutliers
+        self.NumFilterPoints = NumFilterPoints
+    
+
 def ReadInData(FullName,Limit=None):
     """
     Reads in the PXP waves as TimeSepForce Object (must *only* wave waves with
@@ -357,19 +366,18 @@ def GetAroundTouchoff(Objects,**kwargs):
         ToRet.append(GetFECPullingRegion(o,**kwargs))
     return ToRet
 
-def GetFECPullingRegionAlreadyFlipped(Retract,NFilterFraction=0.02):
+def GetFECPullingRegionAlreadyFlipped(Retract,NFilterPoints):
     """
     Adapter to GetFECPullingRegion, gets the retract after, assuming things
     have already been flipped
     """
     # now, get just the 'post touchoff' region. We *dont* want to flip
     # the sign when doing this
-    SurfaceNPoints = int(np.ceil(Retract.Force.size *NFilterFraction))
     Retract = GetFECPullingRegion(Retract,FlipSign=False,
-                                  FilterPoints=SurfaceNPoints)
+                                  FilterPoints=NFilterPoints)
     return Retract
 
-def FilteredGradient(Retract,NFilterFraction):
+def FilteredGradient(Retract,NFilterPoints):
     """
     Get the filtered gradient of an object
 
@@ -377,20 +385,34 @@ def FilteredGradient(Retract,NFilterFraction):
 
     Args:
        Retract: TimeSepForce Objectr
-       NFilterFraction: see GetGradientOutliersAndNormalsAfterAdhesion
+       NFilterPoints: see GetGradientOutliersAndNormalsAfterAdhesion,
+       except this is an absolute number of points
 
     Returns:
        Array of same size as Retract.force which is the fitlered gradient.
     """
-    N = Retract.Force.size
-    NFilterPoints = int(np.ceil(NFilterFraction*N))
     RetractZeroSeparation = Retract.Separation
     RetractZeroForce = Retract.Force
     FilteredForce = GetFilteredForce(Retract,NFilterPoints)
     FilteredForceGradient = np.gradient(FilteredForce.Force)
     return FilteredForceGradient
 
-def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
+def IsNormal(X):
+    """
+    being less than q75 is a good sign we are normal-ish
+    """
+    q75 = np.percentile(X, [75])
+    return (X < q75)
+
+def IsOutlier(X):
+    """
+    being 1.5 * iqr + q75 is a good sign we are an outlier 
+    """
+    q75, q25 = np.percentile(X, [75 ,25])
+    iqr = q75-q25
+    return X > (q75 + 1.5 * iqr)
+
+def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterPoints,
                                                NoTriggerDistance):
     """
     Returns where we are past the notrigger distance, where we are outlying
@@ -398,7 +420,7 @@ def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
 
     Args:
         Retract: TimeSepForce Object to use, assumed zeroed
-        NFilterFraction: [0,1], how much to use for Savitsky Filtering
+        NFilterPoints: [0,N], how many points to use for filtering
         NoTriggerDistance: how long (in meters) not to trigger
         after reaching the surface
     Returns:
@@ -406,24 +428,19 @@ def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterFraction,
          within q75>
     """
     RetractZeroSeparation = Retract.Separation
-    FilteredForceGradient = FilteredGradient(Retract,NFilterFraction)
+    FilteredForceGradient = FilteredGradient(Retract,NFilterPoints)
     NoAdhesionMask = RetractZeroSeparation > NoTriggerDistance
-    OnlyPositive = np.abs(FilteredForceGradient[NoAdhesionMask])
-    q75, q25 = np.percentile(OnlyPositive, [75 ,25])
-    iqr = q75-q25
-    # q75 + 1.5 * iqr is a good metric for outliers
-    IsOutlier = lambda x: x > q75 + 1.5 * iqr
-    # being less than q75 is a good sign we are normal-ish
-    IsNormal = lambda x:  (x <= q75)
-    # where does the first WLC start?
-    Outliers = np.where(IsOutlier(FilteredForceGradient) & \
-                        NoAdhesionMask)
-    # determine where the normal, non adhesion points are
-    NormalPoints = np.where( IsNormal(FilteredForceGradient) &
-                             NoAdhesionMask )
-    return NoAdhesionMask,Outliers[0],NormalPoints[0]
+    # get a mask where the gradient is positive
+    # where are we an outlier in the gradient *and* the force?
+    ForceOutliers = IsOutlier(Retract.Force) 
+    GradientOutliers = IsOutlier(FilteredForceGradient)
+    Outliers = np.where(GradientOutliers & NoAdhesionMask)
+    ToRet = WlcCharacerizationMask(NoAdhesionMask,
+                                   ForceOutliers,GradientOutliers,
+                                   NFilterPoints)
+    return ToRet
 
-def GetWLCPoints(NoAdhesionMask,Outliers,Normal,Object):
+def GetWLCPoints(WlcObj,Retract):
     """
     Gets the indices associated with (near) the start and end of the WLC
     
@@ -433,39 +450,35 @@ def GetWLCPoints(NoAdhesionMask,Outliers,Normal,Object):
         tuple of <start idx 1, end idx 1, start idx 2, end idx 2> where
         the numbers refer to the WLC region
     """
-    FirstBackToNormalPost = lambda Point: Normal[np.where( (Normal > Point))][0]
-    # first WLC starts with the first outlier
-    FirstWlcStart = Outliers[0]
-    # first WLC ends after we are back to 'normal'
-    EndOfFirstWLC = FirstBackToNormalPost(FirstWlcStart)
-    # now we have a (very rough) guess for the contour length; the next
-    # WLC should be at least 70% later by XXX (literature). Say 50% to be safe
-    NextWLCSizeMin = 1.5
-    Separation = Object.Separation
-    SeparationFirstWLC = Separation[EndOfFirstWLC]
-    MinSeparationSecond = SeparationFirstWLC * NextWLCSizeMin
-    # second WLC starts when we are an outlier again
-    StartOfSecondWLC = Outliers[np.where( (Outliers > EndOfFirstWLC) &
-                                          (Separation[Outliers]
-                                           > MinSeparationSecond))][0]
-    # ends when we ae back to normal 
-    EndOfSecondWLC = FirstBackToNormalPost(StartOfSecondWLC)
-    return FirstWlcStart,EndOfFirstWLC,StartOfSecondWLC,EndOfSecondWLC
+    SeparationZeroed = Retract.Separation - min(Retract.Separation)
+    # the second WLC should end at approximately the maximum force
+    EndOfSecondWLC = np.argmax(Retract.Force)
+    Approximately170PercentOfL0 = SeparationZeroed[EndOfSecondWLC]
+    # second WLC is about 1.7 * the contour length (which is where the
+    # first one is. Here, we under-estimate; should still get a decent
+    # estimate of the contour length
+    ApproxL0Meters = Approximately170PercentOfL0/2
+    ApproxL0Idx = np.argmin(np.abs(SeparationZeroed - ApproxL0Meters))
+    EndOfFirstWLC = ApproxL0Idx
+    # XXX fix these
+    StartOfFirstWLC = EndOfFirstWLC
+    StartOfSecondWLC = EndOfSecondWLC
+    return StartOfFirstWLC,EndOfFirstWLC,StartOfSecondWLC,EndOfSecondWLC
 
-def GetWlcIdxObject(NoAdhesionMask,Outliers,Normal,Retract):
+def GetWlcIdxObject(WlcObj,Retract):
     """
     Returns the DNAWlcPoints associated with the object
 
     Args:
         Retract: the rertract object used
-        others: See output of GetGradientOutliersAndNormalsAfterAdhesion
+        WlcObj: See output of GetGradientOutliersAndNormalsAfterAdhesion
     Returns:
         DNAWlcPoints object associated
     """
-    Points = GetWLCPoints(NoAdhesionMask,Outliers,Normal,Retract)
+    Points = GetWLCPoints(WlcObj,Retract)
     return DNAWlcPoints(*Points,TimeSepForceObj=Retract)
     
-def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.1,
+def GetRegionForWLCFit(RetractOriginal,NFilterPoints=None,
                        NoTriggerDistance=150e-9,**kwargs):
     """
     Given a (pre-processed, so properly 'flipped' and zeroed) WLC, gets the 
@@ -476,35 +489,31 @@ def GetRegionForWLCFit(RetractOriginal,NFilterFraction=0.1,
         RetractOriginal: pre-processed retract
         NoTriggerDistance: how long before we allow the first WLC to happen;
         points before this distance are ignored
+        NFilterPoint : how many points to use for the savitsky filter
         **kwargs: passed to GetFECPullingRegionAlreadyFlipped
     Returns:
         TimeSepForce Object of the portion of the curve to fit 
     """
+    if (NFilterPoints is None):
+        NFilterPoints = int(np.ceil(0.1 *RetractOriginal.Force.size))
+    # get the (properly zeroed) FEC, starting from zero force 
     Retract = GetFECPullingRegionAlreadyFlipped(RetractOriginal,
-                                                NFilterFraction=NFilterFraction,
+                                                NFilterPoints=NFilterPoints,
                                                 **kwargs)
+    # next, we want to find just the *first* WLC region
     RetractZeroSeparation = Retract.Separation
-    FilteredForceGradient = FilteredGradient(Retract,
-                                             NFilterFraction=NFilterFraction)
     AdhesionArgs = dict(Retract=Retract,
                         NoTriggerDistance=NoTriggerDistance,
-                        NFilterFraction=NFilterFraction)
-    NoAdhesionMask,Outliers,NormalPoints = \
-        GetGradientOutliersAndNormalsAfterAdhesion(**AdhesionArgs)
-    Idx = GetWlcIdxObject(NoAdhesionMask,Outliers,NormalPoints,Retract)
-    FirstOutlier = Idx.FirstWLC.start
+                        NFilterPoints=NFilterPoints)
+    # get the wlc characterization object
+    WlcObj = GetGradientOutliersAndNormalsAfterAdhesion(**AdhesionArgs)
+    # get the indices associated with the WLC
+    Idx = GetWlcIdxObject(WlcObj,Retract)
+    # interested in where the first WLC ends
     EndOfFirstWLC = Idx.FirstWLC.end
-    N = RetractOriginal.Force.size
-    # determine the maximum point between the two outliers; this is likely
-    # the linear (ie: stretching) point of the WLC
-    MiddleOfFirstWLC = FirstOutlier + \
-                    np.argmax(FilteredForceGradient[FirstOutlier:EndOfFirstWLC])
-    IndexForWLCFit = int(np.mean([MiddleOfFirstWLC,EndOfFirstWLC]))
-    MetersAfterTouchoff = RetractZeroSeparation[IndexForWLCFit]
-    # *dont* sign correct anything.
-    NearSurface = GetFECPullingRegion(Retract,
-                                      MetersAfterTouchoff=MetersAfterTouchoff,
-                                      Correct=False,FlipSign=False)
+    # make a new object based on this slice
+    FirstWlcSlice = slice(0,EndOfFirstWLC,1)
+    NearSurface = MakeTimeSepForceFromSlice(Retract,FirstWlcSlice)
     return NearSurface
 
     
