@@ -131,7 +131,8 @@ def GetTransitionForces(CorrectedApproachAndRetracts,
         ToRet.append(TransitionForce)
     return ToRet
 
-def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
+def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength,
+             OutDir):
     """
     Plots the WLC fits into ./Out/
 
@@ -141,6 +142,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         ListOfSepAndFits: see output of GetWLCFits
         TransitionForces: see output of GetTransitionForces
         ExpectedContourLength: expected contour length, in meters
+        OutDir: base directory for output
     """
     # get all of the transition forces
     ExpectedContourLengthNm = ExpectedContourLength * 1e9
@@ -156,7 +158,7 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         SepNear,FitObj = ListOfSepAndFits[i]
         # get the number of filter points needed for whatever spatial resolution
         # we want
-        NFilterPoints = 75
+        NFilterPoints = 10
         PlotOptions = dict(LegendOpts=LegendOpts,
                            NFilterPoints=NFilterPoints)
         # get the WLC prediction for the region we fit
@@ -170,7 +172,8 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         # Get the fit parameters
         L0,Lp,_,_ = FitObj.Params()
         fig = pPlotUtil.figure()
-        SaveNameIncremental = lambda j : "./Out/FEC{:d}_{:d}.png".format(i,j)
+        SaveNameIncremental = lambda j : \
+            "{:s}Out/FEC{:d}_{:d}.png".format(OutDir,i,j)
         FEC_Plot.FEC_AlreadySplit(ApproachCorrected,RetractCorrected,
                                   **PlotOptions)
         set_y_lim()
@@ -192,13 +195,16 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         plt.close(fig)
 
 
-def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
+def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength,
+                OutDir):
     """
     Makes a scatter plot of the contour length and transition forces
 
     Args:
         TransitionForces: array, each element the transition region for curve i
         ListOfSepAndFits: array, each element the output of GetWLCFits
+        ExpectedContourLength: how long we expect the construct to be
+        OutDir: base directory, for saving stuff
     """
     L0Arr = []
     TxArr = []
@@ -248,24 +254,31 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength):
     plt.hist(L0Plot,bins=ContourBins,color=ColorLength,**HistOpts)
     pPlotUtil.lazyLabel(r"$\frac{L_{\rm WLC}}{L_0}$","Count","")
     plt.xlim([0,MaxX])
-    pPlotUtil.savefig(fig,"./Out/ScatterL0vsFTx.png")
+    pPlotUtil.savefig(fig,"{:s}Out/ScatterL0vsFTx.png".format(OutDir))
 
-def run():
+def AnalyzeAFMDataForDNA(DataDir,BasePairs,
+                         OutDir="./",
+                         Force=False,
+                         ForceWLC=False,
+                         GridResolution=200):
     """
-    Runs contour length analysis
+    Given a data directory and an expected size in basepairs, attempts to
+    Analyze a bunch of AFM data
+
+    Args:
+         DataDir: path to the relevant folder containing 1 or more pxp files
+         Basepairs: number of base pairs for the DNA
+         OutDir: Base output directory
+         Force: if True, forces recalculation (otherwise, caches)
+         ForceWLC: if True, forces recalculation of WLC models
+         GridResolution: what size to use for the WLC
     """
-    DataDir ="./Data/"
-    FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     DataArray = []
-    Force = False
-    ForceWLC = False
-    ForceTransition = False
+    FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     MetersPerBp = 0.338e-9
-    # primer locations, plus overhang, plus abasic sites
-    Bp = 3520-1607+12+3
-    ExpectedContourLength =MetersPerBp*Bp
+    ExpectedContourLength =MetersPerBp*BasePairs
+    # shouldnt trigger less than 25% of the contour length
     NoTriggerDistance = ExpectedContourLength/4
-    GridResolution = 200
     # maximum contour length should take into account linkers, tip (~30nm)
     WlcParams = dict(MaxContourLength=ExpectedContourLength*1.1+30e-9,
                      NoTriggerDistance=NoTriggerDistance,
@@ -273,30 +286,47 @@ def run():
     # read in all the data
     for i,Name in enumerate(FullNames):
         FileName = Name[len(DataDir):]
-        DataArray.extend(pCheckUtil.getCheckpoint("./Cache/{:s}.pkl".\
-                                                  format(FileName),
+        DataArray.extend(pCheckUtil.getCheckpoint("{:s}Cache/{:s}.pkl".\
+                                                  format(OutDir,FileName),
                                                   ReadInData,Force,Name))
     # get all the corrected, force-zeroed objects
-    Corrected= pCheckUtil.getCheckpoint("./Cache/Corrected.pkl",
-                                        GetCorrectedFECs,
-                                        Force,DataArray)
+    Corrected= pCheckUtil.\
+        getCheckpoint("{:s}Cache/Corrected.pkl".format(OutDir),GetCorrectedFECs,
+                      Force,DataArray)
     # Get all the WLC (initial)
-    ListOfSepAndFits= pCheckUtil.getCheckpoint("./Cache/WLC.pkl",GetWLCFits,
-                                               (ForceWLC),
-                                               Corrected,**WlcParams)
+    ListOfSepAndFits= pCheckUtil.\
+        getCheckpoint("{:s}Cache/WLC.pkl".format(OutDir),GetWLCFits,
+                      (Force or ForceWLC),Corrected,**WlcParams)
     TransitionArgs = dict(NoTriggerDistance=NoTriggerDistance,
                           CorrectedApproachAndRetracts=Corrected,
                           ContourLength=ExpectedContourLength)
-    TransitionForces= pCheckUtil.getCheckpoint("./Cache/Transition.pkl",
-                                               GetTransitionForces,
-                                               ForceTransition,
-                                               **TransitionArgs)
+    TransitionForces= pCheckUtil.\
+        getCheckpoint("{:s}/Cache/Transition.pkl".format(OutDir),
+                      GetTransitionForces,(Force or ForceWLC),**TransitionArgs)
+    pGenUtil.ensureDirExists("{:s}Out".format(OutDir))
     # make a scatter plot of L0 and the overstrectching force. 
     ScatterPlot(TransitionForces,ListOfSepAndFits,
-                ExpectedContourLength=ExpectedContourLength)
+                ExpectedContourLength=ExpectedContourLength,OutDir=OutDir)
     # plot the WLC fits
     PlotFits(Corrected,ListOfSepAndFits,TransitionForces,
-             ExpectedContourLength=ExpectedContourLength)
+             ExpectedContourLength=ExpectedContourLength,OutDir=OutDir)
+    
+    
+def run():
+    """
+    Runs contour length analysis
+
+    """
+    Force = False
+    ForceWLC = False
+    ForceTransition = False
+    DataDirBasePairs = [ ("./200bp/",200)]
+    Args = dict(Force=Force,ForceWLC=ForceWLC,ForceTransition=ForceTransition)
+    for DataDir,BasePairs in DataDirBasePairs:
+        OutName = "{:s}Working/".format(DataDir)
+        InName = "{:s}Data/".format(DataDir)
+        AnalyzeAFMDataForDNA(DataDir=InName,BasePairs=BasePairs,
+                             OutDir=OutName,GridResolution=20)
 
 if __name__ == "__main__":
     run()
