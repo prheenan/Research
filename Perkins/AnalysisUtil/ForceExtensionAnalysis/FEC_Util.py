@@ -451,8 +451,12 @@ def GetWLCPoints(WlcObj,Retract):
         the numbers refer to the WLC region
     """
     SeparationZeroed = Retract.Separation - min(Retract.Separation)
-    # the second WLC should end at approximately the maximum force
-    EndOfSecondWLC = np.argmax(Retract.Force)
+    # the second WLC should end at approximately the maximum force, *within*
+    # the non-adhesion area
+    NoAdhesionIdx = np.where(WlcObj.NoAdhesion)[0]
+    IndexOfMaxInNonAdhesionMask = np.argmax(Retract.Force[NoAdhesionIdx])
+    # get the actual index of the max into the real data.
+    EndOfSecondWLC = NoAdhesionIdx[IndexOfMaxInNonAdhesionMask]
     Approximately170PercentOfL0 = SeparationZeroed[EndOfSecondWLC]
     # second WLC is about 1.7 * the contour length (which is where the
     # first one is. Here, we under-estimate; should still get a decent

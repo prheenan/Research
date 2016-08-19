@@ -159,15 +159,21 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         DeltaX = max(SepNear)/SepNear.size
         NFilterPoints = int(np.ceil(FilterSpatialResolution/DeltaX))
         PlotOptions = dict(LegendOpts=LegendOpts,
-                           NFilterPoints=NFilterPoints)
-        
-        # get the WLC prediction
-        WLC_Pred = FitObj.Predict(SepNear)
+                           NFilterPoints=NFilterPoints,
+        )
+        # get the wlc predition a little 'out' 
+        PlotFudge = 1.3
+        MaxSep = max(SepNear)
+        SepPredExtrapolate = np.linspace(MaxSep,MaxSep*PlotFudge,num=20)
+        WlcPredExtrapolate =  FitObj.Predict(SepPredExtrapolate)
+        # get the WLC prediction for the region we fit
+        SepPred = np.linspace(0,max(SepNear),num=50)
+        WLC_Pred = FitObj.Predict(SepPred)
         # convert to plotting units
         ToYUnits = lambda y : y*1e12
         ToXUnits = lambda x: x*1e9
         WLC_Force_pN = ToYUnits(WLC_Pred)
-        WLC_Separation_nm = ToXUnits(SepNear)
+        WLC_Separation_nm = ToXUnits(SepPred)
         # Get the fit parameters
         L0,Lp,_,_ = FitObj.Params()
         fig = pPlotUtil.figure()
@@ -178,8 +184,13 @@ def PlotFits(Corrected,ListOfSepAndFits,TransitionForces,ExpectedContourLength):
         set_x_lim()
         pPlotUtil.LegendAndSave(fig,SaveNameIncremental(0),loc="upper left")
         plt.plot(WLC_Separation_nm,
-                 WLC_Force_pN,linewidth=3,color='g',linestyle='--',
+                 WLC_Force_pN,linewidth=1.5,color='g',linestyle='-',
                  label="WLC: L0={:4.1f}nm".format(L0*1e9))
+        plt.plot(ToXUnits(SepPredExtrapolate),
+                 ToYUnits(WlcPredExtrapolate),linewidth=3,color='g',
+                 linestyle='--')
+
+
         pPlotUtil.LegendAndSave(fig,SaveNameIncremental(1),loc="upper left")
         ContourLengthLabel = r"""L$_0$={:4.1f}nm""".\
                              format(ExpectedContourLengthNm)
@@ -239,9 +250,9 @@ def run():
     DataDir ="./Data/"
     FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
     DataArray = []
-    Force = True
-    ForceWLC = True
-    ForceTransition = True
+    Force = False
+    ForceWLC = False
+    ForceTransition = False
     MetersPerBp = 0.338e-9
     # primer locations, plus overhang, plus abasic sites
     Bp = 201
