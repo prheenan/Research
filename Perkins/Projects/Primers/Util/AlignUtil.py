@@ -116,13 +116,13 @@ def GetBestSelfDimerAlignmentScore(Seq,MismatchScore=IDT_DEF_GAP_MIS,
         score from alignment. If using default arguments, this is number 
         of base-pair matches, less 2 for the start of any gap
     """
-    alignments = AlignSelfWithReverseComplement(Seq,
-                                                MismatchScore=MismatchScore,
-                                                GapOpen=GapOpen,
-                                                GapExtend=GapExtend,
+    alignment = AlignSelfWithReverseComplement(Seq,
+                                               MismatchScore=MismatchScore,
+                                               GapOpen=GapOpen,
+                                               GapExtend=GapExtend,
+                                               one_alignment_only=True,
                                                 **kwargs)
-    bestScore = max([a.score for a in alignments])
-    return bestScore
+    return alignment[0].score
         
 def AlignSelfWithReverseComplement(Seq,MismatchScore=IDT_DEF_GAP_MIS,
                                    GapOpen=IDT_DEF_GAP_MIS,GapExtend=0,
