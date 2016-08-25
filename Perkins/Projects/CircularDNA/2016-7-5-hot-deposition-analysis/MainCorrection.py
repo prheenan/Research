@@ -235,7 +235,7 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength,
     fudge = 1.05
     # make the plot boundaries OK
     MaxX = max(L0BoxMax,max(L0Plot))*fudge
-    MaxY = max(max(TxPlot),68)*fudge
+    MaxY = 90
     plt.xlim([0,MaxX])
     plt.ylim([0,MaxY])
     pPlotUtil.lazyLabel("",r"F$_{\rm overstretch}$ (pN)",
@@ -317,8 +317,8 @@ def run():
     Runs contour length analysis
 
     """
-    Force = True
-    ForceWLC = True
+    Force = False
+    ForceWLC = False
     DataDirBasePairs = [
         ("./201bp/",201),
         ("./1927bp/",1927),
