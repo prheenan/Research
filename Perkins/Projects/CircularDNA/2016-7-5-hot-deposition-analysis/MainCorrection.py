@@ -317,16 +317,18 @@ def run():
     Runs contour length analysis
 
     """
-    Force = False
-    ForceWLC = False
-    ForceTransition = False
-    DataDirBasePairs = [ ("./200bp/",200)]
-    Args = dict(Force=Force,ForceWLC=ForceWLC,ForceTransition=ForceTransition)
+    Force = True
+    ForceWLC = True
+    DataDirBasePairs = [
+        ("./201bp/",201),
+        ("./1927bp/",1927),
+    ]
+    Args = dict(Force=Force,ForceWLC=ForceWLC,GridResolution=300)
     for DataDir,BasePairs in DataDirBasePairs:
         OutName = "{:s}Working/".format(DataDir)
         InName = "{:s}Data/".format(DataDir)
         AnalyzeAFMDataForDNA(DataDir=InName,BasePairs=BasePairs,
-                             OutDir=OutName,GridResolution=20)
+                             OutDir=OutName,**Args)
 
 if __name__ == "__main__":
     run()
