@@ -24,11 +24,11 @@ class DNAWlcPoints:
         self.TimeSepForceObject = TimeSepForceObj
 
 class WlcCharacerizationMask:
-    def __init__(self,NoAdhesion,ForceOutliers,GradientOutliers,
+    def __init__(self,NoAdhesion,ForceOutliers,Gradient,
                  NumFilterPoints):
         self.NoAdhesion = NoAdhesion
         self.ForceOutliers = ForceOutliers
-        self.GradientOutliers = GradientOutliers
+        self.Gradient = Gradient
         self.NumFilterPoints = NumFilterPoints
     
 
@@ -275,7 +275,7 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
         Fraction: see GetAroundTouchoff
         FilterPoints: see GetAroundTouchoff
         ZeroAtStart: if true, uses the first 'fraction' points; otherwise 
-        uses the last 'fraction' points
+        uses the last 'fraction' points for zeroing
 
         FlipSign: if true (default), assumes the data is 'raw', so that
         Dwell happens at positive force. Set to false if already fixed
@@ -307,13 +307,16 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
     ZeroIdx = np.where(FilteredRetract >= 0)[0][0]
     return ZeroIdx,MedRetr
 
-def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
+def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,FlipSign=True,
                         MetersAfterTouchoff=None,Correct=False,**kwargs):
     """
     Args:
         fraction: Amount to average to determine the zero point for the force. 
         FilterPoints: how many points to filter to find the zero, from the 
         *start* of the array forward
+    
+        FlipSign: If true, flips the sign. This is for using 'raw' data
+
         MetersFromTouchoff: gets this many meters away from the surface. If
         None, just returns all the data
         Correct: if true, corrects the data by flipping it and zeroing it out. 
@@ -321,7 +324,8 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,
         **kwargs: passed on to GetSurfaceIndexAndForce
     """
     ZeroIdx,MedRetr =  GetSurfaceIndexAndForce(o,fraction,FilterPoints,
-                                               ZeroAtStart=False,**kwargs)
+                                               ZeroAtStart=False,
+                                               FlipSign=FlipSign,**kwargs)
     if (MetersAfterTouchoff is not None):
         XToUse  = o.Separation
         N = XToUse.size
@@ -394,7 +398,8 @@ def FilteredGradient(Retract,NFilterPoints):
     RetractZeroSeparation = Retract.Separation
     RetractZeroForce = Retract.Force
     FilteredForce = GetFilteredForce(Retract,NFilterPoints)
-    FilteredForceGradient = np.gradient(FilteredForce.Force)
+    FilteredForceGradient =  SavitskyFilter(np.gradient(FilteredForce.Force),
+                                            nSmooth=NFilterPoints)
     return FilteredForceGradient
 
 def IsNormal(X):
@@ -433,10 +438,9 @@ def GetGradientOutliersAndNormalsAfterAdhesion(Retract,NFilterPoints,
     # get a mask where the gradient is positive
     # where are we an outlier in the gradient *and* the force?
     ForceOutliers = IsOutlier(Retract.Force) 
-    GradientOutliers = IsOutlier(FilteredForceGradient)
-    Outliers = np.where(GradientOutliers & NoAdhesionMask)
+    Gradient = FilteredForceGradient
     ToRet = WlcCharacerizationMask(NoAdhesionMask,
-                                   ForceOutliers,GradientOutliers,
+                                   ForceOutliers,Gradient,
                                    NFilterPoints)
     return ToRet
 
@@ -452,7 +456,7 @@ def GetWLCPoints(WlcObj,Retract):
     """
     SeparationZeroed = Retract.Separation - min(Retract.Separation)
     # the second WLC should end at approximately the maximum force, *within*
-    # the non-adhesion area
+    # the non-adhesion are
     NoAdhesionIdx = np.where(WlcObj.NoAdhesion)[0]
     IndexOfMaxInNonAdhesionMask = np.argmax(Retract.Force[NoAdhesionIdx])
     # get the actual index of the max into the real data.
@@ -461,9 +465,14 @@ def GetWLCPoints(WlcObj,Retract):
     # second WLC is about 1.7 * the contour length (which is where the
     # first one is. Here, we under-estimate; should still get a decent
     # estimate of the contour length
-    ApproxL0Meters = Approximately170PercentOfL0/2
-    ApproxL0Idx = np.argmin(np.abs(SeparationZeroed - ApproxL0Meters))
-    EndOfFirstWLC = ApproxL0Idx
+    ApproxL0Meters = Approximately170PercentOfL0/1.5
+    ApproxBetweenIdx = np.argmin(np.abs(SeparationZeroed - ApproxL0Meters))
+    N  =SeparationZeroed.size
+    IdxArr = np.linspace(0,N,N)
+    IdxForFirstWLC = np.where( (IdxArr < ApproxBetweenIdx) & \
+                               (WlcObj.NoAdhesion))[0]
+    MaxGradientIdxInMask = np.argmax(WlcObj.Gradient[IdxForFirstWLC])
+    EndOfFirstWLC = IdxForFirstWLC[MaxGradientIdxInMask]
     # XXX fix these
     StartOfFirstWLC = EndOfFirstWLC
     StartOfSecondWLC = EndOfSecondWLC

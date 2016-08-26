@@ -12,12 +12,16 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection.\
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.DataCorrection\
     import CorrectionByFFT
 
+# WLC stuff
 from FitUtil.WormLikeChain.Python.Code.WLC_Fit import BoundedWlcFit
 from FitUtil.FitUtils.Python.FitClasses import GetBoundsDict
+# overhead / plotting things
 from GeneralUtil.python import PlotUtilities as pPlotUtil
 from GeneralUtil.python import GenUtilities as pGenUtil
 from GeneralUtil.python import CheckpointUtilities as pCheckUtil
-from GeneralUtil.python.IgorUtil import SavitskyFilter
+# IWT
+from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import\
+    InverseWeierstrass
 
 def ReadInData(FullName):
     """
@@ -69,7 +73,8 @@ def GetWLCFits(CorrectedApproachAndRetracts,NoTriggerDistance,
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the zerod and corrected Force extension curve
         WLCFitFEC = FEC_Util.\
-            GetRegionForWLCFit(Retract,NoTriggerDistance=NoTriggerDistance)
+            GetRegionForWLCFit(Retract,NoTriggerDistance=NoTriggerDistance,
+                               NFilterPoints=300)
         # actually fit the WLC
         Bounds = GetBoundsDict(**dict(Lp=[0.3e-9,60e-9],
                                       L0=[0,MaxContourLength],
@@ -107,7 +112,7 @@ def GetTransitionForces(CorrectedApproachAndRetracts,
     ToRet = []
     for i,(Approach,Retract) in enumerate(CorrectedApproachAndRetracts):
         # get the (entire) zerod and corrected retract curve
-        NFilterPoints = 10
+        NFilterPoints = 300
         Retract =  FEC_Util.\
             GetFECPullingRegionAlreadyFlipped(Retract,
                                               NFilterPoints=NFilterPoints)
@@ -256,10 +261,88 @@ def ScatterPlot(TransitionForces,ListOfSepAndFits,ExpectedContourLength,
     plt.xlim([0,MaxX])
     pPlotUtil.savefig(fig,"{:s}Out/ScatterL0vsFTx.png".format(OutDir))
 
+def PlotHeatMap(Bins,X,Y,ContourLengthNm,
+                LabelColorbar="Data points in bin"):
+    plt.hist2d(X,Y,bins=Bins,cmap='afmhot')
+    plt.axhline(65,color='g',linestyle='--',linewidth=4,alpha=0.3,
+                label="65pN")
+    plt.axvline(ContourLengthNm,color='c',linestyle='--',linewidth=4,
+                alpha=0.3,label=r"L$_0$={:.1f}nm".format(ContourLengthNm)) 
+
+    
+def MakeIwtPlot(OutDir,ExpectedContourLength,Corrected):
+    """
+    Makes an inverse Weierstrass plot and a 2-D heat map of all the data
+
+    Args:
+        OutDir: base directory to save the plot into
+        ExpectedContourLength: 
+        Corrected: output of GetCorrectedFECs, ie: tuple of (approach,retract)
+    """
+    # get the IWT transform
+    IwtObjs = []
+    for _,RetractRaw in Corrected:
+        retract = FEC_Util.GetFECPullingRegion(RetractRaw,FlipSign=False)
+        retract.Separation -= retract.Separation[0]
+        Args = dict(Time=retract.Time,
+                    Extension=retract.Separation,
+                    Force=retract.Force,
+                    SpringConstant=retract.SpringConstant,
+                    Velocity=retract.Velocity)
+        tmp = InverseWeierstrass.FEC_Pulling_Object(**Args)
+        IwtObjs.append(tmp)
+    Landscape = InverseWeierstrass.FreeEnergyAtZeroForce(IwtObjs,NumBins=400)
+    # Convert the data to format for display as a 2-D heat map
+    FlatX = np.concatenate([x.Extension for x in IwtObjs])
+    FlatY = np.concatenate([x.Force for x in IwtObjs])
+    # plotting beautification
+    MinX = min(FlatX)
+    BinsXandY = [400,80]
+    # N * L0,expected, should be enough to get through overstretching
+    MaxX = 3*ExpectedContourLength
+    fudge = (MaxX-MinX)/20
+    # limits and unit conversions
+    ToPlotX = lambda x: x*1e9
+    xlim = lambda: plt.xlim([ToPlotX(MinX),ToPlotX(MaxX)])
+    EnergyPerKt = Landscape.EnergyLandscape*Landscape.Beta
+    LandscapeExtensionsPlot = ToPlotX(Landscape.Extensions)
+    # go to nm and pN for the histogram
+    HistogramX = ToPlotX(FlatX)
+    HistogramY = FlatY * 1e12
+    # make a heat map of everything, no color bar this time
+    fig = pPlotUtil.figure(figsize=(12,12))
+    PlotHeatMap(Bins=BinsXandY,X=HistogramX,Y=HistogramY,
+                ContourLengthNm=ToPlotX(ExpectedContourLength))
+    xlim()
+    pPlotUtil.lazyLabel("Separation (nm)","Force (pN)","FEC Heat Map",
+                        legendBgColor='w',frameon=True)
+    pPlotUtil.colorbar("Count in bins")
+    pPlotUtil.savefig(fig,"{:s}Out/HeatMap.png".format(OutDir))
+    # make a new figure, also add the heatmap
+    fig = pPlotUtil.figure(figsize=(12,18))
+    plt.subplot(3,1,1)
+    PlotHeatMap(Bins=BinsXandY,X=HistogramX,Y=HistogramY,
+                ContourLengthNm=ToPlotX(ExpectedContourLength))
+    xlim()
+    pPlotUtil.lazyLabel("","Force (pN)","",frameon=True,legendBgColor='w')
+    plt.subplot(3,1,2)
+    plt.plot(LandscapeExtensionsPlot,EnergyPerKt)
+    pPlotUtil.lazyLabel("","Free Energy (kT)","")
+    xlim()
+    plt.subplot(3,1,3)
+    Grad = np.gradient(EnergyPerKt)
+    plt.plot(LandscapeExtensionsPlot,Grad)
+    xlim()
+    # avoid super negative spikes
+    plt.ylim([-max(Grad),max(Grad)])
+    pPlotUtil.lazyLabel("Extension (nm)","Free Energy Difference (kT)","")
+    pPlotUtil.savefig(fig,"{:s}Out/IWT.png".format(OutDir))
+    
 def AnalyzeAFMDataForDNA(DataDir,BasePairs,
                          OutDir="./",
                          Force=False,
                          ForceWLC=False,
+                         ForceTransition=True,
                          GridResolution=200):
     """
     Given a data directory and an expected size in basepairs, attempts to
@@ -271,7 +354,7 @@ def AnalyzeAFMDataForDNA(DataDir,BasePairs,
          OutDir: Base output directory
          Force: if True, forces recalculation (otherwise, caches)
          ForceWLC: if True, forces recalculation of WLC models
-         GridResolution: what size to use for the WLC
+         GridResolution: what size to use for the WLC 2-d parameter sweep
     """
     DataArray = []
     FullNames = pGenUtil.getAllFiles(DataDir,".pxp")
@@ -302,8 +385,13 @@ def AnalyzeAFMDataForDNA(DataDir,BasePairs,
                           ContourLength=ExpectedContourLength)
     TransitionForces= pCheckUtil.\
         getCheckpoint("{:s}/Cache/Transition.pkl".format(OutDir),
-                      GetTransitionForces,(Force or ForceWLC),**TransitionArgs)
+                      GetTransitionForces,
+                      (ForceTransition),
+                      **TransitionArgs)
+
     pGenUtil.ensureDirExists("{:s}Out".format(OutDir))
+    # Make the IWT Plot
+    MakeIwtPlot(OutDir,ExpectedContourLength,Corrected)
     # make a scatter plot of L0 and the overstrectching force. 
     ScatterPlot(TransitionForces,ListOfSepAndFits,
                 ExpectedContourLength=ExpectedContourLength,OutDir=OutDir)
@@ -317,13 +405,14 @@ def run():
     Runs contour length analysis
 
     """
-    Force = False
-    ForceWLC = False
+    Force = True
+    ForceWLC = True
     DataDirBasePairs = [
         ("./201bp/",201),
         ("./1927bp/",1927),
     ]
-    Args = dict(Force=Force,ForceWLC=ForceWLC,GridResolution=300)
+    Args = dict(Force=Force,ForceWLC=ForceWLC,ForceTransition=True,
+                GridResolution=300)
     for DataDir,BasePairs in DataDirBasePairs:
         OutName = "{:s}Working/".format(DataDir)
         InName = "{:s}Data/".format(DataDir)
