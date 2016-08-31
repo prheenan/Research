@@ -32,8 +32,8 @@ def GetVolumeToDilute(Concentration,Volume,DesiredConcentration):
     volumeToAdd = volumeNeeded-Volume
     return volumeToAdd
 
-def PrintDilutions(StockConcs,StockVols,ConcDesired,UnitVol="uL",
-                   UnitConc="ng/uL",**kwargs):
+def PrintDilutions(StockConcs,StockVols,ConcDesired,UnitVol=None,
+                   UnitConc=None,**kwargs):
     """
     Convenience wrapper: Print all the dilutions, given desired concentrations
     stocks, etc.
@@ -45,6 +45,10 @@ def PrintDilutions(StockConcs,StockVols,ConcDesired,UnitVol="uL",
     Returns:
         all the dilution objects
     """
+    if (UnitVol is None):
+        UnitVol = ["uL" for _ in StockConcs]
+    if (UnitConc is None):
+        UnitConc = ["ng/uL" for _ in StockConcs]    
     dilutionObj = GetDilutionObjects(StockConcs,StockVols,ConcDesired,**kwargs)
     _PrintVolumeDilutions(dilutionObj,UnitVol=UnitVol,UnitConc=UnitConc)
     return dilutionObj
@@ -102,7 +106,7 @@ def GetDilutionObj(StockConcs,StockVols,ConcDesired,VolToAdd,Idx,
                        DesiredConc=DesiredConc,
                        AddVol=AddVol,Name=StockName)
 
-def _DilutionString(dilutionObj,UnitVol="uL",UnitConc="ng/uL"):
+def _DilutionString(dilutionObj,UnitVol,UnitConc):
     """
     Args:
         dilutionObj: list of dilution objects
@@ -114,13 +118,14 @@ def _DilutionString(dilutionObj,UnitVol="uL",UnitConc="ng/uL"):
     toRet = ""
     for i,d in enumerate(dilutionObj):
         stockConcStr = "({:4.1f}{:s}@{:4.1f}{:s})".\
-                       format(float(d.StockVol),UnitVol,float(d.StockConc),
-                              UnitConc)
-        volAddStr = "({:4.1f}{:s})".format(d.AddVol,UnitVol)
+                       format(float(d.StockVol),UnitVol[i],float(d.StockConc),
+                              UnitConc[i])
+        volAddStr = "({:4.1f}{:s})".format(d.AddVol,UnitVol[i])
+        TotalVol = float(d.AddVol) + float(d.StockVol)
         toRet += ("Stock {: <7} (#{:03d}) {: <20}" +
-                  "add {: <10} -> {:3.1f}{:7s}\n").\
+                  "add {: <10} -> {:3.1f}{:7s} in {:3.1f}{:7s}\n").\
             format(d.Name,i,stockConcStr,volAddStr,d.DesiredConc,
-                   UnitConc)
+                   UnitConc[i],TotalVol,UnitVol[i])
     return toRet
     
 def _PrintVolumeDilutions(dilutionObj,**kwargs):

@@ -26,9 +26,27 @@ def run():
              [1.479,0.60],
              [0.602,0.59],
              [1.398,0.57]]
+    # see:
+    # 1.Biotin binding proteins.
+    #Available at:
+    #abcam.com/index.html?pageconfig=resource&rid=12723.
+    #(Accessed: 30th August 2016)
+    ExtinctionPerMoleCm = 41326
+    MolecularMassDaltons = 52800
+    # nanodrop give 10mm effective absorbances
+    PathLengthCm = 1
     # coefficienct to converty from intensity to mg/ml, using pp 133 of
     # notebook #2 (Beers law)
-    coeff = 0.5 * (1.321/1.034 + 0.798/0.624)
+    AbsorbanceToCocnentrationMolesPerLiter = \
+        1/(ExtinctionPerMoleCm*PathLengthCm)
+    LitersToMl = 1000
+    DaltonToKg = 1.66e-27
+    MolesToMolecules = 6.02e23
+    KbToMg = 1e6
+    MolesToMg = MolesToMolecules * MolecularMassDaltons * DaltonToKg * KbToMg
+    print(MolesToMg)
+    MolesPerLiterToMgPerMl = MolesToMg/LitersToMl
+    coeff = AbsorbanceToCocnentrationMolesPerLiter*MolesPerLiterToMgPerMl
     GetConc = lambda arr,skip: np.array([a[0] * coeff for a in arr[skip:]])
     # skip the first data point, which was just a control
     skip = 1
