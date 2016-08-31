@@ -10,27 +10,31 @@ from Util import DilutionUtil
 
 def run():
     """
-
+    For aliquotting things...
     """
-    pass
-    Stats = [ ["TCEP","mM",4,1],
-              ["Strept","mg/mL",4.9,0.2],
-              ["Pre-aliquotted","Au",2,1]]
-    Desired = [s[-1] for s in Stats]
-    Stocks = [s[-2] for s in Stats]
-    Volume = 200
-    Volumes = DilutionUtil.GetVolumesNeededByConcentration(Stocks,
-                                                           Desired,Volume)
-    BufferVolume = Volume - sum(Volumes)
-    print("In a total solution of {:.1f}uL ({:.1f} of buffer)...".\
-          format(Volume,BufferVolume))
+    # TCEP is already present (25uL at 4mM),
+    # assume effectively that we want the full aliquot
+    # Stats list is formattd like <name,Concentraiton string, stock, desired,
+    # already present> s
+    Stats = [ ["TCEP","mM",4,1,37.5*4],
+              ["Aliquot (1.96mg/mL stept, 2.4mMTCEP))","mg/mL",1.96,0.2,0]]
+    # get the stocks, desired concntrations, and already-present concentraitons
+    Stocks = [s[2] for s in Stats]
+    Desired = [s[3] for s in Stats]
+    Already = [s[4] for s in Stats]
+    Volume = 600
+    Volumes = DilutionUtil.\
+        GetVolumesNeededByConcentration(Stocks,Desired,Volume,
+                                        AlreadyHaveMass=Already)
+    BufferVolume = Volume - sum(Volumes) 
+    print("In a total solution of {:.1f}uL...".format(Volume))
     vol_units = "uL"
-    for (name,conc_units,conc_stock,desired_conc),vol_stock in\
+    for (name,conc_units,conc_stock,desired_conc,_),vol_stock in\
         zip(Stats,Volumes):
-        print("\t{:.1f}{:s} of {:.1f}{:s} {:s} for {:.1f}{:s} in solution".\
+        print("\t{:.2f}{:s} of {:.2f}{:s} {:s} for {:.2f}{:s} in solution".\
               format(vol_stock,vol_units,conc_stock,conc_units,name,
                      desired_conc,conc_units))
-    print("\tRemainder ({:.1f}uL) is buffer".format(BufferVolume))
+    print("\tRemainder is ({:.1f}uL) of buffer".format(BufferVolume))
                                       
 
 if __name__ == "__main__":

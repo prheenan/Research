@@ -141,13 +141,31 @@ def _PrintVolumeDilutions(dilutionObj,**kwargs):
     """
     print(_DilutionString(dilutionObj,**kwargs))
     
-def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume):
-    MassOrMolesNeeded = np.array(ConcsDesired)*TotalVolume
-    return GetVolumeNeededByMassOrMoles(MassOrMolesNeeded,StockConcs)
+def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume,
+                                    AlreadyHaveMass=None):
+    """
+    Given desired and stock concentrations and a final volume, gives the 
+    volumes needed of each stock
 
-def GetVolumeNeededByMassOrMoles(MassOrMolesNeeded,StockConcs):
-    VolumesNeeded = MassOrMolesNeeded/StockConcs
-    return VolumesNeeded
+    Args:
+        StockConcs: index i refers to some species, same units as 
+        ConcsDesired[i]
+     
+        ConcsDesired: what we want in the volume
+
+        AlreadyHaveMass: if present, the mass already present in the buffer
+        we will use. Element [i] should have the same units as StockConcs[i]
+    Returns:
+        Array of volumes needed going from StockConcs to ConcsDesired in 
+        TotalVolume (note that TotalVolume-sum(<Return of this function>) is
+        taken up by some unspecified buffer)
+    """
+    if (AlreadyHaveMass is None):
+        AlreadyHaveMass  = np.zeros_like(StockConcs)
+    StockArr = np.array(StockConcs)
+    TotalVolumeNeeded = np.array(ConcsDesired)*TotalVolume/StockArr
+    EffectiveVolumeAlreadyPresent = np.array(AlreadyHaveMass)/StockArr
+    return TotalVolumeNeeded - EffectiveVolumeAlreadyPresent
 
     
 
