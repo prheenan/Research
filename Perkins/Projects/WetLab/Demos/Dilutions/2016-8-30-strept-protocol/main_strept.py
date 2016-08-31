@@ -13,28 +13,24 @@ def run():
 
     """
     pass
-    stocks = np.array([5,4])
-    StreptConcStock = 4.9   # mg/mL
-    StreptConcDesired = 0.2 # mg/mL
-    VolumeStrept = 10
-    VolumeAdd = DilutionUtil.GetVolumeToDilute(StreptConcStock,
-                                               VolumeStrept,
-                                               StreptConcDesired)
-    VolumeTotal = VolumeStrept + VolumeAdd
-    TCEPStock = 4   # mM
-    TCEPDesired = 1 # mM
-    VolumeTCEP = TCEPDesired * VolumeTotal / TCEPStock
-    Stats = [ ["TCEP","mM",TCEPStock,VolumeTCEP,"uL",TCEPDesired],
-              ["Strept","mg/mL",StreptConcStock,VolumeStrept,"uL",
-               StreptConcDesired]]
-    BufferVolume = VolumeTotal - VolumeTCEP - VolumeStrept
+    Stats = [ ["TCEP","mM",4,1],
+              ["Strept","mg/mL",4.9,0.2],
+              ["Pre-aliquotted","Au",2,1]]
+    Desired = [s[-1] for s in Stats]
+    Stocks = [s[-2] for s in Stats]
+    Volume = 200
+    Volumes = DilutionUtil.GetVolumesNeededByConcentration(Stocks,
+                                                           Desired,Volume)
+    BufferVolume = Volume - sum(Volumes)
     print("In a total solution of {:.1f}uL ({:.1f} of buffer)...".\
-          format(VolumeTotal,BufferVolume))
-    for name,conc_units,conc_stock,vol_stock,vol_units,desired_conc in Stats:
+          format(Volume,BufferVolume))
+    vol_units = "uL"
+    for (name,conc_units,conc_stock,desired_conc),vol_stock in\
+        zip(Stats,Volumes):
         print("\t{:.1f}{:s} of {:.1f}{:s} {:s} for {:.1f}{:s} in solution".\
               format(vol_stock,vol_units,conc_stock,conc_units,name,
                      desired_conc,conc_units))
-    print("\tRemainder {:.1f}uL is buffer".format(BufferVolume))
+    print("\tRemainder ({:.1f}uL) is buffer".format(BufferVolume))
                                       
 
 if __name__ == "__main__":

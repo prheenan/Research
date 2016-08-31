@@ -10,7 +10,10 @@ class DilutionObj:
         self.DesiredConc=DesiredConc
         self.AddVol=AddVol
         self.Name = Name
-    
+
+class SolutionObj:
+    def __init__(self,ArrayOfDilutionObjects):
+        self.arr = ArrayOfDilutionObjects
 
 def GetVolumeToDilute(Concentration,Volume,DesiredConcentration):
     """
@@ -137,4 +140,14 @@ def _PrintVolumeDilutions(dilutionObj,**kwargs):
         **kwargs: see DilutionString
     """
     print(_DilutionString(dilutionObj,**kwargs))
+    
+def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume):
+    MassOrMolesNeeded = np.array(ConcsDesired)*TotalVolume
+    return GetVolumeNeededByMassOrMoles(MassOrMolesNeeded,StockConcs)
+
+def GetVolumeNeededByMassOrMoles(MassOrMolesNeeded,StockConcs):
+    VolumesNeeded = MassOrMolesNeeded/StockConcs
+    return VolumesNeeded
+
+    
 
