@@ -17,7 +17,7 @@ class SolutionObj:
 
 def GetVolumeToDilute(Concentration,Volume,DesiredConcentration):
     """
-    Gets the volume to dilute a sampel with a given volume and concentration
+    Gets the volume to dilute a sample with a given volume and concentration
     
     Args:
         Concentration: mass per volume of the system
@@ -81,7 +81,10 @@ def GetFromArrayOrScalar(Array,idx):
         relevant element of the array
     """
     try:
-        return Array[idx]
+        if (len(Array) > 1):
+            return Array[idx]
+        else:
+            return Array[0]
     except (TypeError,IndexError) as e:
         return Array
     
@@ -166,6 +169,81 @@ def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume,
     TotalVolumeNeeded = np.array(ConcsDesired)*TotalVolume/StockArr
     EffectiveVolumeAlreadyPresent = np.array(AlreadyHaveMass)/StockArr
     return TotalVolumeNeeded - EffectiveVolumeAlreadyPresent
+
+
+def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes):
+    """
+    Given a stock and desired concentraitons and desired volumes at each 
+    concentration, returns the list of stocks, volumes, dilutions, and final
+    stocks
+
+    Args:
+         Stock: concentration, same units as elements of DesiredConcentrations
+         DesiredConcentrations: array or scalar, same units as stock. These
+         are the concentrations we want
+
+         DesiredVolumes: scalar or array volumes, in units of au/<Stock>,
+         we want for each dilution. Note that *actual* volume will be a bit 
+         more, since we need something to serially dilute with. E.g., if 
+         DesiredVolumes was 1L, we might need 10mL extra for 'downstream'
+         Dilutions
+    Returns
+        Tuple of arrays, the elements are grouped from high to low 
+        concentrations for each of:<What stocks we used, What volumes of stocks,
+        what volume we diluted with, what was the resulting stock>.
+        Note that the first and last elements are just Stock and DesiredVolumes
+    """
+    NumConc = len(DesiredConcentrations)
+    MassNeededBelow = 0
+    VolumeStock = []
+    VolumeDilute = []
+    Stocks = []
+    ResultingStock = []
+    # work backwards with the last one first, determine what volume
+    # and concentraton is needed
+    for i in range(NumConc-1,-1,-1):
+        VolumeNeeded = GetFromArrayOrScalar(DesiredVolumes,i)
+        ConcNeeded = GetFromArrayOrScalar(DesiredConcentrations,i)
+        # what mass is needed 'below' us?
+        MassNeeded = ConcNeeded*VolumeNeeded
+        MassNeededBelow += MassNeeded
+        # we use  the stock 'above' what we need here
+        TmpStock = Stock if (i==0) \
+                   else GetFromArrayOrScalar(DesiredConcentrations,i-1)
+        # determine how much stock we need
+        VolStock = MassNeededBelow/TmpStock
+        # how can we dilute it to get the concentration we need?
+        # since we have already accounting for the underlying mass,
+        # this implicitly includes the 'extra' volume for dilutions
+        VolDilute = GetVolumeToDilute(TmpStock,VolStock,
+                                      ConcNeeded)
+        VolumeStock.append(VolStock)
+        VolumeDilute.append(VolDilute)
+        Stocks.append(TmpStock)
+        ResultingStock.append(ConcNeeded)
+    # reverse the arrays so we go big to small (natural order for dilution)
+    RetSanitize = lambda x: x[::-1]
+    RetArrs = Stocks,VolumeStock,VolumeDilute,ResultingStock
+    return [RetSanitize(a) for a in RetArrs]
+
+def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
+                        VolString="uL",ConcString="ng/uL"):
+    """
+    Given the results of SeriallyDilute, prints off the relevant information
+    to 
+    """
+    for stock,VolStock,VolDilute,DilutedStock in \
+        zip(Stocks,VolumeStock,VolumeDilute,FinalStocks):
+        VolumeTotal = VolStock + VolDilute
+        StockStr = "{:6.3g}{:s} of {:6.3g}{:s} with {:6.3g}{:s} Buffer".\
+                   format(VolStock,VolString,stock,ConcString,VolDilute,
+                          VolString)
+        ResultStr = "{:6.3g}{:s} of {:6.3g}{:s}".\
+                    format(VolumeTotal,VolString,DilutedStock,ConcString)
+        print("{:s} gives {:s}".format(StockStr,ResultStr))
+
+
+                
 
     
 

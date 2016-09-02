@@ -16,13 +16,13 @@ def run():
     # assume effectively that we want the full aliquot
     # Stats list is formattd like <name,Concentraiton string, stock, desired,
     # already present> s
-    Stats = [ ["TCEP","mM",4,1,37.5*4],
-              ["Strept (in Aliquot)","mg/mL",1.96,0.2,1.96*62.5e-3]]
+    Stats = [ ["TCEP","mM",250,1,37.5*4],
+              ["Strept (in Aliquot)","mg/mL",1.836,0.2,1.96*60.5e-3]]
     # get the stocks, desired concntrations, and already-present concentraitons
     Stocks = [s[2] for s in Stats]
     Desired = [s[3] for s in Stats]
     Already = [s[4] for s in Stats]
-    Volume = 600 # uL
+    Volume = 500 # uL
     Volumes = DilutionUtil.\
         GetVolumesNeededByConcentration(Stocks,Desired,Volume,
                                         AlreadyHaveMass=Already)
