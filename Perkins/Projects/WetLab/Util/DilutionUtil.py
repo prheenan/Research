@@ -235,10 +235,10 @@ def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
     for stock,VolStock,VolDilute,DilutedStock in \
         zip(Stocks,VolumeStock,VolumeDilute,FinalStocks):
         VolumeTotal = VolStock + VolDilute
-        StockStr = "{:6.3g}{:s} of {:6.3g}{:s} with {:6.3g}{:s} Buffer".\
+        StockStr = "{:5.3g}{:s} of {:5.3g}{:s} with {:5.3g}{:s} Buffer".\
                    format(VolStock,VolString,stock,ConcString,VolDilute,
                           VolString)
-        ResultStr = "{:6.3g}{:s} of {:6.3g}{:s}".\
+        ResultStr = "{:5.3g}{:s} of {:5.3g}{:s}".\
                     format(VolumeTotal,VolString,DilutedStock,ConcString)
         print("{:s} gives {:s}".format(StockStr,ResultStr))
 
