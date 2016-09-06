@@ -22,11 +22,7 @@ def run():
     Desired = [2,1,0.5,0.2]
     # desired volumes (for each)
     Volumes = [25] + [10 for d in Desired[1:]]
-    Stocks,VolumeStock,VolumeDilute,FinalStocks = DilutionUtil.\
-                                    SeriallyDilute(Stock,Desired,Volumes)
-    DilutionUtil.PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,
-                                     FinalStocks,ConcString=ConcString,
-                                     VolString=VolString)
+    DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired)
     
 
 if __name__ == "__main__":

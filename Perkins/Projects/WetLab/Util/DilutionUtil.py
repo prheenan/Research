@@ -231,6 +231,10 @@ def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
     """
     Given the results of SeriallyDilute, prints off the relevant information
     to 
+
+    Args:
+        Stocks,VolumeStock,VolumeDilute,FinalStocks: output of SeriallyDilute
+        VolString,ConcStrung:  units for the volume and concentration
     """
     for stock,VolStock,VolDilute,DilutedStock in \
         zip(Stocks,VolumeStock,VolumeDilute,FinalStocks):
@@ -242,8 +246,50 @@ def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
                     format(VolumeTotal,VolString,DilutedStock,ConcString)
         print("{:s} gives {:s}".format(StockStr,ResultStr))
 
+def PrintSerialSteps(Stock,Volumes,Desired,
+                     ConcString="ng/uL",VolString="uL"):
+    """
+    Given a stock concentration, desired volumes and concentrations, prints
+    out the steps needed to serially dilute
 
-                
+    Args:
+        see PrintSerialDilution
+    """
+    Stocks,VolumeStock,VolumeDilute,FinalStocks = \
+                        SeriallyDilute(Stock,Desired,Volumes)
+    PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,
+                        FinalStocks,ConcString=ConcString,
+                        VolString=VolString)
+
+def PrintSolutionSteps(Stats,Volume,vol_units="uL"):
+    """
+    Prints the steps to seriall dilute things
+    Args:
+        Stats: List of Tuples; each element is <Name,Concentration Unit,
+        Stock Concentraiton, Desired concentration, mass present in solution
+        already> 
+    """
+    # get the stocks, desired concntrations, and already-present concentraitons
+    Stocks = [s[2] for s in Stats]
+    Desired = [s[3] for s in Stats]
+    Already = [s[4] for s in Stats]
+    Volumes = GetVolumesNeededByConcentration(Stocks,Desired,Volume,
+                                              AlreadyHaveMass=Already)
+    BufferVolume = Volume - sum(Volumes)
+    # check that our buffer is reasonable non-negative. if it is very close
+    # to zero (less than 1% error), let it slide.
+    assert (BufferVolume > -Volume/100) , \
+        "Warning: cant make this solution. Need a negative volume of buffer. "+\
+        "Use more concentrated stocks"
+    print("In a total solution of {:.1f}{:s}...".format(Volume,vol_units))
+    for (name,conc_units,conc_stock,desired_conc,_),vol_stock in\
+        zip(Stats,Volumes):
+        print("\t{:.2f}{:s} of {:.2f}{:s} {:s} for {:.2f}{:s} in solution".\
+              format(vol_stock,vol_units,conc_stock,conc_units,name,
+                     desired_conc,conc_units))
+    print("\tRemainder is ({:.1f}{:s}) of buffer".format(BufferVolume,
+                                                         vol_units))
+  
 
     
 
