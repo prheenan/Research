@@ -21,14 +21,16 @@ def run():
     DesiredDNAConcentration = 2
     StockDNAConcentration = 50
     # note: DNA is assumed in 1mM EDTA, so we need to find what volume this
-    # translates into; this corresponds to how much extra EDTA we need
+    # translates into; this corresponds to how much extra EDTA we need. This
+    # is effectively a *negative* mass present, (1mM)*ul for each uL 
     DNAStockVolNeeded = (DesiredDNAConcentration*Volume)/StockDNAConcentration
-    Stats = [ ["Ni2+","mM",3,1,-DNAStockVolNeeded],
-              ["DNA","ng/uL",StockDNAConcentration,DesiredDNAConcentration,0]]
+    Stats = [ ["Ni2+","mM",3,1,(-1) * DNAStockVolNeeded],
+              ["TE-DNA","ng/uL",StockDNAConcentration,
+               DesiredDNAConcentration,0]]
     DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units)
     # now do the serial dilutions
-    print("For the serial dilutions from {:.1f}{:s}...".\
-          format(DesiredDNAConcentration,vol_units))
+    print("For serial dilutions from {:.1f}ng/uL into 1mM NiCL2,10mM Hepes...".\
+          format(DesiredDNAConcentration))
     DilutionUtil.PrintSerialSteps(Stock=DesiredDNAConcentration,
                                   Volumes=10,
                                   Desired=[2,1,0.5,0.2])

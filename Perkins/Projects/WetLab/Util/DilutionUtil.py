@@ -157,7 +157,8 @@ def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume,
         ConcsDesired: what we want in the volume
 
         AlreadyHaveMass: if present, the mass already present in the buffer
-        we will use. Element [i] should have the same units as StockConcs[i]
+        we will use. Element [i] should have the same 'mass' units as 
+        StockConcs[i]
     Returns:
         Array of volumes needed going from StockConcs to ConcsDesired in 
         TotalVolume (note that TotalVolume-sum(<Return of this function>) is
