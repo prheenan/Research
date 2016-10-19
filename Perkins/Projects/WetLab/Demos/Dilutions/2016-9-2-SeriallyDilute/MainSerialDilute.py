@@ -17,11 +17,15 @@ def run():
     ConcString = "ng/uL"
     VolString = "uL"
     # stock concentration
-    Stock = 43
+    Stock = 20
     # Desired concentrations
-    Desired = [2,1,0.5,0.2]
+    FirstDilutionConcentration = 10
+    Desired = [FirstDilutionConcentration,2,0.4]
+    # Maximum Volume possible to make
+    StockVolumeTotal = 30
+    MaxVolume = Stock * StockVolumeTotal / FirstDilutionConcentration
     # desired volumes (for each)
-    Volumes = [25] + [10 for d in Desired[1:]]
+    Volumes = [20] + [20 for d in Desired[1:]]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired)
     
 

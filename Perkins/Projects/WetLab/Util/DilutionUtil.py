@@ -28,7 +28,10 @@ def GetVolumeToDilute(Concentration,Volume,DesiredConcentration):
         Volume + (<return of this funciton>) gives the desired concentration
     """
     # figure out how much stuff we have
-    ng = Concentration*Volume
+    try:
+        ng = Concentration*Volume
+    except TypeError:
+        ng = np.array(Concentration)*np.array(Volume)
     # what total volume do we need?
     volumeNeeded = ng/DesiredConcentration
     # how much do we need to add?
@@ -122,16 +125,19 @@ def _DilutionString(dilutionObj,UnitVol,UnitConc):
         String representation of dilution objects
     """
     toRet = ""
+    n = len(dilutionObj)
     for i,d in enumerate(dilutionObj):
         stockConcStr = "({:4.1f}{:s}@{:4.1f}{:s})".\
                        format(float(d.StockVol),UnitVol[i],float(d.StockConc),
                               UnitConc[i])
         volAddStr = "({:4.1f}{:s})".format(d.AddVol,UnitVol[i])
         TotalVol = float(d.AddVol) + float(d.StockVol)
-        toRet += ("Stock {: <7} (#{:03d}) {: <20}" +
-                  "add {: <10} -> {:3.1f}{:7s} in {:3.1f}{:7s}\n").\
+        toRet += ("{: <4} (#{:03d}) {: <20}" +
+                  "add {: <8} -> {:3.1f}{:6s} in {:3.1f}{:7s}").\
             format(d.Name,i,stockConcStr,volAddStr,d.DesiredConc,
                    UnitConc[i],TotalVol,UnitVol[i])
+        if (i != n-1):
+            toRet += "\n"
     return toRet
     
 def _PrintVolumeDilutions(dilutionObj,**kwargs):
@@ -247,6 +253,17 @@ def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
                     format(VolumeTotal,VolString,DilutedStock,ConcString)
         print("{:s} gives {:s}".format(StockStr,ResultStr))
 
+def StockVolumeNeededForSerialDilution(Stock,Volumes,Desired):
+    """
+    Gets the  total volume needed of the 'stock'
+
+    Args:
+         see PrintSerialSteps
+    """
+    _,VolumeStock,_,_ = SeriallyDilute(Stock,Desired,Volumes)
+    return VolumeStock[0]
+
+        
 def PrintSerialSteps(Stock,Volumes,Desired,
                      ConcString="ng/uL",VolString="uL"):
     """
@@ -262,7 +279,7 @@ def PrintSerialSteps(Stock,Volumes,Desired,
                         FinalStocks,ConcString=ConcString,
                         VolString=VolString)
 
-def PrintSolutionSteps(Stats,Volume,vol_units="uL"):
+def PrintSolutionSteps(Stats,Volume,vol_units="uL",BufferName="buffer"):
     """
     Prints the steps to seriall dilute things
     Args:
@@ -288,8 +305,8 @@ def PrintSolutionSteps(Stats,Volume,vol_units="uL"):
         print("\t{:.2f}{:s} of {:.2f}{:s} {:s} for {:.2f}{:s} in solution".\
               format(vol_stock,vol_units,conc_stock,conc_units,name,
                      desired_conc,conc_units))
-    print("\tRemainder is ({:.1f}{:s}) of buffer".format(BufferVolume,
-                                                         vol_units))
+    print("\tRemainder is ({:.1f}{:s}) of {:s}".format(BufferVolume,
+                                                       vol_units,BufferName))
   
 
     

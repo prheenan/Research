@@ -36,7 +36,7 @@ def run():
     """
     Simple demo for reading in and segmenting an image
     """
-    ImagePath = "./Image0007HtR.tif"
+    ImagePath = "./Image0007HtR_Small.tif"
     PixelsPerNanometer = 2e3/1024
     MinFeatureSizeNanometer = 10
     MinPixels = int(np.ceil(MinFeatureSizeNanometer/PixelsPerNanometer))
@@ -45,7 +45,7 @@ def run():
     Image = imread(ImagePath,as_grey=True)
     # denoising, see
     # scikit-image.org/docs/dev/auto_examples/filters/plot_denoise.html
-    qLow,qHigh = np.percentile(Image,[80,95])
+    qLow,qHigh = np.percentile(Image,[90,99])
     LowIntensity = qLow
     HighIntensity = qHigh
     CorrectedImage =  Image.copy()
@@ -76,20 +76,24 @@ def run():
     fig = PlotUtilities.figure(dpi=600)
     # get the arc length of each chain
     NumRows = 5
-    plt.subplot(NumRows,2,1)
+    ImageFig = lambda : PlotUtilities.figure()
+    IncrementName = lambda fig,x: \
+                    PlotUtilities.savefig(plt.gcf(),"Image{:d}.png".format(x))
+    ImageFig()
     plt.imshow(Image, cmap=cm.gray)
-    plt.subplot(NumRows,2,3)
+    IncrementName(fig,0)
+    ImageFig()
     plt.imshow(CorrectedImage, cmap=cm.gray)
-    plt.subplot(NumRows,2,4)
-    plt.hist(CorrectedImage.ravel(),bins=100)
-    plt.axvline(LowIntensity)
-    plt.axvline(HighIntensity)
-    plt.subplot(NumRows,2,5)
+    IncrementName(fig,1)
+    ImageFig()
     plt.imshow(binary,cmap=cm.gray)
-    plt.subplot(NumRows,2,6)
+    IncrementName(fig,2)
+    ImageFig()
     plt.imshow(segmentation,cmap=cm.gray)
+    IncrementName(fig,3)
     # draw and indicate the skeletons
-    ax = plt.subplot(NumRows,2,7)
+    ImageFig()
+    ax = plt.subplot(1,1,1)
     plt.imshow(skeleton,cmap=cm.Greys)
     colors = ['r','g','b','k','m','y']
     for i,region in enumerate(chain_properties):
@@ -99,7 +103,7 @@ def run():
         rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
                                   fill=False, edgecolor=color, linewidth=1)
         ax.add_patch(rect)
-    PlotUtilities.savefig(fig,"image.png")
+    IncrementName(fig,4)
 
 if __name__ == "__main__":
     run()

@@ -32,7 +32,8 @@ def Complement(strV):
                'T':'A',
                'G':'C',
                'C':'G'}
-    return ''.join([ dictDNA[base] for base in strV ])
+    Sanit = strV.upper()
+    return ''.join([ dictDNA[base] for base in Sanit ])
 
 def ReverseComplement(strV):
     """

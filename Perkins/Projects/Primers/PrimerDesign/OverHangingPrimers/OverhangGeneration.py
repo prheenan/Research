@@ -386,6 +386,7 @@ def GetPrimersSortedByAlignmentScore(mInfo):
     allSeq = mInfo.AllPrimers
     return GetSortedScores(allSeq)
 
+
 def ConcatToPrimers(PrimerStr,ForwardPrimer,ReversePrimer,
                     addSpacer=False,addDbcoAndBio=False,
                     **kwargs):

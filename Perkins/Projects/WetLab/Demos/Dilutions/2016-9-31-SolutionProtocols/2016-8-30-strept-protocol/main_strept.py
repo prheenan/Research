@@ -5,24 +5,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-sys.path.append("../../../")
+sys.path.append("../../../../")
 from Util import DilutionUtil 
 
 def run():
     """
     For aliquotting things...
     """
-    # TCEP is already present (25uL at 4mM),
+    # TCEP is already present,
     # assume effectively that we want the full aliquot
     # Stats list is formattd like <name,Concentraiton string, stock, desired,
     # already present> s
-    Stats = [ ["TCEP","mM",250,1,37.5*4],
-              ["Strept (in Aliquot)","mg/mL",1.836,0.2,1.96*60.5e-3]]
+    ProteinStock = 0.5
+    ProteinDesired = 0.2
+    Stats = [ ["TCEP","mM",50,1,30*5 * (80/90)],
+              ["Strept (in Aliquot)","mg/mL",ProteinStock,ProteinDesired,0]]
     # get the stocks, desired concntrations, and already-present concentraitons
     Stocks = [s[2] for s in Stats]
     Desired = [s[3] for s in Stats]
     Already = [s[4] for s in Stats]
-    Volume = 500 # uL
+    Volume = 200 # uL
     Volumes = DilutionUtil.\
         GetVolumesNeededByConcentration(Stocks,Desired,Volume,
                                         AlreadyHaveMass=Already)
@@ -35,6 +37,16 @@ def run():
               format(vol_stock,vol_units,conc_stock,conc_units,name,
                      desired_conc,conc_units))
     print("\tRemainder is ({:.1f}uL) of buffer".format(BufferVolume))
+    # Now assume that the actual concentration of Protein was somewhat higher;
+    # what do we have in the solution?
+    ActualConcentration = 1.9
+    FactorMore  = ActualConcentration/ProteinStock
+    TrueConcentration = FactorMore * ProteinDesired
+    print("For 0.2mg/mL according to nanodrop " + \
+          "(assume stock at {:.1f} mg/mL)".format(ActualConcentration))
+    DilutionUtil.PrintDilutions([TrueConcentration],[20],[ProteinDesired],
+                                UnitConc=["mg/mL"])
+
                                       
 
 if __name__ == "__main__":

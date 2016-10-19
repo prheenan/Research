@@ -29,6 +29,8 @@ def run():
     Weights = np.array([5,3,1,-2])
     ScorePerNameToTotal = lambda x: sum(np.array(x) * Weights)
     ScoresByName = [ScorePerNameToTotal(d) for d in ScoresByNameAndVoteType]
+    TotalN = sum([np.sum(np.where(np.abs(d)>0.5))
+                  for d in ScoresByNameAndVoteType])
     Max = np.max(ScoresByName)
     Min = np.min(ScoresByName)
     # get the y tick lengths

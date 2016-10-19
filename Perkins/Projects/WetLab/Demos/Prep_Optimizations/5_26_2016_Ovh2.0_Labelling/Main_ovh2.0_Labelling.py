@@ -207,13 +207,14 @@ def run():
     TimesHours = TimesSeconds/3600
     # write down the depositions names, volumes (uL) and radii (m)
     # used, below, to plot
-    Depositions = [["Mica",10e-6,9.5e-3/2],
-                   ["AFM",60e-6,13e-3/2]]
+    Depositions = [["Mica",20e-6,9.5e-3/2],
+                   ["AFM",100e-6,13e-3/2]]
     PlottingData = []
     for name,VolumeDepoLiters,RadiusMeters in Depositions:
         VolumeDepoMetersCubed = VolumeDepoLiters/1000
         # determine the effective average height of the bubble
         SurfaceAreaMetersSquared = np.pi * RadiusMeters**2
+
         HeightMeters = VolumeDepoMetersCubed/SurfaceAreaMetersSquared
         HeightMicrons = HeightMeters*1e6
         TimeDiffuseSecondsAFM = TimeToDiffuse(DiffusionCoeffMetersSquaredPerSec,

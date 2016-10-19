@@ -7,6 +7,7 @@ class Scales:
 class Purifications:
     HPLC = "HPLC"
     NONE = "STD"
+    PAGE = "PAGE"
 
 class IdtOrder:
     def __init__(self,ProductName,Sequence,Scale=Scales._25NM,
@@ -27,7 +28,7 @@ class IdtOrder:
         self.seq = Sequence
         self.scale = Scale
         self.purification = Purification
-        # biotin or DBCO recquires HPLC
+        # biotin or DBCO recquires HPLC (not even PAGE works)
         if ( (Biotin5Prime() in self.seq) or (Dbco5Prime() in self.seq)):
             self.purification = Purifications.HPLC
     def __str__(self):
@@ -137,15 +138,28 @@ def SequenceAndReverseComplementOrders(Seq,NameFwd,NameRev,**kwargs):
 
 def IdSpacer():
     """
-    Return: the string for a spacer
+    See: idtdna.com/site/Catalog/Modifications/Category/2
+
+    Return: the string for an abasic spacer. 
     """
     return "/IdSp/"
 
 def Biotin5Prime():
     """
-    Returns: the string for a 5' Biotin
+    See: idtdna.com/site/Catalog/Modifications/Category/2
+
+    Returns: the string for a 5' Biotin, with TEG spacer
     """
     return "/5BiotinTEG/"
+
+def Biotin3Prime():
+    """
+    See: idtdna.com/site/Catalog/Modifications/Category/2
+
+    Returns: the string for a 3' Biotin, with TEG spacer
+    """
+    return "/3BioTEG/"
+    
 
 def Dbco5Prime():
     """

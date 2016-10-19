@@ -12,14 +12,26 @@ def run():
     """
     For aliquotting things...
     """
-    # TCEP is already present (25uL at 4mM),
-    # assume effectively that we want the full aliquot
     # Stats list is formattd like <name,Concentraiton string, stock, desired,
-    # already present> s
+    # already present> 
     vol_units = "uL"
-    Volume = 100 # units of vol_units
     DesiredDNAConcentration = 2
-    StockDNAConcentration = 50
+    # Pre dilution concntration
+    PreDilutionConcentration = 68.6 
+    # sotkc concentration is what we *want* the stock to be at, for imaging
+    StockDNAConcentration = 20
+    stocks = np.array([PreDilutionConcentration])
+    # what volume are the stocks, in uL
+    volumes = np.array([68])
+    # The serial aguments
+    SerialArgs = dict(Stock=DesiredDNAConcentration,
+                      Volumes=40,
+                      Desired=[2,0.5])
+    Volume = DilutionUtil.StockVolumeNeededForSerialDilution(**SerialArgs)
+    # what the post-dilution concenration is, ng/uL
+    DesiredConc = np.array([StockDNAConcentration])
+    obj = DilutionUtil.PrintDilutions(stocks,volumes,DesiredConc)
+                                      
     # note: DNA is assumed in 1mM EDTA, so we need to find what volume this
     # translates into; this corresponds to how much extra EDTA we need. This
     # is effectively a *negative* mass present, (1mM)*ul for each uL 
@@ -27,13 +39,12 @@ def run():
     Stats = [ ["Ni2+","mM",3,1,(-1) * DNAStockVolNeeded],
               ["TE-DNA","ng/uL",StockDNAConcentration,
                DesiredDNAConcentration,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units)
+    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
+                                    BufferName="10mM Hepes, pH7")
     # now do the serial dilutions
-    print("For serial dilutions from {:.1f}ng/uL into 1mM NiCL2,10mM Hepes...".\
+    print("For serial dilutions from {:.1f}ng/uL into 1mM NiCl2,10mM Hepes...".\
           format(DesiredDNAConcentration))
-    DilutionUtil.PrintSerialSteps(Stock=DesiredDNAConcentration,
-                                  Volumes=10,
-                                  Desired=[2,1,0.5,0.2])
+    DilutionUtil.PrintSerialSteps(**SerialArgs)
 
                                       
 
