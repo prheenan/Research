@@ -28,12 +28,12 @@ def MakePlot(Example,height,label,**kwargs):
     MinV = np.percentile(height_nm,pct_considered_surface)
     height_nm_rel = height_nm - MinV
     # make plots
-    fig = PlotUtilities.figure(figsize=(5,8))
+    fig = PlotUtilities.figure(figsize=(10/1.5,16/1.5))
     ax = plt.subplot(2,1,1)
     plt.imshow( height_nm_rel,extent=[0,range_microns,0,range_microns],
                 cmap=plt.cm.Greys,aspect='auto',**kwargs)
     # remove the ticks
-    PlotUtilities.lazyLabel(r"Microns",r"Microns","Surface Image")
+    PlotUtilities.lazyLabel(r"Microns",r"Microns","{:s} Surface Image".format(label))
     plt.tick_params(axis='both', which='both', bottom='off', top='off',
                     right='off', left='off') 
     PlotUtilities.colorbar("Height (nm)")
@@ -62,13 +62,19 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-
+    surface_kwargs = dict(vmin=-1, vmax=4)
+    tip_kwargs = dict(vmin=-10,vmax=18)
     in_files = [
-        ["2016-10-6-mini-pbs-koh-clened-glass-batch-10-5-2016.pxp","KOH"],
+        ["2016-10-6-mini-pbs-koh-clened-glass-batch-10-5-2016.pxp","KOH",surface_kwargs],
+        ["2016-10-18-mini-pbs-PEG-azide-surface-batch-0p10x_peg_0p015mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp",r"PEG-Azide-$\frac{1}{10}$x",surface_kwargs],
         ["2016-10-14-mini-pbs-PEG-azide-surface-batch-10-10-2016_1%_attachment.pxp",
-         "PEG-Azide"]]
-    kwargs = dict(vmin=-1, vmax=4)
-    for file_name,label in in_files:
+         "PEG-Azide-1x",surface_kwargs],
+        ["2016-10-18-mini-pbs-PEG-azide-surface-batch-3x_peg_0p45mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp","PEG-Azide-3x",surface_kwargs],
+        ["9-221-2016-functiuonalized-9-19-tStrept-in-pbs-ph7.4-with-mini.pxp","'Good' T-Strept Mini",
+         tip_kwargs],
+        ["2016-10-14-mini-pbs-t-strept-tip-batch-10-10-2016_1%_attachment.pxp","'Bad'(?) T-Strept Mini",
+         tip_kwargs]]
+    for file_name,label,kwargs in in_files:
         Example,height = ReadImage(file_name)
         MakePlot(Example,height,label,**kwargs)
 
