@@ -311,6 +311,8 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,FlipSign=True,
                         MetersAfterTouchoff=None,Correct=False,**kwargs):
     """
     Args:
+        o: TimeSepForce Object to get the FEC pulling region of
+    
         fraction: Amount to average to determine the zero point for the force. 
         FilterPoints: how many points to filter to find the zero, from the 
         *start* of the array forward

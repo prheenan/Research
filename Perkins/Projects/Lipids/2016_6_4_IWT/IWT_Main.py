@@ -48,6 +48,8 @@ def ReadInAllFiles(FileNames,Limit):
     toRet = []
     for f in FileNames:
         toRet.extend(FEC_Util.ReadInData(f))
+        # see if we are done
+    # only return the limited number we want
     return toRet[:Limit]
 
 def GetIWTObj(Base,FullNames,Force,Limit=150,
@@ -75,13 +77,14 @@ def GetIWTObj(Base,FullNames,Force,Limit=150,
     GetFilter = lambda x: max(3,
                               int((FilterToMeters/x.Velocity)*x.Frequency))
     Touchoff = [FEC_Util.GetFECPullingRegion(r,FilterPoints=GetFilter(r),
-                                             MetersAfterTouchoff=PastZeroExt)
+                                             MetersAfterTouchoff=PastZeroExt,
+                                             Correct=True)
                 for r in RetractList]
     # get the IWT transform objects
     IwtObjects = ToIWTObjects(Touchoff)
     return IwtObjects,RetractList,Touchoff
 
-def GetObjectsAndIWT(Base,FullName,Force,NumBins=125):
+def GetObjectsAndIWT(Base,FullName,Force,NumBins=125,Limit=150):
     """
     Get the IWT and landscape associated with all the force extension curves
 
@@ -90,7 +93,8 @@ def GetObjectsAndIWT(Base,FullName,Force,NumBins=125):
     Returns:
         See GetIWTObj, plus it returns a LandscapeObj
     """
-    IwtObjects,RetractList,Touchoff = GetIWTObj(Base,FullName,Force)
+    IwtObjects,RetractList,Touchoff = GetIWTObj(Base,FullName,Force,
+                                                Limit=Limit)
     # get the IWT
     LandscapeObj = InverseWeierstrass.FreeEnergyAtZeroForce(IwtObjects,
                                                             NumBins=NumBins)
@@ -150,23 +154,27 @@ def GetAllExtensionsAndForce(RetractList,Touchoff,IwtObjects,Base):
     return ext,force
 
 def run():
-    Base = "/Users/patrickheenan/Documents/education/boulder_files/" +\
-           "rotations_year_1/3_perkins/reports/2016_Bio-DOPC-Energy-Landscape/"
+    BaseDir = "/Volumes/group/4Patrick/Reports/" + \
+           "2016_6_5_NearEquilibrium_Biotin_DOPC/IWT/"
+    InBase = BaseDir + "In/"
+    OutBase = BaseDir + "Out/"
     FullNames = [
-    Base +"2016-6-3-micah-1-part-per-million-biolevel-long-strept-coated.pxp",
-    Base +"2016-6-4-micah-1ppm-biolever-long-strept-saved-data.pxp",
-    Base +"2016-6-5-micah-1ppm-biolever-long-strept-saved-data.pxp"
+    InBase +"2016-6-3-micah-1-part-per-million-biolevel-long-strept-coated.pxp",
+    InBase +"2016-6-4-micah-1ppm-biolever-long-strept-saved-data.pxp",
+    InBase +"2016-6-5-micah-1ppm-biolever-long-strept-saved-data.pxp"
     ]
+    Limit = 100
     Stiffness_pN_per_nm = 4 # stiffness of the cantilever, pN/nm
     ForceReRead = False
     ForceRePlot = False
     IwtObjects,RetractList,Touchoff,LandscapeObj  = \
-            pCheckUtil.getCheckpoint(Base + "IWT.pkl",GetObjectsAndIWT,
-                                     ForceReRead,Base,FullNames,ForceReRead)
-    ext,force  = pCheckUtil.getCheckpoint(Base + "ExtAndForce.pkl",
+            pCheckUtil.getCheckpoint(OutBase + "IWT.pkl",GetObjectsAndIWT,
+                                     ForceReRead,InBase,FullNames,ForceReRead,
+                                     Limit=Limit)
+    ext,force  = pCheckUtil.getCheckpoint(OutBase + "ExtAndForce.pkl",
                                           GetAllExtensionsAndForce,
                                           ForceRePlot,RetractList,Touchoff,
-                                          IwtObjects,Base)
+                                          IwtObjects,OutBase)
     # make a list of histograms for the plot
     fig = pPlotUtil.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -180,11 +188,11 @@ def run():
         ax.bar(left=x,height=z,
                zs=yedges[:-1],zdir='y',alpha=0.7,color=colors[i%NumColors])
     pPlotUtil.lazyLabel("Force (pN)","Extension (nm)","",zlab="Count")
-    pPlotUtil.savefig(fig,Base + "Hist2d.png")
+    pPlotUtil.savefig(fig,OutBase + "Hist2d.png")
     toNano = lambda x : x * 1e9
     toPn = lambda x: x * 1e12
     nBins = 50
-    # make a heat map, essentiall
+    # make a heat map, essentially
     fig = plt.figure()
     ax = plt.subplot(1,1,1)
     counts, xedges, yedges, Image = plt.hist2d(ext, force,
@@ -203,7 +211,7 @@ def run():
                         frameon=True)
     cbar = plt.colorbar()
     cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
-    pPlotUtil.savefig(fig,Base + "HeatMap.png")
+    pPlotUtil.savefig(fig,OutBase + "HeatMap.png")
     fig = pPlotUtil.figure(figsize=(8,12))
     plt.subplot(3,1,1)
     NanoExt =toNano(LandscapeObj.Extensions)
@@ -254,7 +262,7 @@ def run():
     plt.ylim([0,max(EnergyZoom)])
     pPlotUtil.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
                         "",frameon=True)
-    pPlotUtil.savefig(fig,Base + "IWT.png")
+    pPlotUtil.savefig(fig,OutBase + "IWT.png")
 
 if __name__ == "__main__":
     run()
