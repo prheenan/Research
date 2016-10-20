@@ -261,6 +261,8 @@ def GetFilteredForce(Obj,NFilterPoints):
     """
     ToRet = copy.deepcopy(Obj)
     ToRet.Force = SavitskyFilter(Obj.Force,nSmooth=NFilterPoints)
+    ToRet.Separation = SavitskyFilter(Obj.Separation,nSmooth=NFilterPoints)
+    ToRet.ZSnsr = SavitskyFilter(Obj.ZSnsr,nSmooth=NFilterPoints)
     return ToRet
 
 def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
