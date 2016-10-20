@@ -36,13 +36,17 @@ def run():
     cycles = 16
     size = Example.ZSnsr.size
     cyclesize = int(size/cycles)
-    retracts = []
+    retracts,reverse = [],[]
     for i in range(cycles):
         # XXX only get first half
-        m_slice = slice(i*cyclesize,int((i+0.5)*cyclesize))
-        retract = FEC_Util.MakeTimeSepForceFromSlice(Example,m_slice)
-        retracts.append(retract)
-    half_cycle_size= retract.Force.size
+        half = int((i+0.5)*cyclesize)
+        fwd_slice = slice(i*cyclesize,half)
+        rev_slice = slice(half,(i+1)*cyclesize)
+        fwd = FEC_Util.MakeTimeSepForceFromSlice(Example,fwd_slice)
+        rev = FEC_Util.MakeTimeSepForceFromSlice(Example,rev_slice)
+        retracts.append(fwd)
+        reverse.append(rev)
+    half_cycle_size= fwd.Force.size
     up = np.linspace(z0,zf,half_cycle_size)
     down = np.linspace(zf,z0,half_cycle_size)
     updown = np.concatenate((up,down))
@@ -62,7 +66,7 @@ def run():
                   for o in retracts]
     InverseWeierstrass.SetAllWorkOfObjects(IwtObjects)
     # get the IWT
-    Bins = [50,100,200,250,300,500,1000]
+    Bins = [25,50,100,200,250,300,500,1000]
     for b in Bins:
         LandscapeObj =  InverseWeierstrass.\
                         FreeEnergyAtZeroForce(IwtObjects,
@@ -73,7 +77,7 @@ def run():
                                           nBins=b)
         PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
         fig = PlotUtilities.figure(figsize=(12,12))
-        IWT_Util.EnergyLandscapePlot(LandscapeObj,FOneHalf=15e-12,
+        IWT_Util.EnergyLandscapePlot(LandscapeObj,FOneHalf=16e-12,
                                      ZoomBoundsMeters=[56e-9,68e-9],
                                      stiffness_pN_per_nm=80,
                                      NumPointsAround=int(b/10))
