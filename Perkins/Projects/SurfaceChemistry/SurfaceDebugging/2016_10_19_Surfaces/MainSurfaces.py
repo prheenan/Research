@@ -9,6 +9,14 @@ sys.path.append("../../../../../../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import PlotUtilities
 
+class SurfaceImage:
+
+    def __init__(self,Example,height):
+        self.height = height
+        self.pixel_size_meters = Example.ImagePixelSize()
+        self.NumRows = height.shape[0]
+        self.range_meters = self.pixel_size_meters * self.NumRows
+
 def ReadImage(InFile):
     Waves = PxpLoader.LoadAllWavesFromPxp(InFile,
                                           ValidFunc=PxpLoader.IsValidImage)
@@ -17,12 +25,8 @@ def ReadImage(InFile):
     height = Data[:,:,0]
     return Example,height
 
-def MakePlot(Example,height,label,**kwargs):
-    pixel_size_meters = Example.ImagePixelSize()
-    NumRows = height.shape[0]
-    range_meters = pixel_size_meters * NumRows
-    range_microns = range_meters * 1e6
-    height_nm = height * 1e9
+def MakePlot(SurfaceImage,label,**kwargs):
+    height_nm = SurfaceImage.height * 1e9
     # look at the *relative* height
     pct_considered_surface = 5
     MinV = np.percentile(height_nm,pct_considered_surface)
@@ -30,10 +34,12 @@ def MakePlot(Example,height,label,**kwargs):
     # make plots
     fig = PlotUtilities.figure(figsize=(10/1.5,16/1.5))
     ax = plt.subplot(2,1,1)
+    range_microns = SurfaceImage.range_meters * 1e6
     plt.imshow( height_nm_rel,extent=[0,range_microns,0,range_microns],
                 cmap=plt.cm.Greys,aspect='auto',**kwargs)
     # remove the ticks
-    PlotUtilities.lazyLabel(r"Microns",r"Microns","{:s} Surface Image".format(label))
+    PlotUtilities.lazyLabel(r"Microns",r"Microns",
+                            "{:s} Surface Image".format(label))
     plt.tick_params(axis='both', which='both', bottom='off', top='off',
                     right='off', left='off') 
     PlotUtilities.colorbar("Height (nm)")
@@ -76,7 +82,8 @@ def run():
          tip_kwargs]]
     for file_name,label,kwargs in in_files:
         Example,height = ReadImage(file_name)
-        MakePlot(Example,height,label,**kwargs)
+        Image = SurfaceImage(Example,height)
+        MakePlot(Image,label,**kwargs)
 
 if __name__ == "__main__":
     run()
