@@ -124,7 +124,7 @@ def PlotImageDistribution(Image,pct=95,bins=300,PlotLines=True,AddSigmas=True,
                             "Count","Distribution of Heights")
     return n,bins,patches
 
-def MakePlot(SurfaceImage,label,**kwargs):
+def MakePlot(SurfaceImage,label,OutPath,**kwargs):
     """
     Makes a simple plot of the desired distribution
     """
@@ -134,16 +134,18 @@ def MakePlot(SurfaceImage,label,**kwargs):
     PlotImage(SurfaceImage,label,**kwargs)
     ax = plt.subplot(2,1,2)
     PlotImageDistribution(SurfaceImage)
-    PlotUtilities.savefig(fig,"./out/{:s}.png".format(label))
+    PlotUtilities.savefig(fig,OutPath)
 
-def MakeGridPlot(ImageInfo,Limits,Name,figsize):
+def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize):
     # first, loop through and make the 'normal' plots, per distribution
     Images = []
+    OutBase = Base + "out/"
+    InBase = Base + "in/"
     for file_name,label,kwargs in ImageInfo:
-        Image = CheckpointUtilities.getCheckpoint("./out/c_ " + label + ".pkl",
+        Image = CheckpointUtilities.getCheckpoint(OutBase +"c_"+label+".pkl",
                                                   ReadImageAsObject,False,
-                                                  file_name)
-        MakePlot(Image,label,**kwargs)
+                                                  InBase + file_name)
+        MakePlot(Image,label,OutPath=OutBase + label + ".pdf",**kwargs)
         Images.append(Image)
     # now we make a grid
     NumRows = 3
@@ -168,7 +170,7 @@ def MakeGridPlot(ImageInfo,Limits,Name,figsize):
                                          color=colors[i],
                                          PlotLines=False)
         plt.xlim(Limits)
-    PlotUtilities.savefig(fig,Name)
+    PlotUtilities.savefig(fig,OutBase+Name+".pdf")
             
 
 def run():
@@ -183,6 +185,8 @@ def run():
     """
     surface_kwargs = dict(vmin=-1, vmax=4)
     tip_kwargs = dict(vmin=-10,vmax=18)
+    Base = "/Volumes/group/4Patrick/Reports/" + \
+           "2016-10-20-tip-and-surface-height-distributions/"
     files_tips =[
         ["1_EtchedLong.pxp","Etched Long",tip_kwargs],
         ["9-221-2016-functiuonalized-9-19-tStrept-in-pbs-ph7.4-with-mini.pxp","'Good' T-Strept Mini",tip_kwargs],
@@ -194,8 +198,8 @@ def run():
          "PEG-Azide-1x",surface_kwargs],
         ["2016-10-18-mini-pbs-PEG-azide-surface-batch-3x_peg_0p45mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp","PEG-Azide-3x",surface_kwargs],
         ]
-    MakeGridPlot(files_tips,[-50,200],"./out/TipGrid.pdf",figsize=(16,16))
-    MakeGridPlot(files_surfaces,[-5,30],"./out/SurfaceGrid.pdf",
+    MakeGridPlot(files_tips,[-50,200],Base,"TipGrid.pdf",figsize=(16,16))
+    MakeGridPlot(files_surfaces,[-5,30],Base,"SurfaceGrid.pdf",
                  figsize=(24,16))
 
 if __name__ == "__main__":

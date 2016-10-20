@@ -232,7 +232,9 @@ def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
         EnergyZoom -= np.min(EnergyZoom)
         ExtZoom -= ExtZoom[MinIdx]
         # fit a parabola to the bottom of the well
-        IdxSlice = slice(MinIdx-NumPointsAround,MinIdx+NumPointsAround)
+        IdxStart = max(0,MinIdx-NumPointsAround)
+        IdxEnd = min(ExtZoom.size,MinIdx+NumPointsAround)
+        IdxSlice = slice(IdxStart,IdxEnd)
         FitX = ExtZoom[IdxSlice]
         FitY = EnergyZoom[IdxSlice]
         coeffs = np.polyfit(FitX,FitY,deg=2)

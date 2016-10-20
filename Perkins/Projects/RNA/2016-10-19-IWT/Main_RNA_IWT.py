@@ -26,8 +26,8 @@ def run():
     FilteredData = [FEC_Util.GetFilteredForce(r,FilterPoints)
                     for r in RawData]
     Example = FilteredData[0]
-    z0_Separation = 59e-9
-    zf_Separation = 75e-9
+    z0_Separation = 60e-9
+    zf_Separation = 73e-9
     z0_ZSnsr = 57e-9
     zf_ZSnsr = 70e-9
     # choose the bounds
@@ -36,12 +36,13 @@ def run():
     cycles = 16
     size = Example.ZSnsr.size
     cyclesize = int(size/cycles)
-    # XXX break up by cycle
+    retracts = []
     for i in range(cycles):
-        m_slice = slice(i*cyclesize,(i+1)*cyclesize)
-        plt.plot(Example.Force[m_slice])
-        plt.show()
-    half_cycle_size= cyclesize/2
+        # XXX only get first half
+        m_slice = slice(i*cyclesize,int((i+0.5)*cyclesize))
+        retract = FEC_Util.MakeTimeSepForceFromSlice(Example,m_slice)
+        retracts.append(retract)
+    half_cycle_size= retract.Force.size
     up = np.linspace(z0,zf,half_cycle_size)
     down = np.linspace(zf,z0,half_cycle_size)
     updown = np.concatenate((up,down))
@@ -49,24 +50,19 @@ def run():
     all_cycles = np.zeros(size)
     MaxSize = min(cat_cyc.size,all_cycles.size)
     all_cycles[:MaxSize] = cat_cyc[:MaxSize]
-    print(all_cycles.size-cat_cyc.size)
     # XXX just extrapolate end..
     all_cycles[MaxSize:] = cat_cyc[-1]
-    plt.plot(Example.Separation)
-    plt.plot(RawData[0].Separation,color='k',alpha=0.3)
-    plt.plot(cat_cyc)
-    plt.show()
     IwtObjects = [InverseWeierstrass.\
         FEC_Pulling_Object(Time=o.Time,
                            Extension=o.Separation,
                            Force=o.Force,
                            SpringConstant=o.Meta.__dict__["K"],
                            Velocity=o.Meta.__dict__["RetractVelocity"],
-                           ZFunc=lambda : all_cycles)
-                  for o in FilteredData]
+                           ZFunc=lambda : up)
+                  for o in retracts]
     InverseWeierstrass.SetAllWorkOfObjects(IwtObjects)
     # get the IWT
-    Bins = [200,250,300]
+    Bins = [50,100,200,250,300,500,1000]
     for b in Bins:
         LandscapeObj =  InverseWeierstrass.\
                         FreeEnergyAtZeroForce(IwtObjects,
@@ -76,8 +72,11 @@ def run():
                                           Example.Force,
                                           nBins=b)
         PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
-        fig = PlotUtilities.figure(figsize=(8,8))
-        IWT_Util.EnergyLandscapePlot(LandscapeObj,FOneHalf=16e-12)
+        fig = PlotUtilities.figure(figsize=(12,12))
+        IWT_Util.EnergyLandscapePlot(LandscapeObj,FOneHalf=15e-12,
+                                     ZoomBoundsMeters=[56e-9,68e-9],
+                                     stiffness_pN_per_nm=80,
+                                     NumPointsAround=int(b/10))
         PlotUtilities.savefig(fig,OutBase + "1_{:d}IWT.pdf".format(b))
     
 if __name__ == "__main__":
