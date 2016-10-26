@@ -72,7 +72,7 @@ def ReadImageAsObject(file_name):
     Tuples = ReadImage(file_name)
     return [SurfaceImage(ex,height) for ex,height in Tuples]
 
-def PlotImage(Image,label,**kwargs):
+def PlotImage(Image,**kwargs):
     """
     Plots SurfaceImage as a greyscale map
     
@@ -86,13 +86,11 @@ def PlotImage(Image,label,**kwargs):
     plt.imshow( height_nm_relative,extent=[0,range_microns,0,range_microns],
                 cmap=plt.cm.Greys,aspect='auto',**kwargs)
     # remove the ticks
-    PlotUtilities.lazyLabel(r"Microns",r"Microns",label)
     plt.tick_params(axis='both', which='both', bottom='off', top='off',
                     right='off', left='off')
-    PlotUtilities.colorbar("Height (nm)")
 
 def PlotImageDistribution(Image,pct=95,bins=300,PlotLines=True,AddSigmas=True,
-                          label="Height\nDistribution",**kwargs):
+                          **kwargs):
     """
     Plots the distribution of image heights, relative to the surface
 
@@ -109,7 +107,8 @@ def PlotImageDistribution(Image,pct=95,bins=300,PlotLines=True,AddSigmas=True,
     """
     height_nm_relative = Image.height_nm_rel()
     n,bins,patches = plt.hist(height_nm_relative.ravel(),bins=bins,linewidth=0,
-                              alpha=0.3,label=label,**kwargs)
+                              edgecolor="none",alpha=0.3,
+                              normed=False,**kwargs)
     height_nm_rel_encompassing_pct = np.percentile(height_nm_relative,pct)
     if (PlotLines):
         plt.axvline(height_nm_rel_encompassing_pct,linewidth=3,color='r',
@@ -117,9 +116,7 @@ def PlotImageDistribution(Image,pct=95,bins=300,PlotLines=True,AddSigmas=True,
                     label=("{:d}%<={:.1f}nm".\
                            format(int(pct),height_nm_rel_encompassing_pct)))
     plt.gca().set_yscale('log')
-    plt.ylim([0.5,max(n)*2])
-    PlotUtilities.lazyLabel("Height above surface(nm)",
-                            "Count","Distribution of Heights")
+    plt.ylim([min(n)/2,max(n)*2])
     return n,bins,patches
 
 def MakePlot(SurfaceImage,label,OutPath,**kwargs):
@@ -129,12 +126,17 @@ def MakePlot(SurfaceImage,label,OutPath,**kwargs):
     # make plots
     fig = PlotUtilities.figure(figsize=(10/1.5,16/1.5))
     ax = plt.subplot(2,1,1)
-    PlotImage(SurfaceImage,label,**kwargs)
+    PlotImage(SurfaceImage,**kwargs)
+    PlotUtilities.lazyLabel(r"Microns",r"Microns",label)
+    PlotUtilities.colorbar("Height (nm)")
     ax = plt.subplot(2,1,2)
-    PlotImageDistribution(SurfaceImage)
+    bins_tmp = PlotImageDistribution(SurfaceImage)
+    PlotUtilities.lazyLabel("Height above surface(nm)",
+                            "Count","Distribution of Heights")
     PlotUtilities.savefig(fig,OutPath)
+    return bins_tmp
 
-def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,
+def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
                  ImageFunc=lambda m_list: m_list[0]):
     """
     Given a list of images, files, and labels, makes a gridwise comparison
@@ -143,7 +145,8 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,
         ImageInfo: Tuple of <FileName,Label,plotkwargs>
         Limits: x Limits for the histogram
         Base: Base directory (where in and out live
-        figsize: how big to make the figure
+        figsize: how big to make the grid figure
+        Force: if true, force re-reading
         ImageFunc: given a list of images from the file, selects one and 
         only one
     """
@@ -151,12 +154,15 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,
     Images = []
     OutBase = Base + "out/"
     InBase = Base + "in/"
+    max_n = 0
     for file_name,label,kwargs in ImageInfo:
         List = CheckpointUtilities.getCheckpoint(OutBase +"c_"+label+".pkl",
-                                                 ReadImageAsObject,True,
+                                                 ReadImageAsObject,Force,
                                                  InBase + file_name)
         Image = ImageFunc(List)
-        MakePlot(Image,label,OutPath=OutBase + label + ".pdf",**kwargs)
+        n,bins,patches = \
+            MakePlot(Image,label,OutPath=OutBase + label + ".pdf",**kwargs)
+        max_n = max(max_n,max(n))
         Images.append(Image)
     # now we make a grid
     NumRows = 3
@@ -170,29 +176,49 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,
         label,kwargs = ImageInfo[i][1:]
         # plot these next to each other
         ax = plt.subplot(gs[0,i])
-        PlotImage(im,label,**kwargs)
+        PlotImage(im,**kwargs)
+        if (i ==0 ):
+            PlotUtilities.lazyLabel(r"Microns",r"Microns",label)
+            PlotUtilities.colorbar("Height (nm)")
+        else:
+            PlotUtilities.lazyLabel(r"","",label)
+            PlotUtilities.colorbar("")
         ax = plt.subplot(gs[1,i])
         bins_tmp = PlotImageDistribution(im,color=colors[i])
         plt.xlim(Limits)
+        # set common y limits
+        plt.ylim(0.5,2*max_n)
         bins.append(bins_tmp)
+        # only add the x and y labels to the first plot, to de-clutter
+        if (i == 0):
+            PlotUtilities.lazyLabel("Height above surface(nm)",
+                                    "Count","Distribution of Heights")
+        else:
+            # just get the axis formatting
+            PlotUtilities.lazyLabel("","","")
     ax = plt.subplot(gs[2, :])
     for i,im in enumerate(Images):
         bins_tmp = PlotImageDistribution(im,label=ImageInfo[i][1],
                                          color=colors[i],
                                          PlotLines=False)
         plt.xlim(Limits)
+        PlotUtilities.lazyLabel("Height above surface(nm)",
+                                "Count","Distribution of Heights")
     PlotUtilities.savefig(fig,OutBase+Name+".pdf")
             
 
 def InitialDebugging():
+    """
+    Makes the plots for the early 2016-10 images of surfaces and tips
+    """
     surface_kwargs = dict(vmin=-1, vmax=4)
     tip_kwargs = dict(vmin=-10,vmax=18)
     Base = "/Volumes/group/4Patrick/Reports/" + \
            "2016-10-20-tip-and-surface-height-distributions/"
     files_tips =[
         ["1_EtchedLong.pxp","Etched Long",tip_kwargs],
-        ["9-221-2016-functiuonalized-9-19-tStrept-in-pbs-ph7.4-with-mini.pxp","'Good' T-Strept Mini",tip_kwargs],
-        ["2016-10-14-mini-pbs-t-strept-tip-batch-10-10-2016_1%_attachment.pxp","'Bad'(?) T-Strept Mini",tip_kwargs] ]
+        ["9-221-2016-functiuonalized-9-19-tStrept-in-pbs-ph7.4-with-mini.pxp","'Good' T-Strept Long",tip_kwargs],
+        ["2016-10-14-mini-pbs-t-strept-tip-batch-10-10-2016_1%_attachment.pxp","'Bad'(?) T-Strept Long",tip_kwargs] ]
     files_surfaces = [
         ["2016-10-6-mini-pbs-koh-clened-glass-batch-10-5-2016.pxp","KOH",surface_kwargs],
         ["2016-10-18-mini-pbs-PEG-azide-surface-batch-0p10x_peg_0p015mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp",r"PEG-Azide-$\frac{1}{10}$x",surface_kwargs],
@@ -204,6 +230,27 @@ def InitialDebugging():
     MakeGridPlot(files_surfaces,[-5,30],Base,"SurfaceGrid.pdf",
                  figsize=(24,16))
 
+def SilanePegMalemideDebugging():
+    """
+    Makes the plots for the Silane-Peg-Maleimide and UVChamber/Lamp comparisons
+    from 10-25
+    """
+    common_kwargs = dict(vmin=-1, vmax=6)
+    Base = "/Volumes/group/4Patrick/Reports/" + \
+           "2016-10-26-spm-comparison/"
+    files_tips =[
+         ["2016-10-18-mini-pbs-PEG-azide-surface-batch-1x_peg_0p15mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp",
+          "SPA on Glass, UV Chamber",common_kwargs],
+        ["2016-10-25-spm-on-kohd-glass-in-pbs-imaged-by-mini.pxp",
+         "SPM on Glass, UV Chamber",common_kwargs],
+        ["2016-10-25-spm-on-biol-uv-chamber-not-lamp-in-pbs-imaged-by-mini.pxp",
+         "SPM Bio-L, UV Chamber",common_kwargs],
+        ["2016-10-25-spm-on-biol-uv-lamp-not-chamber-in-pbs-imaged-by-mini.pxp",
+         "SPM Bio-L, UV Lamp",common_kwargs]
+          ]
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid.pdf",figsize=(24,16),
+                 ImageFunc=lambda m_list: m_list[-1])
+    
 def run():
     """
     <Description>
@@ -214,6 +261,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    SilanePegMalemideDebugging()
     InitialDebugging()
     
 if __name__ == "__main__":
