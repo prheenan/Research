@@ -17,12 +17,12 @@ def run():
     vol_units = "uL"
     DesiredDNAConcentration = 2
     # Pre dilution concntration
-    PreDilutionConcentration = 68
+    PreDilutionConcentration = 50
     # sotkc concentration is what we *want* the stock to be at, for imaging
-    StockDNAConcentration = 30
+    StockDNAConcentration = 35.5
     stocks = np.array([PreDilutionConcentration])
     # what volume are the stocks, in uL
-    volumes = np.array([68])
+    volumes = np.array([20])
     # The serial aguments
     SerialArgs = dict(Stock=DesiredDNAConcentration,
                       Volumes=20,

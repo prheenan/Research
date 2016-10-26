@@ -53,14 +53,12 @@ def ReadImage(InFile):
     Args:
          InFile: path
     Returns:
-         tuple of <Full Wave Object, height array>
+         List of tuple of <Full Wave Object, height array>
     """
     Waves = PxpLoader.LoadAllWavesFromPxp(InFile,
                                           ValidFunc=PxpLoader.IsValidImage)
-    Example = Waves[0]
-    Data = Example.DataY
-    height = Data[:,:,0]
-    return Example,height
+    # get all the images
+    return [ (Example,Example.DataY[:,:,0]) for Example in Waves]
 
 def ReadImageAsObject(file_name):
     """
@@ -69,10 +67,10 @@ def ReadImageAsObject(file_name):
     Args:
         file_name: See ReadImage
     Returns:
-        SurfaceImage object
+        List of SurfaceImage objects present in the file
     """
-    Example,height = ReadImage(file_name)
-    return SurfaceImage(Example,height)
+    Tuples = ReadImage(file_name)
+    return [SurfaceImage(ex,height) for ex,height in Tuples]
 
 def PlotImage(Image,label,**kwargs):
     """
@@ -136,15 +134,28 @@ def MakePlot(SurfaceImage,label,OutPath,**kwargs):
     PlotImageDistribution(SurfaceImage)
     PlotUtilities.savefig(fig,OutPath)
 
-def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize):
+def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,
+                 ImageFunc=lambda m_list: m_list[0]):
+    """
+    Given a list of images, files, and labels, makes a gridwise comparison
+
+    Args:
+        ImageInfo: Tuple of <FileName,Label,plotkwargs>
+        Limits: x Limits for the histogram
+        Base: Base directory (where in and out live
+        figsize: how big to make the figure
+        ImageFunc: given a list of images from the file, selects one and 
+        only one
+    """
     # first, loop through and make the 'normal' plots, per distribution
     Images = []
     OutBase = Base + "out/"
     InBase = Base + "in/"
     for file_name,label,kwargs in ImageInfo:
-        Image = CheckpointUtilities.getCheckpoint(OutBase +"c_"+label+".pkl",
-                                                  ReadImageAsObject,False,
-                                                  InBase + file_name)
+        List = CheckpointUtilities.getCheckpoint(OutBase +"c_"+label+".pkl",
+                                                 ReadImageAsObject,True,
+                                                 InBase + file_name)
+        Image = ImageFunc(List)
         MakePlot(Image,label,OutPath=OutBase + label + ".pdf",**kwargs)
         Images.append(Image)
     # now we make a grid
@@ -173,16 +184,7 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize):
     PlotUtilities.savefig(fig,OutBase+Name+".pdf")
             
 
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
+def InitialDebugging():
     surface_kwargs = dict(vmin=-1, vmax=4)
     tip_kwargs = dict(vmin=-10,vmax=18)
     Base = "/Volumes/group/4Patrick/Reports/" + \
@@ -202,5 +204,17 @@ def run():
     MakeGridPlot(files_surfaces,[-5,30],Base,"SurfaceGrid.pdf",
                  figsize=(24,16))
 
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    InitialDebugging()
+    
 if __name__ == "__main__":
     run()
