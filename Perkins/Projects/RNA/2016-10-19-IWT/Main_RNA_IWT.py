@@ -71,7 +71,6 @@ def run():
     all_cycles[MaxSize:] = cat_cyc[-1]
     UnfoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: up)) for o in retracts]
     RefoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: down)) for o in reverse]
-    InverseWeierstrass.NumericallyGetDeltaA(UnfoldObj,RefoldObj)
     # get the IWT
     Bins = [25,50,100,200,250,300,500,1000]
     for b in Bins:

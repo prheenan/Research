@@ -155,13 +155,14 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
     OutBase = Base + "out/"
     InBase = Base + "in/"
     max_n = 0
-    for file_name,label,kwargs in ImageInfo:
+    for i,(file_name,label,kwargs) in enumerate(ImageInfo):
         List = CheckpointUtilities.getCheckpoint(OutBase +"c_"+label+".pkl",
                                                  ReadImageAsObject,Force,
                                                  InBase + file_name)
         Image = ImageFunc(List)
         n,bins,patches = \
-            MakePlot(Image,label,OutPath=OutBase + label + ".pdf",**kwargs)
+            MakePlot(Image,label,OutPath=OutBase + str(i)+"_" +label + ".pdf",
+                     **kwargs)
         max_n = max(max_n,max(n))
         Images.append(Image)
     # now we make a grid
@@ -170,9 +171,10 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
     gs = gridspec.GridSpec(NumRows, NumCols)
     bins = []
     fig = PlotUtilities.figure(figsize=figsize)
-    colors = ['r','g','b','k']
+    colors = ['r','g','b','k','m','c','y']
     for i in range(NumCols):
         im  = Images[i]
+        color_idx= i % len(colors)
         label,kwargs = ImageInfo[i][1:]
         # plot these next to each other
         ax = plt.subplot(gs[0,i])
@@ -184,7 +186,7 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
             PlotUtilities.lazyLabel(r"","",label)
             PlotUtilities.colorbar("")
         ax = plt.subplot(gs[1,i])
-        bins_tmp = PlotImageDistribution(im,color=colors[i])
+        bins_tmp = PlotImageDistribution(im,color=colors[color_idx])
         plt.xlim(Limits)
         # set common y limits
         plt.ylim(0.5,2*max_n)
@@ -198,13 +200,14 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
             PlotUtilities.lazyLabel("","","")
     ax = plt.subplot(gs[2, :])
     for i,im in enumerate(Images):
+        color_idx = i % len(colors)
         bins_tmp = PlotImageDistribution(im,label=ImageInfo[i][1],
-                                         color=colors[i],
+                                         color=colors[color_idx],
                                          PlotLines=False)
         plt.xlim(Limits)
         PlotUtilities.lazyLabel("Height above surface(nm)",
                                 "Count","Distribution of Heights")
-    PlotUtilities.savefig(fig,OutBase+Name+".pdf")
+    PlotUtilities.savefig(fig,OutBase+ "Grid_" + Name+".pdf")
             
 
 def InitialDebugging():
@@ -237,7 +240,7 @@ def SilanePegMalemideDebugging():
     """
     common_kwargs = dict(vmin=-1, vmax=6)
     Base = "/Volumes/group/4Patrick/Reports/" + \
-           "2016-10-26-spm-comparison/"
+           "2016-10-25-spm-comparison/"
     files_tips =[
          ["2016-10-18-mini-pbs-PEG-azide-surface-batch-1x_peg_0p15mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp",
           "SPA on Glass, UV Chamber",common_kwargs],
@@ -248,7 +251,29 @@ def SilanePegMalemideDebugging():
         ["2016-10-25-spm-on-biol-uv-lamp-not-chamber-in-pbs-imaged-by-mini.pxp",
          "SPM Bio-L, UV Lamp",common_kwargs]
           ]
-    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid.pdf",figsize=(24,16),
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid",figsize=(24,16),
+                 ImageFunc=lambda m_list: m_list[-1])
+
+def HigherMwPEG():
+    """
+    Makes the plots for the 3kDA Silane-Peg-Maleimide from 10/26
+    """
+    common_kwargs = dict(vmin=-1, vmax=6)
+    Base = "/Volumes/group/4Patrick/Reports/" + \
+           "2016-10-26-3kDa/"
+    files_tips =[
+         ["2016-10-18-mini-pbs-PEG-azide-surface-batch-1x_peg_0p15mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp",
+          "SPA on Glass",common_kwargs],
+        ["2016-10-25-spm-on-kohd-glass-in-pbs-imaged-by-mini.pxp",
+         "600Da SPM on Glass",common_kwargs],
+        ["2016-10-26-3kDa-spm-on-kohd-glass-in-pbs-imaged-by-mini.pxp",
+         "3kDa SPM on Glass",common_kwargs],
+        ["2016-10-25-spm-on-biol-uv-chamber-not-lamp-in-pbs-imaged-by-mini.pxp",
+         "600Da SPM on Bio-L",common_kwargs],
+        ["2016-10-26-3kDa-spm-on-bio-long-in-pbs-imaged-by-mini.pxp",
+         "3kDa SPM on Bio-L",common_kwargs]
+          ]
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid",figsize=(28,16),
                  ImageFunc=lambda m_list: m_list[-1])
     
 def run():
@@ -261,6 +286,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    HigherMwPEG()
     SilanePegMalemideDebugging()
     InitialDebugging()
     
