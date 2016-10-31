@@ -137,7 +137,7 @@ def MakePlot(SurfaceImage,label,OutPath,**kwargs):
     return bins_tmp
 
 def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
-                 ImageFunc=lambda m_list: m_list[0]):
+                 ImageFunc=lambda m_list: m_list[0],hist_kwargs=dict()):
     """
     Given a list of images, files, and labels, makes a gridwise comparison
 
@@ -166,7 +166,7 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
         max_n = max(max_n,max(n))
         Images.append(Image)
     # now we make a grid
-    NumRows = 3
+    NumRows = 4
     NumCols = len(ImageInfo)
     gs = gridspec.GridSpec(NumRows, NumCols)
     bins = []
@@ -199,14 +199,29 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
             # just get the axis formatting
             PlotUtilities.lazyLabel("","","")
     ax = plt.subplot(gs[2, :])
+    labels = [i[1] for i in ImageInfo]
     for i,im in enumerate(Images):
         color_idx = i % len(colors)
-        bins_tmp = PlotImageDistribution(im,label=ImageInfo[i][1],
-                                         color=colors[color_idx],
-                                         PlotLines=False)
+        PlotImageDistribution(im,label=labels[i],color=colors[color_idx],
+                              PlotLines=False,**hist_kwargs)
         plt.xlim(Limits)
         PlotUtilities.lazyLabel("Height above surface(nm)",
                                 "Count","Distribution of Heights")
+    ax = plt.subplot(gs[3,:])
+    data = [i.height_nm_rel() for i in Images]
+    x_vals = np.arange(len(data))
+    # (1) show the 5-95 by the notches, *dont* show any outliers (too slow)
+    # (2) show the median line 
+    box = plt.boxplot(data,positions=x_vals,whis=[5,95],sym='',
+                      patch_artist=True)
+    plt.xticks(x_vals, labels,rotation=0,)
+    PlotUtilities.lazyLabel("","Height (nm)",
+                            "Comparison of Image Distributions")
+    # set the alpha and colors
+    for patch, color in zip(box['boxes'], colors):
+        patch.set_facecolor(color)
+        patch.set_alpha(0.3)
+    # finally, plot the mean and standard deviations as a functo
     PlotUtilities.savefig(fig,OutBase+ "Grid_" + Name+".pdf")
             
 
@@ -258,7 +273,7 @@ def HigherMwPEG():
     """
     Makes the plots for the 3kDA Silane-Peg-Maleimide from 10/26
     """
-    common_kwargs = dict(vmin=-1, vmax=6)
+    common_kwargs = dict(vmin=-1, vmax=10)
     Base = "/Volumes/group/4Patrick/Reports/" + \
            "2016-10-26-3kDa/"
     files_tips =[
@@ -271,10 +286,33 @@ def HigherMwPEG():
         ["2016-10-25-spm-on-biol-uv-chamber-not-lamp-in-pbs-imaged-by-mini.pxp",
          "600Da SPM on Bio-L",common_kwargs],
         ["2016-10-26-3kDa-spm-on-bio-long-in-pbs-imaged-by-mini.pxp",
-         "3kDa SPM on Bio-L",common_kwargs]
+         "3kDa SPM on Bio-L",common_kwargs],
+        ["2016-10-28-imaging-spm-3kDa-bio-l-low-attachments-on-DNA-surface-in-pbs-or-dried-dna-surface.pxp",
+         "3kDa SPM-Strept on Bio-L",common_kwargs]
           ]
-    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid",figsize=(28,16),
-                 ImageFunc=lambda m_list: m_list[-1])
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid",figsize=(28,22),
+                 ImageFunc=lambda m_list: m_list[-1],
+                 hist_kwargs=dict())
+
+    
+def CleaningConditions():
+    """
+    Makes the plots for the cleaning conditions trials from 10/28
+    """
+    common_kwargs = dict(vmin=-1, vmax=10)
+    Base = "/Volumes/group/4Patrick/Reports/2016-10-28-cleaning-conditions/"
+    files_tips =[
+         ["2016-10-28-spm-600Da-on-glass-pos-ctrl.pxp",
+          "600 SPM, Glass, Double UV",common_kwargs],
+        ["2016-10-25-spm-on-biol-uv-chamber-not-lamp-in-pbs-imaged-by-mini.pxp",
+         "600 SPM, Bio-L, 'Usual' Clean",common_kwargs],
+        ["2016-10-28-spm-600Da-on-uv-ozoned-biolong-cleaned-before-and-after-etch-with-solvent-rinse-after-etch.pxp","SPM, Bio-L, Double UV + Solvent",
+         common_kwargs],
+        ["2016-10-28-spm-600Da-on-uv-ozoned-biolong-cleaned-before-and-after-etch-no-solvent-after.pxp","600 SPM, Bio-L, Double UV",common_kwargs]
+        ]
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid",figsize=(20,16),
+                 ImageFunc=lambda m_list: m_list[-1],
+                 hist_kwargs=dict())
     
 def run():
     """
@@ -286,6 +324,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    CleaningConditions()
     HigherMwPEG()
     SilanePegMalemideDebugging()
     InitialDebugging()

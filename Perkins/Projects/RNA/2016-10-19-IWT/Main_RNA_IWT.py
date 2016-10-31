@@ -69,13 +69,15 @@ def run():
     all_cycles[:MaxSize] = cat_cyc[:MaxSize]
     # XXX just extrapolate end..
     all_cycles[MaxSize:] = cat_cyc[-1]
-    UnfoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: up)) for o in retracts]
-    RefoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: down)) for o in reverse]
+    UnfoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: up))
+                 for o in retracts[:1]]
+    RefoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: down))
+                 for o in reverse[:1]]
     # get the IWT
-    Bins = [25,50,100,200,250,300,500,1000]
+    Bins = [1000]
     for b in Bins:
-        LandscapeObj =  InverseWeierstrass.FreeEnergyAtZeroForce(UnfoldObj,
-                                                                 NumBins=b)
+        LandscapeObj =  InverseWeierstrass.\
+            FreeEnergyAtZeroForce(UnfoldObj,NumBins=b,RefoldingObjs=RefoldObj)
         fig = PlotUtilities.figure(figsize=(8,8))
         IWT_Util.ForceExtensionHistograms(Example.Separation,
                                           Example.Force,
