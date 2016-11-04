@@ -218,7 +218,7 @@ def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes):
         TmpStock = Stock if (i==0) \
                    else GetFromArrayOrScalar(DesiredConcentrations,i-1)
         # determine how much stock we need
-        VolStock = MassNeededBelow/TmpStock
+        VolStock = np.array(MassNeededBelow)/np.array(TmpStock)
         # how can we dilute it to get the concentration we need?
         # since we have already accounting for the underlying mass,
         # this implicitly includes the 'extra' volume for dilutions
@@ -234,7 +234,8 @@ def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes):
     return [RetSanitize(a) for a in RetArrs]
 
 def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
-                        VolString="uL",ConcString="ng/uL"):
+                        VolString="uL",ConcString="ng/uL",
+                        BufferString="Buffer"):
     """
     Given the results of SeriallyDilute, prints off the relevant information
     to 
@@ -246,9 +247,9 @@ def PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,FinalStocks,
     for stock,VolStock,VolDilute,DilutedStock in \
         zip(Stocks,VolumeStock,VolumeDilute,FinalStocks):
         VolumeTotal = VolStock + VolDilute
-        StockStr = "{:5.3g}{:s} of {:5.3g}{:s} with {:5.3g}{:s} Buffer".\
+        StockStr = "{:5.3g}{:s} of {:5.3g}{:s} with {:5.3g}{:s} {:s}".\
                    format(VolStock,VolString,stock,ConcString,VolDilute,
-                          VolString)
+                          VolString,BufferString)
         ResultStr = "{:5.3g}{:s} of {:5.3g}{:s}".\
                     format(VolumeTotal,VolString,DilutedStock,ConcString)
         print("{:s} gives {:s}".format(StockStr,ResultStr))
@@ -265,7 +266,7 @@ def StockVolumeNeededForSerialDilution(Stock,Volumes,Desired):
 
         
 def PrintSerialSteps(Stock,Volumes,Desired,
-                     ConcString="ng/uL",VolString="uL"):
+                     ConcString="ng/uL",VolString="uL",BufferString="Buffer"):
     """
     Given a stock concentration, desired volumes and concentrations, prints
     out the steps needed to serially dilute
@@ -277,15 +278,18 @@ def PrintSerialSteps(Stock,Volumes,Desired,
                         SeriallyDilute(Stock,Desired,Volumes)
     PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,
                         FinalStocks,ConcString=ConcString,
-                        VolString=VolString)
+                        VolString=VolString,BufferString=BufferString)
 
-def PrintSolutionSteps(Stats,Volume,vol_units="uL",BufferName="buffer"):
+def PrintSolutionSteps(Stats,Volume,vol_units="uL",BufferName="buffer",
+                       PostVolume=0):
     """
     Prints the steps to seriall dilute things
     Args:
         Stats: List of Tuples; each element is <Name,Concentration Unit,
         Stock Concentraiton, Desired concentration, mass present in solution
         already> 
+        PostVolume: if true, this is the volume to add after some step (e.g.
+        thawing). We store the solution at a higher concentration
     """
     # get the stocks, desired concntrations, and already-present concentraitons
     Stocks = [s[2] for s in Stats]
@@ -293,7 +297,7 @@ def PrintSolutionSteps(Stats,Volume,vol_units="uL",BufferName="buffer"):
     Already = [s[4] for s in Stats]
     Volumes = GetVolumesNeededByConcentration(Stocks,Desired,Volume,
                                               AlreadyHaveMass=Already)
-    BufferVolume = Volume - sum(Volumes)
+    BufferVolume = Volume - sum(Volumes) - PostVolume
     # check that our buffer is reasonable non-negative. if it is very close
     # to zero (less than 1% error), let it slide.
     assert (BufferVolume > -Volume/100) , \
@@ -307,6 +311,10 @@ def PrintSolutionSteps(Stats,Volume,vol_units="uL",BufferName="buffer"):
                      desired_conc,conc_units))
     print("\tRemainder is ({:.1f}{:s}) of {:s}".format(BufferVolume,
                                                        vol_units,BufferName))
+    if (PostVolume > 1e-12):
+        print("\tTo use, add ({:.1f}{:s}) of {:s}".format(PostVolume,
+                                                          vol_units,BufferName))
+
   
 
     
