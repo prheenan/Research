@@ -87,7 +87,7 @@ def run():
                                           nBins=b)
         PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
         fig = PlotUtilities.figure(figsize=(12,12))
-        IWT_Util.EnergyLandscapePlot(LandscapeObj,FOneHalf=16e-12,
+        IWT_Util.EnergyLandscapePlot(LandscapeObj,FOneHalf=15e-12,
                                      ZoomBoundsMeters=[56e-9,68e-9],
                                      stiffness_pN_per_nm=80,
                                      NumPointsAround=int(b/10))
