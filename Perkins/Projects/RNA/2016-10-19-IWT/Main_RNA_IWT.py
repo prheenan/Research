@@ -16,6 +16,7 @@ from GeneralUtil.python import PlotUtilities
 from scipy.signal import sawtooth
 
 def RobTimeSepForceToIWT(o,ZFunc):
+    # spring constant should be in N/m
     k = o.Meta.__dict__["K"]
     velocity = o.Meta.__dict__["RetractVelocity"]
     Obj = InverseWeierstrass.FEC_Pulling_Object(Time=o.Time,
@@ -74,10 +75,12 @@ def run():
     RefoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: down))
                  for o in reverse[:1]]
     # get the IWT
-    Bins = [1000]
+    Bins = [50,100,200,500,1000]
     for b in Bins:
         LandscapeObj =  InverseWeierstrass.\
             FreeEnergyAtZeroForce(UnfoldObj,NumBins=b,RefoldingObjs=RefoldObj)
+        LandscapeObjFwd =  InverseWeierstrass.\
+            FreeEnergyAtZeroForce(UnfoldObj,NumBins=b)
         fig = PlotUtilities.figure(figsize=(8,8))
         IWT_Util.ForceExtensionHistograms(Example.Separation,
                                           Example.Force,

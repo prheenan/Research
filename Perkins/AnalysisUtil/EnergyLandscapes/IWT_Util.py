@@ -210,7 +210,7 @@ def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
     FreeEnergyEq = LandscapeObj.EnergyLandscape
     plt.plot(NanoExt,FreeEnergyEq * LandscapeObj.Beta)
     PlotUtilities.lazyLabel("","G0",
-                        "Reconstructed Energy Landscape for lipid Bilayer")
+                            "Reconstructed Energy Landscape")
     plt.subplot(3,1,2)
     TiltedEnergy = (FreeEnergyEq - LandscapeObj.Extensions * FOneHalf)
     TiltedEnergy -= (TiltedEnergy[0])

@@ -14,6 +14,8 @@ def run():
     """
     # volume for a single aliquot
     VolumeAliquot_uL = 150
+    # Volume we save for after thawing
+    VolumePostThaw= 60
     ProteinStock_mg_mL = 0.5
     ProteinDesired_mg_mL = 0.2
     # 1mL total given
@@ -33,7 +35,13 @@ def run():
     Stats = [ ["TCEP","mM",DesiredTCEPStock_mM,DesiredTCEPAliquot_mM,0],
               ["T-Strept","mg/mL",ProteinStock_mg_mL,ProteinDesired_mg_mL,0]]
     DilutionUtil.PrintSolutionSteps(Stats,VolumeAliquot_uL,vol_units="uL",
-                                    BufferName=Buffer,PostVolume=60)
+                                    BufferName=Buffer,PostVolume=VolumePostThaw)
+    # also print off the 15x version
+    Times = 7
+    print("{:d}x...".format(Times))
+    DilutionUtil.PrintSolutionSteps(Stats,Times*VolumeAliquot_uL,vol_units="uL",
+                                    BufferName=Buffer,
+                                    PostVolume=VolumePostThaw*Times)
 
                                       
 
