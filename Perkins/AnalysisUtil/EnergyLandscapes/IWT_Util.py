@@ -166,7 +166,7 @@ def GetAllExtensionsAndForceAndPlot(RetractList,Touchoff,IwtObjects,Base):
         force.extend(toPn(Touch.Force))
     return ext,force
 
-def ForceExtensionHistograms(ext,force,nBins=100):
+def ForceExtensionHistograms(ext,force,nBins=100,AddAverage=True):
     """
     Makes a 2-d force histogram (ext,force)
     
@@ -174,22 +174,24 @@ def ForceExtensionHistograms(ext,force,nBins=100):
         ext: list of extensions
         force: list of forces
         nBins: how many bins to use
+        AddAverage: if true, add average at each bin
     """
     # make a heat map, essentially
     counts, xedges, yedges, Image = plt.hist2d(ext, force,
                                                bins=nBins,cmap='afmhot')
-    x_bins = xedges[:-1]
-    y_bins = yedges[:-1]
-    bindiff = np.median(np.diff(x_bins))
-    for i in range(x_bins.size):
-        N = sum(counts[i,:])
-        average = (sum(counts[i,:] * y_bins))/N
-        label = "Avg binned force" if i == 0 else ""
-        plt.plot(x_bins[i]+bindiff/2,average,'go',label=label)
-    PlotUtilities.lazyLabel("Tip-Bilayer Separation [nm]",
-                        "Force [pN]",
-                        "Two-Dimensional Force-Separation Histogram",
-                        frameon=True)
+    if (AddAverage):
+        x_bins = xedges[:-1]
+        y_bins = yedges[:-1]
+        bindiff = np.median(np.diff(x_bins))
+        for i in range(x_bins.size):
+            N = sum(counts[i,:])
+            average = (sum(counts[i,:] * y_bins))/N
+            label = "Avg binned force" if i == 0 else ""
+            plt.plot(x_bins[i]+bindiff/2,average,'go',label=label)
+    PlotUtilities.lazyLabel("Separation [nm]",
+                            "Force [pN]",
+                            "Two-Dimensional Force-Separation Histogram",
+                            frameon=True)
     cbar = plt.colorbar()
     cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
 
@@ -248,10 +250,10 @@ def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
         curvature_pN_per_nm = curvature_kbT_per_nm * 4.1
         plt.plot(ExtZoom,EnergyZoom)
         plt.plot(xinterp,vals,color='g',linewidth=4.0,linestyle='--',
-                 label="Landscape parabola: ({:.1f} pN/nm)".\
+                 label="Landscape SHO ({:.1f} pN/nm)".\
                  format(curvature_pN_per_nm))
         plt.plot(xinterp,stiffness_pN_per_nm*xinterp**2+max(vals),
-                 label="Cantilever Response ({:.1f} pN/nm)".\
+                 label="Cantilever SHO ({:.1f} pN/nm)".\
                  format(stiffness_pN_per_nm))
         plt.ylim([0,max(EnergyZoom)])
         PlotUtilities.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
