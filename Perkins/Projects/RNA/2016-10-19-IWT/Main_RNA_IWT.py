@@ -133,11 +133,11 @@ def run():
         plt.plot(landscape_ext_nm,Landscape_kT)
         plt.axvline(landscape_ext_nm[ext_idx],linewidth=4,color='g',
                     linestyle='--',
-            label=(r"$\Delta x^{\dagger}$=" +
+            label=(r"$\Delta x^{\ddag}$=" +
                    "{:.1f}nm".format(DeltaXDagger) ))
         plt.axhline(DeltaGDagger,linewidth=4,color='b',
                     linestyle='--',
-                    label=(r"$\Delta G^{\dagger}}$=" +
+                    label=(r"$\Delta G^{\ddag}}$=" +
                            "{:.1f}kT".format(DeltaGDagger) ))
         plt.ylim([0.5,max(Landscape_kT)*1.05])
         PlotUtilities.lazyLabel("","Landscape at F=0","",frameon=True)
@@ -147,7 +147,7 @@ def run():
         plt.plot(landscape_ext_nm,OffsetTilted,color='b',alpha=0.7)
         plt.axvline(landscape_ext_nm[ext_idx],linewidth=4,color='g',
                     linestyle='--',
-            label=(r"$\Delta x^{\dagger}$=" +
+            label=(r"$\Delta x^{\ddag}$=" +
                    "{:.1f}nm".format(DeltaXDagger) ))
         plt.plot(pred_fold_x,np.polyval(coeffs_fold,pred_fold_x)-Offset,
                  linestyle='--',color='r',linewidth=4,
