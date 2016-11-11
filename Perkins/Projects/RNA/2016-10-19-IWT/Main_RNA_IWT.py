@@ -18,7 +18,7 @@ from scipy.signal import sawtooth
 bounds_folded_nm = [56,61]
 bounds_unfolded_nm = [64,69]
 bounds_transition_nm = [61.75,63.5]
-FOneHalf_N = 15e-12
+FOneHalf_N = 14.2e-12
 
 
 
@@ -86,7 +86,7 @@ def TomPlot(OutBase,UnfoldObj,RefoldObj,Bins,idx):
     fig = PlotUtilities.figure(figsize=(8,4))
     plt.subplot(1,2,1)
     SubplotArgs = dict(alpha=0.4,linewidth=0.5)
-    FilterN = 100
+    FilterN = 250
     Unfold = FEC_Util.GetFilteredForce(UnfoldObj[idx],FilterN)
     Refold = FEC_Util.GetFilteredForce(RefoldObj[idx],FilterN)
     UnfoldX = ToX(Unfold.Extension)
@@ -275,9 +275,8 @@ def run():
     RefoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: down))
                  for o in reverse]
     for idx in range(min(len(UnfoldObj),RefoldObj)):
-        TomPlot(OutBase,UnfoldObj,RefoldObj,Bins=40,idx=idx)
-    exit(1)
-    InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,
+        TomPlot(OutBase+ str(idx) + "_",UnfoldObj,RefoldObj,Bins=40,idx=idx)
+    InTheWeedsPlot(OutBase ,UnfoldObj,RefoldObj,Example,
                    Bins = [50,75,100,150])
 
 
