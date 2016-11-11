@@ -18,6 +18,8 @@ from scipy.signal import sawtooth
 bounds_folded_nm = [56,61]
 bounds_unfolded_nm = [64,69]
 bounds_transition_nm = [61.75,63.5]
+FOneHalf_N = 15e-12
+
 
 
 def RobTimeSepForceToIWT(o,ZFunc):
@@ -70,10 +72,12 @@ class TiltedLandscape:
         self.ext_idx = np.argmin(np.abs(landscape_ext_nm - self.x0_tx))
         self.MinG = min(self.Landscape_kT)
         self.DeltaGDagger = self.Landscape_kT[self.ext_idx]-self.MinG
-        self.landscape_ext_nm = landscape_ext_nm 
+        self.landscape_ext_nm = landscape_ext_nm
+        self.Offset = np.percentile(self.Tilted_kT,10)
+        self.OffsetTilted = self.Tilted_kT-self.Offset
 
 
-def TomPlot(OutBase,UnfoldObj,RefoldObj,Bins):
+def TomPlot(OutBase,UnfoldObj,RefoldObj,Bins,idx):
     LandscapeObj =  InverseWeierstrass.\
         FreeEnergyAtZeroForce(UnfoldObj,NumBins=Bins,RefoldingObjs=RefoldObj)
     # get a forward and reverse
@@ -81,14 +85,58 @@ def TomPlot(OutBase,UnfoldObj,RefoldObj,Bins):
     ToForceY = lambda y: y * 1e12
     fig = PlotUtilities.figure(figsize=(8,4))
     plt.subplot(1,2,1)
-    plt.plot(ToX(UnfoldObj[0].Extension),
-             ToForceY(UnfoldObj[0].Force),color='r',label="Unfolding")
-    plt.plot(ToX(RefoldObj[0].Extension),
-             ToForceY(RefoldObj[0].Force),color='b',label="Refolding")
-    PlotUtilities.lazyLabel("","Force (pN)","")
+    SubplotArgs = dict(alpha=0.4,linewidth=0.5)
+    FilterN = 100
+    Unfold = FEC_Util.GetFilteredForce(UnfoldObj[idx],FilterN)
+    Refold = FEC_Util.GetFilteredForce(RefoldObj[idx],FilterN)
+    UnfoldX = ToX(Unfold.Extension)
+    UnfoldY = ToForceY(Unfold.Force)
+    FoldX = ToX(Refold.Extension)
+    FoldY = ToForceY(Refold.Force)
+    plt.plot(UnfoldX,UnfoldY,color='r',label="Unfolding",
+             **SubplotArgs)
+    plt.plot(FoldX,FoldY,color='b',label="Refolding",
+             **SubplotArgs)
+    fontdict = dict(fontsize=13)
+    x_text_dict =  dict(x=60, y=22.5, s="2 nm", fontdict=fontdict,
+                        withdash=False,
+                        rotation="horizontal")
+    y_text_dict =  dict(x=59, y=27, s="5 pN", fontdict=fontdict, withdash=False,
+                        rotation="vertical")
+    PlotUtilities.ScaleBar(x_kwargs=dict(x=[60,62],y=[24,24]),
+                           y_kwargs=dict(x=[60,60],y=[25,30]),
+                           text_x=x_text_dict,text_y=y_text_dict)
+    PlotUtilities.legend(loc=[0.4,0.8],**fontdict)
     plt.subplot(1,2,2)
-    PlotUtilities.lazyLabel("","Force (pN)","")
-    PlotUtilities.savefig(fig,OutBase + "TomMockup.png")
+    Obj = TiltedLandscape(LandscapeObj,
+                          bounds_folded_nm,
+                          bounds_transition_nm,
+                          bounds_unfolded_nm,
+                          FOneHalf_N)
+    plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted)
+    plt.xlim([56,69])
+    plt.ylim([-1,4])
+    yoffset = 1
+    x_text_dict =  dict(x=58.5, y=yoffset+1.5, s="2 nm", fontdict=fontdict,
+                        withdash=False,rotation="horizontal")
+    y_text_dict =  dict(x=57, y=yoffset+2.5, s=r"1 k$_\mathrm{b}$T",
+                        fontdict=fontdict, withdash=False,
+                        rotation="vertical")
+    PlotUtilities.ScaleBar(x_kwargs=dict(x=[58,60],
+                                         y=[yoffset+1.75,yoffset+1.75]),
+                           y_kwargs=dict(x=[58,58],y=[yoffset+2,yoffset+3]),
+                           text_x=x_text_dict,text_y=y_text_dict,
+                           kill_axis=True)
+    PlotUtilities.savefig(fig,OutBase + "TomMockup" + str(idx) + ".png",
+                          subplots_adjust=dict(bottom=-0.1))
+    # save out the data exactly as we want to plot it
+    common = dict(delimiter=",")
+    ext = str(idx) + ".txt"
+    np.savetxt(X=np.c_[UnfoldX,UnfoldY],fname=OutBase+"Unfold" + ext,**common)
+    np.savetxt(X=np.c_[FoldX,FoldY],fname=OutBase+"Fold"+ext,**common)
+    np.savetxt(X=np.c_[Obj.landscape_ext_nm,Obj.OffsetTilted],
+               fname=OutBase+"Landscape"+ext,**common)
+    
 
 
 def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,
@@ -109,7 +157,6 @@ def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,
                                           nBins=b)
         PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
         # get the distance to the transition state etc
-        FOneHalf_N = 15e-12
         Obj = TiltedLandscape(LandscapeObj,
                               bounds_folded_nm,
                               bounds_transition_nm,
@@ -130,28 +177,55 @@ def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,
         plt.ylim([-0.5,max(Obj.Landscape_kT)*1.05])
         PlotUtilities.lazyLabel("","Landscape at F=0","",frameon=True)
         plt.subplot(2,1,2)
-        Offset = np.percentile(Obj.Tilted_kT,10)
-        OffsetTilted = Obj.Tilted_kT-Offset
-        plt.plot(Obj.landscape_ext_nm,OffsetTilted,color='b',alpha=0.7)
+        plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted,color='b',alpha=0.7)
         plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
                     linestyle='--',
             label=(r"$\Delta x^{\ddag}$=" +
                    "{:.1f}nm".format(Obj.DeltaXDagger) ))
         plt.plot(Obj.pred_fold_x,
-                 np.polyval(Obj.coeffs_fold,Obj.pred_fold_x)-Offset,
+                 np.polyval(Obj.coeffs_fold,Obj.pred_fold_x)-Obj.Offset,
                  linestyle='--',color='r',linewidth=4,
                  label="Folded State at {:.1f}nm".format(Obj.x0_fold))
-        plt.plot(Obj.pred_tx_x,np.polyval(Obj.coeffs_tx,Obj.pred_tx_x)-Offset,
+        plt.plot(Obj.pred_tx_x,
+                 np.polyval(Obj.coeffs_tx,Obj.pred_tx_x)-Obj.Offset,
                  linestyle='--',color='g',linewidth=4,
                  label="Transition State at {:.1f}nm".format(Obj.x0_tx))
         plt.plot(Obj.pred_unfold_x,
-                 np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Offset,
+                 np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Obj.Offset,
                  linestyle='--',color='r',linewidth=4,
                  label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
-        plt.ylim(-0.5,max(OffsetTilted)*1.5)
+        plt.ylim(-0.5,max(Obj.OffsetTilted)*1.5)
         PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2","",
                                 frameon=True)
         PlotUtilities.savefig(fig,OutBase + "1_{:d}IWT.pdf".format(b))
+        
+def ExtensionOffsetFromCoeffs(coeffs):
+    """
+    Gets the location of the center of the 'well' from the polynomial coeffs
+
+    Args:
+        coeffs: the polynomial coefficients, higherst first, from np.polyfit
+    Returns:
+        x0, from k/2 * (x-x0)**2, fit 
+    """
+    return -coeffs[1]/(2*coeffs[0])
+        
+def FitToRegion(x,y,bounds_x):
+    """
+    Fits to a bounded region
+
+    Args:
+        x,y: values to fit
+        bounds_x: only fit within these bounds
+    Returns:
+        tuple of <predicted x, predicted y, coefficients>
+    """
+    GoodIdx = np.where( ( x >= min(bounds_x)) &
+                        ( x <= max(bounds_x)) )
+    pred_x = x[GoodIdx]
+    pred_y = y[GoodIdx]
+    coeffs = np.polyfit(x=pred_x,y=pred_y,deg=2)
+    return pred_x,pred_y,coeffs
 
     
 def run():
@@ -197,23 +271,15 @@ def run():
     # XXX just extrapolate end..
     all_cycles[MaxSize:] = cat_cyc[-1]
     UnfoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: up))
-                 for o in retracts[:1]]
+                 for o in retracts]
     RefoldObj = [RobTimeSepForceToIWT(o,ZFunc=(lambda: down))
-                 for o in reverse[:1]]
-    TomPlot(OutBase,UnfoldObj,RefoldObj,Bins=40)
+                 for o in reverse]
+    for idx in range(min(len(UnfoldObj),RefoldObj)):
+        TomPlot(OutBase,UnfoldObj,RefoldObj,Bins=40,idx=idx)
+    exit(1)
     InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,
-                   Bins = [50,75,100,150,200,500,1000])
+                   Bins = [50,75,100,150])
 
-def ExtensionOffsetFromCoeffs(coeffs):
-    return -coeffs[1]/(2*coeffs[0])
-        
-def FitToRegion(x,y,bounds_x):
-    GoodIdx = np.where( ( x > min(bounds_x)) &
-                        ( x < max(bounds_x)) )
-    pred_x = x[GoodIdx]
-    pred_y = y[GoodIdx]
-    coeffs = np.polyfit(x=pred_x,y=pred_y,deg=2)
-    return pred_x,pred_y,coeffs
 
 if __name__ == "__main__":
     run()
