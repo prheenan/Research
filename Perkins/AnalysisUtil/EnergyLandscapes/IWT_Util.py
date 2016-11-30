@@ -13,6 +13,65 @@ from FitUtil.FitUtils.Python import FitUtil as pFitUtil
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 
+class TiltedLandscape:
+    def __init__(self,landscape,bounds_folded_nm,bounds_transition_nm,
+                 bounds_unfolded_nm,f_one_half,kT=4.1e-21):
+        self.Landscape_kT =  landscape.EnergyLandscape/kT
+        self.Tilted_kT = self.Landscape_kT - \
+                         (landscape.Extensions*f_one_half)/kT
+        landscape_ext_nm = landscape.Extensions * 1e9
+        self.pred_fold_x,self.pred_fold_y,self.coeffs_fold = \
+            FitToRegion(landscape_ext_nm,self.Tilted_kT,bounds_folded_nm)
+        self.pred_tx_x,self.pred_tx_y,self.coeffs_tx = \
+                FitToRegion(landscape_ext_nm,self.Tilted_kT,
+                            bounds_transition_nm)
+        self.pred_unfold_x,self.pred_unfold_y,self.coeffs_unfold = \
+                FitToRegion(landscape_ext_nm,self.Tilted_kT,bounds_unfolded_nm)
+        # get the energy landscapes in kT
+        # fit a second order to the tilted one (easy to find transition states)
+        # get the offsets for the SHO
+        self.x0_tx = ExtensionOffsetFromCoeffs(self.coeffs_tx)
+        self.x0_fold = ExtensionOffsetFromCoeffs(self.coeffs_fold)
+        self.x0_unfold = ExtensionOffsetFromCoeffs(self.coeffs_unfold)
+        # DeltaX dagger ais the distance between the transition and
+        # folded state. See after equation 5:
+
+        """
+        Dudko, O. K., Hummer, G. & Szabo, A. 
+        Theory, analysis, and interpretation of single-molecule force 
+        spectroscopy experiments. PNAS 105, 1575515760 (2008).
+        """
+        self.DeltaXDagger = self.x0_tx-self.x0_fold
+        """
+        DeltaG_dagger is (ibid)
+        "the apparent free-energy of activation in the absence of an external
+        force." (ie: the height of the energy barrier without force)
+        """
+        self.ext_idx = np.argmin(np.abs(landscape_ext_nm - self.x0_tx))
+        self.MinG = min(self.Landscape_kT)
+        self.DeltaGDagger = self.Landscape_kT[self.ext_idx]-self.MinG
+        self.landscape_ext_nm = landscape_ext_nm
+        self.Offset = np.percentile(self.Tilted_kT,10)
+        self.OffsetTilted = self.Tilted_kT-self.Offset
+
+        
+def FitToRegion(x,y,bounds_x):
+    """
+    Fits to a bounded region
+
+    Args:
+        x,y: values to fit
+        bounds_x: only fit within these bounds
+    Returns:
+        tuple of <predicted x, predicted y, coefficients>
+    """
+    GoodIdx = np.where( ( x >= min(bounds_x)) &
+                        ( x <= max(bounds_x)) )
+    pred_x = x[GoodIdx]
+    pred_y = y[GoodIdx]
+    coeffs = np.polyfit(x=pred_x,y=pred_y,deg=2)
+    return pred_x,pred_y,coeffs
+        
 def ToIWTObjects(TimeSepForceObjects):
     """
     Converts TimeSepForceObjects to InverseWeierstrass objects
@@ -261,4 +320,40 @@ def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
 
 
 
+def RobTimeSepForceToIWT(o,ZFunc):
+    """
+    converts a Rob-Walder style pull into a FEC_Pulling_Object
 
+    Args:
+         o: TimeSepForce object with Robs meta information
+         ZFunc: the z function (schedule) passed along
+    Returns:
+         properly initialized FEC_Pulling_Object for use in IWT
+    """
+    # spring constant should be in N/m
+    k = o.Meta.__dict__["K"]
+    velocity = o.Meta.__dict__["RetractVelocity"]
+    Obj = InverseWeierstrass.FEC_Pulling_Object(Time=o.Time,
+                                                Extension=o.Separation,
+                                                Force=o.Force,
+                                                SpringConstant=k,
+                                                Velocity=velocity,
+                                                ZFunc=ZFunc)
+    Obj.SetWork(Obj.CalculateForceCummulativeWork())
+    return Obj
+
+        
+def ExtensionOffsetFromCoeffs(coeffs):
+    """
+    Gets the location of the center of the 'well' from the polynomial coeffs
+
+    Args:
+        coeffs: the polynomial coefficients, higherst first, from np.polyfit
+    Returns:
+        x0, from k/2 * (x-x0)**2, fit 
+    """
+    return -coeffs[1]/(2*coeffs[0])
+
+
+
+        

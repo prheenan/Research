@@ -313,6 +313,26 @@ def CleaningConditions():
     MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGrid",figsize=(20,16),
                  ImageFunc=lambda m_list: m_list[-1],
                  hist_kwargs=dict())
+
+def PositiveControls():
+    """
+    Makes the plots for the positive controls (bio-L, t-strept and peg) we have
+    from week of 11/7/2016
+    """
+    common_kwargs = dict(vmin=-1, vmax=10)
+    Base = "/Volumes/group/4Patrick/Reports/2016-11-14-working-positive-control-tstrept-bio-l/"
+    files_tips =[
+         ["2016-11-8-spm-3kDa-11-7-batch-biol-biol-mini-imaged.pxp",
+          "3kDa PEG, no t-strept",common_kwargs],
+        ["2016-11-8-tstrep-tip-decent-attachment-made-11-1-2016-biol-mini-imaged.pxp", "3kDa, t-strept, 1 week old",common_kwargs],
+        ["2016-11-8-tstrept-004-good-attachment-11-7-batch-biol-biol-mini-imaged.pxp","3kDa, t-strept, new, 1",
+         common_kwargs],
+        ["2016-11-9-tstrept-005-ty-multiple-freeze-thaw-good-attachment-11-7-batch-biol-biol-mini-imaged.pxp","3kDa, t-stept, new, 2",common_kwargs],
+        ["2016-11-9-tstrept-005-patrick-single-freeze-thaw-good-attachment-11-7-batch-biol-biol-mini-imaged.pxp","3kDa, t-strept, new, 3",common_kwargs]]
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGridPosCtrl",figsize=(25,16),
+                 ImageFunc=lambda m_list: m_list[-1],
+                 hist_kwargs=dict())
+    
     
 def run():
     """
@@ -324,6 +344,8 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    PositiveControls()
+    exit(1)
     CleaningConditions()
     HigherMwPEG()
     SilanePegMalemideDebugging()
