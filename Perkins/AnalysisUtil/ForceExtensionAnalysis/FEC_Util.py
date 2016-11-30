@@ -32,7 +32,7 @@ class WlcCharacerizationMask:
         self.NumFilterPoints = NumFilterPoints
     
 
-def ReadInData(FullName,Limit=None):
+def ReadInData(FullName,Limit=None,**kwargs):
     """
     Reads in the PXP waves as TimeSepForce Object (must *only* wave waves with
     Cypher-like wave endins in FullName
@@ -40,8 +40,9 @@ def ReadInData(FullName,Limit=None):
     Args:
         FullName: Path to the pxp file to load in
         Limit: maximum number to read in. If none, defaults to all (!)
+        **kwargs: passed to LoadPxp
     """
-    MData = PxpLoader.LoadPxp(FullName)
+    MData = PxpLoader.LoadPxp(FullName,**kwargs)
     # convert the waves into TimeSepForce objects
     Objs = [TimeSepForceObj(WaveDataGroup(v)) for _,v in MData.items()]
     if (Limit is not None):

@@ -89,7 +89,7 @@ def ToIWTObjects(TimeSepForceObjects):
     InverseWeierstrass.SetAllWorkOfObjects(Objs)
     return Objs
 
-def ReadInAllFiles(FileNames,Limit):
+def ReadInAllFiles(FileNames,Limit,**kwargs):
     """
     Given a list of pxp files, reads them all into a list as 
     TimeSepForce Objcts
@@ -97,10 +97,11 @@ def ReadInAllFiles(FileNames,Limit):
     Args:
         FileNames: List of .pxp full paths to data
         Limit: maximum number of curves to return
+        kwargs: passed directly to ReadInData
     """
     toRet = []
     for f in FileNames:
-        toRet.extend(FEC_Util.ReadInData(f))
+        toRet.extend(FEC_Util.ReadInData(f,Limit=Limit,**kwargs))
         # see if we are done
     # only return the limited number we want
     return toRet[:Limit]
