@@ -11,14 +11,6 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 
-class BoundsObj:
-    def __init__(self,bounds_folded_nm,bounds_unfolded_nm,
-                 bounds_transition_nm,force_one_half_N):
-        self.bounds_folded_nm =bounds_folded_nm
-        self.bounds_unfolded_nm = bounds_unfolded_nm
-        self.bounds_transition_nm =bounds_transition_nm
-        self.force_one_half_N = force_one_half_N
-
 
 def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
     # get a forward and reverse
@@ -49,12 +41,8 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
                            text_x=x_text_dict,text_y=y_text_dict)
     PlotUtilities.legend(loc=[0.4,0.8],**fontdict)
     plt.subplot(1,2,2)
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
-                                    bounds.bounds_folded_nm,
-                                    bounds.bounds_transition_nm,
-                                    bounds.bounds_unfolded_nm,
-                                    bounds.force_one_half_N)
-    plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted)
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,bounds)
+    plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT)
     plt.xlim([56,69])
     plt.ylim([-1,4])
     yoffset = 1
@@ -75,7 +63,7 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
     ext = str(idx) + ".txt"
     np.savetxt(X=np.c_[UnfoldX,UnfoldY],fname=OutBase+"Unfold" + ext,**common)
     np.savetxt(X=np.c_[FoldX,FoldY],fname=OutBase+"Fold"+ext,**common)
-    np.savetxt(X=np.c_[Obj.landscape_ext_nm,Obj.OffsetTilted],
+    np.savetxt(X=np.c_[Obj.landscape_ext_nm,Obj.OffsetTilted_kT],
                fname=OutBase+"Landscape"+ext,**common)
     
 
@@ -98,10 +86,7 @@ def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,bounds,
         PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
         # get the distance to the transition state etc
         Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
-                                        bounds.bounds_folded_nm,
-                                        bounds.bounds_transition_nm,
-                                        bounds.bounds_unfolded_nm,
-                                        bounds.force_one_half_N)
+                                        bounds)
         print("DeltaG_Dagger is {:.1f}kT".format(Obj.DeltaGDagger))
         fig = PlotUtilities.figure(figsize=(12,12))
         plt.subplot(2,1,1)
@@ -117,7 +102,7 @@ def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,bounds,
         plt.ylim([-0.5,max(Obj.Landscape_kT)*1.05])
         PlotUtilities.lazyLabel("","Landscape at F=0","",frameon=True)
         plt.subplot(2,1,2)
-        plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted,color='b',alpha=0.7)
+        plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT,color='b',alpha=0.7)
         plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
                     linestyle='--',
             label=(r"$\Delta x^{\ddag}$=" +
@@ -134,7 +119,7 @@ def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,bounds,
                  np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Obj.Offset,
                  linestyle='--',color='r',linewidth=4,
                  label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
-        plt.ylim(-0.5,max(Obj.OffsetTilted)*1.5)
+        plt.ylim(-0.5,max(Obj.OffsetTilted_kT)*1.5)
         PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2","",
                                 frameon=True)
         PlotUtilities.savefig(fig,OutBase + "1_{:d}IWT.pdf".format(b))

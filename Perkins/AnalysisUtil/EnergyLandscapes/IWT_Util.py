@@ -13,9 +13,20 @@ from FitUtil.FitUtils.Python import FitUtil as pFitUtil
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 
+class BoundsObj:
+    def __init__(self,bounds_folded_nm,bounds_unfolded_nm,
+                 bounds_transition_nm,force_one_half_N):
+        self.bounds_folded_nm =bounds_folded_nm
+        self.bounds_unfolded_nm = bounds_unfolded_nm
+        self.bounds_transition_nm =bounds_transition_nm
+        self.force_one_half_N = force_one_half_N
+
 class TiltedLandscape:
-    def __init__(self,landscape,bounds_folded_nm,bounds_transition_nm,
-                 bounds_unfolded_nm,f_one_half,kT=4.1e-21):
+    def __init__(self,landscape,bounds,kT=4.1e-21):
+        bounds_folded_nm = bounds.bounds_folded_nm
+        bounds_transition_nm = bounds.bounds_transition_nm
+        bounds_unfolded_nm = bounds.bounds_unfolded_nm
+        f_one_half = bounds.force_one_half_N 
         self.Landscape_kT =  landscape.EnergyLandscape/kT
         self.Tilted_kT = self.Landscape_kT - \
                          (landscape.Extensions*f_one_half)/kT
@@ -35,7 +46,6 @@ class TiltedLandscape:
         self.x0_unfold = ExtensionOffsetFromCoeffs(self.coeffs_unfold)
         # DeltaX dagger ais the distance between the transition and
         # folded state. See after equation 5:
-
         """
         Dudko, O. K., Hummer, G. & Szabo, A. 
         Theory, analysis, and interpretation of single-molecule force 
@@ -52,7 +62,7 @@ class TiltedLandscape:
         self.DeltaGDagger = self.Landscape_kT[self.ext_idx]-self.MinG
         self.landscape_ext_nm = landscape_ext_nm
         self.Offset = np.percentile(self.Tilted_kT,10)
-        self.OffsetTilted = self.Tilted_kT-self.Offset
+        self.OffsetTilted_kT = self.Tilted_kT-self.Offset
 
         
 def FitToRegion(x,y,bounds_x):
@@ -81,7 +91,7 @@ def ToIWTObjects(TimeSepForceObjects):
     """
     Objs = [InverseWeierstrass.\
             FEC_Pulling_Object(Time=o.Time,
-                               Extension=o.Zsnsr,
+                               Extension=o.Separation,
                                Force=o.Force,
                                SpringConstant=o.SpringConstant,
                                Velocity=o.Velocity)

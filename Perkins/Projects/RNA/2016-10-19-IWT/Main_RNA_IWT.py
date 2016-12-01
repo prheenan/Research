@@ -42,7 +42,7 @@ def run():
     size = Example.ZSnsr.size
     cyclesize = int(size/cycles)
     retracts,reverse = [],[]
-    bounds = IWT_Plot.BoundsObj(bounds_folded_nm,bounds_unfolded_nm,
+    bounds = IWT_Util.BoundsObj(bounds_folded_nm,bounds_unfolded_nm,
                                 bounds_transition_nm,FOneHalf_N)
     for i in range(cycles):
         # XXX only get first half
@@ -74,7 +74,7 @@ def run():
          IWT_Plot.TomPlot(LandscapeObj,OutBase+ str(idx) + "_",UnfoldObj,
                           RefoldObj,idx=idx,bounds=bounds)
     IWT_Plot.InTheWeedsPlot(OutBase ,UnfoldObj,RefoldObj,Example,
-                            Bins = [50,75,100,150],bounds=bounds)
+                            Bins = [50,75],bounds=bounds)
 
 
 if __name__ == "__main__":
