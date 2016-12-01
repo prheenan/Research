@@ -23,6 +23,14 @@ class BoundsObj:
 
 class TiltedLandscape:
     def __init__(self,landscape,bounds,kT=4.1e-21):
+        """
+        Creates a new tilted landscape object
+
+        Args:
+            landscape: the IWT landscape object (from InverseWeierstrass)
+            bounds: the IWT_Util.BoundsObj
+            kT: 1/beta, assumed constant
+        """
         bounds_folded_nm = bounds.bounds_folded_nm
         bounds_transition_nm = bounds.bounds_transition_nm
         bounds_unfolded_nm = bounds.bounds_unfolded_nm

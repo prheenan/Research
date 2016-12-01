@@ -68,7 +68,9 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
     
 
 def InTheWeedsPlot(OutBase,UnfoldObj,bounds,RefoldObj=[],Example=None,
-                   Bins=[50,75,100,150,200,500,1000]):
+                   Bins=[50,75,100,150,200,500,1000],
+                   min_landscape_kT=None,
+                   max_landscape_kT=None):
     # get the IWT
     kT = 4.1e-21
     for b in Bins:
@@ -118,7 +120,11 @@ def InTheWeedsPlot(OutBase,UnfoldObj,bounds,RefoldObj=[],Example=None,
                  np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Obj.Offset,
                  linestyle='--',color='r',linewidth=4,
                  label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
-        plt.ylim(-0.5,max(Obj.OffsetTilted_kT)*1.5)
+        if (max_landscape_kT is None):
+            max_landscape_kT = max(Obj.OffsetTilted_kT)*1.5
+        if (min_landscape_kT is None):
+            min_landscape_kT = np.percentile(Obj.OffsetTilted_kT,5)-2
+        plt.ylim( min_landscape_kT,max_landscape_kT)
         PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2","",
                                 frameon=True)
         PlotUtilities.savefig(fig,OutBase + "1_{:d}IWT.pdf".format(b))
