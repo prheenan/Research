@@ -67,23 +67,22 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
                fname=OutBase+"Landscape"+ext,**common)
     
 
-def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj,Example,bounds,
+def InTheWeedsPlot(OutBase,UnfoldObj,bounds,RefoldObj=[],Example=None,
                    Bins=[50,75,100,150,200,500,1000]):
     # get the IWT
     kT = 4.1e-21
     for b in Bins:
         LandscapeObj =  InverseWeierstrass.\
             FreeEnergyAtZeroForce(UnfoldObj,NumBins=b,RefoldingObjs=RefoldObj)
-        LandscapeObjFwd =  InverseWeierstrass.\
-            FreeEnergyAtZeroForce(UnfoldObj,NumBins=b)
         # make a 2-D histogram of everything
-        fig = PlotUtilities.figure(figsize=(8,8))
-        ext_nm = Example.Separation*1e9
-        IWT_Util.ForceExtensionHistograms(ext_nm,
-                                          Example.Force*1e12,
-                                          AddAverage=False,
-                                          nBins=b)
-        PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
+        if (Example is not None):
+            fig = PlotUtilities.figure(figsize=(8,8))
+            ext_nm = Example.Separation*1e9
+            IWT_Util.ForceExtensionHistograms(ext_nm,
+                                              Example.Force*1e12,
+                                              AddAverage=False,
+                                              nBins=b)
+            PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
         # get the distance to the transition state etc
         Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
                                         bounds)

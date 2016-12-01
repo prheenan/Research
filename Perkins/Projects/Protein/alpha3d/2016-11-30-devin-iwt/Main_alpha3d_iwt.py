@@ -45,16 +45,16 @@ def run():
     IwtData = IWT_Util.ToIWTObjects(unfold)
     Landscape = InverseWeierstrass.FreeEnergyAtZeroForce(IwtData,NumBins=40)
     # get the titled landscape...
-    Bounds = IWT_Util.BoundsObj(bounds_folded_nm=[0,10],
-                                bounds_unfolded_nm=[0,10],
-                                bounds_transition_nm=[0,10],
-                                force_one_half_N=9e-12)
+    Bounds = IWT_Util.BoundsObj(bounds_folded_nm=[20,28],
+                                bounds_transition_nm=[28,33],
+                                bounds_unfolded_nm=[32,40],
+                                force_one_half_N=13e-12)
     tilt = IWT_Util.TiltedLandscape(Landscape,Bounds)
-    plt.figure()
-    plt.subplot(2,1,1)
-    plt.plot(IwtData[-1].Extension*1e9,IwtData[-1].Force)
-    plt.subplot(2,1,2)
-    plt.plot(tilt.landscape_ext_nm,tilt.OffsetTilted)
-    plt.show()
+    limits_ext_nm = [np.min(tilt.landscape_ext_nm),
+                     np.max(tilt.landscape_ext_nm)]
+    IWT_Plot.InTheWeedsPlot(OutBase="./out/",
+                            UnfoldObj=IwtData,
+                            bounds=Bounds,Bins=[40,60,80])
+
 if __name__ == "__main__":
     run()
