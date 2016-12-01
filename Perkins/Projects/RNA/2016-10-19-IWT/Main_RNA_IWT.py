@@ -73,8 +73,8 @@ def run():
     for idx in range(min(len(UnfoldObj),RefoldObj)):
          IWT_Plot.TomPlot(LandscapeObj,OutBase+ str(idx) + "_",UnfoldObj,
                           RefoldObj,idx=idx,bounds=bounds)
-    IWT_Plot.InTheWeedsPlot(OutBase ,UnfoldObj,RefoldObj,Example,
-                            Bins = [50,75],bounds=bounds)
+    IWT_Plot.InTheWeedsPlot(OutBase ,UnfoldObj,RefoldObj=RefoldObj,
+                            Example=Example,Bins = [50,75],bounds=bounds)
 
 
 if __name__ == "__main__":
