@@ -31,7 +31,7 @@ def run():
     # hard coded constant for now...
     # XXX for re-folding, need to add in schedule
     # XXX ensure properly zeroed?
-    idx_end_of_unfolding = 7950
+    idx_end_of_unfolding = 8100
     unfold,refold = [],[]
     for d in RawData:
         # flip the sign, so force goes up 
@@ -39,23 +39,30 @@ def run():
         # get the unfolding and unfolds
         slice_unfolding = slice(0,idx_end_of_unfolding)
         unfold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
-        unfold_tmp.Separation -= np.percentile(unfold_tmp.Separation,5)
+        slice_folding = slice(idx_end_of_unfolding,idx_end_of_unfolding*2)
+        fold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_folding)
+        # arbitrarily assign the minimum separaiton to the lower 5%.
+        MinV = np.percentile(unfold_tmp.Separation,5)
+        unfold_tmp.Separation -= MinV
+        fold_tmp.Separation -= MinV
         unfold.append(unfold_tmp)
+        refold.append(fold_tmp)
     # convert all the unfolding objects to IWT data
     IwtData = IWT_Util.ToIWTObjects(unfold)
-    Landscape = InverseWeierstrass.FreeEnergyAtZeroForce(IwtData,NumBins=40)
+    IwtData_fold = IWT_Util.ToIWTObjects(refold)
+    # switch the velocities of all the folding objects..
+    for o in IwtData_fold:
+        o.Velocity *= -1
     # get the titled landscape...
     Bounds = IWT_Util.BoundsObj(bounds_folded_nm=[20,30],
                                 bounds_transition_nm=[26,35],
                                 bounds_unfolded_nm=[32,40],
                                 force_one_half_N=13e-12)
-    tilt = IWT_Util.TiltedLandscape(Landscape,Bounds)
-    limits_ext_nm = [np.min(tilt.landscape_ext_nm),
-                     np.max(tilt.landscape_ext_nm)]
     IWT_Plot.InTheWeedsPlot(OutBase="./out/",
                             UnfoldObj=IwtData,
                             bounds=Bounds,Bins=[40,60,80],
-                            max_landscape_kT=10)
+                            max_landscape_kT=None,
+                            min_landscape_kT=None)
 
 if __name__ == "__main__":
     run()
