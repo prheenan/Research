@@ -412,7 +412,7 @@ def run():
         ("./1927bp/",1927),
     ]
     Args = dict(Force=Force,ForceWLC=ForceWLC,ForceTransition=True,
-                GridResolution=300)
+                GridResolution=500)
     for DataDir,BasePairs in DataDirBasePairs:
         OutName = "{:s}Working/".format(DataDir)
         InName = "{:s}Data/".format(DataDir)
