@@ -42,6 +42,19 @@
 __pycache__/
 *.py[cod]
 *$py.class
+# CPLC stuff
+*.zip
+*.out
+*.profile
+*.opj
+*.tif
+*.traces
+*.pks
+*.log
+*.pptx
+Scratch/
+
+
 
 # C extensions
 *.so
