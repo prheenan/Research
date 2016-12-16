@@ -14,9 +14,9 @@ def run():
     """
     stocks = np.array([270,20])
     # what volume are the stocks, in <vol>
-    volumes = np.array([10,15])
+    volumes = np.array([20])
     # what the post-dilution concenration is, <mass>/<vol>
-    DesiredConc = np.array([50,5])
+    DesiredConc = np.array([3,1,3])
     obj = DilutionUtil.PrintDilutions(stocks,volumes,DesiredConc)
 
 

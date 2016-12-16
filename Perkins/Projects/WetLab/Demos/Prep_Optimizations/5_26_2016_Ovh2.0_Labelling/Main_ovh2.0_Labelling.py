@@ -113,14 +113,17 @@ def run():
     LowerEfficiency= MeanDistNano*np.sqrt(1/efficiency)
     # N*L0 should be totally sufficient: DNA at site A must reach all the way
     # to site B (tether is complemtary region)
-    LowerBoundDist = 1.5*DNASizeNanoMeters
-    UpperBoundDist = 8*DNASizeNanoMeters
+    LowerBoundDist = DNASizeNanoMeters
+    UpperBoundDist = 5*DNASizeNanoMeters
     plt.loglog(LoadConcentrationNgPerUl,LowerEfficiency,
                'm.-',linewidth=3,
                label="{:d}% efficiency".format(int(efficiency*100)))
     # bit of a hack to get the label working
-    pPlotUtil.lazyLabel("Concentration [ng/uL] (20uL Deposition)",
-                        "Expected Mean DNA distance [nm]",\
+    xlabel =("Concentration [ng/uL]" +\
+             "\n({:d}uL Deposition onto {:.1f}mm diameter glass)").\
+        format(LoadVolumeMicroliters,(2*radius)*1000)
+    pPlotUtil.lazyLabel(xlabel,
+                        "Expected Mean DNA distance [nm]",
                         "Tuning Deposition Concentration to avoid dimerization",
                         titley=1.1)
     LegendAndSave(fig,"DepositionAdvice1.png")
