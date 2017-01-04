@@ -178,7 +178,8 @@ def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume,
     return TotalVolumeNeeded - EffectiveVolumeAlreadyPresent
 
 
-def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes):
+def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes,
+                   FixedBufferVolume=None):
     """
     Given a stock and desired concentraitons and desired volumes at each 
     concentration, returns the list of stocks, volumes, dilutions, and final
@@ -266,7 +267,8 @@ def StockVolumeNeededForSerialDilution(Stock,Volumes,Desired):
 
         
 def PrintSerialSteps(Stock,Volumes,Desired,
-                     ConcString="ng/uL",VolString="uL",BufferString="Buffer"):
+                     ConcString="ng/uL",VolString="uL",BufferString="Buffer",
+                     **kwargs):
     """
     Given a stock concentration, desired volumes and concentrations, prints
     out the steps needed to serially dilute
@@ -275,7 +277,7 @@ def PrintSerialSteps(Stock,Volumes,Desired,
         see PrintSerialDilution
     """
     Stocks,VolumeStock,VolumeDilute,FinalStocks = \
-                        SeriallyDilute(Stock,Desired,Volumes)
+                        SeriallyDilute(Stock,Desired,Volumes,**kwargs)
     PrintSerialDilution(Stocks,VolumeStock,VolumeDilute,
                         FinalStocks,ConcString=ConcString,
                         VolString=VolString,BufferString=BufferString)

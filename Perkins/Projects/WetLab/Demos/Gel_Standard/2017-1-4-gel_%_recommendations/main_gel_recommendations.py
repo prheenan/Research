@@ -12,7 +12,24 @@ def run():
     """
     plot of how we should run an agarose gel for small fragments
 
-    1.Agilent. Gel Electrophoresis.
+
+    --According to Figure 2 (pp5) of :
+
+    Mitas, M. et al. 
+    Hairpin properties of single-stranded DNA containing a GC-rich triplet 
+    repeat: (CTG)15. Nucleic Acids Res 23, 1050-1059 (1995).
+
+    --an 8% polyacrilimide gel works well to resolve ssDNA and dsDNA on the 
+    order of 15bp. (we are dealing with more like 30). According to 
+
+    1.Agilent. Gel Electrophoresis
+
+    --an 8% gel is 50-400bp for resolving. The script you are reading
+    shows that a 2.5% agarose gel should behave similarly. Note that by ibid,
+    the bromophenol blue goes with 45bp (ie: probably want to stop when it is
+    <= 1/2 for our ~30bp) 
+
+    
     """
     percentage_and_range = [ [0.5,1000,30000],
                              [0.7,800,12000],
