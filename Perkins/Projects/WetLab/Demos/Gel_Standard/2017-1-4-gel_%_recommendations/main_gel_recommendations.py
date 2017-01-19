@@ -46,7 +46,7 @@ def run():
     # get the coefficients to fit, fitting to a log scale
     coeffs_low = np.polyfit(x=pct,y=np.log(bp_low),deg=1)
     coeffs_high = np.polyfit(x=pct,y=np.log(bp_high),deg=1)
-    desired_pct = 2.5
+    desired_pct = 3.5
     desired_bp_resolution = 20
     max_pct = max(pct)
     max_graph = max(max_pct,desired_pct)
@@ -94,7 +94,7 @@ def run():
     pct = [p[0] for p in pct_bp]
     bp = [p[1] for p in pct_bp]
     lin_coeffs_dye = np.polyfit(pct,np.log(bp),deg=1)
-    x_fit = np.linspace(min(pct),max(pct))
+    x_fit = np.linspace(min(pct),max_graph)
     fit_dye = np.exp(np.polyval(lin_coeffs_dye,x_fit))
     expected_running = np.exp(np.polyval(lin_coeffs_dye,desired_pct))
     fig = PlotUtilities.figure()

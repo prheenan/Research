@@ -12,7 +12,7 @@ def run():
     """
     Utility file: we write down our stocks and desired concentrations
     """
-    stocks = np.array([270,20])
+    stocks = np.array([6])
     # what volume are the stocks, in <vol>
     volumes = np.array([20])
     # what the post-dilution concenration is, <mass>/<vol>
