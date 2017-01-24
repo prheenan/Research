@@ -50,6 +50,17 @@ def GetAllAreas(chains,residues,names):
 
 
 def run():
+    """
+    Gets all the accessible areas of the cystines
+    
+    TO RUN:
+    
+    (1) open pymol
+    (2) in the command window, type:
+    run /Users/patrickheenan/src_prh/Research/Perkins/Projects/Protein/titin/2017-1-17-solvent-cystein/main.py
+    (3) ???
+    (4) Profit
+    """
     # reset the session, make the background less awful
     cmd.delete("all")
     cmd.bg_color('grey80')
@@ -70,7 +81,7 @@ def run():
     ids = [float(r) for r in stored.residues]
     sasa_per_residue,area_per_residue= \
         CheckpointUtilities.getCheckpoint(base + "out.pkl",
-                                          GetAllAreas,False,
+                                          GetAllAreas,True,
                                           stored.chains,stored.residues,
                                           stored.names)
     accessible_tmp = np.where(sasa_per_residue > 

@@ -43,7 +43,7 @@ def run():
     Primer = "AGAGTGGTCCTA"
     # get the sequence, tack on the overhang
     ProductStartLoc = 1606
-    ProductEndLoc = 1794
+    ProductEndLoc = 3520
     with open("mp13_plasmid_plasmid_seq.txt") as f:
         Seq = Primer + "".join([l for l in f.readlines()])
         Seq = Seq[ProductStartLoc:ProductEndLoc]
@@ -113,8 +113,8 @@ def run():
     LowerEfficiency= MeanDistNano*np.sqrt(1/efficiency)
     # N*L0 should be totally sufficient: DNA at site A must reach all the way
     # to site B (tether is complemtary region)
-    LowerBoundDist = DNASizeNanoMeters
-    UpperBoundDist = 5*DNASizeNanoMeters
+    LowerBoundDist = 30
+    UpperBoundDist = DNASizeNanoMeters
     plt.loglog(LoadConcentrationNgPerUl,LowerEfficiency,
                'm.-',linewidth=3,
                label="{:d}% efficiency".format(int(efficiency*100)))

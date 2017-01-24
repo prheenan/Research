@@ -67,10 +67,23 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
                fname=OutBase+"Landscape"+ext,**common)
     
 
-def InTheWeedsPlot(OutBase,UnfoldObj,bounds,RefoldObj=[],Example=None,
+def InTheWeedsPlot(OutBase,UnfoldObj,bounds=None,RefoldObj=[],Example=None,
                    Bins=[50,75,100,150,200,500,1000],
                    min_landscape_kT=None,
                    max_landscape_kT=None):
+    """
+    Plots a detailed energy landscape, and saves
+
+    Args:
+        OutBase: where to start the save
+        UnfoldObj: unfolding objects
+        bounds: Where to 'zoom' in the plot, Iwt_Util.BoundsObj instance
+        RefoldObj: refolding objects
+        Bins: how many bins to use in the energy landscape plots
+        <min/max>_landscape_kT: bounds on the landscape
+    Returns:
+        nothing
+    """
     # get the IWT
     kT = 4.1e-21
     for b in Bins:
