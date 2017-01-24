@@ -90,6 +90,15 @@ def FitToRegion(x,y,bounds_x):
     coeffs = np.polyfit(x=pred_x,y=pred_y,deg=2)
     return pred_x,pred_y,coeffs
         
+def ToIWTObject(o):
+    obj = InverseWeierstrass.FEC_Pulling_Object(Time=o.Time,
+                                                Extension=o.Separation,
+                                                Force=o.Force,
+                                                SpringConstant=o.SpringConstant,
+                                                Velocity=o.Velocity)
+    obj.SetWork(obj.CalculateForceCummulativeWork())
+    return obj
+
 def ToIWTObjects(TimeSepForceObjects):
     """
     Converts TimeSepForceObjects to InverseWeierstrass objects
@@ -97,14 +106,7 @@ def ToIWTObjects(TimeSepForceObjects):
     Args:
         TimeSepForceObjects: list of TimeSepForceObjects to transform
     """
-    Objs = [InverseWeierstrass.\
-            FEC_Pulling_Object(Time=o.Time,
-                               Extension=o.Separation,
-                               Force=o.Force,
-                               SpringConstant=o.SpringConstant,
-                               Velocity=o.Velocity)
-            for o in TimeSepForceObjects]
-    InverseWeierstrass.SetAllWorkOfObjects(Objs)
+    Objs = [ToIWTObject(o) for o in TimeSepForceObjects]
     return Objs
 
 def ReadInAllFiles(FileNames,Limit,**kwargs):
@@ -337,6 +339,67 @@ def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
         PlotUtilities.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
                                 "",frameon=True)
 
+def set_separation_velocity_by_first_num(iwt_data,num):
+    """
+    Sets the velocity and offset of the given iwt_object by the first
+    num points in the separation vs time curve
+
+    Args:
+        iwt_data: the data to use
+        num: the number of points to use
+    Returns:
+        nothing, but sets the iwt_data offset and velocity
+    """
+    time_slice = iwt_data.Time[:num]
+    sep_slice = iwt_data.Extension[:num]
+    coeffs = np.polyfit(x=time_slice,y=sep_slice,deg=1)
+    # XXX could just get slope from all, then get offset from np.percentile
+    velocity = coeffs[0]
+    offset = coeffs[1]
+    # adjust the Z function for the fitted velocity and time
+    iwt_data.SetVelocityAndOffset(offset,velocity)
+
+
+def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
+                           fraction_for_vel=0.5):
+    """
+    given a 'raw' TimeSepForce object, gets the approach and retract 
+    as IWT objects, accounting for the velocity and offset of the separation
+
+    Args:
+        d: Single TimeSepForce object to split. A single retract/approach
+        idx_end_of_unfolding: where the unfolding stops. If not given, we
+        assume it happens directly in the middle (ie: default is no 'padding').
+
+        idx_end_of_folding: where unfolding stops. If not given, we assume
+        it happens at exactly twice where the folding stops
+    
+        fraction_for_vel: fit this much of the retract/approach
+        separation versus time to determine the true velocity
+    returns:
+        tuple of <unfolding,refolding> IWT Object
+    """
+    if (idx_end_of_unfolding is None):
+        idx_end_of_unfolding = int(np.ceil(d.Force.size/2))
+    if (idx_end_of_folding is None):
+        idx_end_of_folding = 2 * idx_end_of_unfolding
+    # flip the sign, so force goes up 
+    d.Force *= -1
+    # get the unfolding and unfolds
+    slice_unfolding = slice(0,idx_end_of_unfolding)
+    unfold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
+    slice_folding = slice(idx_end_of_unfolding,idx_end_of_folding)
+    fold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_folding)
+    # convert all the unfolding objects to IWT data
+    IwtData = ToIWTObject(unfold_tmp)
+    IwtData_fold = ToIWTObject(fold_tmp)
+    # switch the velocities of all ToIWTObject folding objects..
+    # get the number of points to use for the fit. 
+    Num = int(np.ceil(unfold_tmp.Time.size * fraction_for_vel))
+    # set the velocity and Z functions
+    set_separation_velocity_by_first_num(IwtData,Num)
+    set_separation_velocity_by_first_num(IwtData_fold,Num)
+    return IwtData,IwtData_fold
 
 
 def RobTimeSepForceToIWT(o,ZFunc):
