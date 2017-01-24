@@ -2,7 +2,6 @@
 from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 
 import os, sys
@@ -27,25 +26,28 @@ def run():
     """
 
     """
-    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser = argparse.ArgumentParser(description='IWT of a .pxp ')
+    common = dict(required=True)
     parser.add_argument('-number_of_pairs', metavar='number_of_pairs', 
-                        type=int,
-                        help='number of approach/retract pairs')
+                        type=int,help='number of approach/retract pairs',
+                        **common)
     parser.add_argument('-flip_forces',metavar="flip_forces",type=int,
-                        help="if true, multiplies all the forces by -1")
+                        help="if true, multiplies all the forces by -1",
+                        **common)
     parser.add_argument('-number_of_bins', metavar='number_of_bins', 
-                        type=int,
-                        help='number of separation bins')
+                        type=int,help='number of separation bins',**common)
     parser.add_argument('-f_one_half', metavar='f_one_half', type=float,
-                        help='force at which half the pop is folded/unfolded')
+                        help='force at which half the pop is folded/unfolded',
+                        **common)
     help_vel = '[0,1] of the separation vs time to fit for the velocity'
     parser.add_argument('-fraction_velocity_fit', 
                         metavar='fraction_velocity_fit', type=float,
-                        help=help_vel)
+                        help=help_vel,**common)
     parser.add_argument('-file_input',metavar="file_input",type=str,
-                        help="path to the '.pxp' with the force, separation")
+                        help="path to the '.pxp' with the force, separation",
+                        **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
-                        help="path to output the associated data")
+                        help="path to output the associated data",**common)
     args = parser.parse_args()
     out_file = args.file_output
     in_file = args.file_input
