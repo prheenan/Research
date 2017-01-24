@@ -35,6 +35,7 @@ class TiltedLandscape:
         bounds_transition_nm = bounds.bounds_transition_nm
         bounds_unfolded_nm = bounds.bounds_unfolded_nm
         f_one_half = bounds.force_one_half_N 
+        self.kT = kT
         self.Landscape_kT =  landscape.EnergyLandscape/kT
         self.Tilted_kT = self.Landscape_kT - \
                          (landscape.Extensions*f_one_half)/kT
@@ -361,7 +362,7 @@ def set_separation_velocity_by_first_num(iwt_data,num):
 
 
 def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
-                           fraction_for_vel=0.5):
+                           fraction_for_vel=0.5,flip_forces=False):
     """
     given a 'raw' TimeSepForce object, gets the approach and retract 
     as IWT objects, accounting for the velocity and offset of the separation
@@ -383,16 +384,21 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
         idx_end_of_unfolding = int(np.ceil(d.Force.size/2))
     if (idx_end_of_folding is None):
         idx_end_of_folding = 2 * idx_end_of_unfolding
-    # flip the sign, so force goes up 
-    d.Force *= -1
+    if (flip_forces):
+        d.Force *= -1
     # get the unfolding and unfolds
     slice_unfolding = slice(0,idx_end_of_unfolding)
     unfold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
     slice_folding = slice(idx_end_of_unfolding,idx_end_of_folding)
     fold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_folding)
     # convert all the unfolding objects to IWT data
-    IwtData = ToIWTObject(unfold_tmp)
-    IwtData_fold = ToIWTObject(fold_tmp)
+    try:
+        IwtData = ToIWTObject(unfold_tmp)
+        IwtData_fold = ToIWTObject(fold_tmp)
+    except AttributeError:
+        # Rob messes with the notes
+        IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None)
+        IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None)
     # switch the velocities of all ToIWTObject folding objects..
     # get the number of points to use for the fit. 
     Num = int(np.ceil(unfold_tmp.Time.size * fraction_for_vel))
