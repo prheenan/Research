@@ -4,12 +4,11 @@ from __future__ import division
 import numpy as np
 import sys
 
-import os, sys
+import os, sys,traceback
 # change to this scripts path
 path = os.path.abspath(os.path.dirname(__file__))
 os.chdir(path)
 sys.path.append('../../../../../')
-
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
@@ -18,14 +17,10 @@ from GeneralUtil.python import GenUtilities
 from IgorUtil.PythonAdapter import PxpLoader
 import argparse
 
-def write_and_close(file_handle,string):
-    file_handle.write(string)
-    file_handle.close()
+def write_and_close(string):
+    raise RuntimeError(string)
 
-def run():
-    """
-
-    """
+def parse_and_run():
     parser = argparse.ArgumentParser(description='IWT of a .pxp ')
     common = dict(required=True)
     parser.add_argument('-number_of_pairs', metavar='number_of_pairs', 
@@ -54,9 +49,8 @@ def run():
     flip_forces = args.flip_forces
     number_of_pairs = args.number_of_pairs
     f_one_half = args.f_one_half
-    log_file = open(os.path.dirname(out_file) + "log",'w+')
     if (not GenUtilities.isfile(in_file)):
-        write_and_close(log_file,"File {:s} doesn't exist".format(in_file))
+        write_and_close("File {:s} doesn't exist".format(in_file))
     # # POST: input file exists
     # go ahead and read it
     validation_function = PxpLoader.valid_fec_allow_endings
@@ -64,7 +58,7 @@ def run():
                                       ValidFunc=validation_function)
     # POST: file read sucessfully. should just have the one
     if (not len(RawData) == 1):
-        write_and_close(log_file,"Need exactly one Force/Separation".\
+        write_and_close("Need exactly one Force/Separation".\
                         format(in_file))
     # POST: have just one. Go ahead and break it up
     Data= RawData[0]
@@ -95,16 +89,26 @@ def run():
                                 force_one_half_N=f_one_half)
     Obj =  IWT_Util.TiltedLandscape(LandscapeObj,Bounds)
     # write out the file we need
-    extension_meters = Obj.landscape_ext_nm * 1e9
-    landscape_joules = Obj.Landscape_kT / Obj.kT
-    landscape_tilted_joules = Obj.Tilted_kT / Obj.kT
+    extension_meters = Obj.landscape_ext_nm/1e9
+    landscape_joules = Obj.Landscape_kT * Obj.kT
+    landscape_tilted_joules = Obj.Tilted_kT * Obj.kT
     data = np.array((extension_meters,landscape_joules,
                      landscape_tilted_joules))
     # done with the log file...
-    log_file.close()
     np.savetxt(fname=out_file,delimiter=",",newline="\n",
                header="(C) PRH 2017\n extension(m),landscape(J),tilted(J)",
                X=data.T)
+
+
+def run():
+    try:
+        parse_and_run()
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, 
+                                           exc_traceback)
+        # Log it or whatever here
+        str_out =''.join('!! ' + line for line in lines)
 
 if __name__ == "__main__":
     run()
