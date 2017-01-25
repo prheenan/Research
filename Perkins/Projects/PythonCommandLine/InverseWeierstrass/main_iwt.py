@@ -44,8 +44,8 @@ def parse_and_run():
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
     args = parser.parse_args()
-    out_file = args.file_output
-    in_file = args.file_input
+    out_file = os.path.normpath(args.file_output)
+    in_file = os.path.normpath(args.file_input)
     flip_forces = args.flip_forces
     number_of_pairs = args.number_of_pairs
     f_one_half = args.f_one_half
