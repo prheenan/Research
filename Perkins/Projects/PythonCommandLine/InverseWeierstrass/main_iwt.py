@@ -109,6 +109,6 @@ def run():
                                            exc_traceback)
         # Log it or whatever here
         str_out =''.join('!! ' + line for line in lines)
-
+        print(str_out)
 if __name__ == "__main__":
     run()
