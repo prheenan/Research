@@ -160,17 +160,13 @@ def PreProcessApproachAndRetract(Approach,Retract,
         Retract.Force += ZeroForceRetr
     if (ZeroSep):
         double_min = lambda x,y:min(np.min(x),np.min(y))
-        #if (ZeroForceFraction is None):
+        # then we just go with the minimum
         MinSep = double_min(Approach.Separation,Retract.Separation)
         MinZ = double_min(Approach.ZSnsr,Retract.ZSnsr)
-        #else:
-        #    # offset to zero force at the retract index
-        #    MinSep =  Approach.Separation[idx_retr]
-        #    MinZ = Approach.ZSnsr[idx_retr]
         Approach.Separation -= MinSep
         Retract.Separation -= MinSep
-        Approach.offset_z_sensor()
-        Retract.offset_z_sensor()
+        Approach.offset_z_sensor(MinZ)
+        Retract.offset_z_sensor(MinZ)
     if (FlipY):
         Approach.Force *= -1
         Retract.Force *= -1
