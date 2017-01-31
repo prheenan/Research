@@ -13,10 +13,12 @@ def run():
     """
     "tacks" onto the woodside DNA construct to pad it to 100nt
     """
-    DesiredLength = 100
+    DesiredLength = 68
     LoopLength = 4
     seq = "gag tca acg tac tga tca cgc tgg atc cta TTT Tta gga tcc agc gtg " +\
           "atc agt acg ttg act c"
+    
+    seq = "tt" + seq + "tt" 
     seq = seq.replace(" ","")
     original_seq = copy.deepcopy(seq)
     ExtraNeeded = DesiredLength-len(seq)

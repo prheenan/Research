@@ -11,6 +11,8 @@ import copy
 
 
 def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
+                          x_func = lambda x: x.Separation,
+                          y_func = lambda y: y.Force, 
                           ApproachLabel="Approach",
                           RetractLabel="Retract"):
     """
@@ -25,10 +27,12 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
     # plot the separation and force, with their filtered counterparts
     ApprFiltered = FEC_Util.GetFilteredForce(Appr,NFilterPoints)
     RetrFiltered = FEC_Util.GetFilteredForce(Retr,NFilterPoints)
-    plt.plot(Appr.Separation,Appr.Force,color='r',alpha=0.3)
-    plt.plot(Appr.Separation,ApprFiltered.Force,color='r',label=ApproachLabel)
-    plt.plot(Retr.Separation,Retr.Force,color='b',alpha=0.3)
-    plt.plot(Retr.Separation,RetrFiltered.Force,color='b',label=RetractLabel)
+    plt.plot(x_func(Appr),y_func(Appr),color='r',alpha=0.3)
+    plt.plot(x_func(ApprFiltered),y_func(ApprFiltered),color='r',
+             label=ApproachLabel)
+    plt.plot(x_func(Retr),y_func(Retr),color='b',alpha=0.3)
+    plt.plot(x_func(RetrFiltered),y_func(RetrFiltered),color='b',
+             label=RetractLabel)
 
 def FEC_AlreadySplit(Appr,Retr,
                      XLabel = "Separation (nm)",

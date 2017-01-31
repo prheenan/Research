@@ -45,10 +45,8 @@ def ReadInData(FullName,Limit=None,**kwargs):
     MData = PxpLoader.LoadPxp(FullName,**kwargs)
     # convert the waves into TimeSepForce objects
     Objs = [TimeSepForceObj(WaveDataGroup(v)) for _,v in MData.items()]
-    if (Limit is not None):
-        return Objs[:Limit]
-    else:
-        return Objs
+    # note: limit=None gives everything on upper bound
+    return Objs[:Limit]
 
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
@@ -70,9 +68,7 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
 
 def UnitConvert(TimeSepForceObj,
                 ConvertX=lambda x : x,
-                ConvertY=lambda y : y,
-                GetX = lambda x : x.Separation,
-                GetY = lambda x : x.Force):
+                ConvertY=lambda y : y):
     """
     Converts the 'X' and 'Y' using the specified units and properties 
     of the object passed in 
@@ -81,14 +77,13 @@ def UnitConvert(TimeSepForceObj,
         TimeSepForceObj : see ApproachRetractCurve
         ConvertX: method to convert the X values into whatever units we want
         ConvertY: metohod to convery the Y values into whatever units we want
-        GetX: gets the x values (assumed separation for plotting XXX TODO)
-        GetY: gets the y values (assumed force for plotting XXX TODO)
     Returns: 
         deep *copy* of original object in the specified units
     """
     ObjCopy = copy.deepcopy(TimeSepForceObj)
-    ObjCopy.Force = ConvertY(GetY(ObjCopy))
-    ObjCopy.Separation = ConvertX(GetX(ObjCopy))
+    ObjCopy.Force = ConvertY(TimeSepForceObj.Force)
+    ObjCopy.Separation = ConvertX(TimeSepForceObj.Separation)
+    ObjCopy.set_z_sensor(ConvertX(TimeSepForceObj.Zsnsr))
     return ObjCopy
 
 
@@ -148,24 +143,34 @@ def PreProcessApproachAndRetract(Approach,Retract,
     if (ZeroForceFraction is not None):
         # then we need to offset the force
         # XXX assume offset is the same for both
-        _,ZeroForceRetr = GetSurfaceIndexAndForce(Retract,
-                                                  Fraction=ZeroForceFraction,
-                                                  FilterPoints=NFilterPoints,
-                                                  ZeroAtStart=False)
-        _,ZeroForceAppr = GetSurfaceIndexAndForce(Approach,
-                                                  Fraction=ZeroForceFraction,
-                                                  FilterPoints=NFilterPoints,
-                                                  ZeroAtStart=True)
+        idx_retr,ZeroForceRetr = \
+            GetSurfaceIndexAndForce(Retract,
+                                    Fraction=ZeroForceFraction,
+                                    FilterPoints=NFilterPoints,
+                                    ZeroAtStart=False)
+        idx_appr,ZeroForceAppr = \
+            GetSurfaceIndexAndForce(Approach,
+                                    Fraction=ZeroForceFraction,
+                                    FilterPoints=NFilterPoints,
+                                    ZeroAtStart=True)
         # add, because the sign diffreent presummably hasnt been fixed
         # (See below)
         Approach.Force += ZeroForceRetr
         # Do the same for retract
         Retract.Force += ZeroForceRetr
     if (ZeroSep):
-        MinSep = min(np.min(Approach.Separation),
-                     np.min(Retract.Separation))
+        double_min = lambda x,y:min(np.min(x),np.min(y))
+        #if (ZeroForceFraction is None):
+        MinSep = double_min(Approach.Separation,Retract.Separation)
+        MinZ = double_min(Approach.ZSnsr,Retract.ZSnsr)
+        #else:
+        #    # offset to zero force at the retract index
+        #    MinSep =  Approach.Separation[idx_retr]
+        #    MinZ = Approach.ZSnsr[idx_retr]
         Approach.Separation -= MinSep
         Retract.Separation -= MinSep
+        Approach.offset_z_sensor()
+        Retract.offset_z_sensor()
     if (FlipY):
         Approach.Force *= -1
         Retract.Force *= -1
@@ -267,7 +272,7 @@ def GetFilteredForce(Obj,NFilterPoints):
     except AttributeError:
         ToRet.Extension = SavitskyFilter(Obj.Extension,nSmooth=NFilterPoints)
     try:
-        ToRet.ZSnsr = SavitskyFilter(Obj.ZSnsr,nSmooth=NFilterPoints)
+        ToRet.set_z_sensor(SavitskyFilter(Obj.ZSnsr,nSmooth=NFilterPoints))
     except AttributeError:
         pass
     return ToRet
@@ -356,8 +361,8 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,FlipSign=True,
         # sign correct and offset the force
         MyObj.Force = MyObj.Force * -1
         MyObj.Force -= MedRetr
-        MyObj.Separation -= MyObj.Separation[0]
-        MyObj.Zsnsr -= MyObj.Zsnsr[0]
+        MyObj.Separation -= np.min(MyObj.Separation)
+        MyObj.offset_z_sensor(MyObj)
     return MyObj
 
 

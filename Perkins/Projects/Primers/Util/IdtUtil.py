@@ -188,3 +188,16 @@ def PrintAndSave(orders,fileV):
     """
     PrintOrders(orders)
     PrintSequencesToFile(orders,fileV)
+
+
+def AddDBCOAndBiotin(Sequence):
+    """
+    Adds a 5' DBCO and a 3' biotin  to the given sequence
+
+    Args:
+         Sequence: what to add to
+    Returns:
+         Sequence as a list of characters, with a DBCO and Biotin appended
+    """
+    SeqByChar = [l for l in Sequence]
+    return [Dbco5Prime()] + SeqByChar + [Biotin3Prime()]
