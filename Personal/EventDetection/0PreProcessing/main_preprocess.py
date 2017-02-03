@@ -105,6 +105,7 @@ def run():
     """
     base_directory="/Volumes/group/4Patrick/CuratedData/"
     output_base_directory = base_directory + "Masters_CSCI/"
+    positive_directory = output_base_directory + "Positive/"
     # copy each of the input directories into CSV files in the output directory
     dna_relative = "CircularDNA/ovh2.0-1p9kbp/ForceExtensionCurves/RawPxpFiles/"
     relative_input_dir = [dna_relative + "Scratch/"]
@@ -112,12 +113,16 @@ def run():
     files_data_events = [read_single_directory_with_events(d) 
                          for d in absolute_input_dir]
     for i,d in enumerate(absolute_input_dir):
-        # go through each PXP in this directory...
-        for file_name,data,ev in files_data_events[i]:
+        # make the output directory 
+        this_base = positive_directory + relative_input_dir[i]
+        GenUtilities.ensureDirExists(this_base)
+        # go through each PXP in this directory
+        for file_path,data,ev in files_data_events[i]:
             set_events_of_data(data,ev)
             # POST: all data are set. go ahead and save them out.
             for dat in data:
-                output_path = d + "tmp.csv"
+                file_name = os.path.basename(file_path)
+                output_path = this_base + file_name + "_"+dat.Meta.Name + ".csv"
                 FEC_Util.save_time_sep_force_as_csv(output_path,dat)
                 time_sep_force = FEC_Util.\
                     read_time_sep_force_from_csv(output_path,has_events=True)
