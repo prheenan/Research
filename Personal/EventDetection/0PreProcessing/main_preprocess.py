@@ -88,6 +88,8 @@ def set_events_of_data(data,events):
         # find which index (in id_events) corresponds to id_data_tmp
         matching_idx = [j for j,id_ev in enumerate(id_events) 
                         if eq(id_ev,id_data_tmp)]
+        assert len(matching_idx) >= 1 , "Couldnt find events for {:s}".\
+            format(data.Meta.Name)
         # get the actual events
         events_matching = [events[i] for i in matching_idx]
         # add the events to the TimeSepForce Object. Note that
@@ -101,14 +103,15 @@ def set_events_of_data(data,events):
 
 def run():
     """
-    
+    utility process which reads in asylum-style pxp files and converts them and
+    their events into csv files. 
     """
     base_directory="/Volumes/group/4Patrick/CuratedData/"
     output_base_directory = base_directory + "Masters_CSCI/"
     positive_directory = output_base_directory + "Positive/"
     # copy each of the input directories into CSV files in the output directory
     dna_relative = "CircularDNA/ovh2.0-1p9kbp/ForceExtensionCurves/RawPxpFiles/"
-    relative_input_dir = [dna_relative + "Scratch/"]
+    relative_input_dir = [dna_relative]
     absolute_input_dir = [(base_directory + d) for d in relative_input_dir]
     files_data_events = [read_single_directory_with_events(d) 
                          for d in absolute_input_dir]
@@ -124,8 +127,6 @@ def run():
                 file_name = os.path.basename(file_path)
                 output_path = this_base + file_name + "_"+dat.Meta.Name + ".csv"
                 FEC_Util.save_time_sep_force_as_csv(output_path,dat)
-                time_sep_force = FEC_Util.\
-                    read_time_sep_force_from_csv(output_path,has_events=True)
     
 
 if __name__ == "__main__":

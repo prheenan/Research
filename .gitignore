@@ -1,6 +1,12 @@
 *.i
 *.hg/*
 *~
+*.pse
+*.pdb
+*.pqr
+*.dmg
+*.pml
+*.tar
 *.DS_Store
 *.pyc
 *.docx
