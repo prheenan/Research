@@ -52,9 +52,9 @@ def PrintDilutions(StockConcs,StockVols,ConcDesired,UnitVol=None,
         all the dilution objects
     """
     if (UnitVol is None):
-        UnitVol = ["uL" for _ in StockConcs]
+        UnitVol = ["uL" for _ in ConcDesired]
     if (UnitConc is None):
-        UnitConc = ["ng/uL" for _ in StockConcs]    
+        UnitConc = ["ng/uL" for _ in ConcDesired]    
     dilutionObj = GetDilutionObjects(StockConcs,StockVols,ConcDesired,**kwargs)
     _PrintVolumeDilutions(dilutionObj,UnitVol=UnitVol,UnitConc=UnitConc)
     return dilutionObj

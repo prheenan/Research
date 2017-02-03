@@ -3,15 +3,16 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,ast
 
 import copy
 from IgorUtil.PythonAdapter.DataObj import DataObj
 from IgorUtil.PythonAdapter.TimeSepForceObj import TimeSepForceObj,Bunch
 from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
 from IgorUtil.PythonAdapter.WaveDataGroup import WaveDataGroup
-from IgorUtil.PythonAdapter.TimeSepForceObj import TimeSepForceObj,Bunch
+from IgorUtil.PythonAdapter import TimeSepForceObj
 from GeneralUtil.python.IgorUtil import SavitskyFilter
+from GeneralUtil.python import GenUtilities
 
 class DNAWlcPoints:
     class BoundingIdx:
@@ -44,9 +45,25 @@ def ReadInData(FullName,Limit=None,**kwargs):
     """
     MData = PxpLoader.LoadPxp(FullName,**kwargs)
     # convert the waves into TimeSepForce objects
-    Objs = [TimeSepForceObj(WaveDataGroup(v)) for _,v in MData.items()]
+    Objs = [TimeSepForceObj.TimeSepForceObj(WaveDataGroup(v)) 
+            for _,v in MData.items()]
     # note: limit=None gives everything on upper bound
     return Objs[:Limit]
+
+
+def read_single_directory(directory):
+    """
+    reads the pxp files and data in a single directory, returning the 
+    files and the data
+
+    Args:
+        directory: to search in  
+    Returns:
+        tuple of <files read, TimeSepForce Objects>
+    """
+    pxp_files = GenUtilities.getAllFiles(path=directory,ext=".pxp")
+    data = [ReadInData(f) for f in pxp_files]
+    return pxp_files,data
 
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
@@ -56,7 +73,7 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
         Obj:
         Slice:
     """
-    ToRet = TimeSepForceObj()
+    ToRet = TimeSepForceObj.TimeSepForceObj()
     # note: we make a copy, to avoid any reference funny business
     GetSlice = lambda x: x[Slice].copy()
     ToRet.LowResData = DataObj(GetSlice(Obj.Time),
@@ -542,4 +559,65 @@ def GetRegionForWLCFit(RetractOriginal,NFilterPoints=None,
     return NearSurface
 
     
+
+
+def save_time_sep_force_as_csv(output_path,data):
+    """
+    saves the time,sep,force and mets infromation of data to outputpath
+
+    Args:
+        output_path: where to save as a csv
+        data: TimeSepForce object to use
+    Returns:
+        nothing ,saves it out
+    """
+    meta = data.Meta.__dict__
+    # get the string back as a dict
+    safe = lambda x: str(x).replace(",",";").replace(":","/")
+    str_meta = ",".join("{:s}:{:s}".format(safe(k),safe(v))
+                        for k,v in meta.items())
+    Events = [e for e in data.Events]
+    header = str_meta
+    # add the events to the second line if we want them
+    if (data.has_events):
+        header += "\nEventIndices,formatted as [[start1,end1],...]:"+str(Events)
+    arr_tmp = np.array((data.Time,data.Separation,data.Force))
+    np.savetxt(fname=output_path,X=arr_tmp.T,
+               delimiter=",",header=header,comments="#")
+
+
+def read_time_sep_force_from_csv(input_path,has_events=False):
+    """
+    reads a TimeSepForce objct stored in the given path, looks for events 
+    if has_event=Ture
+
+    Args:
+        input_path: whre to look for the file. 
+        data: TimeSepForce object to use
+    Returns:
+        TimeSepForce object, with events if it cold find them /was told to look
+    """
+    skiprows = 2 if has_events else 1
+    arr = np.loadtxt(input_path,skiprows=skiprows,delimiter=",")
+    with open(input_path) as f:
+        # ignore the first  character (a #)
+        first = f.readline()[1:-1]
+        second = f.readline()[1:-1]
+    # for meta: split by comma, then by ":" into key,value
+    key_values = [k_v.split(":") for k_v in first.split(",")]
+    # convert just as we would if we were reading in for the first time
+    key_values = [ [k,ProcessSingleWave.SafeConvertValue(v)]
+                   for k,v in key_values]
+    meta = dict(key_values)
+    time,separation,force = arr[:,0],arr[:,1],arr[:,2]
+    # create TimeSepForce object
+    to_return = TimeSepForceObj.TimeSepForceObj()
+    to_return.LowResData = DataObj(time,separation,force,meta)
+    if (has_events):
+        # syntax is Events: [ [event 1 start,event 1 end],[...],...]
+        events = ast.literal_eval(second.split(":")[1])
+        # set the events of the TimeSepForce Object
+        to_return.set_events(events)
+    return to_return
+
 

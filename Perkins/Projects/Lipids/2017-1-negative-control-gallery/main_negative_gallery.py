@@ -21,7 +21,7 @@ def read_pxp_in_dir(directory,**kwargs):
 def read_and_cache_pxp(directory,cache_name =None,**kwargs):
     if (cache_name is None):
         cache_name = "./cache.pkl"
-    return CheckpointUtilities.getCheckpoint(cache_name,read_pxp_in_dir,False,
+    return CheckpointUtilities.getCheckpoint(cache_name,read_pxp_in_dir,True,
                                              directory,**kwargs)
 
 def run():
