@@ -14,13 +14,14 @@ def add_stretch(x,f,start,end,spring):
     idx_stretch = np.where( (x > start) & 
                             (x < end))
     x_stretch = x[idx_stretch]
-    f_copy[idx_stretch] += (x_stretch - x_stretch[0])**2 * spring
-    return f_copy
+    f_stretch = (x_stretch - x_stretch[0])**2 * spring
+    return idx_stretch,f_stretch
 
 def make_force_extension_curve(x,array_of_stretch_kwargs,DecayConst,snr):
     f = (1-np.exp(-x/DecayConst))
     for kwargs in array_of_stretch_kwargs:
-        f = add_stretch(x=x,f=f,**kwargs)
+        idx,f_at_idx = add_stretch(x=x,f=f,**kwargs)
+        f[idx] += f_at_idx
     # add in uniform noise
     noise_ampltude = np.sqrt(1/snr)
     f += (np.random.normal(size=f.size)-0.5)* 2 * noise_ampltude
