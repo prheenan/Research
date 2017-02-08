@@ -17,22 +17,29 @@ def add_stretch(x,f,start,end,spring):
     f_copy[idx_stretch] += (x_stretch - x_stretch[0])**2 * spring
     return f_copy
 
+def make_force_extension_curve(x,array_of_stretch_kwargs,DecayConst,snr):
+    f = (1-np.exp(-x/DecayConst))
+    for kwargs in array_of_stretch_kwargs:
+        f = add_stretch(x=x,f=f,**kwargs)
+    # add in uniform noise
+    noise_ampltude = np.sqrt(1/snr)
+    f += (np.random.normal(size=f.size)-0.5)* 2 * noise_ampltude
+    return f
+
 def MakeFigure(Points=1024,MaxX=1,Seed=42,DecayConst=1/50,SpringStretch=10,
                snr=100):
     np.random.seed(Seed)
     x,dx = np.linspace(0,MaxX,Points,retstep=True)
+    stretch_kwargs = [
+        # adhesion peak...
+        dict(start=0.04,end=0.1,spring=SpringStretch*50),
+        # next, add in something that looks (vaguely) like a WLC strech
+        dict(start=0.2,end=0.4,spring=SpringStretch),
+        dict(start=0.35,end=0.6,spring=SpringStretch*1.2),
+        dict(start=0.55,end=0.9,spring=SpringStretch/2)]
+    # get the force
+    f = make_force_extension_curve(x,stretch_kwargs,DecayConst,snr)
     # first, add in approach/retract
-    f = (1-np.exp(-x/DecayConst))
-    # add in an adhesion
-    f = add_stretch(x=x,f=f,start=0.04,end=0.1,spring=SpringStretch*50)
-    # next, add in something that looks (vaguely) like a WLC strech
-    f = add_stretch(x=x,f=f,start=0.2,end=0.4,spring=SpringStretch)
-    f = add_stretch(x=x,f=f,start=0.35,end=0.6,spring=SpringStretch*1.2)
-    f = add_stretch(x=x,f=f,start=0.55,end=0.9,spring=SpringStretch/2)
-    # add in uniform noise
-    snr = 100
-    noise_ampltude = np.sqrt(1/snr)
-    f += (np.random.normal(size=f.size)-0.5)* 2 * noise_ampltude
     # make everything nice and zero-meaned, max of 1
     f -= np.mean(f)
     f /= max(f)
