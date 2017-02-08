@@ -27,10 +27,11 @@ def make_force_extension_curve(x,array_of_stretch_kwargs,DecayConst,snr):
     f += (np.random.normal(size=f.size)-0.5)* 2 * noise_ampltude
     return f
 
-def MakeFigure(Points=1024,MaxX=1,Seed=42,DecayConst=1/50,SpringStretch=10,
-               snr=100):
-    np.random.seed(Seed)
-    x,dx = np.linspace(0,MaxX,Points,retstep=True)
+def normalized_force_extension(max_x=1,decay_const=1/50,points=1024,
+                               spring_const=10,snr=100):
+    x,dx = np.linspace(0,max_x,points,retstep=True)
+    SpringStretch = spring_const
+    DecayConst = decay_const
     stretch_kwargs = [
         # adhesion peak...
         dict(start=0.04,end=0.1,spring=SpringStretch*50),
@@ -40,6 +41,19 @@ def MakeFigure(Points=1024,MaxX=1,Seed=42,DecayConst=1/50,SpringStretch=10,
         dict(start=0.55,end=0.9,spring=SpringStretch/2)]
     # get the force
     f = make_force_extension_curve(x,stretch_kwargs,DecayConst,snr)
+    # convert to 0-1 (ish)
+    f -= np.median(f)
+    f /= np.max(f)
+    # get the maximum force in 
+    return x,dx,stretch_kwargs,f
+
+def MakeFigure(Points=1024,MaxX=1,Seed=42,DecayConst=1/50,SpringStretch=10,
+               snr=100):
+    np.random.seed(Seed)
+    x,dx,stretch_kwargs,f = \
+        normalized_force_extension(max_x=MaxX,decay_const=DecayConst,
+                                   points=Points,spring_const=SpringStretch,
+                                   snr=snr)
     # first, add in approach/retract
     # make everything nice and zero-meaned, max of 1
     f -= np.mean(f)
