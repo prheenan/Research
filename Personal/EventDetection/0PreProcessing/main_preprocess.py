@@ -84,12 +84,15 @@ def set_events_of_data(data,events):
     id_events = [get_id(e[0]) for e in events]
     # determine matches; may have multiple events
     eq = lambda x,y: x.strip().lower() == y.strip().lower()
-    for id_data_tmp,d in zip(id_data,data):
+    for idx_tmp,(id_data_tmp,d) in enumerate(zip(id_data,data)):
         # find which index (in id_events) corresponds to id_data_tmp
         matching_idx = [j for j,id_ev in enumerate(id_events) 
                         if eq(id_ev,id_data_tmp)]
-        assert len(matching_idx) >= 1 , "Couldnt find events for {:s}".\
-            format(data.Meta.Name)
+        # make sure we have at least one event for the data...
+        if (len(matching_idx) == 0):
+            print("Couldnt find events for {:s}, removing".
+                  format(data.Meta.Name))
+            del data[idx_tmp]
         # get the actual events
         events_matching = [events[i] for i in matching_idx]
         # add the events to the TimeSepForce Object. Note that
