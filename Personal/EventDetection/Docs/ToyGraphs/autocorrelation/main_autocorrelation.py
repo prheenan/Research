@@ -7,6 +7,8 @@ import sys
 
 sys.path.append("../../../../../../")
 from GeneralUtil.python import PlotUtilities
+from GeneralUtil.python.IgorUtil import SavitskyFilter
+
 from Research.Personal.EventDetection.Docs.ToyGraphs import SimulationUtil
 from Research.Personal.EventDetection.Util import Analysis
 
@@ -16,12 +18,15 @@ def run():
     This shows how to get the 1/e autocorrelation time from a WLC-looking thing
     """
     x,dx,stretch_kwargs,f = SimulationUtil.\
-            normalized_force_extension(snr=1e3,points=10000)
+            normalized_force_extension(snr=1e3,points=1000)
     tau,linear_auto_coeffs,auto_norm = Analysis.auto_correlation_tau(x,f)
+    num_points = np.round(tau/dx)
+    smoothed = SavitskyFilter(inData=f,nSmooth=num_points)
     pred = np.exp(np.polyval(linear_auto_coeffs,x=x))
     fig = PlotUtilities.figure()
     plt.subplot(2,1,1)
-    plt.plot(x,f)
+    plt.plot(x,f,color='k',alpha=0.2,label="raw")
+    plt.plot(x,smoothed,color='r',label="smoothed to autocorrelation time")
     PlotUtilities.\
         lazyLabel("","Force (au)",
                   "1/e Autocorrelation time by fitting to initial decay")
