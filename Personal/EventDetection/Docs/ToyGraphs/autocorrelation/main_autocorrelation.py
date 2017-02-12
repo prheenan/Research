@@ -18,7 +18,7 @@ def run():
     This shows how to get the 1/e autocorrelation time from a WLC-looking thing
     """
     x,dx,stretch_kwargs,f = SimulationUtil.\
-            normalized_force_extension(snr=1e3,points=1000)
+            normalized_force_extension(snr=1e3,points=300)
     tau,linear_auto_coeffs,auto_norm = Analysis.auto_correlation_tau(x,f)
     num_points = np.round(tau/dx)
     smoothed = SavitskyFilter(inData=f,nSmooth=num_points)
