@@ -52,7 +52,9 @@ def run():
     limits = [min(f_minus_mu),max(f_minus_mu)]
     bins = 50
     linspace_f_diff = np.linspace(*limits,num=bins*5)
-    qr_1,qr_2 = np.percentile(a=f_minus_mu,q=[5,95])
+    # symetrically choose percentiles for the fit
+    start_q = 1
+    qr_1,qr_2 = np.percentile(a=f_minus_mu,q=[start_q,100-start_q])
     idx_fit = np.where( (f_minus_mu >= qr_1) &
                         (f_minus_mu <= qr_2))
     # fit a normal distribution to it, to get the standard deviation (globally)
@@ -64,8 +66,13 @@ def run():
     # get the cdf of the data
     force_cdf = distribution_force.cdf(f)
     force_cdf_complement = 1-force_cdf
+    # make a threshold in probability (this will likely be machine-learned) 
+    thresh = 1e-4
+    idx_high = np.where(force_cdf >= thresh)
+    idx_low = np.where(force_cdf <= thresh)
+    events = force_cdf[idx_low]
     # plot everything
-    fig = PlotUtilities.figure()
+    fig = PlotUtilities.figure(figsize=(8,16))
     plt.subplot(3,1,1)
     plt.plot(x,f_interp,color='b',linewidth=3)
     plt.plot(x,f,color='k',alpha=0.3)
@@ -75,10 +82,12 @@ def run():
     plt.plot(linspace_f_diff,pdf_diff,linewidth=3,color='r')
     PlotUtilities.lazyLabel("Force Difference (au)","Probability (au)","")
     plt.subplot(3,1,3)
-    plt.semilogy(x,force_cdf)
-    ylim = [np.percentile(a=force_cdf,q=0.5),1]
-    plt.ylim(ylim)
-    PlotUtilities.lazyLabel("Time (au)","Probability","")
+    plt.semilogy(x[idx_high],force_cdf[idx_high],alpha=0.3,color='k',
+                 label="Non-Event")
+    plt.semilogy(x[idx_low],force_cdf[idx_low],linestyle='None',marker='.',
+                 color='r',label="Event")
+    PlotUtilities.lazyLabel("Time (au)","Probability","",frameon=True,
+                            loc="lower right")
     PlotUtilities.savefig(fig,"out.png")
 
 
