@@ -9,20 +9,7 @@ sys.path.append("../../../../../")
 from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
-
-def read_pxp_in_dir(directory,**kwargs):
-    files = GenUtilities.getAllFiles(directory,ext=".pxp")
-    to_ret = []
-    for f in files:
-        raw_data = FEC_Util.ReadInData(f,**kwargs)
-        to_ret.extend(raw_data)
-    return to_ret
-
-def read_and_cache_pxp(directory,cache_name =None,**kwargs):
-    if (cache_name is None):
-        cache_name = "./cache.pkl"
-    return CheckpointUtilities.getCheckpoint(cache_name,read_pxp_in_dir,True,
-                                             directory,**kwargs)
+	
 
 def run():
     """
@@ -34,10 +21,10 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    network = "/Volumes/group/"
+    network = FEC_Util.default_data_root()
     base = network + "4Patrick/CuratedData/Lipids/DOPC/"+\
             "NegativeControls/Representative_Gallery/"
-    raw_data = read_and_cache_pxp(base)
+    _,raw_data = FEC_Util.read_and_cache_pxp(base)
     processed = [FEC_Util.SplitAndProcess(r) for r in raw_data]
     n_cols = 3
     n_rows = int(np.ceil(len(processed)/n_cols))

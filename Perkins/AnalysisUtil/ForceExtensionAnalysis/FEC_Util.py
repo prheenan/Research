@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,ast
+import sys,ast,os
 
 import copy
 from IgorUtil.PythonAdapter.DataObj import DataObj
@@ -12,7 +12,7 @@ from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
 from IgorUtil.PythonAdapter.WaveDataGroup import WaveDataGroup
 from IgorUtil.PythonAdapter import TimeSepForceObj
 from GeneralUtil.python.IgorUtil import SavitskyFilter
-from GeneralUtil.python import GenUtilities
+from GeneralUtil.python import GenUtilities,CheckpointUtilities
 
 class DNAWlcPoints:
     class BoundingIdx:
@@ -32,6 +32,25 @@ class WlcCharacerizationMask:
         self.Gradient = Gradient
         self.NumFilterPoints = NumFilterPoints
     
+def default_data_root():
+	"""
+	Returns the default system (absolute) path to perknas, assuming mounted
+	"""
+	os_name = os.name
+	if (os_name == "nt"):
+		# windows
+		to_ret = "//perknas2.colorado.edu/group/"
+	elif (os_name == "mac"):
+		# macintosh
+		to_ret = "/Volumes/group/"
+	elif (os_name == "posix"):
+		# linux, XXX TODO
+		to_ret = ""
+	else:
+		# throw an error... dont know what to do
+		raise OSError("Didn't recognize OS name: {:s}".format(os_name))
+	return to_ret
+	
 
 def ReadInData(FullName,Limit=None,**kwargs):
     """
@@ -51,20 +70,58 @@ def ReadInData(FullName,Limit=None,**kwargs):
     return Objs[:Limit]
 
 
-def read_single_directory(directory):
+def read_single_directory(directory,**kwargs):
     """
     reads the pxp files and data in a single directory, returning the 
     files and the data
 
     Args:
         directory: to search in  
+		**kwargs: pass to ReadInData
     Returns:
         tuple of <files read, TimeSepForce Objects>
     """
     pxp_files = GenUtilities.getAllFiles(path=directory,ext=".pxp")
-    data = [ReadInData(f) for f in pxp_files]
+    data = [ReadInData(f,**kwargs) for f in pxp_files]
     return pxp_files,data
+	
+def concatenate_fec_from_single_directory(directory,**kwargs):
+	"""
+	Reads in all the pxp files in a directory, concatenating their waves	
+	and returning them as a list of TimeSepForce objects
+	
+	Args:
+		directory: see  read_single_directory
+		kwargs: passed to save_single_directory
+	Returns:
+		see  read_single_directory, except 1-D list 
+	"""
+	files,data = read_single_directory(directory,**kwargs)
+	to_ret = []
+	for d in data:
+		to_ret.extend(d)
+	return files,to_ret
 
+def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
+    """
+    reads a directory of pxp files, caches to cache_name
+    
+    Args:
+        directory: see concatenate_fec_from_single_directory
+        cache_name: where to save the pkl of the read. defaults to cwd
+        force: if we should force a re-read. defaults to true to prevent stale
+        **kwargsL passed to concatenate_fec_from_single_directory
+    Returns:
+        see concatenate_fec_from_single_directory
+        
+    """
+    if (cache_name is None):
+        cache_name = "./cache.pkl"
+    d =CheckpointUtilities.getCheckpoint(cache_name,
+                                         concatenate_fec_from_single_directory,
+                                         force,directory,**kwargs)
+    return d
+    
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
     Given a TimeSepForceObject and a slice, gets a new object using just the 
@@ -140,7 +197,8 @@ def ZeroForceAndSeparation(Obj,IsApproach,FractionForOffset=0.1):
 def PreProcessApproachAndRetract(Approach,Retract,
                                  NFilterPoints=100,
                                  ZeroForceFraction=0.2,
-                                 ZeroSep=True,FlipY=True):
+                                 ZeroSep=True,FlipY=True,
+                                 zero_separation_at_zero_force=False):
     """
     Given and already-split approach and retract curve, pre=processes it.
     This *modifies the original array* (ie: in-place)
@@ -153,6 +211,7 @@ def PreProcessApproachAndRetract(Approach,Retract,
         
         ZeroSep: if true, zeros the separation to its minima
         FlipY: if true, multiplies Y (force) by -1 before plotting
+        zero_separation_at_zero_force: if true, zeros the separation by the 0 force point
     Returns:
         tuple of <Appr,Retr>, both pre-processed TimeSepFOrce objects for
         the appropriate reason
@@ -176,10 +235,16 @@ def PreProcessApproachAndRetract(Approach,Retract,
         # Do the same for retract
         Retract.Force += ZeroForceRetr
     if (ZeroSep):
-        double_min = lambda x,y:min(np.min(x),np.min(y))
-        # then we just go with the minimum
-        MinSep = double_min(Approach.Separation,Retract.Separation)
-        MinZ = double_min(Approach.ZSnsr,Retract.ZSnsr)
+        if (zero_separation_at_zero_force):
+            assert ZeroForceFraction is not None , \
+                "To use zero force for zero separation, much get a zero force"
+            MinSep = Retract.Separation[idx_retr]
+            MinZ = Retract.ZSnsr[idx_retr]
+        else:
+            double_min = lambda x,y:min(np.min(x),np.min(y))
+            # then we just go with the minimum
+            MinSep = double_min(Approach.Separation,Retract.Separation)
+            MinZ = double_min(Approach.ZSnsr,Retract.ZSnsr)
         Approach.Separation -= MinSep
         Retract.Separation -= MinSep
         Approach.offset_z_sensor(MinZ)
@@ -202,7 +267,7 @@ def PreProcessFEC(TimeSepForceObject,**kwargs):
     """
     Appr,Retr = GetApproachRetract(TimeSepForceObject)
     # now pre-process and overwrite them
-    Appr,Retr = PreProcessApproachAndRetract(Appr,Retr)
+    Appr,Retr = PreProcessApproachAndRetract(Appr,Retr,**kwargs)
     return Appr,Retr
 
 def SplitAndProcess(TimeSepForceObj,ConversionOpts=dict(),
