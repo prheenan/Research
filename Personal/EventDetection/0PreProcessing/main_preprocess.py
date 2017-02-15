@@ -68,7 +68,7 @@ def get_id(x):
                  \D"""  # anything *not* a digit
     match = re.match(id_regexpr,x,re.VERBOSE)
     assert match is not None , "Couldn't find id of {:s}".format(x)
-    return match.group(1)
+    return match.group(1).strip().lower()
 
 def set_events_of_data(data,events):
     """
@@ -83,15 +83,18 @@ def set_events_of_data(data,events):
     id_data = [get_id(d.Meta.Name) for d in data]
     id_events = [get_id(e[0]) for e in events]
     # determine matches; may have multiple events
-    eq = lambda x,y: x.strip().lower() == y.strip().lower()
+    eq = lambda x,y: x == y
+    id_parity_check = []
     for idx_tmp,(id_data_tmp,d) in enumerate(zip(id_data,data)):
         # find which index (in id_events) corresponds to id_data_tmp
+        # XXX quadratic time... small numbers (hundreds), dont care
         matching_idx = [j for j,id_ev in enumerate(id_events) 
                         if eq(id_ev,id_data_tmp)]
+        id_parity_check.extend(matching_idx)
         # make sure we have at least one event for the data...
         if (len(matching_idx) == 0):
             print("Couldnt find events for {:s}, removing".
-                  format(data.Meta.Name))
+                  format(str(id_data_tmp)))
             del data[idx_tmp]
         # get the actual events
         events_matching = [events[i] for i in matching_idx]
@@ -102,33 +105,40 @@ def set_events_of_data(data,events):
         Events = [TimeSepForceObj.Event(*s) for s in starts_and_ends]
         # set the events of the data
         d.set_events(Events)
-    # POST: all events have been set
+    assert len(id_parity_check) == len(set(id_parity_check)) , "Double jeopardy"
+    # POST: an event only mapped to one FEC_Util
+    n_events = len(id_events)
+    n_matched =len(id_parity_check)
+    if (n_matched <= n_events):
+        unused = [events[i] for i in range(n_events) 
+                  if i not in id_parity_check]
+        print("Warning: The following events were unused: {:s}".format(unused))
+        print("{:d}/{:d} events matched".format(n_matched,n_events))
 
 def run():
     """
     utility process which reads in asylum-style pxp files and converts them and
     their events into csv files. 
     """
-    base_directory="/Volumes/group/4Patrick/CuratedData/"
+    network = FEC_Util.default_data_root()
+    base_directory= network + "4Patrick/CuratedData/"
     output_base_directory = base_directory + "Masters_CSCI/"
     positive_directory = output_base_directory + "Positive/"
-    # copy each of the input directories into CSV files in the output directory
-    dna_relative = "CircularDNA/ovh2.0-1p9kbp/ForceExtensionCurves/RawPxpFiles/"
-    relative_input_dir = [dna_relative]
-    absolute_input_dir = [(base_directory + d) for d in relative_input_dir]
+    relative_input_dir = ["650nm-4x-bio/pxp/500-nanometers-per-second/"]
+    absolute_input_dir = [positive_directory + d for d in relative_input_dir]
+    absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
     files_data_events = [read_single_directory_with_events(d) 
                          for d in absolute_input_dir]
-    for i,d in enumerate(absolute_input_dir):
+    for i,(d,d_out) in enumerate(zip(absolute_input_dir,absolute_output_dir)):
         # make the output directory 
-        this_base = positive_directory + relative_input_dir[i]
-        GenUtilities.ensureDirExists(this_base)
+        GenUtilities.ensureDirExists(d_out)
         # go through each PXP in this directory
         for file_path,data,ev in files_data_events[i]:
             set_events_of_data(data,ev)
             # POST: all data are set. go ahead and save them out.
             for dat in data:
                 file_name = os.path.basename(file_path)
-                output_path = this_base + file_name + "_"+dat.Meta.Name + ".csv"
+                output_path = d_out + file_name + "_"+dat.Meta.Name + ".csv"
                 FEC_Util.save_time_sep_force_as_csv(output_path,dat)
     
 

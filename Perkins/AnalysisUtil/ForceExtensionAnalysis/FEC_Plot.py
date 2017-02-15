@@ -5,10 +5,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import FEC_Util
-import GeneralUtil.python.PlotUtilities as pPlotUtil
+import GeneralUtil.python.PlotUtilities as PlotUtilities
 
 import copy
 
+def_conversion_opts =dict(ConvertX = lambda x: x*1e9,
+                          ConvertY = lambda y: y*1e12)
 
 def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
                           x_func = lambda x: x.Separation,
@@ -37,8 +39,7 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
 def FEC_AlreadySplit(Appr,Retr,
                      XLabel = "Separation (nm)",
                      YLabel = "Force (pN)",
-                     ConversionOpts=dict(ConvertX = lambda x: x*1e9,
-                                         ConvertY = lambda y: y*1e12),
+                     ConversionOpts=def_conversion_opts,
                      PlotLabelOpts=dict(),
                      PreProcess=False,
                      NFilterPoints=50,
@@ -65,8 +66,8 @@ def FEC_AlreadySplit(Appr,Retr,
                                                                   **kwargs)
     _ApproachRetractCurve(ApprCopy,RetrCopy,
                           NFilterPoints=NFilterPoints,**PlotLabelOpts)
-    pPlotUtil.lazyLabel(XLabel,YLabel,"")
-    pPlotUtil.legend(**LegendOpts)
+    PlotUtilities.lazyLabel(XLabel,YLabel,"")
+    PlotUtilities.legend(**LegendOpts)
     
 def FEC(TimeSepForceObj,NFilterPoints=50,
         PreProcessDict=dict(),
@@ -85,3 +86,20 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
                                       **PreProcessDict)
     # plot the approach and retract with the appropriate units
     FEC_AlreadySplit(Appr,Retr,**kwargs)
+    
+def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
+                 ConversionOpts=def_conversion_opts):
+    # convert everything...
+    objs = [FEC_Util.UnitConvert(r,**ConversionOpts) 
+            for r in time_sep_force_objects]
+    filtered_data = [(retr.Separation,retr.Force) for retr in objs]
+    separations = np.concatenate([r[0] for r in filtered_data])
+    forces = np.concatenate([r[1] for r in filtered_data])
+    # make a heat map, essentially
+    counts, xedges, yedges, Image = plt.hist2d(separations, forces,
+                                               bins=num_bins,cmap='afmhot')
+    PlotUtilities.lazyLabel("Separation [nm]",
+                            "Force [pN]",
+                            "Two-Dimensional Force-Separation Histogram")
+    cbar = plt.colorbar()
+    cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
