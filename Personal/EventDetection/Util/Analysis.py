@@ -25,8 +25,58 @@ class split_force_extension:
         self.approach.LowResData.force *= -1
         self.dwell.LowResData.force *= -1
         self.retract.LowResData.force *= -1
+    def n_points_approach_dwell(self):
+        """
+        Returns:
+            the number of points in the approach and dwell curves
+        """
+        return self.approach.Force.size + self.dwell.Force.size
+    def get_retract_event_idx(self):
+        """
+        gets the slices of events *relative to the retract* (ie: idx 0 is
+        the first point in the retract curve)
+        
+        Returns:
+            list, each element is a slice like (start,stop,1) where start and       
+            stop are the event indices
+        """
+        offset = self.n_points_approach_dwell() 
+        # each event is a start/end tuple, so we just offset the min and max
+        idx = [ slice(min(ev)-offset,max(ev)-offset,1) 
+                for ev in self.retract.Events]
+        return idx
 
-
+def get_surface_index(obj,n_smooth,last_less_than=True):
+    """
+    Get the surface index
+    
+    Args:
+        obj: the timesepforce object to use
+        n_smooth: number to smoothing   
+        last_less_than: if true (default, 'raw' data), then we find the last
+        time we are less than the baseline in obj.Force. Otherwise, the first
+    Returns 
+        the surface index and baseline in force
+    """
+    force_baseline = np.median(obj.Force)
+    filtered_obj = FEC_Util.GetFilteredForce(obj,n_smooth)
+    if (last_less_than):
+        # find the last time we are below the threshold ('raw' approach)
+        search_func = lambda thresh: \
+                np.where(filtered_obj.Force <= thresh)[0][-1]
+    else:
+        # find the first time we are above the threshhold ('processed' retract)
+        search_func = lambda thresh: \
+            np.where(filtered_obj.Force >= thresh)[0][0]
+    idx_surface = search_func(force_baseline)
+    # iterate once in order to get a better estimate of the baseline; we can
+    # remove the effect of the invols entirely 
+    if (last_less_than):
+        force_baseline = np.median(obj.Force[:idx_surface])
+    else:
+        force_baseline = np.median(obj.Force[idx_surface:])
+    idx_surface =  search_func(force_baseline)  
+    return force_baseline,idx_surface,filtered_obj
 
 def zero_by_approach(split_fec,n_smooth,flip_force=True):
     """
@@ -41,18 +91,11 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
     """
     # PRE: assume the approach is <50% artifact and invols
     approach = split_fec.approach
-    force_baseline = np.median(approach.Force)
-    filtered_approach = FEC_Util.GetFilteredForce(approach,n_smooth)
-    # find the last place we are above the median
-    idx_where = np.where(filtered_approach.Force <= force_baseline)[0]
-    idx_surface = idx_where[-1]
-    # iterate once in order to get a better estimate of the baseline; we can
-    # remove the effect of the invols entirely 
-    force_baseline = np.median(approach.Force[:idx_surface])
-    idx_surface =  np.where(filtered_approach.Force <= force_baseline)[0][-1]
+    force_baseline,idx_surface,filtered_obj = \
+        get_surface_index(approach,n_smooth,last_less_than=True)
     # get the separation at the baseline
-    separation_baseline = filtered_approach.Separation[idx_surface]
-    zsnsr_baseline = filtered_approach.Zsnsr[idx_surface]
+    separation_baseline = filtered_obj.Separation[idx_surface]
+    zsnsr_baseline = filtered_obj.Zsnsr[idx_surface]
     # zero everything 
     split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline)
     if (flip_force):

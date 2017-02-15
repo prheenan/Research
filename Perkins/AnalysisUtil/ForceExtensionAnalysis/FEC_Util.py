@@ -137,6 +137,8 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
                                GetSlice(Obj.Separation),
                                GetSlice(Obj.Force),
                                copy.deepcopy(Obj.Meta))
+    # copy the events over...
+    ToRet.Events = Obj.Events
     return ToRet
 
 

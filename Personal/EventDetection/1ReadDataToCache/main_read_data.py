@@ -29,14 +29,7 @@ class ForceExtensionCategory:
             nothing
         """
         self.data = data
-
-def read_and_cache_file(file_path,cache_directory,has_events=False,force=False):
-    file_name = os.path.basename(file_path)
-    cache_file = cache_directory + file_name+ ".pkl"
-    func_to_call = FEC_Util.read_time_sep_force_from_csv
-    return CheckpointUtilities.getCheckpoint(cache_file,func_to_call,force,
-                                             file_path,has_events=has_events)
-                                             
+                          
 def set_and_cache_category_data(categories,force,cache_directory,limit):
     """
     loops through each category, reading in at most limit files per category,
