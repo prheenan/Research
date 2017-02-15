@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import sys
 from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
+from scipy.stats import norm
 
 class split_force_extension:
     """
@@ -83,6 +84,45 @@ def split_FEC_by_meta(time_sep_force_obj):
     retract  = slice_func(slice(end_of_dwell  ,None          ,1))
     return split_force_extension(approach,dwell,retract)
 
+def spline_residual_mean_and_stdev(f,f_interp,start_q=1):
+    """
+    returns the mean and standard deviation associated with f-f_interp,
+    from start_q% to 100-startq%
+    
+    Args:
+        f: the 'noisy' function
+        f_interp: the interpolated f (splined)
+        start_q: the start perctile; we have to ignore huge outliers
+    Returns:
+        tuple of mean,standard deviation
+    """
+    # symetrically choose percentiles for the fit
+    f_minus_mu = f-f_interp
+    qr_1,qr_2 = np.percentile(a=f_minus_mu,q=[start_q,100-start_q])
+    idx_fit = np.where( (f_minus_mu >= qr_1) &
+                        (f_minus_mu <= qr_2))
+    # fit a normal distribution to it, to get the standard deviation (globally)
+    mu,std = norm.fit(f_minus_mu[idx_fit])
+    return mu,std
+    
+def spline_gaussian_cdf(f,f_interp,std):
+    """
+    returns the CDF associated with the random variable with mean given by  
+    f_interp and standard deviation associated with std, assuming gaussian
+    about f-finterp
+    
+    Args:
+        f: see spline_residual_mean_and_stdev
+        f_interp: see spline_residual_mean_and_stdev
+        std: standard deviation
+    Returns:
+        cummulative distribution
+    """
+    # get the distribution of the actual data
+    distribution_force = norm(loc=f_interp, scale=std)
+    # get the cdf of the data
+    return distribution_force.cdf(f)
+    
 def spline_interpolator(tau_x,x,f,deg=2):
     """
     returns a spline interpolator with knots uniformly spaced at tau_x over x
@@ -153,24 +193,3 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1):
     tau = abs(1/linear_auto_coeffs[0])
     return tau,coeffs,auto
     
-def plot_autocorrelation_log(x,*args):
-    """
-    plots the autocorrelation function and fit
-    
-    Args:
-        x: corrlation abscissa
-        *args: output of auto_correlation_tau
-    Returns:
-        nothing, plots the autocorrelation log 
-    """
-    tau,coeffs,auto = args
-    tol = 1e-6
-    auto_norm = (auto-min(auto))/(max(auto)-min(auto))
-    log_norm = np.log(auto_norm + tol)
-    plt.plot(x,log_norm)
-    plt.plot(x,np.polyval(coeffs,x=x))
-    plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
-
-    
-    
-

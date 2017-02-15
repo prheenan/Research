@@ -10,7 +10,7 @@ from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from GeneralUtil.python.IgorUtil import SavitskyFilter
-from Research.Personal.EventDetection.Util import Analysis
+from Research.Personal.EventDetection.Util import Analysis,Plotting
 
 class ForceExtensionCategory:
     def __init__(self,directory,velocity_nm_s,sample,has_events):
@@ -118,11 +118,17 @@ def run():
     force_interpolator = Analysis.spline_interpolator(tau,x,f)
     separation_interpolate = Analysis.spline_interpolator(tau,x,
                                                           retract.Separation)
-    fig = PlotUtilities.figure()
-    FEC_Plot.FEC_AlreadySplit(approach,retract,NFilterPoints=num_points)
-    plt.plot(separation_interpolate(x)*1e9,force_interpolator(x)*1e12,
-            linewidth=0.5,color='m',label="Spline-interpolated")
-    PlotUtilities.legend()
+    # get the residual mean and standard deviation, from the spline...
+    f_interp_at_x = force_interpolator(x)
+    mu,std = Analysis.spline_residual_mean_and_stdev(f,f_interp_at_x)
+    force_cdf = Analysis.spline_gaussian_cdf(f,f_interp_at_x,std)
+    force_cdf_complement = 1-force_cdf
+    # make a threshold in probability (this will likely be machine-learned) 
+    thresh = 1e-4
+    # plot everything
+    fig = PlotUtilities.figure(figsize=(8,16))
+    Plotting.plot_distribution(x,f,f_interp_at_x,force_cdf,thresh,
+                               num_bins=500)
     PlotUtilities.savefig(fig,cache_directory + "out.png")
     # get the negative events
     # XXX 
