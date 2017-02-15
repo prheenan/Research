@@ -687,5 +687,3 @@ def read_time_sep_force_from_csv(input_path,has_events=False):
     return to_return
 
 
-
-

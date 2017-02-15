@@ -12,7 +12,6 @@ from GeneralUtil.python.IgorUtil import SavitskyFilter
 from Research.Personal.EventDetection.Docs.ToyGraphs import SimulationUtil
 from Research.Personal.EventDetection.Util import Analysis
 
-from scipy import interpolate
 from scipy.stats import norm
 
 def run():
@@ -27,22 +26,10 @@ def run():
     """
     x,dx,stretch_kwargs,f = SimulationUtil.\
             normalized_force_extension(snr=1e3,points=10000)
-    tau,linear_auto_coeffs,auto_norm = Analysis.auto_correlation_tau(x,f)
+    tau,_,_ = Analysis.auto_correlation_tau(x,f)
     num_points = np.round(tau/dx)
     smoothed = SavitskyFilter(inData=f,nSmooth=num_points)
-    # note: stop is *not* included in the iterval, so we add add an extra strep
-    step_knots = tau/2
-    knots = np.arange(start=min(x),stop=max(x)+step_knots,step=step_knots)
-    # get the spline of the data
-    spline_args = \
-        dict(
-            # degree is k, (k-1)th derivative is continuous
-            k=2,
-            # specify the spline knots (t) uniformly in time at the 
-            # autocorrelation time. dont want the endpoints
-            t=knots[1:-1]
-            )
-    interpolated = interpolate.LSQUnivariateSpline(x=x,y=f,**spline_args)
+    interpolated = Analysis.spline_interpolator(tau,x,f)
     f_interp = interpolated(x)
     f_deriv = interpolated.derivative()(x)
     ratio = -f_deriv/f_interp

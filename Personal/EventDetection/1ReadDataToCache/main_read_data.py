@@ -7,7 +7,10 @@ import sys,os
 
 sys.path.append("../../../../")
 from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,FEC_Plot
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
+    FEC_Util,FEC_Plot
+from GeneralUtil.python.IgorUtil import SavitskyFilter
+from Research.Personal.EventDetection.Util import Analysis
 
 class ForceExtensionCategory:
     def __init__(self,directory,velocity_nm_s,sample,has_events):
@@ -101,8 +104,25 @@ def run():
                                 cache_directory=cache_directory,force=force,
                                 limit=limit)
     example = positive_categories[0].data[0]
+    example_split = Analysis.split_FEC_by_meta(example)
+    approach = example_split.approach
+    retract = example_split.retract 
+    # get the autocorrelation time of the retract force (what we care about)
+    x,f = retract.Time,retract.Force
+    dx = np.median(np.diff(x))
+    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
+    num_points = int(np.round(tau/dx))
+    # zero out everything to the approach using the autocorrelation time 
+    Analysis.zero_by_approach(example_split,num_points)
+    # get an interpolator for the retract force and separation
+    force_interpolator = Analysis.spline_interpolator(tau,x,f)
+    separation_interpolate = Analysis.spline_interpolator(tau,x,
+                                                          retract.Separation)
     fig = PlotUtilities.figure()
-    FEC_Plot.FEC(example)
+    FEC_Plot.FEC_AlreadySplit(approach,retract,NFilterPoints=num_points)
+    plt.plot(separation_interpolate(x)*1e9,force_interpolator(x)*1e12,
+            linewidth=0.5,color='m',label="Spline-interpolated")
+    PlotUtilities.legend()
     PlotUtilities.savefig(fig,cache_directory + "out.png")
     # get the negative events
     # XXX 
