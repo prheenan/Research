@@ -15,9 +15,8 @@ from Research.Personal.EventDetection.OtherMethods.Sandal2009_Hooke.\
 
 class hooke_object:
 
-    def __init__(self,time,force,idx):
+    def __init__(self,time,force):
         self.vectors = [ [],[time,force]]
-        self.surface_idx = idx
 
 def run():
     """
@@ -41,12 +40,11 @@ def run():
                            stable=0.005,
                            positive=True,
                            maxcut=0.2,
-                           seedouble=10,
-                           mindeviation=3)
+                           seedouble=300,
+                           mindeviation=0)
     fitter.convfilt_config = convfilt_config
     fitter.find_contact_point = lambda *args : surface_idx
-    peaks,peaks_size = fitter.has_peaks(hooke_object(time,force,idx=0))
-    print(peaks,peaks_size)
+    peaks,peaks_size = fitter.has_peaks(hooke_object(time,list(force)))
     # convert force to pN for this example
     force *= 1e12
     idx_events = ex.get_retract_event_idx()
@@ -54,8 +52,9 @@ def run():
     force_events = [force[s] for s in idx_events]
     # set up an array where the events are
     events,events_predicted = np.zeros(time.size),np.zeros(time.size)
-    for s_true,s_predicted in zip(idx_events,peaks):
+    for s_true in idx_events:
         events[s] = 1
+    for s_predicted in peaks:
         events_predicted[s_predicted] = 1
     fig = PlotUtilities.figure()
     plt.subplot(2,1,1)
@@ -63,11 +62,12 @@ def run():
     for t,f in zip(time_events,force_events):
         plt.plot(t,f,color='r')
     for p in peaks:
-        plt.plot(time[p],force[p],'ro')
+        plt.plot(time[p],force[p],'b.')
     PlotUtilities.lazyLabel("","Force(pN)","")
     plt.subplot(2,1,2)
-    plt.plot(time,events,linewidth=3,label="True events")
-    plt.plot(time,events_predicted,label="Predicted")
+    plt.plot(time,events,linewidth=4,label="True events",color='b')
+    plt.plot(time,events_predicted,label="Predicted",color='r')
+    PlotUtilities.lazyLabel("Time (s)","Force(pN)","")
     PlotUtilities.savefig(fig,"./out_hooke.png")
 
 if __name__ == "__main__":
