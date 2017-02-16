@@ -45,8 +45,8 @@ class score:
             np.median(self.minimum_distance_distribution)
         
 def call_hooke(split_fec,convolution=None,blindwindow=None,
-               seedouble=None,stable=None,positive=True,maxcut=0.5,
-               mindeviation=0.5):
+               seedouble=None,stable=None,positive=True,maxcut=0.9,
+               mindeviation=2):
     """
     Args:
         split_fec: instance of split_force_extension to use
@@ -103,7 +103,7 @@ def call_hooke(split_fec,convolution=None,blindwindow=None,
     mean,stdev = Analysis.spline_residual_mean_and_stdev(force,force_interpolated)
     # determine some of the parameters from what we care about
     if (blindwindow is None):
-        blindwindow = 0
+        blindwindow = tau_num_points
     if (seedouble is None):
         seedouble = tau_num_points
     if (stable is None):
@@ -112,8 +112,11 @@ def call_hooke(split_fec,convolution=None,blindwindow=None,
         convolution_num_points = 50
         convolution = np.zeros(convolution_num_points)
         n_half = int(np.floor(convolution.size/2))
+        # make the convlution have a zero mean
         convolution[:n_half] = 0.5
         convolution[n_half:] = -0.5
+        # make the convolution normalized to |sum| ^2 to one
+        convolution /= sum(convolution**2)
     convfilt_config = dict(convolution=convolution,
                            blindwindow=blindwindow,
                            stable=stable,
@@ -158,6 +161,7 @@ def run():
         events_predicted[s_predicted] = 1
     # get the score
     print(score(separation,events,events_predicted).minimum_distance_median)
+    print(sum(events_predicted))
     fig = PlotUtilities.figure()
     plt.subplot(2,1,1)
     plt.plot(time,force,color='k',alpha=0.3)
