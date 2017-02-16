@@ -13,15 +13,39 @@ class split_force_extension:
     class representing a force-extension curve, split into approach, dwell,
     and retract
     """
-    def __init__(self,approach,dwell,retract):
+    def __init__(self,approach,dwell,retract,tau_num_points=None):
         self.approach = approach
         self.dwell = dwell
         self.retract = retract
+        self.set_tau_num_points(tau_num_points)
+    def set_tau_num_points(self,tau_num_points):
+        """
+        sets the autocorrelation time associated with this curve
+        
+        Args:
+            tau_num_points: integer number of points
+        Returns:
+            Nothing
+        """
+        self.tau_num_points = tau_num_points
+        if (tau_num_points is not None):
+            self.tau = np.median(np.diff(self.approach.Time))*tau_num_points
+        else:
+            self.tau = None
     def zero_all(self,separation,zsnsr,force):
+        """ 
+        zeros the distance and force of the approach,dwell, and retract
+        
+        Args:
+            separation,zsnsr,force: offsets in their respective categories
+        """
         self.approach.offset(separation,zsnsr,force)
         self.dwell.offset(separation,zsnsr,force)
         self.retract.offset(separation,zsnsr,force)
     def flip_forces(self):
+        """
+        multiplies all the forces by -1; useful after offsetting
+        """
         self.approach.LowResData.force *= -1
         self.dwell.LowResData.force *= -1
         self.retract.LowResData.force *= -1
@@ -100,6 +124,7 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
     split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline)
     if (flip_force):
         split_fec.flip_forces()
+    split_fec.set_tau_num_points(n_smooth)
    
         
 def split_FEC_by_meta(time_sep_force_obj):
