@@ -218,7 +218,7 @@ def spline_interpolator(tau_x,x,f,deg=2):
             )
     return interpolate.LSQUnivariateSpline(x=x,y=f,**spline_args)
 
-def auto_correlation_tau(x,f_user,deg_autocorrelation=1):
+def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
     """
     get the atucorrelation time of f (ie: fit polynomial to log(autocorrelation)
     vs x, so the tau is more or less the exponential decay constant
@@ -228,6 +228,9 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1):
         f_user: the function we want the autocorrelation of 
         deg_autocorrelation: the degree of autocorrelation to use. defaults to  
         linear, to get the 1/e time of autocorrelation
+        
+        fit_idx_max: maximum index to fit. defaults to until we hit 0 in
+        the statistical autocorrelation 
     Returns:
         tuple of <autocorrelation tau, coefficients of log(auto) vs x fit,
                   auto correlation ('raw')>
@@ -246,10 +249,11 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1):
     statistical_norm = (auto_norm - 0.5) * 2
     log_norm = np.log(auto_norm + tol)
     median = np.median(log_norm)
-    fit_idx_max = np.where(statistical_norm <= 0)[0]
-    assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under median"
-    # get the first time we cross under the median
-    fit_idx_max =  fit_idx_max[0]
+    if (fit_idx_max is None):
+        fit_idx_max = np.where(statistical_norm <= 0)[0]
+        assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under median"
+        # get the first time we cross under the median
+        fit_idx_max =  fit_idx_max[0]
     # git a high-order polynomial to the auto correlation spectrum, get the 1/e
     # time.
     coeffs = np.polyfit(x=x[:fit_idx_max],y=log_norm[:fit_idx_max],

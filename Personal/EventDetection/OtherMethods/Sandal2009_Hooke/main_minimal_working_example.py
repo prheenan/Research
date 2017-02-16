@@ -7,18 +7,44 @@ import sys
 
 sys.path.append("../../../../../")
 from Research.Personal.EventDetection.OtherMethods import method_helper
-from Research.Personal.EventDetection.Util import Analysis
+from Research.Personal.EventDetection.Util import Analysis,Plotting
 
 from GeneralUtil.python import PlotUtilities
 from Research.Personal.EventDetection.OtherMethods.Sandal2009_Hooke.\
     hooke_src.trunk import flatfilts
+    
+from sklearn import metrics
 
 class hooke_object:
 
     def __init__(self,time,force):
         self.vectors = [ [],[time,force]]
-
-def call_hooke(split_fec,convolution=[1,1,1,0,0,0],blindwindow=None,
+        
+class score:
+    def __init__(self,x,true,predicted):
+        """
+        gets the scores associated with the binary 'is there an event happening'
+        matrices given by true and predicted, which index into x
+        
+        Args:
+            x: the data values associated with the events we care about 
+            true: matrix of same length as x, 0/1 where an event is/isnt tagged
+            predicted: like true, but for predictions
+        """
+        # have x start at 0...
+        self.precision = metrics.precision_score(true,predicted)
+        self.recall = metrics.precision_score(true,predicted)
+        # get the x values where we think events are happenings
+        true_x = x[np.where(true)]
+        predicted_x = x[np.where(predicted)]
+        # get the minimum distance for each
+        closest_true = lambda x: true_x[np.argmin(np.abs(true_x-x))]
+        self.minimum_distance_distribution = [np.abs(x-closest_true(x))
+                                              for x in predicted_x]
+        self.minimum_distance_median = \
+            np.median(self.minimum_distance_distribution)
+        
+def call_hooke(split_fec,convolution=None,blindwindow=None,
                seedouble=None,stable=None,positive=True,maxcut=0.5,
                mindeviation=0.5):
     """
@@ -26,7 +52,8 @@ def call_hooke(split_fec,convolution=[1,1,1,0,0,0],blindwindow=None,
         split_fec: instance of split_force_extension to use
     
         Convolution:the shape of the peak to use to convolve with our vector,
-        used in 'libpeakspot.conv_dx'
+        used in 'libpeakspot.conv_dx'. If none, just step down, size of 
+        autocorrelation time
         
         blindwindow: the amount of x*1e9, relative to the start, to exclude. 
         essentially, another mask. It must be given in units of (1e9 * x)
@@ -65,7 +92,9 @@ def call_hooke(split_fec,convolution=[1,1,1,0,0,0],blindwindow=None,
     Returns:
         see fitter.has_peaks
     """
-    time,force = split_fec.retract.Time, split_fec.retract.Force                                                 
+    time,force = split_fec.retract.Time, split_fec.retract.Force     
+    # normalize the force, so it is has a max of zero (should already be zeroed)
+    force_max_is_one = force / max(force)
     # determine the parameters we need
     tau_time = split_fec.tau
     tau_num_points = split_fec.tau_num_points
@@ -74,11 +103,17 @@ def call_hooke(split_fec,convolution=[1,1,1,0,0,0],blindwindow=None,
     mean,stdev = Analysis.spline_residual_mean_and_stdev(force,force_interpolated)
     # determine some of the parameters from what we care about
     if (blindwindow is None):
-        blindwindow = tau_time 
+        blindwindow = 0
     if (seedouble is None):
         seedouble = tau_num_points
     if (stable is None):
-        stable=0.005
+        stable=stdev
+    if (convolution is None):
+        convolution_num_points = 50
+        convolution = np.zeros(convolution_num_points)
+        n_half = int(np.floor(convolution.size/2))
+        convolution[:n_half] = 0.5
+        convolution[n_half:] = -0.5
     convfilt_config = dict(convolution=convolution,
                            blindwindow=blindwindow,
                            stable=stable,
@@ -86,14 +121,14 @@ def call_hooke(split_fec,convolution=[1,1,1,0,0,0],blindwindow=None,
                            maxcut=maxcut,
                            mindeviation=mindeviation,
                            seedouble=seedouble)
-    print(convfilt_config)
     fitter = flatfilts.flatfiltsCommands()                           
     fitter.convfilt_config = convfilt_config
     _,surface_idx,_ = Analysis.get_surface_index(split_fec.retract,
                                                  n_smooth=tau_num_points,
                                                  last_less_than=not positive)
     fitter.find_contact_point = lambda *args : surface_idx
-    peaks_predicted,peaks_size = fitter.has_peaks(hooke_object(time,list(force)))
+    input_object = hooke_object(time,list(force_max_is_one))
+    peaks_predicted,peaks_size = fitter.has_peaks(input_object)
     return peaks_predicted,peaks_size
     
 def run():
@@ -108,9 +143,8 @@ def run():
     """
     ex = method_helper.get_example()
     retract = ex.retract
-    time,force = retract.Time,retract.Force
+    time,separation,force = retract.Time,retract.Separation,retract.Force
     peaks_predicted,peaks_size = call_hooke(ex)
-    print(peaks_predicted)
     # convert force to pN for this example
     force *= 1e12
     idx_events = ex.get_retract_event_idx()
@@ -122,6 +156,8 @@ def run():
         events[s] = 1
     for s_predicted in peaks_predicted:
         events_predicted[s_predicted] = 1
+    # get the score
+    print(score(separation,events,events_predicted).minimum_distance_median)
     fig = PlotUtilities.figure()
     plt.subplot(2,1,1)
     plt.plot(time,force,color='k',alpha=0.3)

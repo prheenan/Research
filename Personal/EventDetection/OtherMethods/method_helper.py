@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-from Research.Personal.EventDetection.Util import InputOutput,Analysis
+from Research.Personal.EventDetection.Util import InputOutput,Analysis,Plotting
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis \
     import FEC_Util
 
@@ -34,8 +34,12 @@ def get_example():
     # get the autocorrelation time of the retract force (what we care about)
     x,f = retract.Time,retract.Force
     dx = np.median(np.diff(x))
-    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
-    num_points = int(np.round(tau/dx))
+    frequency = retract.ThermalFrequency
+    n_points_fit = int(np.ceil((1/frequency) * (1/dx)))
+    tau,auto_coeffs,auto_correlation = \
+        Analysis.auto_correlation_tau(x,f,deg_autocorrelation=1,
+                                      fit_idx_max=n_points_fit)
+    num_points = int(np.ceil(tau/dx))
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)                                              
     return example_split

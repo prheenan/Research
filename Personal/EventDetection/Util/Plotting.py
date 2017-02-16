@@ -11,6 +11,18 @@ from scipy.stats import norm
 import Analysis
 
 def plot_distribution(x,f,f_interp,f_cdf,thresh,num_bins=50):
+    """
+    plots a distribution
+    
+    Args:
+        x: time / separation (whatever abscicca is)
+        f,f_interp: the raw and interpolated f values
+        f_cdf: the cdf we are using ; low probability means an event is likely
+        thresh: the minimum probability
+        num_bins: number of bins for showing the histogram (purely for plots)
+    Returns:
+        nothing, plots the distribution
+    """
     idx_high = np.where(f_cdf >= thresh)
     idx_low = np.where(f_cdf <= thresh)
     events = f_cdf[idx_low]
@@ -36,6 +48,14 @@ def plot_distribution(x,f,f_interp,f_cdf,thresh,num_bins=50):
     PlotUtilities.lazyLabel("Time (au)","Probability","",frameon=True,
                             loc="lower right")
 
+def plot_surface_idx(surface_idx,n_smooth,Obj):
+    smoothed = FEC_Util.GetFilteredForce(Obj,n_smooth)
+    x,f = Obj.Time, Obj.Force
+    x_smoothed, f_smoothed = smoothed.Time, smoothed.Force
+    plt.plot(x,f,color='k',alpha=0.3)
+    plt.plot(x_smoothed,f_smoothed,color='b')
+    plt.plot(x[surface_idx],f[surface_idx],'ro')
+                            
 def plot_autocorrelation_log(x,*args):
     """
     plots the autocorrelation function and fit
