@@ -109,18 +109,10 @@ def run():
     tau,auto_coeffs,auto_correlation = Analysis.\
         auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
     num_points = int(np.ceil(tau/dx))
+    print(num_points)
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)
-    # only look at after the nominal zero point
-    below_zero = np.where(separation < 0 )[0]
-    zero_idx = below_zero[-1]
-    f = f[zero_idx:]
-    x = x[zero_idx:]
-    separation = separation[zero_idx:]
-    tau,auto_coeffs,auto_correlation = Analysis.\
-        auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
-    num_points = int(np.round(tau/dx))
-    # XXX get autocorrelaton time again?
+    # XXX only look at after the nominal zero point?
     # get an interpolator for the retract force and separation
     force_interpolator = Analysis.spline_interpolator(tau,x,f)
     separation_interpolate = Analysis.spline_interpolator(tau,x,separation)
