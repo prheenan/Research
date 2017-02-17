@@ -10,6 +10,8 @@ from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 
 import matplotlib.gridspec as gridspec
+from scipy.stats import norm
+
 class SurfaceImage:
     """
     Class for encapsulating (XXX just the height) of an image
@@ -31,7 +33,7 @@ class SurfaceImage:
         Returns the height as a 2-D array in nm
         """
         return self.height * 1e9
-    def height_nm_rel(self,pct_considered_surface = 5):
+    def height_nm_rel(self):
         """
         returns the height, relative to the 'surface' (see args) in nm
 
@@ -42,7 +44,7 @@ class SurfaceImage:
              height_nm_rel, offset to the pct
         """
         height_nm = self.height_nm()
-        MinV = np.percentile(height_nm,pct_considered_surface)
+        MinV = np.median(height_nm)
         height_nm_rel = height_nm - MinV
         return height_nm_rel
 
@@ -89,7 +91,7 @@ def PlotImage(Image,**kwargs):
     plt.tick_params(axis='both', which='both', bottom='off', top='off',
                     right='off', left='off')
 
-def PlotImageDistribution(Image,pct=95,bins=300,PlotLines=True,AddSigmas=True,
+def PlotImageDistribution(Image,pct=95,bins=100,PlotLines=True,AddSigmas=True,
                           **kwargs):
     """
     Plots the distribution of image heights, relative to the surface
@@ -109,14 +111,27 @@ def PlotImageDistribution(Image,pct=95,bins=300,PlotLines=True,AddSigmas=True,
     n,bins,patches = plt.hist(height_nm_relative.ravel(),bins=bins,linewidth=0,
                               edgecolor="none",alpha=0.3,
                               normed=False,**kwargs)
+    bin_width = np.median(np.diff(bins))
     height_nm_rel_encompassing_pct = np.percentile(height_nm_relative,pct)
     if (PlotLines):
-        plt.axvline(height_nm_rel_encompassing_pct,linewidth=3,color='r',
-                    linestyle="--",
-                    label=("{:d}%<={:.1f}nm".\
-                           format(int(pct),height_nm_rel_encompassing_pct)))
-    plt.gca().set_yscale('log')
-    plt.ylim([min(n)/2,max(n)*2])
+        min_height = np.min(height_nm_relative.ravel())
+        max_height = np.max(height_nm_relative.ravel())
+        limits = np.linspace(start=min_height,stop=max_height,num=bins.size)
+        # fit symmetrically to between pct_min% and (100-pct_min)%
+        pct_min = 5
+        pct_max = 80
+        q_min,q_max = np.percentile(height_nm_relative,[pct_min,pct_max])
+        fit_idx = np.where( (height_nm_relative > q_min) &
+                            (height_nm_relative < q_max))
+        height_fit = height_nm_relative[fit_idx]
+        mu,std = norm.fit( height_fit)
+        n_points = height_fit.size
+        denormalize = n_points * bin_width
+        pdf = norm.pdf(limits,loc=mu,scale=std) * denormalize
+        plt.plot(limits,pdf,label=("Gaussian, stdev={:.2f}".format(std)))
+    plt.yscale('log')
+    n_limits = n[np.where(n>=1)]
+    plt.ylim([min(n_limits)/2,max(n_limits)*2])
     return n,bins,patches
 
 def MakePlot(SurfaceImage,label,OutPath,**kwargs):
@@ -235,10 +250,13 @@ def InitialDebugging():
            "2016-10-20-tip-and-surface-height-distributions/"
     files_tips =[
         ["1_EtchedLong.pxp","Etched Long",tip_kwargs],
-        ["9-221-2016-functiuonalized-9-19-tStrept-in-pbs-ph7.4-with-mini.pxp","'Good' T-Strept Long",tip_kwargs],
-        ["2016-10-14-mini-pbs-t-strept-tip-batch-10-10-2016_1%_attachment.pxp","'Bad'(?) T-Strept Long",tip_kwargs] ]
+        ["9-221-2016-functiuonalized-9-19-tStrept-in-pbs-ph7.4-with-mini.pxp",
+         "'Good' T-Strept Long",tip_kwargs],
+        ["2016-10-14-mini-pbs-t-strept-tip-batch-10-10-2016_1%_attachment.pxp",
+         "'Bad'(?) T-Strept Long",tip_kwargs] ]
     files_surfaces = [
-        ["2016-10-6-mini-pbs-koh-clened-glass-batch-10-5-2016.pxp","KOH",surface_kwargs],
+        ["2016-10-6-mini-pbs-koh-clened-glass-batch-10-5-2016.pxp","KOH",
+         surface_kwargs],
         ["2016-10-18-mini-pbs-PEG-azide-surface-batch-0p10x_peg_0p015mg_mL_10-17-2016_0%_attachment_with_proteins_possibly-tips-fault.pxp",r"PEG-Azide-$\frac{1}{10}$x",surface_kwargs],
         ["2016-10-14-mini-pbs-PEG-azide-surface-batch-10-10-2016_1%_attachment.pxp",
          "PEG-Azide-1x",surface_kwargs],
@@ -332,6 +350,22 @@ def PositiveControls():
     MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGridPosCtrl",figsize=(25,16),
                  ImageFunc=lambda m_list: m_list[-1],
                  hist_kwargs=dict())
+
+def ImageFunction(m_list):
+    assert len(m_list) > 0, "Didn't find any images..."
+    return m_list[-1]
+
+def KOH_Testing():
+    common_kwargs = dict(vmin=-2, vmax=3)
+    Base = "/Volumes/group/4Patrick/Reports/2017-2-17-koh-comparisons/"
+    files_tips =[
+         ["2017-1-27-stephen-2.5M-koh-glass-in-pbs.pxp",
+          "KOH, 95% ethanol",common_kwargs],
+        ["2017-1-27-traditional-5.7M-koh-glass-in-pbs.pxp",
+         "KOH, 100% ethanol",common_kwargs]]
+    MakeGridPlot(files_tips,[-5,40],Base,"SurfaceGridPosCtrl",figsize=(25,16),
+                 ImageFunc=ImageFunction,
+                 hist_kwargs=dict(),Force=False)
     
     
 def run():
@@ -344,8 +378,9 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    PositiveControls()
+    KOH_Testing()
     exit(1)
+    PositiveControls()
     CleaningConditions()
     HigherMwPEG()
     SilanePegMalemideDebugging()
