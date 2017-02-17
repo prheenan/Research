@@ -109,7 +109,6 @@ def run():
     tau,auto_coeffs,auto_correlation = Analysis.\
         auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
     num_points = int(np.ceil(tau/dx))
-    print(num_points)
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)
     # XXX only look at after the nominal zero point?
