@@ -379,7 +379,6 @@ def run():
         This is a description of what is returned.
     """
     KOH_Testing()
-    exit(1)
     PositiveControls()
     CleaningConditions()
     HigherMwPEG()
