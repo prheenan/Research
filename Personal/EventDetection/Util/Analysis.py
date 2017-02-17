@@ -227,12 +227,12 @@ def auto_correlation_helper(auto):
     auto_norm = (auto - np.min(auto))/(np.max(auto)-np.min(auto)) 
     # statistical norm goes from -1 to 1
     statistical_norm = (auto_norm - 0.5) * 2
-    log_norm = np.log(auto_norm + tol)
     median = np.median(log_norm)
     fit_idx_max = np.where(statistical_norm < 0)[0]
     assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under median"
     # get the first time we cross under the median
     fit_idx_max =  fit_idx_max[0]
+    log_norm = np.log(auto_norm + tol)
     return auto_norm,statistical_norm,log_norm,fit_idx_max
     
 def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
