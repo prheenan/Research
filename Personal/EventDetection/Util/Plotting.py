@@ -67,13 +67,34 @@ def plot_autocorrelation_log(x,*args):
         nothing, plots the autocorrelation log 
     """
     tau,coeffs,auto = args
+    auto_norm_predicted = np.exp(np.polyval(coeffs,x=x))
+    auto_norm,statistical_norm,log_norm,fit_idx_max= \
+        Analysis.auto_correlation_helper(auto)
     tol = 1e-6
-    auto_norm = (auto-min(auto))/(max(auto)-min(auto))
-    log_norm = np.log(auto_norm + tol)
-    plt.plot(x,log_norm)
-    plt.plot(x,np.polyval(coeffs,x=x))
+    x_plot = x- min(x)
+    # auto_norm goes from 0 to 1
+    style_fit = dict(color='r',linestyle='--',linewidth=2)
+    style_auto = dict(color='k',alpha=0.3,marker='.')
+    xlim_zoomed = [0,3*tau]
+    highlight_fit_range = lambda y: \
+        plt.plot(x_plot[:fit_idx_max],y[:fit_idx_max],color='r')
+    plt.subplot(3,1,1)
+    plt.plot(x_plot,auto_norm,**style_auto)
+    plt.plot(x_plot,auto_norm_predicted,**style_fit)
+    highlight_fit_range(auto_norm)
+    PlotUtilities.lazyLabel("","autocorrelation (au)","")
+    plt.subplot(3,1,2)
+    plt.plot(x_plot,auto_norm,**style_auto)
+    plt.plot(x_plot,auto_norm_predicted,**style_fit)
+    highlight_fit_range(auto_norm)
+    plt.xlim(xlim_zoomed)
+    PlotUtilities.lazyLabel("","","")
+    plt.subplot(3,1,3)
+    plt.plot(x_plot,log_norm,**style_auto)
+    plt.plot(x_plot,np.polyval(coeffs,x=x),**style_fit)
+    plt.xlim(xlim_zoomed)
     plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
-
+    PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
     
     
 

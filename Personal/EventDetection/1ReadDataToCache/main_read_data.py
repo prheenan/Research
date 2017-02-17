@@ -105,10 +105,21 @@ def run():
     x,f = retract.Time,retract.Force
     separation = retract.Separation
     dx = np.median(np.diff(x))
-    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
-    num_points = int(np.round(tau/dx))
+    deg_auto = 1
+    tau,auto_coeffs,auto_correlation = Analysis.\
+        auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
+    num_points = int(np.ceil(tau/dx))
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)
+    # only look at after the nominal zero point
+    below_zero = np.where(separation < 0 )[0]
+    zero_idx = below_zero[-1]
+    f = f[zero_idx:]
+    x = x[zero_idx:]
+    separation = separation[zero_idx:]
+    tau,auto_coeffs,auto_correlation = Analysis.\
+        auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
+    num_points = int(np.round(tau/dx))
     # XXX get autocorrelaton time again?
     # get an interpolator for the retract force and separation
     force_interpolator = Analysis.spline_interpolator(tau,x,f)
@@ -118,12 +129,13 @@ def run():
     mu,std = Analysis.spline_residual_mean_and_stdev(f,f_interp_at_x)
     force_cdf = Analysis.spline_gaussian_cdf(f,f_interp_at_x,std)
     force_cdf_complement = 1-force_cdf
+    # get the derivative of the splined data
+    derivative_at_x = force_interpolator.derivative()(x)
     # make a threshold in probability (this will likely be machine-learned) 
     thresh = 1e-4
     # plot everything
-    fig = PlotUtilities.figure(figsize=(8,16))
-    Plotting.plot_distribution(separation,f,f_interp_at_x,force_cdf,thresh,
-                               num_bins=500)
+    fig = PlotUtilities.figure(figsize=(8,20))
+    Plotting.plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
     PlotUtilities.savefig(fig,cache_directory + "out.png")
     # get the negative events
     # XXX 
