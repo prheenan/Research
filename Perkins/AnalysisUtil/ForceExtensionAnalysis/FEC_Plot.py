@@ -89,6 +89,15 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
     
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
                  ConversionOpts=def_conversion_opts):
+    """
+    Plots a force extension curve. Splits the curve into approach and 
+    Retract and pre-processes by default
+
+    Args:
+        TimeSepForceObj: 'Raw' TimeSepForce Object
+        PreProcessDict: passed directly to FEC_Util.PreProcessFEC
+        **kwargs: passed directly to FEC_Plot.FEC_AlreadySplit
+    """                 
     # convert everything...
     objs = [FEC_Util.UnitConvert(r,**ConversionOpts) 
             for r in time_sep_force_objects]
@@ -102,4 +111,5 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
                             "Force [pN]",
                             "Two-Dimensional Force-Separation Histogram")
     cbar = plt.colorbar()
-    cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
+    label = '# of points in (Force,Separation) Bin'
+    cbar.set_label(label,labelpad=10,rotation=270) 
