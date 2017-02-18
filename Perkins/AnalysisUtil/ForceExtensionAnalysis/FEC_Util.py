@@ -40,12 +40,9 @@ def default_data_root():
 	if (os_name == "nt"):
 		# windows
 		to_ret = "//perknas2.colorado.edu/group/"
-	elif (os_name == "mac"):
+	elif (os_name == "mac" or os_name == "posix"):
 		# macintosh
 		to_ret = "/Volumes/group/"
-	elif (os_name == "posix"):
-		# linux, XXX TODO
-		to_ret = ""
 	else:
 		# throw an error... dont know what to do
 		raise OSError("Didn't recognize OS name: {:s}".format(os_name))
