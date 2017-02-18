@@ -135,7 +135,8 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
                                GetSlice(Obj.Force),
                                copy.deepcopy(Obj.Meta))
     # copy the events over...
-    ToRet.Events = Obj.Events
+    if (Obj.has_events):
+        ToRet.Events = Obj.Events
     return ToRet
 
 
@@ -193,6 +194,10 @@ def ZeroForceAndSeparation(Obj,IsApproach,FractionForOffset=0.1):
     Offset = CalculateOffset(Obj,SliceV)
     return SeparationZeroed.copy(),(Obj.Force - Offset).copy()
 
+def zero_split_fec_approach_and_retract(Split,**kwargs):
+    Split.approach,Split.retract = \
+        PreProcessApproachAndRetract(Split.approach,Split.retract,**kwargs)
+    
 def PreProcessApproachAndRetract(Approach,Retract,
                                  NFilterPoints=100,
                                  ZeroForceFraction=0.2,

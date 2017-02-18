@@ -218,6 +218,22 @@ def spline_interpolator(tau_x,x,f,deg=2):
             )
     return interpolate.LSQUnivariateSpline(x=x,y=f,**spline_args)
 
+def auto_correlation_helper(auto):
+
+    # normalize the auto correlation, add in a small bias to avoid 
+    # taking the log of 0. data is normalized to 0->1, so it should be OK
+    tol = 1e-9
+    # auto norm goes from 0 to 1
+    auto_norm = (auto - np.min(auto))/(np.max(auto)-np.min(auto)) 
+    # statistical norm goes from -1 to 1
+    statistical_norm = (auto_norm - 0.5) * 2
+    log_norm = np.log(auto_norm + tol)
+    fit_idx_max = np.where(statistical_norm < 0)[0]
+    assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under median"
+    # get the first time we cross under the median
+    fit_idx_max =  fit_idx_max[0]
+    return auto_norm,statistical_norm,log_norm,fit_idx_max
+    
 def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
     """
     get the atucorrelation time of f (ie: fit polynomial to log(autocorrelation)
@@ -240,20 +256,10 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
     # only want the last half (should be identical?) 
     size = int(auto.size/2)
     auto = auto[size:]
-    # normalize the auto correlation, add in a small bias to avoid 
-    # taking the log of 0. data is normalized to 0->1, so it should be OK
-    tol = 1e-9
-    # auto norm goes from 0 to 1
-    auto_norm = (auto - np.min(auto))/(np.max(auto)-np.min(auto)) 
-    # statistical norm goes from -1 to 1
-    statistical_norm = (auto_norm - 0.5) * 2
-    log_norm = np.log(auto_norm + tol)
-    median = np.median(log_norm)
-    if (fit_idx_max is None):
-        fit_idx_max = np.where(statistical_norm <= 0)[0]
-        assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under median"
-        # get the first time we cross under the median
-        fit_idx_max =  fit_idx_max[0]
+    auto_norm,statistical_norm,log_norm,fit_idx_max_tmp = \
+        auto_correlation_helper(auto)
+    if fit_idx_max is None:
+        fit_idx_max = fit_idx_max_tmp
     # git a high-order polynomial to the auto correlation spectrum, get the 1/e
     # time.
     coeffs = np.polyfit(x=x[:fit_idx_max],y=log_norm[:fit_idx_max],

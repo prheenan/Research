@@ -159,7 +159,7 @@ def run():
         events[s] = 1
     for s_predicted in peaks_predicted:
         events_predicted[s_predicted] = 1
-    # get the score
+    # XXX debugging: print the score, number of events
     print(score(separation,events,events_predicted).minimum_distance_median)
     print(sum(events_predicted))
     fig = PlotUtilities.figure()

@@ -10,7 +10,7 @@ from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from GeneralUtil.python.IgorUtil import SavitskyFilter
-from Research.Personal.EventDetection.Util import Analysis,Plotting
+from Research.Personal.EventDetection.Util import Analysis,Plotting,InputOutput
 
 class ForceExtensionCategory:
     def __init__(self,directory,velocity_nm_s,sample,has_events):
@@ -56,7 +56,8 @@ def set_and_cache_category_data(categories,force,cache_directory,limit):
                      has_events = r_obj.has_events,force=force)
         # reach all the files until we reach the limit
         for f in all_files:
-            data_in_category.append(read_and_cache_file(f,**kwargs))
+            data_file_tmp = InputOutput.read_and_cache_file(f,**kwargs)
+            data_in_category.append(data_file_tmp)
             limit_tmp = limit_tmp - 1
             if (limit_tmp == 0):
                 break
@@ -102,26 +103,31 @@ def run():
     retract = example_split.retract 
     # get the autocorrelation time of the retract force (what we care about)
     x,f = retract.Time,retract.Force
+    separation = retract.Separation
     dx = np.median(np.diff(x))
-    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
-    num_points = int(np.round(tau/dx))
+    deg_auto = 1
+    tau,auto_coeffs,auto_correlation = Analysis.\
+        auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
+    num_points = int(np.ceil(tau/dx))
+    print(num_points)
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)
+    # XXX only look at after the nominal zero point?
     # get an interpolator for the retract force and separation
     force_interpolator = Analysis.spline_interpolator(tau,x,f)
-    separation_interpolate = Analysis.spline_interpolator(tau,x,
-                                                          retract.Separation)
+    separation_interpolate = Analysis.spline_interpolator(tau,x,separation)
     # get the residual mean and standard deviation, from the spline...
     f_interp_at_x = force_interpolator(x)
     mu,std = Analysis.spline_residual_mean_and_stdev(f,f_interp_at_x)
     force_cdf = Analysis.spline_gaussian_cdf(f,f_interp_at_x,std)
     force_cdf_complement = 1-force_cdf
+    # get the derivative of the splined data
+    derivative_at_x = force_interpolator.derivative()(x)
     # make a threshold in probability (this will likely be machine-learned) 
     thresh = 1e-4
     # plot everything
-    fig = PlotUtilities.figure(figsize=(8,16))
-    Plotting.plot_distribution(x,f,f_interp_at_x,force_cdf,thresh,
-                               num_bins=500)
+    fig = PlotUtilities.figure(figsize=(8,20))
+    Plotting.plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
     PlotUtilities.savefig(fig,cache_directory + "out.png")
     # get the negative events
     # XXX 

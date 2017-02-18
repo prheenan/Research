@@ -82,8 +82,8 @@ def set_events_of_data(data,events):
     """
     id_data = [get_id(d.Meta.Name) for d in data]
     # possible the data was double-annotated; get rid of duplicate events
-    events_id_unique = "".join(events)
-    _, idx = np.unique(events_id_unique)
+    events_id_unique = ["".join(str(v) for v in e) for e in events]
+    _, idx = np.unique(events_id_unique,return_index=True)
     events = [events[i] for i in idx]
     # POST: each event in events is unique
     id_events = [get_id(e[0]) for e in events]
@@ -129,7 +129,9 @@ def run():
     base_directory= network + "4Patrick/CuratedData/"
     output_base_directory = base_directory + "Masters_CSCI/"
     positive_directory = output_base_directory + "Positive/"
-    relative_input_dir = ["650nm-4x-bio/pxp/500-nanometers-per-second/"]
+    relative_650 = "650nm-4x-bio/pxp/"
+    relative_input_dir = [relative_650 + "1000-nanometers-per-second/",
+                          relative_650 + "500-nanometers-per-second/"]
     absolute_input_dir = [positive_directory + d for d in relative_input_dir]
     absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
     files_data_events = [read_single_directory_with_events(d) 
@@ -138,12 +140,16 @@ def run():
         # make the output directory 
         GenUtilities.ensureDirExists(d_out)
         # go through each PXP in this directory
+        print("Looking in {:s} for force-extension curves...".format(d))
         for file_path,data,ev in files_data_events[i]:
             set_events_of_data(data,ev)
             # POST: all data are set. go ahead and save them out.
-            for dat in data:
+            n = len(data)
+            for i,dat in enumerate(data):
                 file_name = os.path.basename(file_path)
-                output_path = d_out + file_name + "_"+dat.Meta.Name + ".csv"
+                meta_name = dat.Meta.Name
+                output_path = d_out + file_name + "_"+ meta_name+ ".csv"
+                print("\t Saving out {:s} ({:d}/{:d})".format(meta_name,i+1,n))                
                 FEC_Util.save_time_sep_force_as_csv(output_path,dat)
     
 
