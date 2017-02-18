@@ -81,6 +81,11 @@ def set_events_of_data(data,events):
         nothing but sets the object's events appropriately
     """
     id_data = [get_id(d.Meta.Name) for d in data]
+    # possible the data was double-annotated; get rid of duplicate events
+    events_id_unique = "".join(events)
+    _, idx = np.unique(events_id_unique)
+    events = [events[i] for i in idx]
+    # POST: each event in events is unique
     id_events = [get_id(e[0]) for e in events]
     # determine matches; may have multiple events
     eq = lambda x,y: x == y
@@ -109,11 +114,11 @@ def set_events_of_data(data,events):
     # POST: an event only mapped to one FEC_Util
     n_events = len(id_events)
     n_matched =len(id_parity_check)
-    if (n_matched <= n_events):
+    if (n_matched < n_events):
         unused = [events[i] for i in range(n_events) 
                   if i not in id_parity_check]
         print("Warning: The following events were unused: {:s}".format(unused))
-        print("{:d}/{:d} events matched".format(n_matched,n_events))
+    print("{:d}/{:d} events matched".format(n_matched,n_events))
 
 def run():
     """

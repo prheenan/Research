@@ -137,6 +137,8 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
                                GetSlice(Obj.Separation),
                                GetSlice(Obj.Force),
                                copy.deepcopy(Obj.Meta))
+    # copy the events over...
+    ToRet.Events = Obj.Events
     return ToRet
 
 
@@ -677,14 +679,13 @@ def read_time_sep_force_from_csv(input_path,has_events=False):
     time,separation,force = arr[:,0],arr[:,1],arr[:,2]
     # create TimeSepForce object
     to_return = TimeSepForceObj.TimeSepForceObj()
-    to_return.LowResData = DataObj(time,separation,force,meta)
+    to_return.LowResData = TimeSepForceObj.\
+        data_obj_by_columns_and_dict(time,separation,force,meta)
     if (has_events):
         # syntax is Events: [ [event 1 start,event 1 end],[...],...]
         events = ast.literal_eval(second.split(":")[1])
         # set the events of the TimeSepForce Object
         to_return.set_events(events)
     return to_return
-
-
 
 
