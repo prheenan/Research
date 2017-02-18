@@ -95,6 +95,33 @@ def plot_autocorrelation_log(x,*args):
     plt.xlim(xlim_zoomed)
     plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
     PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
+
+def plot_classification(split_object,scoring_object):
+    """
+    plots the classification of a single object
+
+    Args:
+         split_object: whatever was classified
+         scoring_object: Scoring.score object, used on split_object
+    Returns:
+         Nothing
+    """
+    retract = split_object.retract
+    time,force = retract.Time,retract.Force
+    true_idx,pred_idx =  scoring_object.idx_true,scoring_object.idx_predicted
+    boolean_true,boolean_predicted = scoring_object.get_boolean_arrays(time)
+    plt.subplot(2,1,1)
+    plt.plot(time,force,color='k',alpha=0.3)
+    for i in true_idx:
+        plt.plot(time[i],force[i],color='r')
+    for p in pred_idx:
+        plt.plot(time[p],force[p],'b.')
+    PlotUtilities.lazyLabel("","Force(pN)","")
+    plt.subplot(2,1,2)
+    plt.plot(time,boolean_true,linewidth=4,label="True events",color='b')
+    plt.plot(time,boolean_predicted,label="Predicted",color='r',alpha=0.3)
+    PlotUtilities.lazyLabel("Time (s)","Force(pN)","")
+
     
     
 

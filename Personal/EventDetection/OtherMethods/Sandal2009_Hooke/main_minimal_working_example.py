@@ -7,43 +7,16 @@ import sys
 
 sys.path.append("../../../../../")
 from Research.Personal.EventDetection.OtherMethods import method_helper
-from Research.Personal.EventDetection.Util import Analysis,Plotting
+from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
 
 from GeneralUtil.python import PlotUtilities
 from Research.Personal.EventDetection.OtherMethods.Sandal2009_Hooke.\
     hooke_src.trunk import flatfilts
-    
-from sklearn import metrics
 
 class hooke_object:
-
     def __init__(self,time,force):
         self.vectors = [ [],[time,force]]
-        
-class score:
-    def __init__(self,x,true,predicted):
-        """
-        gets the scores associated with the binary 'is there an event happening'
-        matrices given by true and predicted, which index into x
-        
-        Args:
-            x: the data values associated with the events we care about 
-            true: matrix of same length as x, 0/1 where an event is/isnt tagged
-            predicted: like true, but for predictions
-        """
-        # have x start at 0...
-        self.precision = metrics.precision_score(true,predicted)
-        self.recall = metrics.precision_score(true,predicted)
-        # get the x values where we think events are happenings
-        true_x = x[np.where(true)]
-        predicted_x = x[np.where(predicted)]
-        # get the minimum distance for each
-        closest_true = lambda x: true_x[np.argmin(np.abs(true_x-x))]
-        self.minimum_distance_distribution = [np.abs(x-closest_true(x))
-                                              for x in predicted_x]
-        self.minimum_distance_median = \
-            np.median(self.minimum_distance_distribution)
-        
+
 def call_hooke(split_fec,convolution=None,blindwindow=None,
                seedouble=None,stable=None,positive=True,maxcut=0.9,
                mindeviation=2):
@@ -100,7 +73,8 @@ def call_hooke(split_fec,convolution=None,blindwindow=None,
     tau_num_points = split_fec.tau_num_points
     interpolator = Analysis.spline_interpolator(tau_time,time,force)
     force_interpolated = interpolator(time)
-    mean,stdev = Analysis.spline_residual_mean_and_stdev(force,force_interpolated)
+    mean,stdev = Analysis.spline_residual_mean_and_stdev(force,
+                                                         force_interpolated)
     # determine some of the parameters from what we care about
     if (blindwindow is None):
         blindwindow = tau_num_points
@@ -149,31 +123,9 @@ def run():
     time,separation,force = retract.Time,retract.Separation,retract.Force
     peaks_predicted,peaks_size = call_hooke(ex)
     # convert force to pN for this example
-    force *= 1e12
-    idx_events = ex.get_retract_event_idx()
-    time_events = [time[s] for s in idx_events]
-    force_events = [force[s] for s in idx_events]
-    # set up an array where the events are
-    events,events_predicted = np.zeros(time.size),np.zeros(time.size)
-    for s_true in idx_events:
-        events[s] = 1
-    for s_predicted in peaks_predicted:
-        events_predicted[s_predicted] = 1
-    # XXX debugging: print the score, number of events
-    print(score(separation,events,events_predicted).minimum_distance_median)
-    print(sum(events_predicted))
+    scorer = Scoring.get_scoring_info(ex,peaks_predicted)
     fig = PlotUtilities.figure()
-    plt.subplot(2,1,1)
-    plt.plot(time,force,color='k',alpha=0.3)
-    for t,f in zip(time_events,force_events):
-        plt.plot(t,f,color='r')
-    for p in peaks_predicted:
-        plt.plot(time[p],force[p],'b.')
-    PlotUtilities.lazyLabel("","Force(pN)","")
-    plt.subplot(2,1,2)
-    plt.plot(time,events,linewidth=4,label="True events",color='b')
-    plt.plot(time,events_predicted,label="Predicted",color='r',alpha=0.3)
-    PlotUtilities.lazyLabel("Time (s)","Force(pN)","")
+    Plotting.plot_classification(ex,scorer)
     PlotUtilities.savefig(fig,"./out_hooke.png")
 
 if __name__ == "__main__":
