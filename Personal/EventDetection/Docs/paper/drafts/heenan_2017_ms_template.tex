@@ -146,6 +146,7 @@
 }
 
 \newcommand{\supply}[2]{(#1 #2)}
+\newcommand{\singlemol}[0]{SMFS}
 
 \newcommand{\pSkip}[0]{0pt}
 \makeatletter
@@ -204,9 +205,27 @@ University of Colorado at Boulder, Department of Physics%\\This line break force
 
 \section{\sLabel{Intro}Introduction}
 
+outline:\\
+Cool examples \\
+how it works  (XXX why surface bound is good?)\\
+especially talk about dynamic force spectroscopy \\
+why data processing is difficult \\
+XXX anatomy of FEC
+previous techniques\\
+
+\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM resolves sub-nanometer molecular structure such as the double helix of DNA (XXX), lattice structure of membrane-bound proteins (YYY), and dynamic motion of motor proteins (ZZZ). AFM is attractive for studies of biological systems since it operates with high resolution in a wide range of temperatures, solvents, and other environmental variables CITE() \\ \pl
+
+During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample(XXX figure). The interaction is measured by the displacement of the tip via deflection of the cantilever CITE(XXX). A calibrated tip can record interaction forces from piconewtons to nanonewtons CITE(XXX). When AFM is used as an imaging platform, the tip motion is constrained by a feedback loop \cite(XXX) and measures the features of a two-dimensional surface such as height, stiffness, and charge \cite() \cite(XXX). XXX insights \pl
+
+In single molecular force spectroscopy (\singlemol) experiments, the AFM tip interacts with a molecule and stretches it (see figure XXX). These experiments yield information such as kinetic information for dissociation of bonds (Cite XXX), protein-ligand bond strength (cite XXX), and the energy landscapes of proteins and nucleic acids (cite XXX). XXX insights \pl
+
+The analysis and interpretability of \singlemol experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, attachment rates between commerically-available AFM tips and most molecules are much less than 0.1\% (see Figure XXX). Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite XXX), but the majority of the data taken is still uninterpretable and must be filtered out.\pl
+
+Methods have been proposed to automate manually sorting \singlemol data. Automation removes the burden of tedious data filtering and improves scientific reproducibility. XXX list methods boo they suck
+
 \section{\sLabel{Materials}Materials and Methods}
 
-Site-specific chemistry is used to improve data quality and acquisition rate. The sample polymer is functionalized with DBCO at one end to ensure a covelent bond with azide-functionalized surface and functionalized with biotin at the opposite end to ensure a specific but reverseible bond with the streptavidin-coated tip. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination. This section descibes how the desired samples, surfaces, and tips are created.
+Site-specific chemistry is used to improve \singlemol data quality and acquisition rate. The sample polymer is functionalized with DBCO at one end to ensure a covelent bond with azide-functionalized surface and functionalized with biotin at the opposite end to ensure a specific but reverseible bond with the streptavidin-coated tip. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination. This section descibes how the desired samples, surfaces, and tips are created.
 
 \subsection{\sLabel{Surface}Azide-functionalied surfaces}
 
