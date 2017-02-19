@@ -96,6 +96,22 @@ def plot_autocorrelation_log(x,*args):
     plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
     PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
 
+def highlight_events(idx_events,x,y,label=None,**kwargs):
+    """
+    highlights x and y at the indices given by idx_events:
+    
+    Args:
+        idx_events: where the events are (a list of slices or integers
+        x,y: what to plot
+        label: how to label it
+        **kwargs: passed to highlight_events
+    """
+    for i in idx_events:
+        # only label the first
+        label_tmp = label if i == 0 else None
+        plt.plot(x[i],y[i],label=label_tmp,**kwargs)
+
+
 def plot_classification(split_object,scoring_object):
     """
     plots the classification of a single object
@@ -112,10 +128,10 @@ def plot_classification(split_object,scoring_object):
     boolean_true,boolean_predicted = scoring_object.get_boolean_arrays(time)
     plt.subplot(2,1,1)
     plt.plot(time,force,color='k',alpha=0.3)
-    for i in true_idx:
-        plt.plot(time[i],force[i],color='r')
-    for p in pred_idx:
-        plt.plot(time[p],force[p],'b.')
+    highlight_events(idx_events,time,force,color='r',linestyle='-',
+                     label="true events")
+    highlight_events(pred_idx,time,force,color='b',linestyle='None',
+                     markerstyle='.',label="predicted events")
     PlotUtilities.lazyLabel("","Force(pN)","")
     plt.subplot(2,1,2)
     plt.plot(time,boolean_true,linewidth=4,label="True events",color='b')

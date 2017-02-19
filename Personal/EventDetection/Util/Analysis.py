@@ -18,6 +18,16 @@ class split_force_extension:
         self.dwell = dwell
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
+    def retract_spline_interpolator(self,**kwargs):
+        """
+        returns an interpolator based on the stored time constant tau
+        for the retract force versus time curbe
+
+        Args:
+            kwargs: passed to spline_inteprolator
+        """
+        x,f = self.retract.Time,self.retract.Force
+        return spline_interpolator(self.tau,x,f,**kwargs)
     def set_tau_num_points(self,tau_num_points):
         """
         sets the autocorrelation time associated with this curve
