@@ -88,22 +88,42 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
     FEC_AlreadySplit(Appr,Retr,**kwargs)
     
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
+                 separation_max = None,n_filter_func=None,
                  ConversionOpts=def_conversion_opts):
     """
     Plots a force extension curve. Splits the curve into approach and 
     Retract and pre-processes by default
 
     Args:
-        TimeSepForceObj: 'Raw' TimeSepForce Object
-        PreProcessDict: passed directly to FEC_Util.PreProcessFEC
-        **kwargs: passed directly to FEC_Plot.FEC_AlreadySplit
+        time_sep_force_objects: list of (zeroed, but SI) TimeSepForce Object
+        num_bins: tuple of <x,y> bins. Passed to hist2d
+        n_filter_func: if not none, histograms the savitsky-golay *filtered*
+        versuon of the objects given, with n_filter_func being a function
+        taking in the TimeSepForce object and returning an integer number of 
+        points
+        
+        separation_max: if not None, only histogram up to and including this
+        separation. should be in units *after* conversion (default: nanometers)
+        
+        ConversionOpts: passed to UnitConvert. Default converts x to nano<X>
+        and y to pico<Y>
     """                 
     # convert everything...
     objs = [FEC_Util.UnitConvert(r,**ConversionOpts) 
             for r in time_sep_force_objects]
+    if n_filter_func is not None:
+        objs = [FEC_Util.GetFilteredForce(o,n_filter_func(o)) 
+                for o in objs]
     filtered_data = [(retr.Separation,retr.Force) for retr in objs]
     separations = np.concatenate([r[0] for r in filtered_data])
     forces = np.concatenate([r[1] for r in filtered_data])
+    if (separation_max is not None):
+        idx_use = np.where(separations < separation_max)
+    else:
+        # use everything
+        idx_use = slice(0,None,1)
+    separations = separations[idx_use]
+    forces = forces[idx_use]
     # make a heat map, essentially
     counts, xedges, yedges, Image = plt.hist2d(separations, forces,
                                                bins=num_bins,cmap='afmhot')
