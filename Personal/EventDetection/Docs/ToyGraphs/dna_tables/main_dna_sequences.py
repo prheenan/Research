@@ -16,7 +16,7 @@ def read_seq(input_file):
 def format_seq(seq,
                terminal_biotin="B",
                terminal_DBCO="D",
-               internal_biotin="B"):
+               internal_biotin="T"):
     seq = seq.replace("5dbcoteg",terminal_DBCO)
     seq = seq.replace("3bioteg",terminal_biotin)
     seq = seq.replace("dbco",terminal_DBCO)
@@ -46,7 +46,7 @@ def get_latex_table(sequences):
     line_end = " \\\\ \e \n"
     to_ret = "Name & Sequence" + line_end
     names = ["Forward primer for 650nm DNA",
-             "Reverse 650nm DNA",
+             "Reverse primer for 650nm DNA",
              "68nt hairpin"]
     rows = ["{:s} & {:s}".format(name,seq) 
             for name,seq in zip(names,formatted_seqs)]
