@@ -180,11 +180,6 @@ class flatfiltsCommands:
         noise_level=lps.noise_absdev(convoluted[cut_index:], self.convfilt_config['positive'], self.convfilt_config['maxcut'], self.convfilt_config['stable'])               
         above=lps.abovenoise(convoluted,noise_level,cut_index,abs_devs)     
         peak_location,peak_size=lps.find_peaks(above,seedouble=self.convfilt_config['seedouble'])
-        plt.subplot(2,1,1)
-        plt.plot(yret[cut_index:])
-        plt.subplot(2,1,2)
-        plt.plot(above)
-        plt.show()
         #take the minimum or the maximum of a peak
         for i in range(len(peak_location)):
             peak=peak_location[i]

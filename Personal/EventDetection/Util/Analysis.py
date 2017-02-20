@@ -18,6 +18,16 @@ class split_force_extension:
         self.dwell = dwell
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
+    def retract_spline_interpolator(self,**kwargs):
+        """
+        returns an interpolator based on the stored time constant tau
+        for the retract force versus time curbe
+
+        Args:
+            kwargs: passed to spline_inteprolator
+        """
+        x,f = self.retract.Time,self.retract.Force
+        return spline_interpolator(self.tau,x,f,**kwargs)
     def set_tau_num_points(self,tau_num_points):
         """
         sets the autocorrelation time associated with this curve
@@ -61,7 +71,7 @@ class split_force_extension:
         the first point in the retract curve)
         
         Returns:
-            list, each element is a slice like (start,stop,1) where start and       
+            list, each element is a slice like (start,stop,1) where start and   
             stop are the event indices
         """
         offset = self.n_points_approach_dwell() 
@@ -69,6 +79,13 @@ class split_force_extension:
         idx = [ slice(min(ev)-offset,max(ev)-offset,1) 
                 for ev in self.retract.Events]
         return idx
+    def get_retract_event_centers(self):
+        """
+        Returns:
+            the mean of the event start and stop (its 'center')
+        """
+        get_mean = lambda ev: int(np.round(np.mean([ev.start,ev.stop]) ))
+        return [ get_mean(ev) for ev in  self.get_retract_event_idx()]
 
 def get_surface_index(obj,n_smooth,last_less_than=True):
     """
