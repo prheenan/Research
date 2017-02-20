@@ -128,10 +128,10 @@ def plot_classification(split_object,scoring_object):
     boolean_true,boolean_predicted = scoring_object.get_boolean_arrays(time)
     plt.subplot(2,1,1)
     plt.plot(time,force,color='k',alpha=0.3)
-    highlight_events(idx_events,time,force,color='r',linestyle='-',
+    highlight_events(true_idx,time,force,color='r',linestyle='-',
                      label="true events")
     highlight_events(pred_idx,time,force,color='b',linestyle='None',
-                     markerstyle='.',label="predicted events")
+                     marker='.',label="predicted events")
     PlotUtilities.lazyLabel("","Force(pN)","")
     plt.subplot(2,1,2)
     plt.plot(time,boolean_true,linewidth=4,label="True events",color='b')
