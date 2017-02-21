@@ -84,21 +84,25 @@ def run():
     mask = np.where(stdevs >  thresh)[0]
     print(mask)
     last_point = mask[-1]
-    diff_idx = np.where(np.diff(mask) > n_points/2)[0]
-    diff_fwd = list(mask[diff_idx]) + [mask[-1]] 
-    diff_rev = [mask[0]] + list(mask[diff_idx+1])
-    print(diff_fwd)
-    print(diff_rev)
-    #peak_ends = list(peak_starts_after_first-1)
-    #peak_ends.extend(mask[-1])
-    #event_centers = [np.mean([start,end]) 
-    #                 for start,end in zip(peak_starts,peak_ends)]
+    idx_step_changes = np.where(np.diff(mask) > n_points/2)[0]
+    step_end_idx = mask[idx_step_changes]
+    step_start_idx = mask[(idx_step_changes + 1)]
+    event_idx_end = list(step_end_idx) + [mask[-1]] 
+    event_idx_start = [mask[0]] + list(step_start_idx)
+    event_slices = [slice(start,end,1) 
+                    for start,end in zip(event_idx_start,event_idx_end)]
+    # determine where the first derivative is minimal (most negative, XXX check)
+    # in each slice; that is the strongest indicator that an event is taking 
+    # place
+    min_deriv_idx = [e.start + np.argmin(interp_first_deriv[e])
+                     for e in event_slices]
+    event_idx = min_deriv_idx
     # XXX check mask has at least one...
     plt.plot(time,stdevs,'b.')
-    for fwd,rev in zip(diff_fwd,diff_rev):
+    for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
         plt.axvline(time[fwd],linestyle='--')
         plt.axvline(time[rev])
-        plt.axvline(time[(rev+fwd)/2],linewidth=3)
+        plt.axvline(time[event],linewidth=3)
     plt.xlim(time_limits)
     PlotUtilities.lazyLabel("","","")
     plt.subplot(n_plots,1,4)
