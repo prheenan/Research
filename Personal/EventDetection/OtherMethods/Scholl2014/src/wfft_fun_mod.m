@@ -1,4 +1,6 @@
-function [good noises]=wfft_fun(proteinType,recordingType,toplot,noiseLevel)
+function [good noises]=wfft_fun(proteinType,recordingType,~,...
+                                noiseLevel,minPeakDistance,...
+                                minPeakHeight,bestLength)
 %
 % wfft - windowed fast fourier transform
 % Syntax = [good noises] =
@@ -17,15 +19,10 @@ function [good noises]=wfft_fun(proteinType,recordingType,toplot,noiseLevel)
 %
 % Zack Scholl, January, 2013
 % Revised 04/26/2014 (stepWindow based off window size)
+% Revised 02/21/2017 by Patrick Heenan to take minPeakDistance, 
+%  minPeakHeight,bestLength,file as parameters and remove plotting
 
 goodPeaks = [];
-
-% Set the window length
-bestLength = 5; %nm
-
-% Use the protein database to deterimine the peak finding parameters
-minPeakDistance = 0;
-minPeakHeight = 0;
 
 % load a recording
 file=sprintf('%s',recordingType);
