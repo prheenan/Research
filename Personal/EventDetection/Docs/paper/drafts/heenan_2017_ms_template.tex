@@ -33,14 +33,15 @@
 \usepackage{txfonts}
 \usepackage{natbib}
 \usepackage{tabularx}
-% enable clicking on citations
+% hyperref: enable clicking on citations
 \usepackage{hyperref}
 \usepackage{titlesec}
-% for degree
+% gensymb: for degree
 \usepackage{gensymb}
 % use times new roman
 % http://tex.stackexchange.com/questions/153168/how-to-set-document-font-to-times-new-roman-by-command
 \usepackage{times}
+% 'Thesis margins should be 1 inch from all edges.'
 % 1 inch margins
 % http://kb.mit.edu/confluence/pages/viewpage.action?pageId=3907057
 \usepackage[margin=1in]{geometry}
@@ -51,7 +52,16 @@
 \titlespacing\subsection{0pt}{\captionspacing}{\captionspacing}
 \titlespacing\subsubsection{0pt}{\captionspacing}{\captionspacing}
 
-
+% put the page number on the right handside
+% http://tex.stackexchange.com/questions/56316/top-right-side-page-numbering
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+% indent *all* paragraphs, not just after first
+% "The first line of paragraphs or footnotes is indented uniformly in the 
+% thesis.''
+\usepackage{indentfirst}
 
 \newcommand{\ndiffn}[3]{\frac{\partial^{#3}#1}{\partial^{#3}#2}}
 \newcommand{\diffn}[2]{\ndiffn{#1}{#2}{}}
@@ -120,7 +130,7 @@
 % command for my captionc
 \newcommand{\pcaption}[1]{\caption{\noindent#1}}
 % command for first paragraph
-\newcommand{\firstp}[0]{\noindent}
+\newcommand{\firstp}[0]{}
 % command for ending a paragraph
 \newcommand{\pl}[0]{\vspace{6pt}}
 \newcommand{\pEndF}[0]{ \\ }
@@ -153,6 +163,8 @@
 \newcommand{\singlemol}[0]{SMFS}
 % degreeC: for abbreviating degrees celsius
 \newcommand{\degreeC}[0]{\degree{}C}
+% citePRH: for controlling the citation method
+\newcommand{\citePRH}[1]{\cite{#1}}
 
 \newcommand{\pSkip}[0]{0pt}
 \makeatletter
@@ -177,21 +189,59 @@
 % single spaced
 \singlespacing
 
+% 'Items 1-8 in list are numbered with lower case Roman numerals.'
+% see: http://tex.stackexchange.com/questions/7355/how-to-suppress-page-number
+\pagenumbering{roman}
+
 \title{Mapping Subsurface Elemental Composition Using X-ray Fluorescence}
 \date{\today}
-\author{Patrick Heenan \\  University of Colorado at Boulder }
+\author{Patrick Heenan XXX The title page contains the thesis title; candidate's name; candidate's degrees, granting institutions, and dates received; statement shown on sample page ("A thesis submitted to ..."); name of department or school granting degree; and year the thesis is submitted (see sample title page).
+ \\  University of Colorado at Boulder }
 
 \maketitle
+\thispagestyle{empty}
+
 
 \clearpage
 
+Signature Page
+
+\clearpage
+
+Abstract
 
 \begin{abstract}
 
 \firstp Non-destructive methods for identifying elemental makeup provide valuable insight for researchers investigating object composition. X-ray fluorescence (XRF) has emerged as an \emph{in situ} method to obtain the elemental makeup of objects, including sub-surface composition. For example, XRF can reconstruct “hidden” paintings beneath a surface image, resolve disputed claims of authorship, and recover text from partially effaced religious documents. XRF traditionally uses synchrotron radiation as a light source and raster scans the artifact of interest. The pixels from the scan are combined into a coherent picture after days of imaging. Recent work focuses on creating two-dimensional images of the artifact's sub-surface elemental composition in hours or days by digitizing photon counts onto a charged coupled device camera. The number of photons in each energy bin for each pixel, constituting the scattered and fluorescent light from the object, are converted into element concentrations by comparing the photon intensities with a prior calibration and correcting for instrumental artifacts and background. This work describes the physical theory, optical instrumentation, and data analysis underpinning recent advances in spatial and temporal resolution in sub-surface reconstruction using XRF. 
 \end{abstract}
 
+\clearpage
 
+Dedication
+
+\clearpage
+
+Acknowledgements
+
+\clearpage
+
+Contents
+
+\clearpage
+
+List of Tables 
+
+\clearpage
+
+List of Figures 
+
+\clearpage
+
+Text
+
+% 'Items 1-8 in list are numbered with lower case Roman numerals.'
+% see: http://tex.stackexchange.com/questions/7355/how-to-suppress-page-number
+\pagenumbering{arabic}
 
 %\pacs{32.30.Rj, 32.50.+d, 32.70.Fw, 32.70.Jz}% PACS, the Physics and Astronomy
                              % Classification Scheme.
@@ -211,7 +261,7 @@ why data processing is difficult \\
 XXX anatomy of FEC
 previous techniques\\
 
-\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM instruments can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \cite{ido_beyond_2013}, lattice structure of membrane-bound proteins \cite{muller_surface_1999}, and real-time motion of motor proteins\cite{ando_high-speed_2007}. As a force spectroscopy platform, AFM XXX. AFM is attractive for studies of biological systems since it operates with high resolution in a wide range of temperatures, solvents, and other environmental variables CITE() \pl
+\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM instruments can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy platform, AFM XXX. AFM is attractive for studies of biological systems since it operates with high resolution in a wide range of temperatures, solvents, and other environmental variables CITE() \pl
 
 During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample(XXX figure). The interaction is measured by the displacement of the tip via deflection of the cantilever CITE(XXX). A calibrated tip can record interaction forces from piconewtons to nanonewtons CITE(XXX). \pl
 
@@ -270,6 +320,7 @@ All atomic force microcopy measurements were carried out using an Asylum Cypher 
 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l | l  }
+\hline \hline
 Forward primer & Dagttgttcctttctattctcactccgc \\ \e 
 Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e 
 68nt hairpin & Dttgagtcaacgtactgatcacgctggatcctat\\
@@ -284,13 +335,20 @@ Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e
 \section{References}
 
 
+
+\clearpage
+
+Bibliography 
+
 \section{Bibliography}
 
 \bibliographystyle{unsrtnat}
-
 \bibliography{0ms-citations} 
 
-\section{Suporting Material}
+
+\clearpage
+
+Appendix
 
 
 \end{document}
