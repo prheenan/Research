@@ -10,7 +10,7 @@ from Research.Personal.EventDetection.OtherMethods import method_helper
 from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
 
 from GeneralUtil.python import PlotUtilities
-from scipy import signal
+from scipy import signal,stats
 
 def local_stdev(f,n):
     """
@@ -29,13 +29,16 @@ def local_stdev(f,n):
                      for i in range(max_n)])
 
 class prediction_info:
-    def __init__(self,event_idx,start_idx,end_idx,local_stdev,interp,mask):
+    def __init__(self,event_idx,start_idx,end_idx,local_stdev,interp,mask,
+                 cdf,slice_fit):
         self.event_idx = event_idx
         self.start = start_idx
         self.end = end_idx
         self.local_stdev = local_stdev
         self.interp = interp
         self.mask = mask
+        self.cdf = cdf
+        self.slice_fit = slice_fit
 
 def _predict_helper(split_fec,threshold):
     retract = split_fec.retract
@@ -54,7 +57,13 @@ def _predict_helper(split_fec,threshold):
     # get the cwt of the wavelet; see pp219 of Mallat, Wavelet Tour (XXX TODO)
     global_stdev = np.std(diff)
     median_local_stdev = np.median(stdevs)
-    mask = np.where(stdevs[min_points_between:] >  threshold)[0]
+    slice_fit = slice(min_points_between,-min_points_between,1)
+    stdev_masked = stdevs[slice_fit]
+    q25,q75 = np.percentile(stdev_masked,[25,75])
+    iqr = q75-q25
+    cdfs = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,scale=iqr)
+
+    mask = np.where(cdfs <  threshold)[0]
     # add back in the offset
     mask += min_points_between
     last_point = mask[-1]
@@ -76,7 +85,9 @@ def _predict_helper(split_fec,threshold):
                              end_idx   = event_idx_end,
                              local_stdev = stdevs,
                              interp = interp,
-                             mask = mask)
+                             mask = mask,
+                             cdf=cdfs,
+                             slice_fit=slice_fit)
     return to_ret
 
 def run():
@@ -94,12 +105,11 @@ def run():
     event_slices = ex.get_retract_event_idx()
     time,separation,force = retract.Time,retract.Separation,retract.Force
     # XXX fix threshhold
-    thresh = 0.6e-11
+    thresh = 1e-3
     info = _predict_helper(ex,threshold=thresh)
     event_idx_end,event_idx_start,event_idx = info.end,\
                                               info.start,\
                                               info.event_idx
-    print(event_idx)
     mask = info.mask
     interp_first_deriv = info.interp.derivative(1)(time)
     # get the interpolated derivative
@@ -123,11 +133,10 @@ def run():
     # plot the autocorrelation time along the plot
     min_x_auto = min(time) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+ex.tau]
-    plt.plot(auto_correlation_x, [np.max(stdevs),np.max(stdevs)],
-             linewidth=5,color='g',label="autocorrelation time")
-    Plotting.highlight_events(event_slices,time,stdevs,linewidth=5,
+    plt.semilogy(time[info.slice_fit],info.cdf)
+    Plotting.highlight_events(event_slices,time,info.cdf,linewidth=5,
                               **style_events)
-    PlotUtilities.lazyLabel("","Local Stdev","")
+    PlotUtilities.lazyLabel("","CDF ","")
     plt.axhline(thresh,label="threshold",linestyle='--',color='r')
     plt.xlim(time_limits)
     plt.subplot(n_plots,1,3)
