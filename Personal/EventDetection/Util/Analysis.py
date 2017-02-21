@@ -96,6 +96,7 @@ def get_surface_index(obj,n_smooth,last_less_than=True):
         n_smooth: number to smoothing   
         last_less_than: if true (default, 'raw' data), then we find the last
         time we are less than the baseline in obj.Force. Otherwise, the first
+        time we are *greater* than...
     Returns 
         the surface index and baseline in force
     """
