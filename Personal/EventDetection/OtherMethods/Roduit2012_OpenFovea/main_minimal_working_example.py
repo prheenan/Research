@@ -102,7 +102,7 @@ def run():
     time,separation,force = retract.Time,retract.Separation,retract.Force
     out_base = "./out/"
     scorers = []
-    weights = np.linspace(start=0.1,stop=0.15,num=7)
+    weights = np.linspace(start=0.1,stop=0.15,num=15)
     for w in weights:
         kwargs_fovea = dict(weight=w,
                             poc=surface_index)
@@ -115,11 +115,12 @@ def run():
     relative_error = np.abs(predicted-true)/true
     xlim = [min(weights)*0.95,max(weights)*1.105]
     fig = PlotUtilities.figure(figsize=(8,12))
-    plt.subplot(2,1,1)
+    n_plots = 2
+    plt.subplot(n_plots,1,1)
     plt.plot(weights,distances,'bo-')
     plt.xlim(xlim)
     PlotUtilities.lazyLabel("","Median distance-to-events","")
-    plt.subplot(2,1,2)
+    plt.subplot(n_plots,1,2)
     plt.plot(weights,relative_error,'bo-')
     plt.xlim(xlim)
     PlotUtilities.lazyLabel("Weights","Relative error in number of events","")

@@ -10,6 +10,7 @@ from Research.Personal.EventDetection.OtherMethods import method_helper
 from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
 
 from GeneralUtil.python import PlotUtilities
+from scipy import signal
 
 def local_stdev(f,n):
     """
@@ -42,7 +43,8 @@ def run():
     n_points = ex.tau_num_points
     # N degree b-spline has continuous (N-1) derivative
     interp = ex.retract_spline_interpolator(deg=3)
-    interp_second = interp.derivative(2)
+    interp_first_deriv = interp.derivative(1)(time)
+    interp_second_deriv = interp.derivative(2)(time)
     # get the interpolated derivative
     interpolated_force = interp(time)
     event_slices = ex.get_retract_event_idx()
@@ -50,6 +52,7 @@ def run():
     # time from the event
     diff = force-interpolated_force
     stdevs = local_stdev(diff,n_points)
+    # get the cwt of the wavelet; see pp219 of Mallat, Wavelet Tour (XXX TODO)
     global_stdev = np.std(diff)
     median_local_stdev = np.median(stdevs)
     thresh = median_local_stdev*1.1
@@ -57,14 +60,15 @@ def run():
     style_events = dict(color='r',label="True events")
     time_limits = [min(time),max(time)]
     fig = PlotUtilities.figure()
-    plt.subplot(3,1,1)
+    n_plots = 4
+    plt.subplot(n_plots,1,1)
     plt.plot(time,force,color='k',alpha=0.3)
     plt.plot(time,interpolated_force,color='b',linewidth=2)
     Plotting.highlight_events(event_slices,time,force,
                               **style_events)
     PlotUtilities.lazyLabel("","Force (au)","")
     plt.xlim(time_limits)
-    plt.subplot(3,1,2)
+    plt.subplot(n_plots,1,2)
     plt.plot(time,stdevs)
     # plot the autocorrelation time along the plot
     min_x_auto = min(time) * 1.1
@@ -73,25 +77,33 @@ def run():
              linewidth=5,color='g',label="autocorrelation time")
     Plotting.highlight_events(event_slices,time,stdevs,linewidth=5,
                               **style_events)
-    PlotUtilities.lazyLabel("a","Local Stdev","")
-    plt.axhline( thresh,label="threshold",linestyle='--',color='r')
+    PlotUtilities.lazyLabel("","Local Stdev","")
+    plt.axhline(thresh,label="threshold",linestyle='--',color='r')
     plt.xlim(time_limits)
-    plt.subplot(3,1,3)
+    plt.subplot(n_plots,1,3)
     mask = np.where(stdevs >  thresh)[0]
-    # XXX check mask has at least one...
     print(mask)
-    peak_starts_after_first = mask[np.where(np.diff(mask) > 1)]
-    peak_starts = [mask[0]]
-    peak_starts.extend(peak_starts_after_first)
-    peak_ends = list(peak_starts_after_first-1)
-    peak_ends.extend(mask[-1])
-    print(peak_starts)
-    print(peak_ends)
-    event_centers = [np.mean([start,end]) 
-                     for start,end in zip(peak_starts,peak_ends)]
+    last_point = mask[-1]
+    diff_idx = np.where(np.diff(mask) > n_points/2)[0]
+    diff_fwd = list(mask[diff_idx]) + [mask[-1]] 
+    diff_rev = [mask[0]] + list(mask[diff_idx+1])
+    print(diff_fwd)
+    print(diff_rev)
+    #peak_ends = list(peak_starts_after_first-1)
+    #peak_ends.extend(mask[-1])
+    #event_centers = [np.mean([start,end]) 
+    #                 for start,end in zip(peak_starts,peak_ends)]
+    # XXX check mask has at least one...
     plt.plot(time,stdevs,'b.')
-    Plotting.highlight_events(event_centers,time,stdevs,linewidth=5,
-                              **style_events)
+    for fwd,rev in zip(diff_fwd,diff_rev):
+        plt.axvline(time[fwd],linestyle='--')
+        plt.axvline(time[rev])
+        plt.axvline(time[(rev+fwd)/2],linewidth=3)
+    plt.xlim(time_limits)
+    PlotUtilities.lazyLabel("","","")
+    plt.subplot(n_plots,1,4)
+    plt.plot(time[mask],interp_first_deriv[mask],'b.')
+    plt.plot(time[mask],interp_second_deriv[mask],'r.')
     plt.xlim(time_limits)
     PlotUtilities.savefig(fig,"./out.png")
 
