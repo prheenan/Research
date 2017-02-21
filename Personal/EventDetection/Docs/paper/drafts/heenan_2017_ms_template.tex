@@ -22,12 +22,9 @@
 \documentclass[%
   aip,12pt,tightenlines,
   amsthm,
- amsmath,amssymb,
-%preprint,%
- reprint,%
-%author-year,%
-%author-numerical,%
-]{revtex4-1}
+ amsmath,amssymb
+]{article}
+
 \usepackage{graphicx}% Include figure files
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
@@ -35,6 +32,7 @@
 %\linenumbers\relax % Commence numbering lines
 \usepackage{txfonts}
 \usepackage{natbib}
+\usepackage{tabularx}
 % enable clicking on citations
 \usepackage{hyperref}
 \usepackage{titlesec}
@@ -176,24 +174,16 @@
 
 \begin{document}
 
-\preprint{AIP/123-QED}
-
 % single spaced
 \singlespacing
 
-\title[CU Boulder, Comps II, 2017]{Mapping Subsurface Elemental Composition Using X-ray Fluorescence}% Force line breaks with \\
+\title{Mapping Subsurface Elemental Composition Using X-ray Fluorescence}
+\date{\today}
+\author{Patrick Heenan \\  University of Colorado at Boulder }
 
-\author{Patrick Heenan }
-\affiliation{ 
-University of Colorado at Boulder, Department of Physics%\\This line break forced with \textbackslash\textbackslash
-}%
+\maketitle
 
-\date{\today}% It is always \today, today,
-             %  but any date may be explicitly specified
-
-
-
-\newpage
+\clearpage
 
 
 \begin{abstract}
@@ -203,13 +193,13 @@ University of Colorado at Boulder, Department of Physics%\\This line break force
 
 
 
-
 %\pacs{32.30.Rj, 32.50.+d, 32.70.Fw, 32.70.Jz}% PACS, the Physics and Astronomy
                              % Classification Scheme.
 %\keywords{Review, x-ray fluorescence, scattering, attenuation}%Use showkeys class option if keyword
                               %display desired
 \maketitle
 
+\doublespacing
 
 \section{\sLabel{Intro}Introduction}
 
@@ -279,14 +269,12 @@ All atomic force microcopy measurements were carried out using an Asylum Cypher 
 \firstp XRF is characterized by absorption of a photon by an electron bound to an atom, followed by `relaxation' of the excited atom by emission of an x-ray photon.\cite{jitschin_progress_1990} Relaxation occurs by XRF when the excited electron is ejected and a higher-shell electron `decays' to fill the vacancy, emitting radiation as a result of the decay (\fRef{Basics}). The relaxation process can consist of a complicated series of excitations and decays,\cite{santra_concepts_2009} but the highest-energy and most-radiative initial excitation and decay is the primary focus of XRF experiments and this paper. Photon absorption and electron ejection happen at well-defined incident photon energies, called the \emph{edge energies}, which are a function of the atomic number of the absorbing atom and the ejected electron's shell.\cite{ueda_high-resolution_2003,de_groot_high-resolution_2001} \fRef{Basics} shows the edge energies and naming conventions associated with the highest-energy and most-dominant\cite{chantler_detailed_2000} absorption levels for the first 90 elements. The tightest-bound, 1s$_{\frac{1}{2}}$ electrons, known as the K-shell electrons, are the dominant contributors to XRF by absorption of the incident photons.\cite{chantler_detailed_2000}
 
 \begin{table}
-\begin{ruledtabular}
-\begin{tabular}{ l | l  }
+\begin{tabularx}{\textwidth}{ l | l  }
 Forward primer & Dagttgttcctttctattctcactccgc \\ \e 
 Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e 
 68nt hairpin & Dttgagtcaacgtactgatcacgctggatcctat\\
 & ttttaggatccagcgtgatcagtacgttgactcttB \\ \e 
-\end{tabular}
-\end{ruledtabular}
+\end{tabularx}
 \pcaption{\tLabel{Sequences}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl separated from the sequence by triethyleneglycol spacer.}
 \end{table}
 
