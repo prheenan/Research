@@ -18,55 +18,14 @@ function [good noises]=wfft_fun(proteinType,recordingType,toplot,noiseLevel)
 % Zack Scholl, January, 2013
 % Revised 04/26/2014 (stepWindow based off window size)
 
-warning off
-%% Protein database in order of increasing force
-proteinDatabase{3}.name='I27';
-proteinDatabase{3}.contourLength=[15 35];
-proteinDatabase{3}.force = [95 300];
-proteinDatabase{3}.num = 0;
-proteinDatabase{2}.name='SNase';
-proteinDatabase{2}.contourLength=[23 70];
-proteinDatabase{2}.force = [10 85];
-proteinDatabase{2}.num = 0;
-proteinDatabase{1}.name='Ank';
-proteinDatabase{1}.contourLength=[4 20];
-proteinDatabase{1}.force = [6.5 50];
-proteinDatabase{1}.num = 0;
 goodPeaks = [];
 
 % Set the window length
 bestLength = 5; %nm
 
-% %% Diagram of the protein database
-% figure;
-% for i=1:length(proteinDatabase)
-%     rectangle('position',[proteinDatabase{i}.contourLength(1) ...
-%         proteinDatabase{i}.force(1) ...
-%         proteinDatabase{i}.contourLength(2)-proteinDatabase{i}.contourLength(1) ...
-%         proteinDatabase{i}.force(2)-proteinDatabase{i}.force(1)],'FaceColor','y'); hold on; 
-%     text(proteinDatabase{i}.contourLength(1)+5,proteinDatabase{i}.force(1)+10,proteinDatabase{i}.name)
-% end
-% xlabel('length increment [nm]'); ylabel('force [pN]'); title('Force-Extension Regimes');
-% axis([0 100 0 320])
-
-
 % Use the protein database to deterimine the peak finding parameters
 minPeakDistance = 0;
 minPeakHeight = 0;
-for i=1:length(proteinType)
-   if (i==1)
-       minPeakDistance = min(proteinDatabase{proteinType(i)}.contourLength);
-       minPeakHeight = min(proteinDatabase{proteinType(i)}.force);
-   else
-       if (min(proteinDatabase{proteinType(i)}.contourLength)<minPeakDistance)
-           minPeakDistance = min(proteinDatabase{proteinType(i)}.contourLength);       
-       end
-       if (min(proteinDatabase{proteinType(i)}.force)< minPeakHeight)
-           minPeakHeight = min(proteinDatabase{proteinType(i)}.force);           
-       end   
-   end
-end
-
 
 % load a recording
 file=sprintf('%s',recordingType);
@@ -157,38 +116,6 @@ if (size(newlocs,1)>0)
 newlocs=sortrows(newlocs);
 end
 
-
-timed=toc;
-
-%% Plot coefficientSum if toplot==2
-xxx = (1:stepWindow:dataLength);
-xxx = (xxx-500)*.0935;
-if (toplot==2)
-    figure(4)
-    subplot(2,1,1)
-    plot(xxx,coefficientSum(1:end),'b','LineWidth',1); 
-    hold on;
-    for j=1:length(locs)
-    plot(xxx(locs(j)+forget),pks(j)+15,'kv','markerfacecolor',[1 0 0],'markeredgecolor',[1 0 0]);
-    end
-    xlabel('extension [nm]');
-    ylabel('sum_{n,odd} X_n(k)');
-    axis([-5 360 -5 450])
-   
-end
-
-   
-%% Determine which peaks are events matching up with protein database
-%% parameters
-if (toplot==1)
-    hold on;
-    plot(gooddata(:,1),gooddata(:,2),'b','LineWidth',0.5)
-    plot(-1000,-1000,'kv','markerfacecolor',[1 0 0],'markeredgecolor',[1 0 0]);
-    plot(-1000,-1000,'kv','markerfacecolor',[30/255 144/255 1],'markeredgecolor',[30/255 144/255 1]);
-    plot(-1000,-1000,'kv','markerfacecolor',[1 1 0],'markeredgecolor',[1 1 0]); 
-    plot(-1000,-1000,'kv','markerfacecolor',[124/255 252/255 0],'markeredgecolor',[124/255 252/255 0]);           
-    legend('Data','Nonspecific','I27','SNase','Ank')
-end
 extrapolatedData = [];
 goodPeaks = zeros(size(newlocs,1),1);
 previous = 0;   
@@ -210,16 +137,6 @@ if (sum(ii)>0)
             
                 type = proteinDatabase{proteinType(iii)}.name;
                 proteinDatabase{proteinType(iii)}.num = proteinDatabase{proteinType(iii)}.num +1;
-              if (toplot==1) 
-                    if (proteinType(iii)==3)
-                  plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[30/255 144/255 1],'markeredgecolor',[30/255 144/255 1]);
-                    end
-                    if (proteinType(iii)==2)
-                  plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[1 1 0],'markeredgecolor',[1 1 0]); 
-                    end
-                    if (proteinType(iii)==1)
-                  plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[124/255 252/255 0],'markeredgecolor',[124/255 252/255 0]);                        
-                    end
                   goodPeaks(jj-1)=1;
               end 
               noIdea = 0;
@@ -231,60 +148,15 @@ if (sum(ii)>0)
             
                 type = proteinDatabase{proteinType(iii)}.name;
                 proteinDatabase{proteinType(iii)}.num = proteinDatabase{proteinType(iii)}.num +1;
-              if (toplot==1) 
-                    if (proteinType(iii)==3)
-                  plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[30/255 144/255 1],'markeredgecolor',[30/255 144/255 1]);
-                    end
-                    if (proteinType(iii)==2)
-                  plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[1 1 0],'markeredgecolor',[1 1 0]); 
-                    end
-                    if (proteinType(iii)==1)
-                  plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[124/255 252/255 0],'markeredgecolor',[124/255 252/255 0]);                        
-                    end
-                  goodPeaks(jj-1)=1;
-              end 
               noIdea = 0;
               previous=iii;
             
         end
         end
-            if (extrapolatedForce > 10 && contour>5 && noIdea == 1)
-               if (toplot==1)
-                   plot(newlocs(jj-1,1),extrapolatedData(jj-1,2)+20,'kv','markerfacecolor',[1 0 0],'markeredgecolor',[1 0 0]);            
-               end
-            end  
         
     end
 
 end
-end
-
-% % Nice plotting
-if (toplot ==1 )
-    hXLabel=xlabel('extension [nm]');
-     hYLabel=ylabel('force [pN]'); 
-        axis([-5  max(extrapolatedData(:,1))*1.5 -25 max(gooddata(:,2))*1.1])
-    %axis([-5  350 -30 350])
-
-end
-
-bestRun=0;
-longestRun = 0;
-for j=1:length(goodPeaks)
-    if (goodPeaks(j)>0)
-       longestRun = longestRun+1;
-    else
-        if (longestRun > bestRun)
-            bestRun = longestRun;
-        end
-        longestRun=0;
-    end
-end
-good = 0;
-if ((sum(proteinType==1)>0 && proteinDatabase{1}.num >= 4) ...
-        || (sum(proteinType==2)>0 && sum(proteinType==3)>0 && proteinDatabase{2}.num+proteinDatabase{3}.num >= 3) ...
-        || (sum(proteinType==3)>0 && proteinDatabase{3}.num >= 3))
-    good = 1;
 end
       
 end
