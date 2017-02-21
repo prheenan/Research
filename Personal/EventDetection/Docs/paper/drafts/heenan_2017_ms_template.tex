@@ -24,14 +24,17 @@
   amsthm,
  amsmath,amssymb
 ]{article}
-
+% use utf-8 for  the input encoding (so the bibliography isnt terrible)
+\usepackage[utf8]{inputenc}
 \usepackage{graphicx}% Include figure files
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
 %\usepackage[mathlines]{lineno}% Enable numbering of text and display math
 %\linenumbers\relax % Commence numbering lines
 \usepackage{txfonts}
-\usepackage{natbib}
+% use natbib / superscripts
+\usepackage[super]{natbib}
+\bibliographystyle{unsrtnat}
 \usepackage{tabularx}
 % hyperref: enable clicking on citations
 \usepackage{hyperref}
@@ -294,7 +297,7 @@ For DNA deposition, 20uL of the desired concentration of DNA (see section XXX) w
 
 \subsection{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
 
-\firstp Functionalized cantilevers with nominal spring constants of 4pN/nm  were used for all experiments. Functionalization etches away gold to improve force stability (XXX cite) and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying (XXX -- solvent rinses?), the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropopanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4, submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loaded into the atomic force microscope. \pl
+\firstp Functionalized cantilevers with nominal spring constants of 4pN/nm  were used for all experiments. Functionalization etches away gold to improve force stability (XXX cite) and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying (XXX -- solvent rinses?), the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropopanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4, and submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loaded into the atomic force microscope. \pl
 
 \subsection{\sLabel{Surface}Atomic force microscopy}
 
@@ -342,7 +345,6 @@ Bibliography
 
 \section{Bibliography}
 
-\bibliographystyle{unsrtnat}
 \bibliography{0ms-citations} 
 
 
