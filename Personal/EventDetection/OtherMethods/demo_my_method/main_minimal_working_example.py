@@ -31,6 +31,23 @@ def local_stdev(f,n):
 class prediction_info:
     def __init__(self,event_idx,start_idx,end_idx,local_stdev,interp,mask,
                  cdf,slice_fit):
+        """
+        record the data from _predict_helper
+
+        Args:
+            event_idx : the event centers we found
+            start_idx : the start of the events
+            end_idx  : the end of the events
+            local_stdev : the local standad deviation at each point in slice_fit
+            interp_mask : points considered valid in slice_fit
+            cdf : cummulative density function for the probability of a point
+            in slice_fit, given the model of the data we have
+        
+            slice_fit : slice within the original retract where we tried to 
+            find events. We have to remove the first few and last few points
+        Returns:
+            prediction_info object
+        """
         self.event_idx = event_idx
         self.start = start_idx
         self.end = end_idx
@@ -41,6 +58,19 @@ class prediction_info:
         self.slice_fit = slice_fit
 
 def _predict_helper(split_fec,threshold):
+    """
+    uses spline interpolation and local stadard deviations to predict
+    events.
+
+    Args:
+        split_fec: split_force_extension object, already initialized, and 
+        zerod, with the autocorraltion time set. 
+
+        threshhold: maximum probability that a given datapoint fits the 
+        model
+    Returns:
+        prediction_info object
+    """
     retract = split_fec.retract
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
@@ -62,8 +92,7 @@ def _predict_helper(split_fec,threshold):
     q25,q75 = np.percentile(stdev_masked,[25,75])
     iqr = q75-q25
     cdfs = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,scale=iqr)
-
-    mask = np.where(cdfs <  threshold)[0]
+    mask = np.where(cdfs <=  threshold)[0]
     # add back in the offset
     mask += min_points_between
     last_point = mask[-1]
