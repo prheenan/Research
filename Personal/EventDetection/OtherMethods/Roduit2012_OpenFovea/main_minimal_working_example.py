@@ -101,11 +101,29 @@ def run():
                                                    last_less_than=False)
     time,separation,force = retract.Time,retract.Separation,retract.Force
     out_base = "./out/"
-    for w in np.linspace(start=0.1,stop=0.15,num=5):
+    scorers = []
+    weights = np.linspace(start=0.1,stop=0.15,num=7)
+    for w in weights:
         kwargs_fovea = dict(weight=w,
                             poc=surface_index)
         scorer = single_classification(ex,call_fovea,**kwargs_fovea)
         plot_classification(out_base,"weight={:.3f}".format(w),ex,scorer)
+        scorers.append(scorer)
+    distances = [s.minimum_distance_median for s in scorers]
+    true = scorers[0].n_events
+    predicted = np.array([s.n_events_predicted for s in scorers])
+    relative_error = np.abs(predicted-true)/true
+    xlim = [min(weights)*0.95,max(weights)*1.105]
+    fig = PlotUtilities.figure(figsize=(8,12))
+    plt.subplot(2,1,1)
+    plt.plot(weights,distances,'bo-')
+    plt.xlim(xlim)
+    PlotUtilities.lazyLabel("","Median distance-to-events","")
+    plt.subplot(2,1,2)
+    plt.plot(weights,relative_error,'bo-')
+    plt.xlim(xlim)
+    PlotUtilities.lazyLabel("Weights","Relative error in number of events","")
+    PlotUtilities.savefig(fig,out_base+"weights.png")
         
 if __name__ == "__main__":
     run()

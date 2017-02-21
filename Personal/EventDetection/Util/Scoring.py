@@ -22,6 +22,9 @@ class score:
         # save where the events are
         self.idx_true = idx_true
         self.idx_predicted = idx_predicted
+        # how many events are there?
+        self.n_events = len(idx_true)
+        self.n_events_predicted = len(idx_predicted)
         # get the 0/1 booleans arrays
         true,predicted = self.get_boolean_arrays(x)
         # have x start at 0...
