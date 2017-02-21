@@ -1,3 +1,15 @@
+from numpy import abs,ceil
+import numpy as np
+
+def length(x):
+    return x.size
+
+def size(x):
+    return length(x)
+
+def zeros(*args):
+    return np.zeros(args)
+
 def wfft_fun(proteinType,recordingType,toplot,noiseLevel):
     #
     # wfft - windowed fast fourier transform
@@ -41,14 +53,13 @@ def wfft_fun(proteinType,recordingType,toplot,noiseLevel):
     minPeakHeight = 0
 
     # Define vectors
-    forceData=gooddata(:,2)'
+    forceData=gooddata(:,2)
     extensionData=gooddata(:,1)
     x=size(extensionData)
     X=forceData
 
-
     ## Determine the window length, i.e. find datapoints/nm *roughly*
-    conversion=sum(gooddata(:,1)>10)/(max(gooddata(:,1))-10)
+    conversion=sum(forceData>10)/(max(extensionData)-10)
     windowLength = round(bestLength*conversion)
     stepWindow=  round(conversion*0.5)
     # Get length of data vector
@@ -59,15 +70,15 @@ def wfft_fun(proteinType,recordingType,toplot,noiseLevel):
     else
             fftLength = ceil(windowLength/2)
     end
-
     # Initialize vector for holding windowed FT
     wfftSignal = zeros(windowedDataLength,fftLength)
-    X = [zeros(1,windowLength/2) X zeros(1,windowLength/2)] # padding the signal with zeros
+    X = [zeros(1,windowLength/2),X,zeros(1,windowLength/2)] 
+    # padding the signal with zeros
     ii = 0
     # Loop through each window, taking FT
     for i = 1:stepWindow:dataLength
             ii = ii + 1
-            dataFrame = X(i:(i + windowLength - 1))  
+            dataFrame = X[i:(i + windowLength - 1)]
             fftValues = abs(fft(dataFrame, windowLength))
             wfftSignal(ii,:) = fftValues(1:fftLength)
     end
