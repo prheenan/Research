@@ -36,51 +36,9 @@ def wfft_fun(proteinType,recordingType,toplot,noiseLevel):
 
     # Set the window length
     bestLength = 5 #nm
-
-    # ## Diagram of the protein database
-    # figure
-    # for i=1:length(proteinDatabase)
-    #     rectangle('position',[proteinDatabase{i}.contourLength(1) ...
-    #         proteinDatabase{i}.force(1) ...
-    #         proteinDatabase{i}.contourLength(2)-proteinDatabase{i}.contourLength(1) ...
-    #         proteinDatabase{i}.force(2)-proteinDatabase{i}.force(1)],'FaceColor','y') hold on 
-    #     text(proteinDatabase{i}.contourLength(1)+5,proteinDatabase{i}.force(1)+10,proteinDatabase{i}.name)
-    # end
-    # xlabel('length increment [nm]') ylabel('force [pN]') title('Force-Extension Regimes')
-    # axis([0 100 0 320])
-
-
     # Use the protein database to deterimine the peak finding parameters
     minPeakDistance = 0
     minPeakHeight = 0
-    for i=1:length(proteinType)
-       if (i==1)
-           minPeakDistance = min(proteinDatabase{proteinType(i)}.contourLength)
-           minPeakHeight = min(proteinDatabase{proteinType(i)}.force)
-       else
-           if (min(proteinDatabase{proteinType(i)}.contourLength)<minPeakDistance)
-               minPeakDistance = min(proteinDatabase{proteinType(i)}.contourLength)       
-           end
-           if (min(proteinDatabase{proteinType(i)}.force)< minPeakHeight)
-               minPeakHeight = min(proteinDatabase{proteinType(i)}.force)           
-           end   
-       end
-    end
-
-
-    # load a recording
-    file=sprintf('#s',recordingType)
-    gooddata = importdata(file)
-    ## Add noise to the recording
-    noise=noiseLevel*sin(rand(length(gooddata(:,2)),1))+noiseLevel*rand(length(gooddata(:,2)),1)
-    noise = noise-mean(noise)
-    noises=sqrt(mean(gooddata(4900:5000,2).^2))
-    gooddata(:,2)=gooddata(:,2)+noise
-    # Compare noise levels
-    noises=sqrt(mean(gooddata(4900:5000,2).^2))-noises
-
-    # Start timing
-    tic
 
     # Define vectors
     forceData=gooddata(:,2)'
