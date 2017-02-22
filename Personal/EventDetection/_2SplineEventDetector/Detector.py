@@ -71,7 +71,7 @@ def _predict_helper(split_fec,threshold):
     n_points = split_fec.tau_num_points
     min_points_between = int(np.ceil(n_points/2))
     # N degree b-spline has continuous (N-1) derivative
-    interp = split_fec.retract_spline_interpolator(deg=3)
+    interp = split_fec.retract_spline_interpolator(deg=2)
     interp_first_deriv = interp.derivative(1)(time)
     # get the interpolated derivative
     interpolated_force = interp(time)
@@ -86,7 +86,11 @@ def _predict_helper(split_fec,threshold):
     stdev_masked = stdevs[slice_fit]
     q25,q75 = np.percentile(stdev_masked,[25,75])
     iqr = q75-q25
-    cdfs = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,scale=iqr)
+    scale_idx = np.where( (stdev_masked <= q75) & (stdev_masked >= q25))
+    scale = np.std(stdev_masked[scale_idx])
+    # XXX debugging...
+    chebyshev = (iqr/(stdev_masked-median_local_stdev))**2
+    cdfs = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,scale=scale)
     mask = np.where(cdfs <=  threshold)[0]
     # add back in the offset
     mask += min_points_between

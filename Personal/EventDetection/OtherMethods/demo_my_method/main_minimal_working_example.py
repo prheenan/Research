@@ -27,7 +27,7 @@ def run():
     event_slices = ex.get_retract_event_idx()
     time,separation,force = retract.Time,retract.Separation,retract.Force
     # XXX fix threshhold
-    thresh = 1e-3
+    thresh = 1e-6
     info = Detector._predict_helper(ex,threshold=thresh)
     event_idx_end,event_idx_start,event_idx = info.end,\
                                               info.start,\
