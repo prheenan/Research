@@ -114,8 +114,10 @@ def _predict_helper(split_fec,threshold):
     # place
     min_deriv_idx = [e.start + np.argmin(interp_first_deriv[e])
                      for e in event_slices]
+    max_force_idx = [e.start + np.argmax(force[e]) 
+                     for e in event_slices]
     # XXX probably want to walk back up to the maximum force?
-    event_idx = min_deriv_idx
+    event_idx = max_force_idx
     to_ret = prediction_info(event_idx = event_idx,
                              start_idx = event_idx_start,
                              end_idx   = event_idx_end,
