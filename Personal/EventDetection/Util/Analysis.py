@@ -237,7 +237,6 @@ def spline_interpolator(tau_x,x,f,deg=2):
     return interpolate.LSQUnivariateSpline(x=x,y=f,**spline_args)
 
 def auto_correlation_helper(auto):
-
     # normalize the auto correlation, add in a small bias to avoid 
     # taking the log of 0. data is normalized to 0->1, so it should be OK
     tol = 1e-9
@@ -246,9 +245,9 @@ def auto_correlation_helper(auto):
     # statistical norm goes from -1 to 1
     statistical_norm = (auto_norm - 0.5) * 2
     log_norm = np.log(auto_norm + tol)
-    fit_idx_max = np.where(statistical_norm < 0)[0]
-    assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under median"
-    # get the first time we cross under the median
+    fit_idx_max = np.where(auto_norm < 0.25)[0]
+    assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under threshold"
+    # get the first time we cross under the threshold
     fit_idx_max =  fit_idx_max[0]
     return auto_norm,statistical_norm,log_norm,fit_idx_max
     
