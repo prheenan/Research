@@ -207,7 +207,7 @@
 % see: http://tex.stackexchange.com/questions/7355/how-to-suppress-page-number
 \pagenumbering{roman}
 
-\title{Mapping Subsurface Elemental Composition Using X-ray Fluorescence}
+\title{An Algorithm for Event Detection by Bayesian Hypothesis Testing in Force Spectroscopy Data}
 \date{\today}
 \author{Patrick Heenan XXX The title page contains the thesis title; candidate's name; candidate's degrees, granting institutions, and dates received; statement shown on sample page ("A thesis submitted to ..."); name of department or school granting degree; and year the thesis is submitted (see sample title page).
  \\  University of Colorado at Boulder }
@@ -292,25 +292,9 @@ This paper describes a new method based on machine learning for detecting events
 
 \subsection{Sample Preparation}
 
-Site-specific chemistry, as described previously (XXX), is used improve \singlemol{} data quality and acquisition rate. The sample polymer is functionalized with DBCO at one end to ensure a covalent bond with an azide-functionalized surface, and the polymer is functionalized with biotin at the opposite end to ensure a specific but reversible bond with the streptavidin-coated tip. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination. This section describes how the desired samples, surfaces, and tips are created.
+Site-specific chemistry is used to improve \singlemol{} acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparaton has been described elsewhere (CITE XXX Rob) and in the appendix (XXX). Through polymerase chain reaction, double-stranded DNA is functionalized with DBCO at one end to ensure a covalent bond with an azide-functionalized surface, and the polymer is functionalized with biotin at the opposite end to ensure a specific but reversible bond with the streptavidin-coated tip. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination.
 
-\subsubsection{\sLabel{Surface}Azide-functionalied surfaces}
-
-\firstp Glass surfaces were smoothed using 3M Potassium Hydroxide etching as follows. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, 250mL of ACS grade acetone \supply{Fisher}{A18-4}, and transferred to a 3M solution of Potassium Hydroxide \supply{Fisher}{P250-500} on a benchtop for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water \supply{Barnstead}{GenPure Pro}. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature. \pl
-
-To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then rinsed serially in 250mL of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with Nitrogen gas and stored in a dust-proof container at 4\degreeC{}. \pl 
-
-\subsubsection{\sLabel{Sample}DNA Samples}
-
-\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include four biotinylated thyimine bases, and the forward-sense primer was modified to include a 5-prime DBCO after a PEG-spacer. After the desired PCR product was purified \supply{Qiagen}{28106} and the appropriate band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \pl 
-
-For DNA deposition, 20uL of the desired concentration of DNA (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see section XXX) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
-
-\subsubsection{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
-
-\firstp Functionalized cantilevers with nominal spring constants of 4 $\frac{\text{pN}}{nm}$  were used for all experiments. Functionalization etches away gold to improve force stability (XXX cite) and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying (XXX -- solvent rinses?), the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin, the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4 and submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loading into the atomic force microscope. \pl
-
-\subsubsection{\sLabel{Surface}Atomic force microscopy}
+\subsection{\sLabel{Surface}Atomic force microscopy}
 
 All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2s pause at the surface (see XXX) at the loading rates noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid. 
 
@@ -371,6 +355,24 @@ Appendix
 
 \subsection{Sample and Cantilever Preparation}
 
+
+\subsubsection{\sLabel{Surface}Azide-functionalied surfaces}
+
+\firstp Glass surfaces were smoothed using 3M Potassium Hydroxide etching as follows. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, 250mL of ACS grade acetone \supply{Fisher}{A18-4}, and transferred to a 3M solution of Potassium Hydroxide \supply{Fisher}{P250-500} on a benchtop for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water \supply{Barnstead}{GenPure Pro}. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature. \pl
+
+To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then rinsed serially in 250mL of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with Nitrogen gas and stored in a dust-proof container at 4\degreeC{}. \pl 
+
+\subsubsection{\sLabel{Sample}DNA Samples}
+
+\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include four biotinylated thyimine bases, and the forward-sense primer was modified to include a 5-prime DBCO after a PEG-spacer. After the desired PCR product was purified \supply{Qiagen}{28106} and the appropriate band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \pl 
+
+For DNA deposition, 20uL of the desired concentration of DNA (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see section XXX) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
+
+\subsubsection{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
+
+\firstp Functionalized cantilevers with nominal spring constants of 4 $\frac{\text{pN}}{nm}$  were used for all experiments. Functionalization etches away gold to improve force stability (XXX cite) and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying (XXX -- solvent rinses?), the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin, the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4 and submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loading into the atomic force microscope. \pl
+
+
 \subsection{Algorithm Design}
 
 This section detailis the mathematics and choices behind the event-detection algorithm. The following conventions are followed:
@@ -380,7 +382,7 @@ This section detailis the mathematics and choices behind the event-detection alg
  \item All variables with lowercase letters are either instances of the corresponding upppercase random variables (i.e., measurements) or pure functions. 
 \end{enumerate}
 
-\subsubsection{The no-event hypothesis}
+\subsubsection{Defining the no-event hypothesis}
 
 \firstp During an event, a force-extension curve exhibits a discontinuity in its first derivative in the absence of noise (XXX figure). The algorithm models the data assuming no event is occuring at a given extension 'q' and finds where the probability of a measurent is low. Hereafter, the assumption of no event at a given extension will be called \emph{no-event hypothesis}. 
 
@@ -390,7 +392,7 @@ This section detailis the mathematics and choices behind the event-detection alg
 
 \eqs{ F(q) = g(q) + X(0,\sigma^2) }
 
-where `g(q)' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The exact form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, |g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
+where `g(q)' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, |g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
 
 \eqs{ R(q) \equiv F(q) - g^{*}(q) = 
   \epsilon + X(0,\sigma^2)  }
