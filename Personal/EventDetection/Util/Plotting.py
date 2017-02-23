@@ -127,9 +127,10 @@ def plot_prediction_info(ex,info,xlabel="Time",
     retract = ex.retract
     event_slices = ex.get_retract_event_idx()
     time,separation,force = retract.Time,retract.Separation,retract.Force
-    event_idx_end,event_idx_start,event_idx = info.end,\
-                                              info.start,\
-                                              info.event_idx
+    event_slices_predicted = info.event_slices
+    event_idx_start = [e.start for e in event_slices_predicted]
+    event_idx_end = [e.stop for e in event_slices_predicted]
+    event_idx = info.event_idx
     mask = info.mask
     interp_first_deriv = info.interp.derivative(1)(time)
     # get the interpolated derivative
@@ -156,7 +157,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    plt.semilogy(x[info.slice_fit],info.cdf)
+    plt.semilogy(x,info.cdf)
     highlight_events(event_slices,x,info.cdf,linewidth=5,**style_events)
     plt.axhline(thresh,label="threshold",linestyle='--',color='r')
     PlotUtilities.lazyLabel("","No-Event CDF ","")

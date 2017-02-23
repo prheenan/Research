@@ -143,7 +143,7 @@ def run():
             # XXX fix threshhold
             fig = PlotUtilities.figure(figsize=(8,12))    
             Plotting.plot_prediction_info(example_split,info)
-            PlotUtilities.savefig(fig,cache_directory + id + "info.png")
+            PlotUtilities.savefig(fig,cache_directory + "info" + id + ".png")
 
     # get the negative events
     # XXX 
