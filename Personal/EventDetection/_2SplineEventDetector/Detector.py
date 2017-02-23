@@ -25,7 +25,7 @@ def local_stdev(f,n):
 
 class prediction_info:
     def __init__(self,event_idx,start_idx,end_idx,local_stdev,interp,mask,
-                 cdf,slice_fit):
+                 cdf,slice_fit,threshold):
         """
         record the data from _predict_helper
 
@@ -40,6 +40,8 @@ class prediction_info:
         
             slice_fit : slice within the original retract where we tried to 
             find events. We have to remove the first few and last few points
+            
+            threshold: the threshhold for determining an event
         Returns:
             prediction_info object
         """
@@ -51,6 +53,7 @@ class prediction_info:
         self.mask = mask
         self.cdf = cdf
         self.slice_fit = slice_fit
+        self.threshold = threshold
 
 def _predict_helper(split_fec,threshold):
     """
@@ -125,5 +128,5 @@ def _predict_helper(split_fec,threshold):
                              interp = interp,
                              mask = mask,
                              cdf=probability_distribution,
-                             slice_fit=slice_fit)
+                             slice_fit=slice_fit,threshold=threshold)
     return to_ret
