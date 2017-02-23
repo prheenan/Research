@@ -11,6 +11,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 from Research.Personal.EventDetection.Util import Analysis,Plotting,InputOutput
+from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
 class ForceExtensionCategory:
     def __init__(self,directory,velocity_nm_s,sample,has_events):
@@ -76,7 +77,6 @@ def debug_plotting(example,cache_directory,out_file_name):
     tau,auto_coeffs,auto_correlation = Analysis.\
         auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
     num_points = int(np.ceil(tau/dx))
-    print(num_points)
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)
     # XXX only look at after the nominal zero point?
@@ -95,7 +95,9 @@ def debug_plotting(example,cache_directory,out_file_name):
     # plot everything
     fig = PlotUtilities.figure(figsize=(8,20))
     Plotting.plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
-    PlotUtilities.savefig(fig,cache_directory + out_file_name + "out.png")        
+    PlotUtilities.savefig(fig,cache_directory + out_file_name + "out.png")    
+    # XXX this is a *bad* way of doing things (should pass example_split in)
+    return example_split
         
 def run():
     """
@@ -131,9 +133,17 @@ def run():
     set_and_cache_category_data(positive_categories,
                                 cache_directory=cache_directory,force=force,
                                 limit=limit)
+    thresh = 1e-2                                
+    # for each category, predict where events are
     for i,category in enumerate(positive_categories):
         for j,example in enumerate(category.data):
-            debug_plotting(example,cache_directory,"{:d}_{:d}".format(i,j))
+            id = "{:d}_{:d}".format(i,j)
+            example_split = debug_plotting(example,cache_directory,id)
+            info = Detector._predict_helper(example_split,threshold=thresh)
+            # XXX fix threshhold
+            fig = PlotUtilities.figure(figsize=(8,12))    
+            Plotting.plot_prediction_info(example_split,info)
+            PlotUtilities.savefig(fig,cache_directory + id + "info.png")
 
     # get the negative events
     # XXX 
