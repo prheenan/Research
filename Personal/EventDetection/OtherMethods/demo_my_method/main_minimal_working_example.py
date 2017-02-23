@@ -25,6 +25,15 @@ def run():
     """
     ex = method_helper.get_example()
     thresh = 5e-3
+    """
+    spline_interp = ex.retract_separaiton_interpolator()
+    plt.subplot(2,1,1)
+    plt.plot(ex.retract.Force)
+    plt.subplot(2,1,2)
+    plt.plot(ex.retract.Separation)
+    plt.show()
+    exit(1)
+    """
     info = Detector._predict_helper(ex,threshold=thresh)
     # XXX fix threshhold
     fig = PlotUtilities.figure(figsize=(8,12))    

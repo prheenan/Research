@@ -137,6 +137,45 @@ def _event_slices_from_mask(mask,min_points_between):
                     for start,end in zip(event_idx_start,event_idx_end)]    
     return event_slices
     
+def _predict(x,y,n_points,interp,threshold,local_event_idx_function):
+    """
+    general method to predict the event boundaries and centers
+    
+    Args:
+        x: see _event_probabilities
+        y: see _event_probabilities
+        n_points: see _event_probabilities
+        interp: see _event_probabilities
+        threshold: see _event_probabilities
+        local_event_idx_function: a function which takes a slice of y as its 
+        only argument and returns the most likely index of an event. the slice
+        passsed should have only one event
+        
+    Returns:
+        list of event slices
+    """
+    min_points_between = int(np.ceil(n_points/2))    
+    probability_distribution,slice_fit,stdevs = \
+        _event_probabilities(x,y,interp,n_points,threshold)
+    mask = _event_mask(probability_distribution,threshold)
+    if (mask.size > 0):
+        event_slices = _event_slices_from_mask(mask,min_points_between)
+    else:
+        event_slices = []
+    # determine where the first derivative is minimal (most negative, XXX check)
+    # in each slice; that is the strongest indicator that an event is taking 
+    # place
+    event_idx = [e.start + local_event_idx_function(y[e]) for e in event_slices]
+    to_ret = prediction_info(event_idx = event_idx,
+                             event_slices = event_slices,
+                             local_stdev = stdevs,
+                             interp = interp,
+                             mask = mask,
+                             cdf=probability_distribution,
+                             slice_fit=slice_fit,
+                             threshold=threshold)
+    return to_ret                                
+                             
 def _predict_helper(split_fec,threshold):
     """
     uses spline interpolation and local stadard deviations to predict
@@ -154,28 +193,13 @@ def _predict_helper(split_fec,threshold):
     retract = split_fec.retract
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
+    local_event_idx_function = lambda data_to_search : np.argmax(data_to_search)
     # N degree b-spline has continuous (N-1) derivative
     interp = split_fec.retract_spline_interpolator(deg=2)
-    min_points_between = int(np.ceil(n_points/2))    
-    probability_distribution,slice_fit,stdevs = \
-        _event_probabilities(time,force,interp,n_points,threshold)
-    mask = _event_mask(probability_distribution,threshold)
-    if (mask.size > 0):
-        event_slices = _event_slices_from_mask(mask,min_points_between)
-    else:
-        event_slices = []
-    # determine where the first derivative is minimal (most negative, XXX check)
-    # in each slice; that is the strongest indicator that an event is taking 
-    # place
-    max_force_idx = [e.start + np.argmax(force[e]) for e in event_slices]
-    # XXX probably want to walk back up to the maximum force?
-    event_idx = max_force_idx
-    to_ret = prediction_info(event_idx = event_idx,
-                             event_slices = event_slices,
-                             local_stdev = stdevs,
-                             interp = interp,
-                             mask = mask,
-                             cdf=probability_distribution,
-                             slice_fit=slice_fit,
-                             threshold=threshold)
+    to_ret = _predict(x=time,
+                      y=force,
+                      n_points=n_points,
+                      interp=interp,
+                      threshold=threshold,
+                      local_event_idx_function=local_event_idx_function)
     return to_ret
