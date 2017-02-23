@@ -25,7 +25,7 @@ def get_events(file_name):
     """
     # get the file without the '.pxp' extension
     f_no_ext = file_name[:-4]
-    # add on the suffix for the events
+    # add on the suffix for the events ( by convention)
     f_events = f_no_ext + "_events.txt"
     # read in the (csv) file
     assert os.path.isfile(f_events) , \
@@ -120,6 +120,36 @@ def set_events_of_data(data,events):
         print("Warning: The following events were unused: {:s}".format(unused))
     print("{:d}/{:d} events matched".format(n_matched,n_events))
 
+def output_waves_in_directory_to_csv_files(input_directory,output_directory):
+    """
+    reads all the waves from all pxp files in input_directory and outputs
+    as csv files
+
+    Args:
+        input_directory: where to search for pxp files
+        output_directory: where to put the csv files
+    Returns:
+        Nothing, prints as it goes.
+    """
+    d,d_out = input_directory, output_directory
+    # make the output directory 
+    GenUtilities.ensureDirExists(d_out)
+    # go through each PXP in this directory
+    print("Looking in {:s} for force-extension curves...".format(d))
+    files_data_events = read_single_directory_with_events(d)
+    n_curves = sum([len(d) for _,d,_ in files_data_events])
+    print("Found {:d} curves".format(n_curves))
+    for file_path,data,ev in files_data_events:
+        set_events_of_data(data,ev)
+        # POST: all data are set. go ahead and save them out.
+        n = len(data)
+        for i,dat in enumerate(data):
+            file_name = os.path.basename(file_path)
+            meta_name = dat.Meta.Name
+            output_path = d_out + file_name + "_"+ meta_name+ ".csv"
+            print("\t Saving out {:s} ({:d}/{:d})".format(meta_name,i+1,n))                
+            FEC_Util.save_time_sep_force_as_csv(output_path,dat) 
+            
 def run():
     """
     utility process which reads in asylum-style pxp files and converts them and
@@ -130,27 +160,13 @@ def run():
     output_base_directory = base_directory + "Masters_CSCI/"
     positive_directory = output_base_directory + "Positive/"
     relative_650 = "650nm-4x-bio/pxp/"
-    relative_input_dir = [relative_650 + "1000-nanometers-per-second/",
+    relative_input_dir = [relative_650 + "100-nanometers-per-second/",
+                          relative_650 + "1000-nanometers-per-second/",
                           relative_650 + "500-nanometers-per-second/"]
     absolute_input_dir = [positive_directory + d for d in relative_input_dir]
     absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
-    files_data_events = [read_single_directory_with_events(d) 
-                         for d in absolute_input_dir]
     for i,(d,d_out) in enumerate(zip(absolute_input_dir,absolute_output_dir)):
-        # make the output directory 
-        GenUtilities.ensureDirExists(d_out)
-        # go through each PXP in this directory
-        print("Looking in {:s} for force-extension curves...".format(d))
-        for file_path,data,ev in files_data_events[i]:
-            set_events_of_data(data,ev)
-            # POST: all data are set. go ahead and save them out.
-            n = len(data)
-            for i,dat in enumerate(data):
-                file_name = os.path.basename(file_path)
-                meta_name = dat.Meta.Name
-                output_path = d_out + file_name + "_"+ meta_name+ ".csv"
-                print("\t Saving out {:s} ({:d}/{:d})".format(meta_name,i+1,n))                
-                FEC_Util.save_time_sep_force_as_csv(output_path,dat)
+        output_waves_in_directory_to_csv_files(d,d_out)
     
 
 if __name__ == "__main__":

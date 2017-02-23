@@ -64,40 +64,7 @@ def set_and_cache_category_data(categories,force,cache_directory,limit):
         # set the data in this category
         r_obj.set_data(data_in_category)    
         
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    network = FEC_Util.default_data_root()
-    base_directory = network + "/4Patrick/CuratedData/Masters_CSCI/"
-    positives_directory = base_directory + "Positive/"
-    negatives_directory = "XXX TODO"
-    cache_directory = "./cache/"
-    # tuple of <relative directory,sample,velocity> for FEC with events
-    positive_meta = \
-      [[positives_directory + "650nm-4x-bio/csv/500-nanometers-per-second/",
-        "650nm DNA",500]]
-    # tuple of <relative directory,sample,velocity> for FEC without events
-    negative_meta = \
-      [[negatives_directory + "/500-nanometers-per-second/csv/",
-        "Negative Control",500]]
-    # create objects to represent our data categories
-    positive_categories = [ForceExtensionCategory(*r,has_events=True) 
-                           for r in positive_meta]
-    force = False
-    # limit (per category)
-    limit = 1
-    # get the positive events
-    set_and_cache_category_data(positive_categories,
-                                cache_directory=cache_directory,force=force,
-                                limit=limit)
-    example = positive_categories[0].data[0]
+def debug_plotting(example,cache_directory,out_file_name):    
     example_split = Analysis.split_FEC_by_meta(example)
     approach = example_split.approach
     retract = example_split.retract 
@@ -109,7 +76,6 @@ def run():
     tau,auto_coeffs,auto_correlation = Analysis.\
         auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
     num_points = int(np.ceil(tau/dx))
-    print(num_points)
     # zero out everything to the approach using the autocorrelation time 
     Analysis.zero_by_approach(example_split,num_points)
     # XXX only look at after the nominal zero point?
@@ -128,7 +94,46 @@ def run():
     # plot everything
     fig = PlotUtilities.figure(figsize=(8,20))
     Plotting.plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
-    PlotUtilities.savefig(fig,cache_directory + "out.png")
+    PlotUtilities.savefig(fig,cache_directory + out_file_name + "out.png")        
+        
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    network = FEC_Util.default_data_root()
+    base_directory = network + "/4Patrick/CuratedData/Masters_CSCI/"
+    positives_directory = base_directory + "Positive/650nm-4x-bio/csv/"
+    negatives_directory = "XXX TODO"
+    cache_directory = "./cache/"
+    # tuple of <relative directory,sample,velocity> for FEC with events
+    positive_meta = \
+      [[positives_directory + "500-nanometers-per-second/","650nm DNA",500],
+       [positives_directory + "100-nanometers-per-second/","650nm DNA",100],
+       [positives_directory + "1000-nanometers-per-second/","650nm DNA",1000]]
+    # tuple of <relative directory,sample,velocity> for FEC without events
+    negative_meta = \
+      [[negatives_directory + "/500-nanometers-per-second/csv/",
+        "Negative Control",500]]
+    # create objects to represent our data categories
+    positive_categories = [ForceExtensionCategory(*r,has_events=True) 
+                           for r in positive_meta]
+    force = False
+    # limit (per category)
+    limit = 1
+    # get the positive events
+    set_and_cache_category_data(positive_categories,
+                                cache_directory=cache_directory,force=force,
+                                limit=limit)
+    for i,category in enumerate(positive_categories):
+        for j,example in enumerate(category.data):
+            debug_plotting(example,cache_directory,"{:d}_{:d}".format(i,j))
+
     # get the negative events
     # XXX 
 
