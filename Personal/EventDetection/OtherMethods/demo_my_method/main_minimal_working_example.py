@@ -8,23 +8,9 @@ import sys
 sys.path.append("../../../../../")
 from Research.Personal.EventDetection.OtherMethods import method_helper
 from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
+from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
 from GeneralUtil.python import PlotUtilities
-
-def local_stdev(f,n):
-    """
-    Gets the local standard deviaiton (+/- n, except at boundaries 
-    where it is just in the direction with data
-
-    Args:
-        f: what we want the stdev of
-        n: window size
-    Returns:
-        array, same size as f, with the dat we want
-    """
-    max_n = f.size
-    return np.array([np.std(f[max(0,i-n):min(max_n,i+n)]) 
-                     for i in range(max_n)])
 
 def run():
     """
@@ -38,61 +24,56 @@ def run():
     """
     ex = method_helper.get_example()
     retract = ex.retract
-    time,separation,force = retract.Time,retract.Separation,retract.Force
-    n_points = ex.tau_num_points
-    # N degree b-spline has continuous (N-1) derivative
-    interp = ex.retract_spline_interpolator(deg=3)
-    interp_second = interp.derivative(2)
-    # get the interpolated derivative
-    interpolated_force = interp(time)
     event_slices = ex.get_retract_event_idx()
-    # get a model for the local standard deviaiton using the autocorrelation
-    # time from the event
-    diff = force-interpolated_force
-    stdevs = local_stdev(diff,n_points)
-    global_stdev = np.std(diff)
-    median_local_stdev = np.median(stdevs)
-    thresh = median_local_stdev*1.1
+    time,separation,force = retract.Time,retract.Separation,retract.Force
+    # XXX fix threshhold
+    thresh = 5e-3
+    info = Detector._predict_helper(ex,threshold=thresh)
+    event_idx_end,event_idx_start,event_idx = info.end,\
+                                              info.start,\
+                                              info.event_idx
+    mask = info.mask
+    interp_first_deriv = info.interp.derivative(1)(time)
+    # get the interpolated derivative
+    interpolated_force = info.interp(time)
+    tau = ex.tau
+    stdevs = info.local_stdev
     # plot everything
     style_events = dict(color='r',label="True events")
-    time_limits = [min(time),max(time)]
     fig = PlotUtilities.figure()
-    plt.subplot(3,1,1)
-    plt.plot(time,force,color='k',alpha=0.3)
-    plt.plot(time,interpolated_force,color='b',linewidth=2)
+    n_plots = 3
+    x = time
+    min_x,max_x = min(x),max(x)
+    x_range = max_x - min_x
+    fudge = x_range * 0.05
+    x_limits = [min_x - fudge,max_x + fudge]
+    x_label = "Time"
+    plt.subplot(n_plots,1,1)
+    plt.plot(x,force,color='k',alpha=0.3)
+    plt.plot(x,interpolated_force,color='b',linewidth=2)
     Plotting.highlight_events(event_slices,time,force,
                               **style_events)
     PlotUtilities.lazyLabel("","Force (au)","")
-    plt.xlim(time_limits)
-    plt.subplot(3,1,2)
-    plt.plot(time,stdevs)
+    plt.xlim(x_limits)
+    plt.subplot(n_plots,1,2)
     # plot the autocorrelation time along the plot
-    min_x_auto = min(time) * 1.1
+    min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+ex.tau]
-    plt.plot(auto_correlation_x, [np.max(stdevs),np.max(stdevs)],
-             linewidth=5,color='g',label="autocorrelation time")
-    Plotting.highlight_events(event_slices,time,stdevs,linewidth=5,
+    plt.semilogy(x[info.slice_fit],info.cdf)
+    Plotting.highlight_events(event_slices,x,info.cdf,linewidth=5,
                               **style_events)
-    PlotUtilities.lazyLabel("a","Local Stdev","")
-    plt.axhline( thresh,label="threshold",linestyle='--',color='r')
-    plt.xlim(time_limits)
-    plt.subplot(3,1,3)
-    mask = np.where(stdevs >  thresh)[0]
+    plt.axhline(thresh,label="threshold",linestyle='--',color='r')
+    PlotUtilities.lazyLabel("","CDF ","")
+    plt.xlim(x_limits)
+    plt.subplot(n_plots,1,3)
     # XXX check mask has at least one...
-    print(mask)
-    peak_starts_after_first = mask[np.where(np.diff(mask) > 1)]
-    peak_starts = [mask[0]]
-    peak_starts.extend(peak_starts_after_first)
-    peak_ends = list(peak_starts_after_first-1)
-    peak_ends.extend(mask[-1])
-    print(peak_starts)
-    print(peak_ends)
-    event_centers = [np.mean([start,end]) 
-                     for start,end in zip(peak_starts,peak_ends)]
-    plt.plot(time,stdevs,'b.')
-    Plotting.highlight_events(event_centers,time,stdevs,linewidth=5,
-                              **style_events)
-    plt.xlim(time_limits)
+    plt.plot(x,force,'b-',color='k',alpha=0.3)
+    for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
+        plt.axvline(x[fwd],linestyle='--',color='r')
+        plt.axvline(x[rev],color='g')
+        plt.axvline(x[event],linewidth=3)
+    plt.xlim(x_limits)
+    PlotUtilities.lazyLabel(x_label,"Force","")
     PlotUtilities.savefig(fig,"./out.png")
 
 if __name__ == "__main__":
