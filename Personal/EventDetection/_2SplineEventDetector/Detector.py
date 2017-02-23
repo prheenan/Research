@@ -88,10 +88,17 @@ def _predict_helper(split_fec,threshold):
     iqr = q75-q25
     scale_idx = np.where( (stdev_masked <= q75) & (stdev_masked >= q25))
     scale = np.std(stdev_masked[scale_idx])
-    # XXX debugging...
-    chebyshev = (iqr/(stdev_masked-median_local_stdev))**2
-    cdfs = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,scale=scale)
-    mask = np.where(cdfs <=  threshold)[0]
+    # note: chebyshev is like
+    # P(|X - mu| >=  k * sigma) <= 1/k^2
+    # we write k = (s(q) - epsilon)/scale
+    k_chebyshev = (stdev_masked-median_local_stdev)/scale
+    # note: chebyshev cant be more than 1 (could happen if the stdev is really 
+    # close to the mean)
+    chebyshev = np.minimum((1/k_chebyshev)**2,1)
+    norm_dist = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,
+                                 scale=scale)
+    probability_distribution = chebyshev
+    mask = np.where(probability_distribution <= threshold)[0]
     # add back in the offset
     mask += min_points_between
     last_point = mask[-1]
@@ -107,6 +114,7 @@ def _predict_helper(split_fec,threshold):
     # place
     min_deriv_idx = [e.start + np.argmin(interp_first_deriv[e])
                      for e in event_slices]
+    # XXX probably want to walk back up to the maximum force?
     event_idx = min_deriv_idx
     to_ret = prediction_info(event_idx = event_idx,
                              start_idx = event_idx_start,
@@ -114,6 +122,6 @@ def _predict_helper(split_fec,threshold):
                              local_stdev = stdevs,
                              interp = interp,
                              mask = mask,
-                             cdf=cdfs,
+                             cdf=probability_distribution,
                              slice_fit=slice_fit)
     return to_ret

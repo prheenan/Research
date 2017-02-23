@@ -322,49 +322,6 @@ All atomic force microscopy measurements were carried out using an Asylum Cypher
 
 XXX inttro
 
-\subsubsection{Mathematical background for hypothesis testing}
-
-\firstp During an event, a force-extension curve exhibits a discontinuity in its first derivative in the absence of noise (XXX figure). In the absence of events, the noise-dependent distribution of force `f' at extension `q' for a single force-extension curve is given (XXX Figure) by the following:
-
-\eqs{ f(q) = g(q) + X(0,\sigma^2) }
-
-where `g(q)' is the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The exact form of the noiseless force and the noise distribution are unknown. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, |g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
-
-\eqs{ R(q) \equiv f(q) - g^{*}(q) = 
-  \epsilon + X(0,\sigma^2)  }
-
-The mean of R(q) is $\epsilon$, and the variance of R(q) is given by:
-
-\eqs{ E[R(q)]^2 - E[R(q)^2] = E[X(0,\sigma)^2] }
-
-where `E' is the expectation value. The noise is then given by
-
-\eqs{ \sigma = \sqrt{E[R(q)]^2 - E[R(q)^2] } }
-
-The probability `P' of measuring r(q) is bounded by Chebyshev's inequality is:
-
-\eqs{ P( |R(q)-\epsilon| \ge r(q)-\epsilon ) \le
- (\frac{\sigma}{r(q)-\epsilon})^2 }
-
-It follows that for \emph{any} noise distribution, given an approximation for the force as a function of extension $g^{*}(q)$, the estimator error $\epsilon$, and the noise $\sigma$, the probability of a measurement in the absence of events can be estimated. A low probability at a given extension implies the measurement is unlikely under the hypothesis that there is no event at a given extension. 
-
-\subsubsection{Accurate estimators for hypothesis testing}
-
-XXX autocorrelation time motivation \pl 
-
-The approximation to the noiseless force $g^{*}(q)$ is obtained by fitting a least-squares second-order basis spline (b-spline, XXX) to the force versus extension curve. The spline is second-order to ensure a continuous first derivative (see XXX), and the spline knots are spaced uniformly at intervals of $\tau$. Figure XXX is a representative demonstration of the spline fitting. Determining  $g^{*}(q)$ immediately gives r(q) by eq XX.  \pl
-
-Using r(q) as shown in eq XXX does not provide a strong signal in the presence of an event(see supplemental Figure XXX). In order to improve the method, the distribution of windowed standard deviations `s(q)' centered at q with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of r(q) in the algorithm. Using s(q) instead of r(q) provides a much stronger signal (see Figure XXX).  \pl
-
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations s(q). From this distribution, $\sigma$ is set to the standard deviation of s(q) within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to limit the influence of possible outlying events (XXX supplmental why this is better) \pl
-
-XXX table?
-
-\subsubsection{Improvements}
-
-XXX figure out how to determine where the adhesion ends.
-
-
 \section{\sLabel{Results}Results}
 
 \section{\sLabel{Discussion}Discussion}
@@ -411,6 +368,53 @@ Bibliography
 \clearpage
 
 Appendix
+
+\section{Algorithm Design}
+
+
+\subsection{Mathematical background for hypothesis testing}
+
+\firstp During an event, a force-extension curve exhibits a discontinuity in its first derivative in the absence of noise (XXX figure). In the absence of events, the noise-dependent distribution of force `f' at extension `q' for a single force-extension curve is given (XXX Figure) by the following:
+
+\eqs{ f(q) = g(q) + X(0,\sigma^2) }
+
+where `g(q)' is the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The exact form of the noiseless force and the noise distribution are unknown. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, |g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
+
+\eqs{ R(q) \equiv f(q) - g^{*}(q) = 
+  \epsilon + X(0,\sigma^2)  }
+
+The mean of R(q) is $\epsilon$, and the variance of R(q) is given by:
+
+\eqs{ E[R(q)]^2 - E[R(q)^2] = E[X(0,\sigma)^2] }
+
+where `E' is the expectation value. The noise is then given by
+
+\eqs{ \sigma = \sqrt{E[R(q)]^2 - E[R(q)^2] } }
+
+The probability `P' of measuring r(q) is bounded by Chebyshev's inequality is:
+
+\eqs{ P( |R(q)-\epsilon| \ge r(q)-\epsilon ) \le
+ (\frac{\sigma}{r(q)-\epsilon})^2 }
+
+It follows that for \emph{any} noise distribution, given an approximation for the force as a function of extension $g^{*}(q)$, the estimator error $\epsilon$, and the noise $\sigma$, the probability of a measurement in the absence of events can be estimated. A low probability at a given extension implies the measurement is unlikely under the hypothesis that there is no event at a given extension. 
+
+\subsection{Accurate estimators for hypothesis testing}
+
+XXX autocorrelation time motivation \pl 
+
+The approximation to the noiseless force $g^{*}(q)$ is obtained by fitting a least-squares second-order basis spline (b-spline, XXX) to the force versus extension curve. The spline is second-order to ensure a continuous first derivative (see XXX), and the spline knots are spaced uniformly at intervals of $\tau$. Figure XXX is a representative demonstration of the spline fitting. Determining  $g^{*}(q)$ immediately gives r(q) by eq XX.  \pl
+
+Using r(q) as shown in eq XXX does not provide a strong signal in the presence of an event(see supplemental Figure XXX). In order to improve the method, the distribution of windowed standard deviations `s(q)' centered at q with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of r(q) in the algorithm. Using s(q) instead of r(q) provides a much stronger signal (see Figure XXX).  \pl
+
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations s(q). From this distribution, $\sigma$ is set to the standard deviation of s(q) within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to limit the influence of possible outlying events (XXX supplmental why this is better) \pl
+
+XXX table?
+
+\subsection{Improvements}
+
+XXX figure out how to determine where the adhesion ends.
+
+
 
 
 \end{document}

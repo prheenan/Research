@@ -27,7 +27,7 @@ def run():
     event_slices = ex.get_retract_event_idx()
     time,separation,force = retract.Time,retract.Separation,retract.Force
     # XXX fix threshhold
-    thresh = 1e-6
+    thresh = 5e-3
     info = Detector._predict_helper(ex,threshold=thresh)
     event_idx_end,event_idx_start,event_idx = info.end,\
                                               info.start,\
@@ -42,7 +42,7 @@ def run():
     style_events = dict(color='r',label="True events")
     fig = PlotUtilities.figure()
     n_plots = 3
-    x = separation
+    x = time
     min_x,max_x = min(x),max(x)
     x_range = max_x - min_x
     fudge = x_range * 0.05
