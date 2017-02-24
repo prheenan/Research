@@ -77,35 +77,33 @@ def adhesion_mask(surface_index,n_points,probability_distribution,threshold):
     events_containing_surface = [e for e in event_boundaries  
                                  if (e.start <= min_idx)]
     if (len(events_containing_surface) == 0):
+        print("nope!")
         return to_ret 
     # POST: at least one event contains the surface. Update the minimum index
     # to go to the end of the (last) event below or at the surface, unless
     # the end's end is below the surface, then just stick to our guns
-    min_idx = max(events_containing_surface[-1].stop,min_idx)
-    no_event_boundaries = _event_slices_from_mask(no_event_mask,
-                                                  min_points_between)
-    no_event_starts = [e.start for e in no_event_boundaries]
-    no_event_starts_after_surface = [s for s in no_event_starts if s >= min_idx]
-    PlotUtilities.figure((8,12))
-    Plotting.debug_plot_adhesion_info(probability_distribution,no_event_mask,
-                                      min_idx,no_event_boundaries,
-                                      event_boundaries,threshold)
-    plt.show()                                
-    if (len(no_event_starts_after_surface) == 0):
-        # everything is always an event after the surface. Not much we can do,
-        # so dont mess with to_ret
-        pass
-    else:
-        # zero out everything until the first non-event
-        first_start_after_surface = no_event_starts_after_surface[0]
-        # XXX add in minimum distance between?
-        # XXX add in 'need to not have an event for a certain amount of time'?
-        to_ret[:first_start_after_surface] = 0
+    idx_after_last_surface_event = events_containing_surface[-1].stop + \
+                                   min_points_between
+    to_ret[:idx_after_last_surface_event] = 0
+    # determine when we go back the median 
+    med = np.median(probability_distribution)
+    where_greater_than_median = np.where(probability_distribution > med)[0]
+    event_boundaries = _event_slices_from_mask(where_greater_than_median,
+                                               min_points_between)
+    event_boundaries = [e for e in event_boundaries 
+                        if e.start >  idx_after_last_surface_event
+                        and e.stop-e.start > min_points_between]
+    if (len(where_greater_than_median) == 0):
+        return to_ret
+    # POST: have some point greater than the last 
+    final_event_boundary = event_boundaries[0].start                                     
+    min_idx = max(idx_after_last_surface_event,min_idx)
+    to_ret[min_idx] = 0
     return to_ret                     
                      
 class prediction_info:
     def __init__(self,event_idx,event_slices,local_stdev,interp,mask,
-                 cdf,slice_fit,threshold):
+                 cdf,slice_fit,threshold,condition_result=None):
         """
         record the data from _predict_helper
 
@@ -121,6 +119,7 @@ class prediction_info:
             find events. We have to remove the first few and last few points
             
             threshold: the threshhold for determining an event
+            condition_result: mask used for adhesion, boolean array like cdf
         Returns:
             prediction_info object
         """
@@ -132,6 +131,7 @@ class prediction_info:
         self.cdf = cdf
         self.slice_fit = slice_fit
         self.threshold = threshold
+        self.condition_result = condition_result
 
 def _event_mask(probability,threshold,condition_function=None):
     """
@@ -145,15 +145,17 @@ def _event_mask(probability,threshold,condition_function=None):
         threshold, and returning a boolean 1/0 array; a 1 is required for an 
         event
     Returns:
-        indices where the probability is less than the threshold
+        tuple of (indices where the probability is less than the threshold
+        and condition function is met, condition function boolean mask)
     """
     boolean_thresh = (probability <= threshold)
     if (condition_function is not None):  
         condition_result = condition_function(probability,threshold)
         conditions =(boolean_thresh & condition_result)
     else:
+        condition_result = None
         conditions = boolean_thresh  
-    return np.where(conditions)[0]
+    return np.where(conditions)[0],condition_result
         
 def _event_probabilities(x,y,interp,n_points,threshold):
     """
@@ -191,7 +193,8 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     # note: chebyshev is like
     # P(|X - mu| >=  k * sigma) <= 1/k^2
     # we write k = (s(q) - epsilon)/scale
-    k_chebyshev = (stdev_masked-median_local_stdev)/scale
+    denom = (stdev_masked-median_local_stdev)
+    k_chebyshev = denom/scale
     # note: chebyshev cant be more than 1 (could happen if the stdev is really 
     # close to the mean)
     chebyshev = np.minimum((1/k_chebyshev)**2,1)
@@ -249,7 +252,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     min_points_between = _min_points_between(n_points)
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold)
-    mask = _event_mask(probability_distribution,threshold,condition_function)
+    mask,condition_result = _event_mask(probability_distribution,
+                                        threshold,condition_function)
     # only keep points where we are farther than min_points between from the 
     # edges (ie: from index 0 and N-1)
     n = mask.size
@@ -259,9 +263,12 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         event_slices = _event_slices_from_mask(mask,min_points_between)
     else:
         event_slices = []
-    # determine where the first derivative is minimal (most negative, XXX check)
-    # in each slice; that is the strongest indicator that an event is taking 
-    # place
+    # determine where the events are happening locally (guarentee at least
+    # a search window of min_points)
+    remainder_split = [ int(np.ceil((min_points_between-(e.stop-e.start)/2)))
+                        for e in event_slices]
+    event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
+                    for event,remainder in zip(event_slices,remainder_split)]
     event_idx = [e.start + local_event_idx_function(y[e]) for e in event_slices]
     to_ret = prediction_info(event_idx = event_idx,
                              event_slices = event_slices,
@@ -270,7 +277,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                              mask = mask,
                              cdf=probability_distribution,
                              slice_fit=slice_fit,
-                             threshold=threshold)
+                             threshold=threshold,
+                             condition_result=condition_result)
     return to_ret                                
                              
 def _predict_helper(split_fec,threshold,**kwargs):

@@ -164,9 +164,14 @@ def plot_prediction_info(ex,info,xlabel="Time",
     highlight_events(event_slices,x,info.cdf,linewidth=5,**style_events)
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
-    plt.semilogy(x,mask_boolean+1e-6,label="mask for events")
-    plt.axhline(thresh,label="threshold",linestyle='--',color='r')
-    PlotUtilities.lazyLabel("","No-Event CDF ","")
+    tol=min(info.cdf/2)
+    plt.semilogy(x,mask_boolean+tol,alpha=0.7,linestyle='--',color='r',
+                 label="mask for events")
+    plt.semilogy(x,info.condition_result+tol,alpha=0.7,linestyle='-.',color='b',
+                 label="mask for adhesions")
+    plt.axhline(thresh,label="threshold",linestyle='-',color='k')
+    PlotUtilities.lazyLabel("","No-Event CDF ","",frameon=True,
+                            loc='lower right')
     plt.xlim(x_limits)
     plt.subplot(n_plots,1,3)
     # XXX check mask has at least one...
@@ -205,7 +210,8 @@ def plot_classification(split_object,scoring_object):
     PlotUtilities.lazyLabel("Time (s)","Force(pN)","")
 
 def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
-                             no_event_boundaries,event_boundaries,threshold):
+                             no_event_boundaries,event_boundaries,threshold,
+                             to_ret):
     """
     Used  insides of Detector.adhesion_mask to tell wtf is happening
     
@@ -220,7 +226,7 @@ def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
     plt.plot(probability_distribution,color='g',linewidth=0.5)
     for i,e in enumerate(no_event_boundaries):
         label = "no event start" if i ==0 else None
-        plt.axvline(e.start,linestyle='--',color='r',alpha=0.3,
+        plt.axvline(e.start,linestyle='-',color='r',alpha=0.3,
                     label=label)
     for i,e in enumerate(event_boundaries):
         label_start = "event start" if i ==0 else None    
@@ -229,12 +235,14 @@ def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
                     label=label_start)
         plt.axvline(e.stop,linestyle='-.',color='b',linewidth=4,alpha=0.5,
                     label=label_end)        
-    plt.axvline(min_idx,linewidth=4,color='k',label="minimum index used")
+    plt.axvline(min_idx,linewidth=4,color='k',alpha=0.3,linestyle="--",
+                label="minimum index used")
     plt.axhline(threshold,label="probability threshold")
+    plt.yscale('log')
     PlotUtilities.lazyLabel("","probability","",loc="upper right",
                             frameon=True) 
     plt.subplot(2,1,2)
-    plt.plot(boolean_debug)
+    plt.plot(to_ret)
     PlotUtilities.lazyLabel("index (au)","boolean no event mask","",
                             loc="upper right")
         
