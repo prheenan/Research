@@ -54,7 +54,7 @@ def run():
         This is a description of what is returned.
     """
     ex = method_helper.get_example()
-    thresh = 0.02
+    thresh = 5e-3
     # XXX : get first index where less than the threshold after surface index?
     surface_index = ex.get_predicted_retract_surface_index()
     adhesion_func = lambda *args: adhesion_mask(surface_index,*args)

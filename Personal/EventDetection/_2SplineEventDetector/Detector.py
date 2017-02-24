@@ -33,7 +33,7 @@ class prediction_info:
             event_idx : the event centers we found
             start_idx : the boundaries found for events
             local_stdev : the local standad deviation at each point in slice_fit
-            interp_mask : points considered valid in slice_fit
+            mask : indices where an event is possible
             cdf : cummulative density function for the probability of a point
             in slice_fit, given the model of the data we have
         
@@ -135,14 +135,15 @@ def _event_slices_from_mask(mask,min_points_between):
     Returns:
         list of event slices
     """
-    mask_offset = mask[min_points_between:-min_points_between]
-    idx_step_changes = np.where(np.diff(mask_offset) >= min_points_between)[0]
-    step_end_idx = mask_offset[idx_step_changes]
-    step_start_idx = mask_offset[(idx_step_changes + 1)]
-    event_idx_end = list(step_end_idx) + [mask_offset[-1]] 
-    event_idx_start = [mask_offset[0]] + list(step_start_idx)
-    offset = min_points_between
-    event_slices = [slice(start+offset,end+offset,1) 
+    idx_step_changes = np.where(np.diff(mask) >= min_points_between)[0]
+    # mask[idx_step_changes] gives the end of event i, for some i 
+    # mask[idx_step_changes+1] gives the start of event (i+1), for the same i
+    step_end_idx = mask[idx_step_changes]
+    step_start_idx = mask[(idx_step_changes + 1)]
+    # need to incllude the endpoints to get the proper events
+    event_idx_end = list(step_end_idx) + [mask[-1]] 
+    event_idx_start = [mask[0]] + list(step_start_idx)
+    event_slices = [slice(start,end,1) 
                     for start,end in zip(event_idx_start,event_idx_end)]    
     return event_slices
     
@@ -169,6 +170,11 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold)
     mask = _event_mask(probability_distribution,threshold,condition_function)
+    # only keep points where we are farther than min_points between from the 
+    # edges (ie: from index 0 and N-1)
+    n = mask.size
+    mask = mask[np.where( (mask >= min_points_between ) | 
+                          (mask <= n-min_points_between ) )]
     if (mask.size > 0):
         event_slices = _event_slices_from_mask(mask,min_points_between)
     else:
