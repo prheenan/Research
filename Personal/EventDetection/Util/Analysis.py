@@ -28,7 +28,7 @@ class split_force_extension:
         """
         x,f = self.retract.Time,self.retract.Force
         return spline_interpolator(self.tau,x,f,**kwargs)
-    def retract_separaiton_interpolator(self,**kwargs):
+    def retract_separation_interpolator(self,**kwargs):
         """
         returns an interpolator for separation based on the stored time
         constant tau for the retract force versus time curbe
@@ -96,6 +96,11 @@ class split_force_extension:
         """
         get_mean = lambda ev: int(np.round(np.mean([ev.start,ev.stop]) ))
         return [ get_mean(ev) for ev in  self.get_retract_event_idx()]
+    def get_predicted_retract_surface_index(self):
+        """
+        Assuming this have been zeroed, get the predicted retract surface index
+        """
+        return np.where(self.retract.Separation >= 0)[0][0]
 
 def get_surface_index(obj,n_smooth,last_less_than=True):
     """

@@ -53,7 +53,7 @@ class prediction_info:
         self.slice_fit = slice_fit
         self.threshold = threshold
 
-def _event_mask(probability,threshold):
+def _event_mask(probability,threshold,condition_function=None):
     """
     Given a probability distribution and a threshold, returns the indices
     where the probability is less  than the threshhold
@@ -61,10 +61,20 @@ def _event_mask(probability,threshold):
     Args;
         probability: array of numbers between 0 and 1
         threshold: maximum value in mask
+        condition_function: a function taking in the probability and 
+        threshold, and returning a boolean 1/0 array; a 1 is required for an 
+        event
     Returns:
         indices where the probability is less than the threshold
     """
-    return np.where(probability <= threshold)[0]
+    boolean_thresh = (probability <= threshold)
+    if (condition_function is not None):  
+        condition_result = condition_function(probability,threshold)
+        print(sum(condition_result),sum(boolean_thresh))
+        conditions =(boolean_thresh & condition_result)
+    else:
+        conditions = boolean_thresh     
+    return np.where(conditions)
         
 def _event_probabilities(x,y,interp,n_points,threshold):
     """
@@ -137,7 +147,8 @@ def _event_slices_from_mask(mask,min_points_between):
                     for start,end in zip(event_idx_start,event_idx_end)]    
     return event_slices
     
-def _predict(x,y,n_points,interp,threshold,local_event_idx_function):
+def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
+             condition_function=None):
     """
     general method to predict the event boundaries and centers
     
@@ -151,13 +162,14 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function):
         only argument and returns the most likely index of an event. the slice
         passsed should have only one event
         
+        condition_function: see _event_mask
     Returns:
         list of event slices
     """
     min_points_between = int(np.ceil(n_points/2))    
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold)
-    mask = _event_mask(probability_distribution,threshold)
+    mask = _event_mask(probability_distribution,threshold,condition_function)
     if (mask.size > 0):
         event_slices = _event_slices_from_mask(mask,min_points_between)
     else:
@@ -176,7 +188,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function):
                              threshold=threshold)
     return to_ret                                
                              
-def _predict_helper(split_fec,threshold):
+def _predict_helper(split_fec,threshold,**kwargs):
     """
     uses spline interpolation and local stadard deviations to predict
     events.
@@ -187,6 +199,8 @@ def _predict_helper(split_fec,threshold):
 
         threshhold: maximum probability that a given datapoint fits the 
         model
+        
+        kwargs: passed to _predict
     Returns:
         prediction_info object
     """
@@ -201,5 +215,8 @@ def _predict_helper(split_fec,threshold):
                       n_points=n_points,
                       interp=interp,
                       threshold=threshold,
-                      local_event_idx_function=local_event_idx_function)
+                      local_event_idx_function=local_event_idx_function,
+                      **kwargs)
+    # XXX modify mask; find first time under threshhold after where we predict
+    # the surface
     return to_ret
