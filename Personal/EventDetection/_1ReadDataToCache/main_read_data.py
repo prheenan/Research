@@ -128,7 +128,7 @@ def run():
                            for r in positive_meta]
     force = False
     # limit (per category)
-    limit = 5
+    limit = 10
     # get the positive events
     set_and_cache_category_data(positive_categories,
                                 cache_directory=cache_directory,force=force,

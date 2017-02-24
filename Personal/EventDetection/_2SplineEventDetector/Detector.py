@@ -40,12 +40,14 @@ def adhesion_function_for_split_fec(split_fec):
     surface_index = split_fec.get_predicted_retract_surface_index()
     n_points = split_fec.tau_num_points
     return (lambda *args,**kwargs: adhesion_mask(surface_index,n_points,
+                                                 split_fec,
                                                  *args,**kwargs))
     
 def _min_points_between(autocorrelation_tau_num_points):
     return int(np.ceil(autocorrelation_tau_num_points/2))
     
-def adhesion_mask(surface_index,n_points,probability_distribution,threshold):
+def adhesion_mask(surface_index,n_points,split_fec,
+                  probability_distribution,threshold):
     """
     returns a boolean mask which is 0 where we can predict and adhesion 
     and zero elsewhere
@@ -77,7 +79,6 @@ def adhesion_mask(surface_index,n_points,probability_distribution,threshold):
     events_containing_surface = [e for e in event_boundaries  
                                  if (e.start <= min_idx)]
     if (len(events_containing_surface) == 0):
-        print("nope!")
         return to_ret 
     # POST: at least one event contains the surface. Update the minimum index
     # to go to the end of the (last) event below or at the surface, unless
@@ -88,17 +89,37 @@ def adhesion_mask(surface_index,n_points,probability_distribution,threshold):
     # determine when we go back the median 
     med = np.median(probability_distribution)
     where_greater_than_median = np.where(probability_distribution > med)[0]
-    event_boundaries = _event_slices_from_mask(where_greater_than_median,
-                                               min_points_between)
-    event_boundaries = [e for e in event_boundaries 
-                        if e.start >  idx_after_last_surface_event
-                        and e.stop-e.start > min_points_between]
+    prob_median_boundaries = _event_slices_from_mask(where_greater_than_median,
+                                                     min_points_between)
+    prob_median_boundaries = [e for e in prob_median_boundaries 
+                              if e.start >  idx_after_last_surface_event
+                              and e.stop-e.start > min_points_between]
     if (len(where_greater_than_median) == 0):
         return to_ret
     # POST: have some point greater than the last 
-    final_event_boundary = event_boundaries[0].start                                     
+    final_event_boundary = prob_median_boundaries[0].start                                     
     min_idx = max(idx_after_last_surface_event,min_idx)
     to_ret[min_idx] = 0
+    # finally, make sure the smoothed force is back to zero
+    retract = split_fec.retract
+    time = retract.Time
+    smoothed_force = split_fec.retract_spline_interpolator()(time)
+    force_median = np.median(smoothed_force[min_idx:])
+    where_smoothed =  np.where(smoothed_force < force_median)[0]
+    where_smoothed_and_greater = [e for e in where_smoothed if e > min_idx]    
+    if (len(where_smoothed_and_greater) == 0):
+        return to_ret
+    # POST: under median somewhere
+    min_idx = where_smoothed_and_greater[0]
+    to_ret[:min_idx] = 0
+    # get a list of the events with a starting point below the surface
+    events_containing_force_baseline = [e for e in event_boundaries  
+                                       if (e.start <= min_idx)]  
+    if (len(events_containing_force_baseline) == 0):
+        return to_ret
+    # new minimum index is based on whatever event contains this   
+    min_idx = events_containing_force_baseline[-1].stop + min_points_between
+    to_ret[:min_idx] = 0
     return to_ret                     
                      
 class prediction_info:
