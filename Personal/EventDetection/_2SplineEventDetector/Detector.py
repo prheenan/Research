@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import sys
 from scipy import signal,stats
 
+from Research.Personal.EventDetection.Util import Plotting
+from GeneralUtil.python import PlotUtilities
 
 def local_stdev(f,n):
     """
@@ -32,12 +34,18 @@ def adhesion_function_for_split_fec(split_fec):
         split_fec: the split_force_extension object we want to mask the 
         adhesions of 
     Returns:
-        lambda call to adhesion_mask, with surface_index already supplied
+        lambda call to adhesion_mask, with arguments except for 
+        probability_distribution,threshold supplied
     """
     surface_index = split_fec.get_predicted_retract_surface_index()
-    return (lambda *args,**kwargs: adhesion_mask(surface_index,*args,**kwargs))
+    n_points = split_fec.tau_num_points
+    return (lambda *args,**kwargs: adhesion_mask(surface_index,n_points,
+                                                 *args,**kwargs))
     
-def adhesion_mask(surface_index,probability_distribution,threshold):
+def _min_points_between(autocorrelation_tau_num_points):
+    return int(np.ceil(autocorrelation_tau_num_points/2))
+    
+def adhesion_mask(surface_index,n_points,probability_distribution,threshold):
     """
     returns a boolean mask which is 0 where we can predict and adhesion 
     and zero elsewhere
@@ -51,21 +59,48 @@ def adhesion_mask(surface_index,probability_distribution,threshold):
     """
     to_ret = np.ones(probability_distribution.size,dtype=np.bool_)
     non_events = probability_distribution > threshold
+    # determine the boundaries of the 'no events'
+    min_points_between = _min_points_between(n_points)
+    min_idx = surface_index + min_points_between    
     # remove all things before the predicted surface
-    to_ret[:surface_index] = 0
-    # remove everything until we arent at an event anymore
-    non_events_after_predicted_surface = np.where(non_events[surface_index:])[0]
-    if (non_events_after_predicted_surface.size == 0):
+    to_ret[:min_idx] = 0    
+    no_event_mask = np.where(non_events)[0]
+    # XXX finish current event, keep consuming events until startd/end
+    # are beyond threshold
+    event_mask = np.where(~non_events)[0]
+    if (event_mask.size ==0 or no_event_mask.size == 0):
+        return to_ret
+    # POST: we have at least one event and one non-event 
+    # (could be some adhesion!)
+    event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
+    # get a list of the events with a starting point below the surface
+    events_containing_surface = [e for e in event_boundaries  
+                                 if (e.start <= min_idx)]
+    if (len(events_containing_surface) == 0):
+        return to_ret 
+    # POST: at least one event contains the surface. Update the minimum index
+    # to go to the end of the (last) event below or at the surface, unless
+    # the end's end is below the surface, then just stick to our guns
+    min_idx = max(events_containing_surface[-1].stop,min_idx)
+    no_event_boundaries = _event_slices_from_mask(no_event_mask,
+                                                  min_points_between)
+    no_event_starts = [e.start for e in no_event_boundaries]
+    no_event_starts_after_surface = [s for s in no_event_starts if s >= min_idx]
+    PlotUtilities.figure((8,12))
+    Plotting.debug_plot_adhesion_info(probability_distribution,no_event_mask,
+                                      min_idx,no_event_boundaries,
+                                      event_boundaries,threshold)
+    plt.show()                                
+    if (len(no_event_starts_after_surface) == 0):
         # everything is always an event after the surface. Not much we can do,
         # so dont mess with to_ret
         pass
     else:
         # zero out everything until the first non-event
-        first_non_event = non_events_after_predicted_surface[0]
-        absolute_index_of_non_event = surface_index + first_non_event
+        first_start_after_surface = no_event_starts_after_surface[0]
         # XXX add in minimum distance between?
         # XXX add in 'need to not have an event for a certain amount of time'?
-        to_ret[:absolute_index_of_non_event] = 0
+        to_ret[:first_start_after_surface] = 0
     return to_ret                     
                      
 class prediction_info:
@@ -137,7 +172,7 @@ def _event_probabilities(x,y,interp,n_points,threshold):
             slice_fit : the part of x and y that mask is valid for
             stdevs: the local, windowed standard deviation, s(q)
     """
-    min_points_between = int(np.ceil(n_points/2))    
+    min_points_between = _min_points_between(n_points)
     interp_first_deriv = interp.derivative(1)(x)
     # get the interpolated derivative
     interpolated_y = interp(x)
@@ -211,7 +246,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     Returns:
         list of event slices
     """
-    min_points_between = int(np.ceil(n_points/2))    
+    min_points_between = _min_points_between(n_points)
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold)
     mask = _event_mask(probability_distribution,threshold,condition_function)

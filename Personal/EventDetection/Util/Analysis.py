@@ -100,7 +100,9 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        return np.where(self.retract.Separation >= 0)[0][0]
+        filtered_obj = FEC_Util.GetFilteredForce(self.retract,
+                                                 self.tau_num_points)
+        return np.where(filtered_obj.Force >= 0)[0][0]
 
 def get_surface_index(obj,n_smooth,last_less_than=True):
     """

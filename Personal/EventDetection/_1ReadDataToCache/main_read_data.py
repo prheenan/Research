@@ -116,9 +116,9 @@ def run():
     cache_directory = "./cache/"
     # tuple of <relative directory,sample,velocity> for FEC with events
     positive_meta = \
-      [[positives_directory + "100-nanometers-per-second/","650nm DNA",100],
-       [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
-       [positives_directory + "1000-nanometers-per-second/","650nm DNA",1000]]
+      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",100]]
+       #[positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
+       #[positives_directory + "100-nanometers-per-second/","650nm DNA",1000]]
     # tuple of <relative directory,sample,velocity> for FEC without events
     negative_meta = \
       [[negatives_directory + "/500-nanometers-per-second/csv/",
@@ -128,18 +128,20 @@ def run():
                            for r in positive_meta]
     force = False
     # limit (per category)
-    limit = 5
+    limit = 1
     # get the positive events
     set_and_cache_category_data(positive_categories,
                                 cache_directory=cache_directory,force=force,
                                 limit=limit)
-    thresh = 1e-2                                
+    thresh = 2e-2                                
     # for each category, predict where events are
     for i,category in enumerate(positive_categories):
         for j,example in enumerate(category.data):
             id = "{:d}_{:d}".format(i,j)
             example_split = debug_plotting(example,cache_directory,id)
-            info = Detector._predict_helper(example_split,threshold=thresh)
+            m_func =Detector.adhesion_function_for_split_fec(example_split)
+            info = Detector._predict_helper(example_split,threshold=thresh,
+                                            condition_function=m_func)
             # XXX fix threshhold
             fig = PlotUtilities.figure(figsize=(8,12))    
             Plotting.plot_prediction_info(example_split,info)
