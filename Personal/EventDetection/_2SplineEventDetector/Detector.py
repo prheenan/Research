@@ -89,12 +89,14 @@ def adhesion_mask(surface_index,n_points,split_fec,
     # determine when we go back the median 
     med = np.median(probability_distribution)
     where_greater_than_median = np.where(probability_distribution > med)[0]
+    if (len(where_greater_than_median) == 0):
+        return to_ret    
     prob_median_boundaries = _event_slices_from_mask(where_greater_than_median,
                                                      min_points_between)
     prob_median_boundaries = [e for e in prob_median_boundaries 
                               if e.start >  idx_after_last_surface_event
                               and e.stop-e.start > min_points_between]
-    if (len(where_greater_than_median) == 0):
+    if (len(prob_median_boundaries) == 0):
         return to_ret
     # POST: have some point greater than the last 
     final_event_boundary = prob_median_boundaries[0].start                                     
