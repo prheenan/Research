@@ -7,6 +7,8 @@ import sys
 
     
 from sklearn import metrics
+from Research.Personal.EventDetection.Util import Analysis
+
 
 class score:
     def __init__(self,x,idx_true,idx_predicted):
@@ -16,8 +18,7 @@ class score:
         
         Args:
             x: the data values associated with the events we care about 
-            true: matrix of same length as x, 0/1 where an event is/isnt tagged
-            predicted: like true, but for prediction
+            idx_true/predicted: indices for the start of the events
         """
         # save where the events are
         self.idx_true = idx_true
@@ -51,6 +52,16 @@ class score:
         for s_predicted in self.idx_predicted:
             events_predicted[s_predicted] = 1
         return events,events_predicted
+    def get_true_and_predicted_rupture_information(self,time,force,n_points):
+        n = time.size
+        m_slice = lambda event_idx: slice(max(event_idx-n_points,0),
+                                          min(event_idx-n_points,n),1)
+        true = [Analysis.loading_rate_and_rupture_force(time,force,e)
+                for e in self.idx_true]
+        predicted = [Analysis.loading_rate_and_rupture_force(time,force,e)
+                     for e in self.idx_true]
+        
+        
         
 def get_scoring_info(split_fec_with_events,idx_predicted_centers):
     idx_events = split_fec_with_events.get_retract_event_centers()
