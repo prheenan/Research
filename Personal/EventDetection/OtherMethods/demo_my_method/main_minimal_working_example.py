@@ -31,17 +31,16 @@ def adhesion_mask(surface_index,probability_distribution,threshold):
     # remove everything until we arent at an event anymore
     non_events_after_predicted_surface = np.where(non_events[surface_index:])[0]
     if (non_events_after_predicted_surface.size == 0):
-        # everything is always an event after the surface. Not much we can do
+        # everything is always an event after the surface. Not much we can do,
         # so dont mess with to_ret
         pass
     else:
         # zero out everything until the first non-event
         first_non_event = non_events_after_predicted_surface[0]
-        to_ret[:surface_index + first_non_event] = 0
-    plt.plot(non_events)
-    plt.plot(to_ret)
-    plt.axvline(surface_index)
-    plt.show()
+        absolute_index_of_non_event = surface_index + first_non_event
+        # XXX add in minimum distance between?
+        # XXX add in 'need to not have an event for a certain amount of time'?
+        to_ret[:absolute_index_of_non_event] = 0
     return to_ret
     
 def run():
@@ -55,7 +54,7 @@ def run():
         This is a description of what is returned.
     """
     ex = method_helper.get_example()
-    thresh = 5e-3
+    thresh = 0.02
     # XXX : get first index where less than the threshold after surface index?
     surface_index = ex.get_predicted_retract_surface_index()
     adhesion_func = lambda *args: adhesion_mask(surface_index,*args)

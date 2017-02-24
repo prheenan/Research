@@ -9,7 +9,7 @@ from scipy import signal,stats
 
 def local_stdev(f,n):
     """
-    Gets the local standard deviaiton (+/- n, except at boundaries 
+    Gets the local standard deviaiton (+/- n), except at boundaries 
     where it is just in the direction with data
 
     Args:
@@ -70,11 +70,10 @@ def _event_mask(probability,threshold,condition_function=None):
     boolean_thresh = (probability <= threshold)
     if (condition_function is not None):  
         condition_result = condition_function(probability,threshold)
-        print(sum(condition_result),sum(boolean_thresh))
         conditions =(boolean_thresh & condition_result)
     else:
-        conditions = boolean_thresh     
-    return np.where(conditions)
+        conditions = boolean_thresh  
+    return np.where(conditions)[0]
         
 def _event_probabilities(x,y,interp,n_points,threshold):
     """
@@ -118,7 +117,7 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     chebyshev = np.minimum((1/k_chebyshev)**2,1)
     norm_dist = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,
                                  scale=scale)
-    # for the edge cases, assume the probability is one                                 
+    # for the edge cases, assume the probability is one                         
     probability_distribution = np.ones(y.size)          
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
