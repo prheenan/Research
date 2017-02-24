@@ -100,7 +100,9 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        return np.where(self.retract.Separation >= 0)[0][0]
+        filtered_obj = FEC_Util.GetFilteredForce(self.retract,
+                                                 self.tau_num_points)
+        return np.where(filtered_obj.Force >= 0)[0][0]
 
 def get_surface_index(obj,n_smooth,last_less_than=True):
     """
@@ -257,10 +259,11 @@ def auto_correlation_helper(auto):
     tol = 1e-9
     # auto norm goes from 0 to 1
     auto_norm = (auto - np.min(auto))/(np.max(auto)-np.min(auto)) 
+    auto_median_normed = auto_norm - np.median(auto_norm)
     # statistical norm goes from -1 to 1
     statistical_norm = (auto_norm - 0.5) * 2
     log_norm = np.log(auto_norm + tol)
-    fit_idx_max = np.where(auto_norm < 0.25)[0]
+    fit_idx_max = np.where(auto_median_normed < 0)[0]
     assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under threshold"
     # get the first time we cross under the threshold
     fit_idx_max =  fit_idx_max[0]
