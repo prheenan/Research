@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 import sys,os
 
 sys.path.append("../../../../")
-from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
-from GeneralUtil.python.IgorUtil import SavitskyFilter
-from Research.Personal.EventDetection.Util import Analysis,Plotting,InputOutput
+from Research.Personal.EventDetection.Util import \
+    Analysis,Plotting,InputOutput,Scoring
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
+from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
 class ForceExtensionCategory:
     def __init__(self,directory,velocity_nm_s,sample,has_events):
@@ -29,75 +29,7 @@ class ForceExtensionCategory:
         Returns:
             nothing
         """
-        self.data = data
-                          
-def set_and_cache_category_data(categories,force,cache_directory,limit):
-    """
-    loops through each category, reading in at most limit files per category,
-    caching the csv files to cache_directory
-    
-    Args:
-        categories: list of ForceExtensionCategory objects. will have their
-        data set with the appropriate TimeSepForce objects 
-        
-        force: whether to force re-reading
-        cache_directory: where to save the files
-        limit: maximum number of files to each (per category)
-    Returns:
-        nothing, but sets the data of set_categories
-    """
-    for i,r_obj in enumerate(categories):
-        # restart the limit each category
-        limit_tmp = limit
-        data_in_category = []
-        # get the label for this dataset.
-        dir_v = r_obj.directory
-        all_files = GenUtilities.getAllFiles(dir_v,ext=".csv")
-        kwargs =dict(cache_directory=cache_directory,
-                     has_events = r_obj.has_events,force=force)
-        # reach all the files until we reach the limit
-        for f in all_files:
-            data_file_tmp = InputOutput.read_and_cache_file(f,**kwargs)
-            data_in_category.append(data_file_tmp)
-            limit_tmp = limit_tmp - 1
-            if (limit_tmp == 0):
-                break
-        # set the data in this category
-        r_obj.set_data(data_in_category)    
-        
-def debug_plotting(example,cache_directory,out_file_name):    
-    example_split = Analysis.split_FEC_by_meta(example)
-    approach = example_split.approach
-    retract = example_split.retract 
-    # get the autocorrelation time of the retract force (what we care about)
-    x,f = retract.Time,retract.Force
-    separation = retract.Separation
-    dx = np.median(np.diff(x))
-    deg_auto = 1
-    tau,auto_coeffs,auto_correlation = Analysis.\
-        auto_correlation_tau(x,f,deg_autocorrelation=deg_auto)
-    num_points = int(np.ceil(tau/dx))
-    # zero out everything to the approach using the autocorrelation time 
-    Analysis.zero_by_approach(example_split,num_points)
-    # XXX only look at after the nominal zero point?
-    # get an interpolator for the retract force and separation
-    force_interpolator = Analysis.spline_interpolator(tau,x,f)
-    separation_interpolate = Analysis.spline_interpolator(tau,x,separation)
-    # get the residual mean and standard deviation, from the spline...
-    f_interp_at_x = force_interpolator(x)
-    mu,std = Analysis.spline_residual_mean_and_stdev(f,f_interp_at_x)
-    force_cdf = Analysis.spline_gaussian_cdf(f,f_interp_at_x,std)
-    force_cdf_complement = 1-force_cdf
-    # get the derivative of the splined data
-    derivative_at_x = force_interpolator.derivative()(x)
-    # make a threshold in probability (this will likely be machine-learned) 
-    thresh = 1e-4
-    # plot everything
-    fig = PlotUtilities.figure(figsize=(8,20))
-    Plotting.plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
-    PlotUtilities.savefig(fig,cache_directory + out_file_name + "out.png")    
-    # XXX this is a *bad* way of doing things (should pass example_split in)
-    return example_split
+        self.data = data 
         
 def run():
     """
@@ -130,23 +62,50 @@ def run():
     # limit (per category)
     limit = 2
     # get the positive events
-    set_and_cache_category_data(positive_categories,
-                                cache_directory=cache_directory,force=force,
-                                limit=limit)
+    try:
+        InputOutput.set_and_cache_category_data(positive_categories,
+                                                cache_directory=cache_directory,
+                                                force=force,limit=limit)
+    except OSError:
+        # just read in the files that live here XXX just for debugging
+        all_files = GenUtilities.getAllFiles(cache_directory,ext=".pkl")
+        single = positive_categories[0]
+        all_files = [CheckpointUtilities.getCheckpoint(f,None,False)
+                     for f in all_files]
+        single.set_data(all_files)
     thresh = 1e-2                                
+    splits, prediction_info,scores = [],[],[]
     # for each category, predict where events are
     for i,category in enumerate(positive_categories):
+        if (category.data is None):
+            continue  
         for j,example in enumerate(category.data):
-            id = "{:d}_{:d}".format(i,j)
-            example_split = debug_plotting(example,cache_directory,id)
+            example_split = Analysis.\
+                zero_and_split_force_extension_curve(example)
             m_func =Detector.adhesion_function_for_split_fec(example_split)
             info = Detector._predict_helper(example_split,threshold=thresh,
                                             condition_function=m_func)
-            # XXX fix threshhold
-            fig = PlotUtilities.figure(figsize=(8,12))    
-            Plotting.plot_prediction_info(example_split,info)
-            PlotUtilities.savefig(fig,cache_directory + "info" + id + ".png")
-
+            score = Scoring.get_scoring_info(example_split,info.event_idx)
+            prediction_info.append(info)
+            splits.append(example_split)
+            scores.append(score)
+    ruptures_objs = [score.get_true_and_predicted_rupture_information(fec) 
+                     for score,fec in zip(scores,splits)]
+    rupture_true = [e for r in ruptures_objs for e in r[0]]
+    rupture_predicted = [e for r in ruptures_objs for e in r[1]]
+    fig = PlotUtilities.figure(figsize=(8,8))
+    Plotting.plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
+    PlotUtilities.savefig(fig,cache_directory + "rupture_loading.png")
+    for i,(example_split,info,score) in \
+        enumerate(zip(splits,prediction_info,scores)):
+        out_file_path = cache_directory + "{:d}".format(i)
+        fig = PlotUtilities.figure(figsize=(8,20))
+        Plotting.plot_autocorrelation(example_split)
+        PlotUtilities.savefig(fig,out_file_path + "auto.png")   
+        # XXX fix threshhold
+        fig = PlotUtilities.figure(figsize=(8,12))    
+        Plotting.plot_prediction_info(example_split,info)
+        PlotUtilities.savefig(fig,out_file_path + "info.png")
     # get the negative events
     # XXX 
 

@@ -9,44 +9,6 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
 import Analysis
-
-def plot_distribution(x,f,f_interp,f_cdf,thresh,num_bins=50):
-    """
-    plots a distribution
-    
-    Args:
-        x: time / separation (whatever abscicca is)
-        f,f_interp: the raw and interpolated f values
-        f_cdf: the cdf we are using ; low probability means an event is likely
-        thresh: the minimum probability
-        num_bins: number of bins for showing the histogram (purely for plots)
-    Returns:
-        nothing, plots the distribution
-    """
-    idx_high = np.where(f_cdf >= thresh)
-    idx_low = np.where(f_cdf <= thresh)
-    events = f_cdf[idx_low]
-    f_minus_mu = f - f_interp
-    mu,std = Analysis.spline_residual_mean_and_stdev(f,f_interp)
-    limits = [min(f_minus_mu),max(f_minus_mu)]
-    num_bins = 50
-    linspace_f_diff = np.linspace(*limits,num=num_bins)
-    pdf_diff = norm.pdf(x=linspace_f_diff,loc=mu,scale=std)
-    plt.subplot(3,1,1)
-    plt.plot(x,f_interp,color='b',linewidth=3)
-    plt.plot(x,f,color='k',alpha=0.3)
-    PlotUtilities.lazyLabel("Time (au)","Force (au)","")
-    plt.subplot(3,1,2)
-    plt.hist(f_minus_mu,bins=num_bins,normed=True)
-    plt.plot(linspace_f_diff,pdf_diff,linewidth=3,color='r')
-    PlotUtilities.lazyLabel("Force Difference (au)","Probability (au)","")
-    plt.subplot(3,1,3)
-    plt.semilogy(x[idx_high],f_cdf[idx_high],alpha=0.3,color='k',
-                 label="Non-Event")
-    plt.semilogy(x[idx_low],f_cdf[idx_low],linestyle='None',marker='.',
-                 color='r',label="Event")
-    PlotUtilities.lazyLabel("Time (au)","Probability","",frameon=True,
-                            loc="lower right")                            
                             
 def plot_surface_idx(surface_idx,n_smooth,Obj):
     smoothed = FEC_Util.GetFilteredForce(Obj,n_smooth)
@@ -95,6 +57,28 @@ def plot_autocorrelation_log(x,*args):
     plt.xlim(xlim_zoomed)
     plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
     PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
+
+         
+def plot_autocorrelation(example_split): 
+    """
+    Given an already-split force extension curve, plots the autocorrelation
+    information related to it.
+
+    Args:
+        example_splut: split_force_extesion object, already zeroed
+    Returns:
+        nothing, sets up a plott..
+    """
+    retract = example_split.retract
+    x,separation,f = retract.Time,retract.Separation,retract.Force
+    tau = example_split.tau
+    # XXX only look at after the nominal zero point?
+    # get an interpolator for the retract force and separation
+    force_interpolator = Analysis.spline_interpolator(tau,x,f)
+    separation_interpolate = Analysis.spline_interpolator(tau,x,separation)
+    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
+    # plot everything
+    plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
 
 def highlight_events(idx_events,x,y,label=None,**kwargs):
     """
@@ -246,4 +230,48 @@ def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
     PlotUtilities.lazyLabel("index (au)","boolean no event mask","",
                             loc="upper right")
         
+def _plot_rupture_objects(to_plot,**kwargs):
+    """
+    given rupture objects, plots rupture force in pN (given N) vs
+    log of loading rate in pN/s (given N/s)
+
+    Args:
+         to_plot: list of rupture obects to plot with the same style
+         **kwargs: passed to plt.semilogx
+    Returns:
+         Nothing
+    """
+    to_pN = lambda x: x * 1e12
+    rupture_forces_pN = [to_pN(obj.rupture_force) for obj in to_plot]
+    loading_rate_pN_per_s = [to_pN(obj.loading_rate) for obj in to_plot]
+    plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
+
+def plot_predicted_and_true_ruptures(true,predicted,title="",label_true="true",
+                                     style_predicted=None):
+    """
+    given rupture objects, plots the true and predicted values of rupture
+    force verus loading rate
+
+    Args:
+        true / predicted: list of true and predicted ruptures. dont have to 
+        match up, but should be all from the same FECs
+
+        title: of the plot
+        label_true: for the legend marker on the true objects
+        style_predicted: what to make the predicted ones look like. if None,
+        defsults to little blue x's.
+    Returns:
+         Nothing
+    """
+    line_style = dict(linestyle="None")
+    if (style_predicted is None):
+        style_predicted  = dict(marker='x',color='k',label="predicted",
+                                linewidth=2,**line_style)
+    style_true = dict(marker='o',color='g',label=label_true,alpha=0.5,
+                      linewidth=0,**line_style)
+    _plot_rupture_objects(true,**style_true)
+    _plot_rupture_objects(predicted,**style_predicted)
+    PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
+                            frameon=True)
+
 

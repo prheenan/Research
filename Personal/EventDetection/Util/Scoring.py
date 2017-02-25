@@ -7,6 +7,13 @@ import sys
 
     
 from sklearn import metrics
+from Research.Personal.EventDetection.Util import Analysis
+
+class rupture:
+    def __init__(self,loading_rate,rupture_force,index):
+        self.loading_rate = loading_rate
+        self.rupture_force = rupture_force
+        self.index = index
 
 class score:
     def __init__(self,x,idx_true,idx_predicted):
@@ -16,8 +23,7 @@ class score:
         
         Args:
             x: the data values associated with the events we care about 
-            true: matrix of same length as x, 0/1 where an event is/isnt tagged
-            predicted: like true, but for prediction
+            idx_true/predicted: indices for the start of the events
         """
         # save where the events are
         self.idx_true = idx_true
@@ -51,6 +57,31 @@ class score:
         for s_predicted in self.idx_predicted:
             events_predicted[s_predicted] = 1
         return events,events_predicted
+    def get_true_and_predicted_rupture_information(self,example_split,
+                                                   num_tau=2):
+        """
+        Returns the rupture information (force and loading rate) at n_points
+        before the indices given by this score
+
+        Args:
+            time/force: from the force extension curve
+            num_tau: number of auto correlation times before the events to fit
+        Returns:
+            tuple: <list of true, list of predicted> rupture objects
+        """
+        retract = example_split.retract
+        time,force = retract.Time,retract.Force
+        n = time.size
+        n_points = 2*example_split.tau_num_points
+        m_slice = lambda event_idx: slice(max(event_idx-n_points,0),
+                                          event_idx,1)
+        rupture_func = lambda slice_ev: \
+            Analysis.loading_rate_rupture_force_and_index(time,force,slice_ev)
+        true = [rupture(*rupture_func(m_slice(e))) for e in self.idx_true]
+        pred = [rupture(*rupture_func(m_slice(e))) for e in self.idx_predicted]
+        return true,pred
+        
+        
         
 def get_scoring_info(split_fec_with_events,idx_predicted_centers):
     idx_events = split_fec_with_events.get_retract_event_centers()

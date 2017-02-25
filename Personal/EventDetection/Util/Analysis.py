@@ -305,4 +305,58 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
     # take the absolute value, since tau is a decay, has a minus 
     tau = abs(1/linear_auto_coeffs[0])
     return tau,coeffs,auto
+
+def zero_and_split_force_extension_curve(example):
+    """
+    zeros a force extension curve by its meta information and the touchoff
+    on the approach
+
+    Args:
+        example: 'raw' force extension to use (negative force is away
+        from surface on molecule)
+    returns:
+        example as an Analysis.split_force_extension object
+    """
+    example_split = split_FEC_by_meta(example)
+    approach = example_split.approach
+    retract = example_split.retract 
+    # get the autocorrelation time of the retract force (what we care about)
+    x,f = retract.Time,retract.Force
+    separation = retract.Separation
+    dx = np.median(np.diff(x))
+    deg_auto = 1
+    tau,auto_coeffs,auto_correlation = auto_correlation_tau(x,f)
+    num_points = int(np.ceil(tau/dx))
+    # zero out everything to the approach using the autocorrelation time 
+    zero_by_approach(example_split,num_points)
+    return example_split
+
+def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
+    """
+    given a portion of time and force to fit, the loading rate is determined 
+    by the local slope. The rupture force is determined by finding the last
+    time the (XXX should use two lines in case of flickering)
+    
+    Args:
+        time/force: should be self-explanatory. Force should be zeroed.
+        slice_to_fit: where we are fitting
+    Returns:
+        tuple of <loading rate,rupture force,index_of_rupture>
+    """
+    x = time[slice_to_fit]
+    y = force[slice_to_fit]
+    coeffs = np.polyfit(y=y,x=x,deg=1)
+    predicted = np.polyval(coeffs,x=x)
+    loading_rate, _ = coeffs
+    # determine the last time the *data* is above the prediction
+    where_above = np.where(y > predicted)[0]
+    if (where_above.size == 0):
+        # unlikely but worth checking
+        last_idx_above = np.argmax(y)
+    else:
+        last_idx_above = where_above[-1]
+    # determine what we *predict* to be the value at that point
+    rupture_force = predicted[last_idx_above]
+    return loading_rate,rupture_force,last_idx_above
+    
     

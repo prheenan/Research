@@ -253,6 +253,43 @@ def _event_slices_from_mask(mask,min_points_between):
                     for start,end in zip(event_idx_start,event_idx_end)]    
     return event_slices
     
+def event_by_loading_rate(x,y,slice_event):
+    """
+    Determine where a (single, local) event is occuring in the slice_event
+    (of length N) part of x,y by:
+    (1) Finding the maximum of y in the slice
+    (2) Fitting a line to the N points up to the maximum
+    (3) Determining the last point at which y[slice_event] is above the 
+    predicted line from (2). If this doesnt exist, just uses the maximum
+
+    Args:
+        x, y: x and y values. we assume an event is from high to low in y
+        slice_event: where to fit
+    Returns:
+        predicted index (absolute) in x,y where we think the event is happening
+    """
+    # determine the local maximum
+    offset = slice_event.start
+    n_points = slice_event.stop-offset+1
+    local_max_idx = offset + np.argmax(y[slice_event]) 
+    n = x.size
+    # 'slide' our slice size over in order to fit to the local maximum
+    start_fit_idx  = max(0,local_max_idx-n_points)
+    fit_slice = slice(start_fit_idx,local_max_idx,1)
+    # fit 1-D until the local max
+    fit_x = x[fit_slice]
+    fit_y = y[fit_slice]
+    coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
+    pred = np.polyval(coeffs,x=x[slice_event])
+    # determine where the data *in the __original__ slice* is __last__
+    # above the fit (after that, it is consistently below it)
+    idx_above_predicted = offset + np.where(y[slice_event] > pred)[0]
+    if (idx_above_predicted .size == 0):
+        return local_max_in_slice
+    # POST: have a proper max, return the last time we are above
+    # the linear prediction
+    return idx_above_predicted[-1]
+
 def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
              condition_function=None):
     """
@@ -264,9 +301,9 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         n_points: see _event_probabilities
         interp: see _event_probabilities
         threshold: see _event_probabilities
-        local_event_idx_function: a function which takes a slice of y as its 
-        only argument and returns the most likely index of an event. the slice
-        passsed should have only one event
+        local_event_idx_function: a function which takes a slice of x,y,slice
+        as its  only argument and returns the most likely index of an event. 
+        the slice passsed should have only one event
         
         condition_function: see _event_mask
     Returns:
@@ -292,7 +329,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                         for e in event_slices]
     event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
-    event_idx = [e.start + local_event_idx_function(y[e]) for e in event_slices]
+    event_idx = [local_event_idx_function(x,y,e) for e in event_slices]
     to_ret = prediction_info(event_idx = event_idx,
                              event_slices = event_slices,
                              local_stdev = stdevs,
@@ -323,7 +360,8 @@ def _predict_helper(split_fec,threshold,**kwargs):
     retract = split_fec.retract
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
-    local_event_idx_function = lambda data_to_search : np.argmax(data_to_search)
+    local_event_idx_function = \
+        lambda x,y,event : event.start + np.argmax(y[event])
     # N degree b-spline has continuous (N-1) derivative
     interp = split_fec.retract_spline_interpolator(deg=2)
     to_ret = _predict(x=time,
@@ -331,7 +369,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
                       n_points=n_points,
                       interp=interp,
                       threshold=threshold,
-                      local_event_idx_function=local_event_idx_function,
+                      local_event_idx_function=event_by_loading_rate,
                       **kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface

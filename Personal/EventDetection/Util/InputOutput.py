@@ -7,8 +7,7 @@ import sys,os
 from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
-from GeneralUtil.python import CheckpointUtilities
-
+from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
 def read_and_cache_file(file_path,cache_directory,has_events=False,force=True):
     """
@@ -29,3 +28,36 @@ def read_and_cache_file(file_path,cache_directory,has_events=False,force=True):
     return CheckpointUtilities.getCheckpoint(cache_file,func_to_call,force,
                                              file_path,has_events=has_events)
                    
+def set_and_cache_category_data(categories,force,cache_directory,limit):
+    """
+    loops through each category, reading in at most limit files per category,
+    caching the csv files to cache_directory
+    
+    Args:
+        categories: list of ForceExtensionCategory objects. will have their
+        data set with the appropriate TimeSepForce objects 
+        
+        force: whether to force re-reading
+        cache_directory: where to save the files
+        limit: maximum number of files to each (per category)
+    Returns:
+        nothing, but sets the data of set_categories
+    """
+    for i,r_obj in enumerate(categories):
+        # restart the limit each category
+        limit_tmp = limit
+        data_in_category = []
+        # get the label for this dataset.
+        dir_v = r_obj.directory
+        all_files = GenUtilities.getAllFiles(dir_v,ext=".csv")
+        kwargs =dict(cache_directory=cache_directory,
+                     has_events = r_obj.has_events,force=force)
+        # reach all the files until we reach the limit
+        for f in all_files:
+            data_file_tmp = read_and_cache_file(f,**kwargs)
+            data_in_category.append(data_file_tmp)
+            limit_tmp = limit_tmp - 1
+            if (limit_tmp == 0):
+                break
+        # set the data in this category
+        r_obj.set_data(data_in_category)    
