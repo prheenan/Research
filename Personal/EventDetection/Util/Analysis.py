@@ -263,7 +263,7 @@ def auto_correlation_helper(auto):
     # statistical norm goes from -1 to 1
     statistical_norm = (auto_norm - 0.5) * 2
     log_norm = np.log(auto_norm + tol)
-    fit_idx_max = np.where(auto_median_normed < 0)[0]
+    fit_idx_max = np.where(auto_median_normed < 0.25)[0]
     assert fit_idx_max.size > 0 , "autocorrelation doesnt dip under threshold"
     # get the first time we cross under the threshold
     fit_idx_max =  fit_idx_max[0]
