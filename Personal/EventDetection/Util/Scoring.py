@@ -10,9 +10,10 @@ from sklearn import metrics
 from Research.Personal.EventDetection.Util import Analysis
 
 class rupture:
-    def __init__(self,loading_rate,rupture_force):
+    def __init__(self,loading_rate,rupture_force,index):
         self.loading_rate = loading_rate
         self.rupture_force = rupture_force
+        self.index = index
 
 class score:
     def __init__(self,x,idx_true,idx_predicted):
@@ -73,9 +74,9 @@ class score:
         n = time.size
         n_points = 2*example_split.tau_num_points
         m_slice = lambda event_idx: slice(max(event_idx-n_points,0),
-                                          min(event_idx+n_points,n),1)
+                                          event_idx,1)
         rupture_func = lambda slice_ev: \
-            Analysis.loading_rate_and_rupture_force(time,force,slice_ev)
+            Analysis.loading_rate_rupture_force_and_index(time,force,slice_ev)
         true = [rupture(*rupture_func(m_slice(e))) for e in self.idx_true]
         pred = [rupture(*rupture_func(m_slice(e))) for e in self.idx_predicted]
         return true,pred

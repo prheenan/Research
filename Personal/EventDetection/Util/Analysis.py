@@ -331,7 +331,7 @@ def zero_and_split_force_extension_curve(example):
     zero_by_approach(example_split,num_points)
     return example_split
 
-def loading_rate_and_rupture_force(time,force,slice_to_fit):
+def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
     """
     given a portion of time and force to fit, the loading rate is determined 
     by the local slope. The rupture force is determined by finding the last
@@ -341,16 +341,22 @@ def loading_rate_and_rupture_force(time,force,slice_to_fit):
         time/force: should be self-explanatory. Force should be zeroed.
         slice_to_fit: where we are fitting
     Returns:
-        tuple of <loading rate,rupture force>
+        tuple of <loading rate,rupture force,index_of_rupture>
     """
     x = time[slice_to_fit]
     y = force[slice_to_fit]
     coeffs = np.polyfit(y=y,x=x,deg=1)
     predicted = np.polyval(coeffs,x=x)
     loading_rate, _ = coeffs
+    # determine the last time the *data* is above the prediction
     where_above = np.where(y > predicted)[0]
-    last_idx_above = where_above[-1]
+    if (where_above.size == 0):
+        # unlikely but worth checking
+        last_idx_above = np.argmax(y)
+    else:
+        last_idx_above = where_above[-1]
+    # determine what we *predict* to be the value at that point
     rupture_force = predicted[last_idx_above]
-    return loading_rate,rupture_force
+    return loading_rate,rupture_force,last_idx_above
     
     

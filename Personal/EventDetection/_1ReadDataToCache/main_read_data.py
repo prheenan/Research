@@ -89,10 +89,15 @@ def run():
             prediction_info.append(info)
             splits.append(example_split)
             scores.append(score)
+    ruptures_objs = [score.get_true_and_predicted_rupture_information(fec) 
+                     for score,fec in zip(scores,splits)]
+    rupture_true = [e for r in ruptures_objs for e in r[0]]
+    rupture_predicted = [e for r in ruptures_objs for e in r[1]]
+    fig = PlotUtilities.figure(figsize=(8,8))
+    Plotting.plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
+    PlotUtilities.savefig(fig,cache_directory + "rupture_loading.png")
     for i,(example_split,info,score) in \
         enumerate(zip(splits,prediction_info,scores)):
-        true,pred = \
-            score.get_true_and_predicted_rupture_information(example_split)
         out_file_path = cache_directory + "{:d}".format(i)
         fig = PlotUtilities.figure(figsize=(8,20))
         Plotting.plot_autocorrelation(example_split)

@@ -230,4 +230,48 @@ def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
     PlotUtilities.lazyLabel("index (au)","boolean no event mask","",
                             loc="upper right")
         
+def _plot_rupture_objects(to_plot,**kwargs):
+    """
+    given rupture objects, plots rupture force in pN (given N) vs
+    log of loading rate in pN/s (given N/s)
+
+    Args:
+         to_plot: list of rupture obects to plot with the same style
+         **kwargs: passed to plt.semilogx
+    Returns:
+         Nothing
+    """
+    to_pN = lambda x: x * 1e12
+    rupture_forces_pN = [to_pN(obj.rupture_force) for obj in to_plot]
+    loading_rate_pN_per_s = [to_pN(obj.loading_rate) for obj in to_plot]
+    plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
+
+def plot_predicted_and_true_ruptures(true,predicted,title="",label_true="true",
+                                     style_predicted=None):
+    """
+    given rupture objects, plots the true and predicted values of rupture
+    force verus loading rate
+
+    Args:
+        true / predicted: list of true and predicted ruptures. dont have to 
+        match up, but should be all from the same FECs
+
+        title: of the plot
+        label_true: for the legend marker on the true objects
+        style_predicted: what to make the predicted ones look like. if None,
+        defsults to little blue x's.
+    Returns:
+         Nothing
+    """
+    line_style = dict(linestyle="None")
+    if (style_predicted is None):
+        style_predicted  = dict(marker='x',color='k',label="predicted",
+                                linewidth=2,**line_style)
+    style_true = dict(marker='o',color='g',label=label_true,alpha=0.5,
+                      linewidth=0,**line_style)
+    _plot_rupture_objects(true,**style_true)
+    _plot_rupture_objects(predicted,**style_predicted)
+    PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
+                            frameon=True)
+
 
