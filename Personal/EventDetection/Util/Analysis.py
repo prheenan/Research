@@ -306,6 +306,31 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
     tau = abs(1/linear_auto_coeffs[0])
     return tau,coeffs,auto
 
+def zero_and_split_force_extension_curve(example):
+    """
+    zeros a force extension curve by its meta information and the touchoff
+    on the approach
+
+    Args:
+        example: 'raw' force extension to use (negative force is away
+        from surface on molecule)
+    returns:
+        example as an Analysis.split_force_extension object
+    """
+    example_split = split_FEC_by_meta(example)
+    approach = example_split.approach
+    retract = example_split.retract 
+    # get the autocorrelation time of the retract force (what we care about)
+    x,f = retract.Time,retract.Force
+    separation = retract.Separation
+    dx = np.median(np.diff(x))
+    deg_auto = 1
+    tau,auto_coeffs,auto_correlation = auto_correlation_tau(x,f)
+    num_points = int(np.ceil(tau/dx))
+    # zero out everything to the approach using the autocorrelation time 
+    zero_by_approach(example_split,num_points)
+    return example_split
+
 def loading_rate_and_rupture_force(time,force,slice_to_fit):
     """
     given a portion of time and force to fit, the loading rate is determined 

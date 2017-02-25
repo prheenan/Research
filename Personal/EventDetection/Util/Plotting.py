@@ -9,44 +9,6 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
 import Analysis
-
-def plot_distribution(x,f,f_interp,f_cdf,thresh,num_bins=50):
-    """
-    plots a distribution
-    
-    Args:
-        x: time / separation (whatever abscicca is)
-        f,f_interp: the raw and interpolated f values
-        f_cdf: the cdf we are using ; low probability means an event is likely
-        thresh: the minimum probability
-        num_bins: number of bins for showing the histogram (purely for plots)
-    Returns:
-        nothing, plots the distribution
-    """
-    idx_high = np.where(f_cdf >= thresh)
-    idx_low = np.where(f_cdf <= thresh)
-    events = f_cdf[idx_low]
-    f_minus_mu = f - f_interp
-    mu,std = Analysis.spline_residual_mean_and_stdev(f,f_interp)
-    limits = [min(f_minus_mu),max(f_minus_mu)]
-    num_bins = 50
-    linspace_f_diff = np.linspace(*limits,num=num_bins)
-    pdf_diff = norm.pdf(x=linspace_f_diff,loc=mu,scale=std)
-    plt.subplot(3,1,1)
-    plt.plot(x,f_interp,color='b',linewidth=3)
-    plt.plot(x,f,color='k',alpha=0.3)
-    PlotUtilities.lazyLabel("Time (au)","Force (au)","")
-    plt.subplot(3,1,2)
-    plt.hist(f_minus_mu,bins=num_bins,normed=True)
-    plt.plot(linspace_f_diff,pdf_diff,linewidth=3,color='r')
-    PlotUtilities.lazyLabel("Force Difference (au)","Probability (au)","")
-    plt.subplot(3,1,3)
-    plt.semilogy(x[idx_high],f_cdf[idx_high],alpha=0.3,color='k',
-                 label="Non-Event")
-    plt.semilogy(x[idx_low],f_cdf[idx_low],linestyle='None',marker='.',
-                 color='r',label="Event")
-    PlotUtilities.lazyLabel("Time (au)","Probability","",frameon=True,
-                            loc="lower right")                            
                             
 def plot_surface_idx(surface_idx,n_smooth,Obj):
     smoothed = FEC_Util.GetFilteredForce(Obj,n_smooth)
@@ -95,6 +57,28 @@ def plot_autocorrelation_log(x,*args):
     plt.xlim(xlim_zoomed)
     plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
     PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
+
+         
+def plot_autocorrelation(example_split): 
+    """
+    Given an already-split force extension curve, plots the autocorrelation
+    information related to it.
+
+    Args:
+        example_splut: split_force_extesion object, already zeroed
+    Returns:
+        nothing, sets up a plott..
+    """
+    retract = example_split.retract
+    x,separation,f = retract.Time,retract.Separation,retract.Force
+    tau = example_split.tau
+    # XXX only look at after the nominal zero point?
+    # get an interpolator for the retract force and separation
+    force_interpolator = Analysis.spline_interpolator(tau,x,f)
+    separation_interpolate = Analysis.spline_interpolator(tau,x,separation)
+    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
+    # plot everything
+    plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
 
 def highlight_events(idx_events,x,y,label=None,**kwargs):
     """

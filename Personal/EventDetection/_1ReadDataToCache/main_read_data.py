@@ -28,51 +28,7 @@ class ForceExtensionCategory:
         Returns:
             nothing
         """
-        self.data = data
-
-
-
-def zero_and_split_force_extension_curve(example):
-    """
-    zeros a force extension curve by its meta information and the touchoff
-    on the approach
-
-    Args:
-        example: 'raw' force extension to use (negative force is away
-        from surface on molecule)
-    returns:
-        example as an Analysis.split_force_extension object
-    """
-    example_split = Analysis.split_FEC_by_meta(example)
-    approach = example_split.approach
-    retract = example_split.retract 
-    # get the autocorrelation time of the retract force (what we care about)
-    x,f = retract.Time,retract.Force
-    separation = retract.Separation
-    dx = np.median(np.diff(x))
-    deg_auto = 1
-    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
-    num_points = int(np.ceil(tau/dx))
-    # zero out everything to the approach using the autocorrelation time 
-    Analysis.zero_by_approach(example_split,num_points)
-    return example_split
-
-         
-def debug_plotting(example_split,cache_directory,out_file_name):   
-    retract = example_split.retract
-    x,separation,f = retract.Time,retract.Separation,retract.Force
-    tau = example_split.tau
-    # XXX only look at after the nominal zero point?
-    # get an interpolator for the retract force and separation
-    force_interpolator = Analysis.spline_interpolator(tau,x,f)
-    separation_interpolate = Analysis.spline_interpolator(tau,x,separation)
-    tau,auto_coeffs,auto_correlation = Analysis.auto_correlation_tau(x,f)
-    # make a threshold in probability (this will likely be machine-learned) 
-    thresh = 1e-4
-    # plot everything
-    fig = PlotUtilities.figure(figsize=(8,20))
-    Plotting.plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
-    PlotUtilities.savefig(fig,cache_directory + out_file_name + "out.png")    
+        self.data = data 
         
 def run():
     """
@@ -117,21 +73,28 @@ def run():
                      for f in all_files]
         single.set_data(all_files)
     thresh = 1e-2                                
+    splits, prediction_info = [],[]
     # for each category, predict where events are
     for i,category in enumerate(positive_categories):
         if (category.data is None):
             continue  
         for j,example in enumerate(category.data):
-            id = "{:d}_{:d}".format(i,j)
-            example_split = zero_and_split_force_extension_curve(example)
-            debug_plotting(example_split,cache_directory,id)
+            example_split = Analysis.\
+                zero_and_split_force_extension_curve(example)
             m_func =Detector.adhesion_function_for_split_fec(example_split)
             info = Detector._predict_helper(example_split,threshold=thresh,
                                             condition_function=m_func)
-            # XXX fix threshhold
-            fig = PlotUtilities.figure(figsize=(8,12))    
-            Plotting.plot_prediction_info(example_split,info)
-            PlotUtilities.savefig(fig,cache_directory + "info" + id + ".png")
+            prediction_info.append(info)
+            splits.append(example_split)
+    for i,(example_split,info) in enumerate(zip(splits,prediction_info)):
+        out_file_path = cache_directory + "{:d}".format(i)
+        fig = PlotUtilities.figure(figsize=(8,20))
+        Plotting.plot_autocorrelation(example_split)
+        PlotUtilities.savefig(fig,out_file_path + "auto.png")   
+        # XXX fix threshhold
+        fig = PlotUtilities.figure(figsize=(8,12))    
+        Plotting.plot_prediction_info(example_split,info)
+        PlotUtilities.savefig(fig,out_file_path + "info.png")
     # get the negative events
     # XXX 
 
