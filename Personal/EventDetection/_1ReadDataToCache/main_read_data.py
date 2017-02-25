@@ -8,7 +8,8 @@ import sys,os
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
-from Research.Personal.EventDetection.Util import Analysis,Plotting,InputOutput
+from Research.Personal.EventDetection.Util import \
+    Analysis,Plotting,InputOutput,Scoring
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
@@ -73,7 +74,7 @@ def run():
                      for f in all_files]
         single.set_data(all_files)
     thresh = 1e-2                                
-    splits, prediction_info = [],[]
+    splits, prediction_info,scores = [],[],[]
     # for each category, predict where events are
     for i,category in enumerate(positive_categories):
         if (category.data is None):
@@ -84,9 +85,14 @@ def run():
             m_func =Detector.adhesion_function_for_split_fec(example_split)
             info = Detector._predict_helper(example_split,threshold=thresh,
                                             condition_function=m_func)
+            score = Scoring.get_scoring_info(example_split,info.event_idx)
             prediction_info.append(info)
             splits.append(example_split)
-    for i,(example_split,info) in enumerate(zip(splits,prediction_info)):
+            scores.append(score)
+    for i,(example_split,info,score) in \
+        enumerate(zip(splits,prediction_info,scores)):
+        true,pred = \
+            score.get_true_and_predicted_rupture_information(example_split)
         out_file_path = cache_directory + "{:d}".format(i)
         fig = PlotUtilities.figure(figsize=(8,20))
         Plotting.plot_autocorrelation(example_split)

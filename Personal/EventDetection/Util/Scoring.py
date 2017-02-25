@@ -9,6 +9,10 @@ import sys
 from sklearn import metrics
 from Research.Personal.EventDetection.Util import Analysis
 
+class rupture:
+    def __init__(self,loading_rate,rupture_force):
+        self.loading_rate = loading_rate
+        self.rupture_force = rupture_force
 
 class score:
     def __init__(self,x,idx_true,idx_predicted):
@@ -52,14 +56,29 @@ class score:
         for s_predicted in self.idx_predicted:
             events_predicted[s_predicted] = 1
         return events,events_predicted
-    def get_true_and_predicted_rupture_information(self,time,force,n_points):
+    def get_true_and_predicted_rupture_information(self,example_split,
+                                                   num_tau=2):
+        """
+        Returns the rupture information (force and loading rate) at n_points
+        before the indices given by this score
+
+        Args:
+            time/force: from the force extension curve
+            num_tau: number of auto correlation times before the events to fit
+        Returns:
+            tuple: <list of true, list of predicted> rupture objects
+        """
+        retract = example_split.retract
+        time,force = retract.Time,retract.Force
         n = time.size
+        n_points = 2*example_split.tau_num_points
         m_slice = lambda event_idx: slice(max(event_idx-n_points,0),
-                                          min(event_idx-n_points,n),1)
-        true = [Analysis.loading_rate_and_rupture_force(time,force,e)
-                for e in self.idx_true]
-        predicted = [Analysis.loading_rate_and_rupture_force(time,force,e)
-                     for e in self.idx_true]
+                                          min(event_idx+n_points,n),1)
+        rupture_func = lambda slice_ev: \
+            Analysis.loading_rate_and_rupture_force(time,force,slice_ev)
+        true = [rupture(*rupture_func(m_slice(e))) for e in self.idx_true]
+        pred = [rupture(*rupture_func(m_slice(e))) for e in self.idx_predicted]
+        return true,pred
         
         
         
