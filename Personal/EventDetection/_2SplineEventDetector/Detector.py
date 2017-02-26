@@ -283,8 +283,10 @@ def event_by_loading_rate(x,y,slice_event):
     pred = np.polyval(coeffs,x=x[slice_event])
     # determine where the data *in the __original__ slice* is __last__
     # above the fit (after that, it is consistently below it)
-    idx_above_predicted = offset + np.where(y[slice_event] > pred)[0]
-    if (idx_above_predicted .size == 0):
+    idx_above_predicted_rel = np.where(y[slice_event] > pred)[0]
+    idx_above_predicted = [offset + i for i in idx_above_predicted_rel
+                           if i <= slice_event.stop]
+    if (len(idx_above_predicted) == 0):
         return local_max_in_slice
     # POST: have a proper max, return the last time we are above
     # the linear prediction
