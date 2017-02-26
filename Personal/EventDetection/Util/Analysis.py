@@ -104,7 +104,7 @@ class split_force_extension:
                                                  self.tau_num_points)
         return np.where(filtered_obj.Force >= 0)[0][0]
 
-def get_surface_index(obj,n_smooth,last_less_than=True):
+def _surface_index(filtered_obj,obj,last_less_than=True):
     """
     Get the surface index
     
@@ -118,7 +118,6 @@ def get_surface_index(obj,n_smooth,last_less_than=True):
         the surface index and baseline in force
     """
     force_baseline = np.median(obj.Force)
-    filtered_obj = FEC_Util.GetFilteredForce(obj,n_smooth)
     if (last_less_than):
         # find the last time we are below the threshold ('raw' approach)
         search_func = lambda thresh: \
@@ -136,6 +135,18 @@ def get_surface_index(obj,n_smooth,last_less_than=True):
         force_baseline = np.median(obj.Force[idx_surface:])
     idx_surface =  search_func(force_baseline)  
     return force_baseline,idx_surface,filtered_obj
+
+def get_surface_index(obj,n_smooth,last_less_than=True):
+    """
+    Get the surface index
+    
+    Args:
+        see _surface_index
+    Returns 
+        see _surface_index
+    """
+    filtered_obj = FEC_Util.GetFilteredForce(obj,n_smooth)
+    return _surface_index(filtered_obj,obj,last_less_than=last_less_than)
 
 def zero_by_approach(split_fec,n_smooth,flip_force=True):
     """
