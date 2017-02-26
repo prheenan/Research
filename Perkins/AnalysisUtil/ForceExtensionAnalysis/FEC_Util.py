@@ -339,7 +339,7 @@ def BreakUpIntoApproachAndRetract(mObjs):
         Retract.append(Retr)
     return Approach,Retract
 
-def GetFilteredForce(Obj,NFilterPoints):
+def GetFilteredForce(Obj,NFilterPoints,FilterFunc=SavitskyFilter):
     """
     Given a TimeSepForce object, return a (filtered) copy of it
 
@@ -348,13 +348,13 @@ def GetFilteredForce(Obj,NFilterPoints):
         NFilterPoitns: fed to savitsky golay filter
     """
     ToRet = copy.deepcopy(Obj)
-    ToRet.Force = SavitskyFilter(Obj.Force,nSmooth=NFilterPoints)
+    ToRet.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
     try:
-        ToRet.Separation = SavitskyFilter(Obj.Separation,nSmooth=NFilterPoints)
+        ToRet.Separation = FilterFunc(Obj.Separation,nSmooth=NFilterPoints)
     except AttributeError:
-        ToRet.Extension = SavitskyFilter(Obj.Extension,nSmooth=NFilterPoints)
+        ToRet.Extension = FilterFunc(Obj.Extension,nSmooth=NFilterPoints)
     try:
-        ToRet.set_z_sensor(SavitskyFilter(Obj.ZSnsr,nSmooth=NFilterPoints))
+        ToRet.set_z_sensor(FilterFunc(Obj.ZSnsr,nSmooth=NFilterPoints))
     except AttributeError:
         pass
     return ToRet

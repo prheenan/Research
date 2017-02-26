@@ -100,16 +100,21 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        filtered_obj = FEC_Util.GetFilteredForce(self.retract,
-                                                 self.tau_num_points)
-        return np.where(filtered_obj.Force >= 0)[0][0]
+        sep_diff = np.median(np.diff(self.retract.Separation))
+        offset_needed = abs(min(self.approach.Separation))
+        n_points = int(np.ceil(offset_needed/sep_diff))
+        return n_points
 
-def get_surface_index(obj,n_smooth,last_less_than=True):
+def filter_fec(obj,n_points):
+    return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
+
+def _surface_index(filtered_y,y,last_less_than=True):
     """
     Get the surface index
     
     Args:
-        obj: the timesepforce object to use
+        y: the y we are searching for the surface of (raw)
+        filtered_y: the filtered y value
         n_smooth: number to smoothing   
         last_less_than: if true (default, 'raw' data), then we find the last
         time we are less than the baseline in obj.Force. Otherwise, the first
@@ -117,25 +122,35 @@ def get_surface_index(obj,n_smooth,last_less_than=True):
     Returns 
         the surface index and baseline in force
     """
-    force_baseline = np.median(obj.Force)
-    filtered_obj = FEC_Util.GetFilteredForce(obj,n_smooth)
-    if (last_less_than):
-        # find the last time we are below the threshold ('raw' approach)
-        search_func = lambda thresh: \
-                np.where(filtered_obj.Force <= thresh)[0][-1]
-    else:
-        # find the first time we are above the threshhold ('processed' retract)
-        search_func = lambda thresh: \
-            np.where(filtered_obj.Force >= thresh)[0][0]
-    idx_surface = search_func(force_baseline)
-    # iterate once in order to get a better estimate of the baseline; we can
-    # remove the effect of the invols entirely 
-    if (last_less_than):
-        force_baseline = np.median(obj.Force[:idx_surface])
-    else:
-        force_baseline = np.median(obj.Force[idx_surface:])
-    idx_surface =  search_func(force_baseline)  
-    return force_baseline,idx_surface,filtered_obj
+    median = np.median(y)
+    lt = np.where(y < median)[0]
+    # determine the last time we were less than the median;
+    # use this as a marker between the invols and the surface region
+    last_lt = lt[-1]
+    x = np.arange(start=0,stop=y.size,step=1)
+    x_approach = x[:last_lt]
+    x_invols = x[last_lt:]
+    coeffs_approach = np.polyfit(x=x_approach,y=y[:last_lt],deg=1)
+    coeffs_invols = np.polyfit(x=x_invols,y=y[last_lt:],deg=1)
+    pred_approach = np.polyval(coeffs_approach,x=x)
+    pred_invols = np.polyval(coeffs_invols,x=x)
+    surface_idx = np.argmin(np.abs(pred_approach-pred_invols))
+    return median,surface_idx
+
+def get_surface_index(obj,n_smooth,last_less_than=True):
+    """
+    Get the surface index
+    
+    Args:
+        see _surface_index
+    Returns 
+        see _surface_index, except last (extra) tuple element is filtered
+        obj 
+    """
+    filtered_obj = filter_fec(obj,n_smooth)
+    baseline,idx = _surface_index(filtered_obj.Force,obj.Force,
+                                  last_less_than=last_less_than)
+    return baseline,idx,filtered_obj
 
 def zero_by_approach(split_fec,n_smooth,flip_force=True):
     """
@@ -226,6 +241,21 @@ def spline_gaussian_cdf(f,f_interp,std):
     # get the cdf of the data
     return distribution_force.cdf(f)
     
+def spline_interpolated_by_index(f,nSmooth,**kwargs):
+    """
+    returnsa spline interpolator of f versus 0,1,2,...,(N-1)
+    
+    Args:
+        f: function to interpolate
+        nSmooth: distance between knots (smoothing number)
+        **kwargs: passed to spline_interpolator
+    Returns: 
+        spline interpolated value of f on the indices (*not* an interpolator
+        object, just an array) 
+    """
+    x = np.arange(start=0,stop=f.size,step=1)
+    return spline_interpolator(nSmooth,x,f,**kwargs)(x)
+
 def spline_interpolator(tau_x,x,f,deg=2):
     """
     returns a spline interpolator with knots uniformly spaced at tau_x over x
@@ -320,13 +350,9 @@ def zero_and_split_force_extension_curve(example):
     example_split = split_FEC_by_meta(example)
     approach = example_split.approach
     retract = example_split.retract 
-    # get the autocorrelation time of the retract force (what we care about)
-    x,f = retract.Time,retract.Force
-    separation = retract.Separation
-    dx = np.median(np.diff(x))
-    deg_auto = 1
-    tau,auto_coeffs,auto_correlation = auto_correlation_tau(x,f)
-    num_points = int(np.ceil(tau/dx))
+    f = approach.Force
+    x = approach.Time
+    num_points = int(np.ceil(f.size * 0.025))
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split
@@ -347,7 +373,7 @@ def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
     y = force[slice_to_fit]
     # XXX can fit a line, throw an error?
     if (x.size < 2):
-        return 0,0,0
+        raise IndexError("Can't fit a line to something with <2 points")
     coeffs = np.polyfit(y=y,x=x,deg=1)
     predicted = np.polyval(coeffs,x=x)
     loading_rate, _ = coeffs
