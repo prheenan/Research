@@ -30,6 +30,7 @@ class ForceExtensionCategory:
             nothing
         """
         self.data = data 
+
         
 def run():
     """
@@ -51,10 +52,6 @@ def run():
       [[positives_directory + "1000-nanometers-per-second/","650nm DNA",100],
        [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
        [positives_directory + "100-nanometers-per-second/","650nm DNA",1000]]
-    # tuple of <relative directory,sample,velocity> for FEC without events
-    negative_meta = \
-      [[negatives_directory + "/500-nanometers-per-second/csv/",
-        "Negative Control",500]]
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(*r,has_events=True) 
                            for r in positive_meta]
@@ -89,15 +86,14 @@ def run():
             prediction_info.append(info)
             splits.append(example_split)
             scores.append(score)
-    ruptures_objs = [score.get_true_and_predicted_rupture_information(fec) 
-                     for score,fec in zip(scores,splits)]
-    rupture_true = [e for r in ruptures_objs for e in r[0]]
-    rupture_predicted = [e for r in ruptures_objs for e in r[1]]
+    rupture_true = [r for s in scores for r in s.ruptures_true ]
+    rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
     fig = PlotUtilities.figure(figsize=(8,8))
     Plotting.plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
     PlotUtilities.savefig(fig,cache_directory + "rupture_loading.png")
     for i,(example_split,info,score) in \
         enumerate(zip(splits,prediction_info,scores)):
+        true,pred = score.ruptures_true,score.ruptures_predicted
         out_file_path = cache_directory + "{:d}".format(i)
         fig = PlotUtilities.figure(figsize=(8,20))
         Plotting.plot_autocorrelation(example_split)
