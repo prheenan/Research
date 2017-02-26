@@ -122,22 +122,20 @@ def _surface_index(filtered_y,y,last_less_than=True):
     Returns 
         the surface index and baseline in force
     """
-    force_baseline = np.median(y)
-    if (last_less_than):
-        # find the last time we are below the threshold ('raw' approach)
-        search_func = lambda thresh: np.where(filtered_y <= thresh)[0][-1]
-    else:
-        # find the first time we are above the threshhold ('processed' retract)
-        search_func = lambda thresh: np.where(filtered_y >= thresh)[0][0]
-    idx_surface = search_func(force_baseline)
-    # iterate once in order to get a better estimate of the baseline; we can
-    # remove the effect of the invols entirely 
-    if (last_less_than):
-        force_baseline = np.median(y[:idx_surface])
-    else:
-        force_baseline = np.median(y[idx_surface:])
-    idx_surface =  search_func(force_baseline)  
-    return force_baseline,idx_surface
+    median = np.median(y)
+    lt = np.where(y < median)[0]
+    # determine the last time we were less than the median;
+    # use this as a marker between the invols and the surface region
+    last_lt = lt[-1]
+    x = np.arange(start=0,stop=y.size,step=1)
+    x_approach = x[:last_lt]
+    x_invols = x[last_lt:]
+    coeffs_approach = np.polyfit(x=x_approach,y=y[:last_lt],deg=1)
+    coeffs_invols = np.polyfit(x=x_invols,y=y[last_lt:],deg=1)
+    pred_approach = np.polyval(coeffs_approach,x=x)
+    pred_invols = np.polyval(coeffs_invols,x=x)
+    surface_idx = np.argmin(np.abs(pred_approach-pred_invols))
+    return median,surface_idx
 
 def get_surface_index(obj,n_smooth,last_less_than=True):
     """
@@ -352,18 +350,10 @@ def zero_and_split_force_extension_curve(example):
     example_split = split_FEC_by_meta(example)
     approach = example_split.approach
     retract = example_split.retract 
-    # determine the stats on the raw approach
-    _,surface_idx = _surface_index(approach.Force,approach.Force,
-                                   last_less_than=True)
-    # update the smoothing needed based on smoothing the data to this index
-    num_approach_points = approach.Force.size
-    num_points_raw = max(1,num_approach_points-(surface_idx+1))
-    filtered_approach = filter_fec(approach,num_points_raw)
-    _,surface_idx = _surface_index(filtered_approach.Force,approach.Force,
-                                   last_less_than=True)
-    num_points = max(1,num_approach_points-(surface_idx+1))
+    f = approach.Force
+    x = approach.Time
     # XXX wtf...
-    num_points = int(np.ceil(num_approach_points * 0.025))
+    num_points = int(np.ceil(f.size * 0.025))
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split
