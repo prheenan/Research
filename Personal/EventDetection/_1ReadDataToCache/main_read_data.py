@@ -25,10 +25,11 @@ class learning_curve:
         self.func_to_call = func_to_call
 
 class learners:
-    def __init__(self,no_event,fovea,wavelet):
+    def __init__(self,no_event,fovea,wavelet,fold_info):
         self.no_event = no_event
         self.fovea = fovea
         self.wavelet = wavelet
+        self.fold_info = fold_info
 
 class ForceExtensionCategory:
     def __init__(self,number,directory,sample,velocity_nm_s,has_events):
