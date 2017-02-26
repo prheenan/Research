@@ -55,7 +55,7 @@ def run():
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(*r,has_events=True) 
                            for r in positive_meta]
-    force = False
+    force = True
     # limit (per category)
     limit = 2
     # get the positive events
