@@ -158,8 +158,8 @@ def run():
                           limit=limit,thresh=thresh,debug_plots=debug_plots)
         category.set_scores(scores)
     scores_flat = [score for cat in positive_categories for score in cat.scores]
-    rupture_true = [r for s in scores_flat for r in s.ruptures_predicted ]
-    rupture_predicted = [r for s in scores_flat for r in s.ruptures_true ]
+    rupture_true = [r for s in scores_flat for r in s.ruptures_true ]
+    rupture_predicted = [r for s in scores_flat for r in s.ruptures_predicted ]
     fig = PlotUtilities.figure(figsize=(8,8))
     Plotting.plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
     PlotUtilities.savefig(fig,cache_directory + "rupture_loading.png")

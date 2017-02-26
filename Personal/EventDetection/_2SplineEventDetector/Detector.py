@@ -270,24 +270,27 @@ def event_by_loading_rate(x,y,slice_event):
     """
     # determine the local maximum
     offset = slice_event.start
-    n_points = slice_event.stop-offset+1
-    local_max_idx = offset + np.argmax(y[slice_event]) 
+    n_points = np.ceil((slice_event.stop-offset+1)/2)
+    y_event = y[slice_event]
+    x_event = x[slice_event]
+    local_max_idx = offset + np.argmax(y_event)
     n = x.size
-    # end our fit at the midpoint of the event; start offset from this point
-    end_fit_idx = int(np.floor((slice_event.start+slice_event.stop)/2))
+    # end our fit at the midpoint of the event; start offset from 
+    end_fit_idx = local_max_idx
     start_fit_idx  = max(0,end_fit_idx-n_points)
     fit_slice = slice(start_fit_idx,end_fit_idx,1)
     # fit 1-D until the local max
     fit_x = x[fit_slice]
     fit_y = y[fit_slice]
     coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
-    pred = np.polyval(coeffs,x=x[slice_event])
+    pred = np.polyval(coeffs,x=x_event)
     # determine where the data *in the __original__ slice* is __last__
     # above the fit (after that, it is consistently below it)
-    idx_above_predicted_rel = np.where(y[slice_event] > pred)[0]
+    idx_above_predicted_rel = np.where(y_event > pred)[0]
     # dont look at things past where we fit...
-    idx_above_predicted = [offset + i for i in idx_above_predicted_rel
-                           if i <= end_fit_idx]
+    idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
+    if (len(idx_above_predicted) == 0):
+        return fit_max_idx
     # POST: have a proper max, return the last time we are above
     # the linear prediction
     return idx_above_predicted[-1]
