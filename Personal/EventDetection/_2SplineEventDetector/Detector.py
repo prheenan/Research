@@ -252,8 +252,8 @@ def _event_slices_from_mask(mask,min_points_between):
     event_slices = [slice(start,end,1) 
                     for start,end in zip(event_idx_start,event_idx_end)]    
     return event_slices
-    
-def event_by_loading_rate(x,y,slice_event):
+
+def _loading_rate_helper(x,y,slice_event):
     """
     Determine where a (single, local) event is occuring in the slice_event
     (of length N) part of x,y by:
@@ -266,7 +266,7 @@ def event_by_loading_rate(x,y,slice_event):
         x, y: x and y values. we assume an event is from high to low in y
         slice_event: where to fit
     Returns:
-        predicted index (absolute) in x,y where we think the event is happening
+        tuple of <fit_x,fit_y,predicted y based on fit, idx_above_predicted>
     """
     # determine the local maximum
     offset = slice_event.start
@@ -289,10 +289,22 @@ def event_by_loading_rate(x,y,slice_event):
     idx_above_predicted_rel = np.where(y_event > pred)[0]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
-    if (len(idx_above_predicted) == 0):
-        return fit_max_idx
+    return fit_x,fit_y,pred,idx_above_predicted
+    
+def event_by_loading_rate(*args,**kwargs):
+    """
+    see _loading_rate_helper 
+
+    Args:
+        see _loading_rate_helper
+    Returns:
+        predicted index (absolute) in x,y where we think the event is happening
+    """
+    fit_x,fit_y,pred,idx_above_predicted = _loading_rate_helper(*args,**kwargs)
     # POST: have a proper max, return the last time we are above
     # the linear prediction
+    if (len(idx_above_predicted) == 0):
+        return fit_max_idx
     return idx_above_predicted[-1]
 
 def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
