@@ -71,7 +71,7 @@ def category_read(category,force,cache_directory,limit):
     try:
         return InputOutput.get_category_data(category,force,cache_directory,
                                              limit)
-    except OSError:
+    except OSError as e:
         if (category.category_number != 0):
             return []
         # just read in the files that live here XXX just for debugging
@@ -135,16 +135,16 @@ def run():
     cache_directory = "./cache/"
     # tuple of <relative directory,sample,velocity> for FEC with events
     positive_meta = \
-      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",100],
+      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",1000],
        [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
-       [positives_directory + "100-nanometers-per-second/","650nm DNA",1000]]
+       [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]
     force = False
-    debug_plots = False
+    debug_plots = True
     # limit (per category)
-    limit = 10
+    limit = 2
     thresh = 1e-2                                
     # for each category, predict where events are
     for i,category in enumerate(positive_categories):

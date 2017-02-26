@@ -66,6 +66,7 @@ class score:
         # how many events are there?
         self.n_events = len(idx_true)
         self.n_events_predicted = len(idx_predicted)
+        """
         # get the 0/1 booleans arrays
         true,predicted = self.get_boolean_arrays(x)
         # have x start at 0...
@@ -76,7 +77,8 @@ class score:
         # get the x values where we think events are happenings
         true_x = x[np.where(true)]
         predicted_x = x[np.where(predicted)]
-        # get the minimum distance for each
+        # et the minimum distance for each
+        """
         """
         closest_true = lambda x: true_x[np.argmin(np.abs(true_x-x))]
         self.minimum_distance_distribution = [np.abs(x-closest_true(x))
