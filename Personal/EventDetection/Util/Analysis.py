@@ -100,8 +100,10 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        filtered_obj = filter_fec(self.retract,self.tau_num_points)
-        return np.where(filtered_obj.Force >= 0)[0][0]
+        sep_diff = np.median(np.diff(self.retract.Separation))
+        offset_needed = abs(min(self.approach.Separation))
+        n_points = int(np.ceil(offset_needed/sep_diff))
+        return n_points
 
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
@@ -148,9 +150,8 @@ def get_surface_index(obj,n_smooth,last_less_than=True):
         obj 
     """
     filtered_obj = filter_fec(obj,n_smooth)
-    baseline,idx = \
-        _surface_index(filtered_obj.Force,obj.Force,
-                       last_less_than=last_less_than)
+    baseline,idx = _surface_index(filtered_obj.Force,obj.Force,
+                                  last_less_than=last_less_than)
     return baseline,idx,filtered_obj
 
 def zero_by_approach(split_fec,n_smooth,flip_force=True):
