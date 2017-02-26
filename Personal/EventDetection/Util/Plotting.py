@@ -193,6 +193,30 @@ def plot_classification(split_object,scoring_object):
     plt.plot(time,boolean_predicted,label="Predicted",color='r',alpha=0.3)
     PlotUtilities.lazyLabel("Time (s)","Force(pN)","")
 
+def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
+    """
+    Used  insides of Detector.event_by_loadin_rate to plot what is happening
+    
+    Args:
+        all: internal Detector.event_by_loading_rate, see that function
+    Returns:
+        nothing
+    """          
+    x_plot = lambda x_tmp: x_tmp - min(x)
+    y_plot = lambda y_tmp : y_tmp * 1e12
+    plt.subplot(2,1,1)
+    plt.plot(x_plot(x),y_plot(y),alpha=0.3,color='k',label="raw")
+    plt.plot(x_plot(fit_x),y_plot(fit_y),label="fit")
+    PlotUtilities.lazyLabel("","Force (pN)","",frameon=True)
+    plt.subplot(2,1,2)
+    plt.plot(x_plot(fit_x),y_plot(fit_y))
+    plt.plot(x_plot(x_event),y_plot(y_event),color='r',alpha=0.3,label="event")
+    plt.plot(x_plot(x_event),y_plot(pred),label="prediction")
+    if (len(idx_above_predicted) > 0):
+        plt.axvline(x_plot(x[idx_above_predicted[-1]]),label="surface pred")
+    PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
+                            loc="upper right")
+
 def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
                              no_event_boundaries,event_boundaries,threshold,
                              to_ret):
