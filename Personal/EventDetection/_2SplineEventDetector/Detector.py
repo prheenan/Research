@@ -74,6 +74,22 @@ def adhesion_mask(surface_index,n_points,split_fec,
         return to_ret
     # POST: we have at least one event and one non-event 
     # (could be some adhesion!)
+    # first, walk to where the smoothed y is at or abovethe median force
+    # finally, make sure the smoothed force is back to zero
+    # XXX switch to faster
+    retract = split_fec.retract
+    time = retract.Time
+    smoothed_force = split_fec.retract_spline_interpolator()(time)
+    # XXX fit a line to it instead?... by nice if this were approach based only
+    force_threshold = np.median(smoothed_force[min_idx:])
+    where_smoothed =  np.where(smoothed_force < force_threshold)[0]
+    where_smoothed_and_greater = [e for e in where_smoothed if e >= min_idx] 
+    if (len(where_smoothed_and_greater) == 0):
+        return to_ret
+    # POST: have some point where we are at or above the threshold
+    min_idx = where_smoothed_and_greater[0]
+    to_ret[:min_idx] = 0
+    # determine events that contain the surface index
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries  
@@ -83,44 +99,9 @@ def adhesion_mask(surface_index,n_points,split_fec,
     # POST: at least one event contains the surface. Update the minimum index
     # to go to the end of the (last) event below or at the surface, unless
     # the end's end is below the surface, then just stick to our guns
-    idx_after_last_surface_event = events_containing_surface[-1].stop + \
-                                   min_points_between
-    to_ret[:idx_after_last_surface_event] = 0
-    # determine when we go back the median 
-    med = np.median(probability_distribution)
-    where_greater_than_median = np.where(probability_distribution > med)[0]
-    if (len(where_greater_than_median) == 0):
-        return to_ret    
-    prob_median_boundaries = _event_slices_from_mask(where_greater_than_median,
-                                                     min_points_between)
-    prob_median_boundaries = [e for e in prob_median_boundaries 
-                              if e.start >  idx_after_last_surface_event
-                              and e.stop-e.start > min_points_between]
-    if (len(prob_median_boundaries) == 0):
-        return to_ret
-    # POST: have some point greater than the last 
-    final_event_boundary = prob_median_boundaries[0].start                                     
-    min_idx = max(idx_after_last_surface_event,min_idx)
-    to_ret[min_idx] = 0
-    # finally, make sure the smoothed force is back to zero
-    retract = split_fec.retract
-    time = retract.Time
-    smoothed_force = split_fec.retract_spline_interpolator()(time)
-    force_median = np.median(smoothed_force[min_idx:])
-    where_smoothed =  np.where(smoothed_force < force_median)[0]
-    where_smoothed_and_greater = [e for e in where_smoothed if e > min_idx]    
-    if (len(where_smoothed_and_greater) == 0):
-        return to_ret
-    # POST: under median somewhere
-    min_idx = where_smoothed_and_greater[0]
-    to_ret[:min_idx] = 0
-    # get a list of the events with a starting point below the surface
-    events_containing_force_baseline = [e for e in event_boundaries  
-                                       if (e.start <= min_idx)]  
-    if (len(events_containing_force_baseline) == 0):
-        return to_ret
-    # new minimum index is based on whatever event contains this   
-    min_idx = events_containing_force_baseline[-1].stop + min_points_between
+    last_event_containing_surface_end = \
+        events_containing_surface[-1].stop + min_points_between
+    min_idx = max(min_idx,last_event_containing_surface_end)
     to_ret[:min_idx] = 0
     return to_ret                     
                      
