@@ -77,11 +77,14 @@ class score:
         true_x = x[np.where(true)]
         predicted_x = x[np.where(predicted)]
         # get the minimum distance for each
+        """
         closest_true = lambda x: true_x[np.argmin(np.abs(true_x-x))]
         self.minimum_distance_distribution = [np.abs(x-closest_true(x))
                                               for x in predicted_x]
         self.minimum_distance_median = \
             np.median(self.minimum_distance_distribution)
+        """
+        # XXX f that
         self.ruptures_true,self.ruptures_predicted = \
             get_true_and_predicted_rupture_information(split_fec,
                                                        self.idx_true,
