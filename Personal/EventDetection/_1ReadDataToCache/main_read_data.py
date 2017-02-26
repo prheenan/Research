@@ -4,6 +4,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys,os
+from sklearn.cross_validation import StratifiedKFold
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
@@ -14,22 +15,26 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
 class fold:
-    def __init__(self,params,scores):
+    def __init__(self,params,scores,info):
         self.params = params
         self.scores = scores
+        self.info = info
 
 class learning_curve:
-    def _init__(self,list_of_folds,list_of_params,func_to_call):
+    def __init__(self,list_of_folds,list_of_params,func_to_call):
         self.list_of_folds = list_of_folds
         self.list_of_params = list_of_params
         self.func_to_call = func_to_call
+    def _concatenate_all_scores(self):
+        return [score for list_by_params in self.list_of_folds
+                for s in list_by_params for score in s.scores]
+            
 
 class learners:
     def __init__(self,no_event,fovea,wavelet,fold_info):
         self.no_event = no_event
         self.fovea = fovea
         self.wavelet = wavelet
-        self.fold_info = fold_info
 
 class ForceExtensionCategory:
     def __init__(self,number,directory,sample,velocity_nm_s,has_events):
@@ -98,43 +103,60 @@ def category_read(category,force,cache_directory,limit):
                      for f in file_names]
         return all_files
 
-        
-def category_scores(category,force,cache_directory,limit,debug_plots,
-                    thresh):
+def single_fold_score(category,fold_data,func_to_call,*args,**kwargs):
     """
-    Gets all the scores associated with a given category
-
-    Args:
-        see category_read, except
-        thresh: threshold we want
-        debug_plots: if true, save plots out
-    Returns:
-        list scoring objects
+    XXX add in actual function support, remove extra ars
     """
-    id_data = "{:s}{:.1f}t={:.5f}".format(category.sample,
-                                          category.velocity_nm_s,
-                                          thresh)
-    cache_data = cache_directory + id_data + ".pkl"
-    data = CheckpointUtilities.getCheckpoint(cache_data,category_read,
-                                             force,category,force,
-                                             cache_directory,limit)
-    category.data = data
+    cache_directory = "./cache/"
     scores = []
-    if (len(category.data)  == 0):
-        return scores
-    for j,example in enumerate(category.data):
+    params = []
+    info = []
+    for j,example in enumerate(fold_data):
+        sample = category[j].sample,
+        velocity = category[j].velocity_nm_s
+        id_data = "{:s}{:.1f}p={:s}".format(sample,velocity,str(kwargs))
         example_split = Analysis.zero_and_split_force_extension_curve(example)
         m_func =Detector.adhesion_function_for_split_fec(example_split)
-        info = Detector._predict_helper(example_split,threshold=thresh,
-                                        condition_function=m_func)
-        score = Scoring.get_scoring_info(example_split,info.event_idx)
+        final_dict = dict(condition_function=m_func,**kwargs)
+        pred_info = Detector._predict_helper(example_split,**final_dict)
+        score = Scoring.get_scoring_info(example_split,pred_info.event_idx)
         scores.append(score)
         wave_name = example_split.retract.Meta.Name
         id_string = cache_directory + "db_" + id_data + "_" + \
                     str(j) + wave_name 
-        if (debug_plots):
-            debugging_plots(id_string,example_split,info)
-    return scores
+        debugging_plots(id_string,example_split,pred_info)
+        info.append([sample,velocity])
+        params.append(kwargs)
+    return fold(params,scores,info)
+
+
+def get_fold_scores(categories,n_folds=2,
+                    params_no_event=[dict(threshold=0.01)]):
+    labels_data = [ [i,d] for i,cat in enumerate(categories) for d in cat.data]
+    labels = [l[0] for l in labels_data]
+    data = [l[1] for l in labels_data]
+    # determine the folds to use
+    fold_idx = StratifiedKFold(labels,n_folds)
+    params_then_folds = []
+    for p in params_no_event:
+        folds = []
+        for train_idx,test_idx in fold_idx:
+            category_tmp = [categories[labels[f]] for f in train_idx]
+            fold_data = [data[f] for f in train_idx]
+            folds_tmp = single_fold_score(category_tmp,fold_data,
+                                          func_to_call=None,**p)
+            folds.append(folds_tmp)
+        params_then_folds.append(folds)
+    # XXX fix parameter stuff
+    return learning_curve(params_then_folds,
+                          list_of_params=params_no_event,func_to_call=None)
+
+def get_cached_folds(categories,force,cache_directory,limit,thresh):
+    for c in categories:
+        data_tmp = category_read(c,force,cache_directory,limit)
+        c.set_data(data_tmp)
+    # POST: all data read in. get all the scores for all the learners.
+    return get_fold_scores(categories)
 
 def run():
     """
@@ -159,25 +181,21 @@ def run():
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]
-    force = True
+    force = False
     debug_plots = True
     # limit (per category)
     limit = 2
     thresh = 1e-2                                
     # for each category, predict where events are
-    for i,category in enumerate(positive_categories):
-        kw_scores = (category,force,cache_directory,
-                     dict(limit=limit,thresh=thresh,debug_plots=debug_plots))
-        file_name_cache = "{:s}{:s}{:.1f}Scores.pkl".\
-            format(cache_directory,category.sample,category.velocity_nm_s)
-        scores = CheckpointUtilities.\
-            getCheckpoint(file_name_cache,category_scores,force,
-                          category,force,cache_directory,
-                          limit=limit,thresh=thresh,debug_plots=debug_plots)
-        category.set_scores(scores)
-    scores_flat = [score for cat in positive_categories for score in cat.scores]
-    rupture_true = [r for s in scores_flat for r in s.ruptures_true ]
-    rupture_predicted = [r for s in scores_flat for r in s.ruptures_predicted ]
+    file_name_cache = "{:s}Scores.pkl".format(cache_directory)
+    learners = CheckpointUtilities.\
+               getCheckpoint(file_name_cache,get_cached_folds,force,
+                             positive_categories,
+                             force,cache_directory,limit,thresh)
+    scores = learners._concatenate_all_scores()
+    print(len(scores))
+    rupture_true = [r for s in scores for r in s.ruptures_true ]
+    rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
     fig = PlotUtilities.figure(figsize=(8,8))
     Plotting.plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
     PlotUtilities.savefig(fig,cache_directory + "rupture_loading.png")
