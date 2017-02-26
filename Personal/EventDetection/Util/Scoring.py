@@ -32,8 +32,11 @@ def get_true_and_predicted_rupture_information(example_split,
                                       event_idx,1)
     rupture_func = lambda slice_ev: \
         Analysis.loading_rate_rupture_force_and_index(time,force,slice_ev)
+    # need at least two points to fit a line for the predicted values
+    condition = lambda slice_ev: time[slice_ev].size > 1
     true = [rupture(*rupture_func(m_slice(e))) for e in idx_true]
-    pred = [rupture(*rupture_func(m_slice(e))) for e in idx_predicted]
+    pred = [rupture(*rupture_func(m_slice(e))) 
+            for e in idx_predicted if condition(m_slice(e))]
     return true,pred
 
 class rupture:

@@ -28,18 +28,5 @@ def get_example():
     file_path = file_folder_path + file_name
     example = InputOutput.read_and_cache_file(file_path,cache_directory="./",
                                               force=False,has_events=True)
-    example_split = Analysis.split_FEC_by_meta(example)
-    approach = example_split.approach
-    retract = example_split.retract 
-    # get the autocorrelation time of the retract force (what we care about)
-    x,f = retract.Time,retract.Force
-    dx = np.median(np.diff(x))
-    frequency = retract.ThermalFrequency
-    n_points_fit = int(np.ceil((1/frequency) * (1/dx)))
-    tau,auto_coeffs,auto_correlation = \
-        Analysis.auto_correlation_tau(x,f,deg_autocorrelation=1,
-                                      fit_idx_max=n_points_fit)
-    num_points = int(np.ceil(tau/dx))
-    # zero out everything to the approach using the autocorrelation time 
-    Analysis.zero_by_approach(example_split,num_points)                                              
+    example_split = Analysis.zero_and_split_force_extension_curve(example)
     return example_split
