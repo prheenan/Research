@@ -270,7 +270,7 @@ def _loading_rate_helper(x,y,slice_event):
     """
     # determine the local maximum
     offset = slice_event.start
-    n_points = np.ceil((slice_event.stop-offset+1)/2)
+    n_points = int(np.ceil((slice_event.stop-offset+1)/2))
     y_event = y[slice_event]
     x_event = x[slice_event]
     local_max_idx = offset + np.argmax(y_event)
