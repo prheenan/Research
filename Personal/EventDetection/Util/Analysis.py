@@ -352,7 +352,6 @@ def zero_and_split_force_extension_curve(example):
     retract = example_split.retract 
     f = approach.Force
     x = approach.Time
-    # XXX wtf...
     num_points = int(np.ceil(f.size * 0.025))
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
