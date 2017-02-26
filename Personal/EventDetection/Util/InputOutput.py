@@ -28,6 +28,34 @@ def read_and_cache_file(file_path,cache_directory,has_events=False,force=True):
     return CheckpointUtilities.getCheckpoint(cache_file,func_to_call,force,
                                              file_path,has_events=has_events)
                    
+def get_category_data(r_obj,force,cache_directory,limit):
+    """
+    gets the data for a single category data, caching on a per-data basis
+    
+    Args:
+        r_obj: the category object to use
+        others:  see set_and_cache_category_data
+    Returns:
+        list of time,sep,force objects to use
+    """
+    # restart the limit each category
+    limit_tmp = 0
+    data_in_category = []
+    # get the label for this dataset.
+    dir_v = r_obj.directory
+    all_files = GenUtilities.getAllFiles(dir_v,ext=".csv")
+    kwargs =dict(cache_directory=cache_directory,
+                 has_events = r_obj.has_events,force=force)
+    # reach all the files until we reach the limit
+    for f in all_files:
+        data_file_tmp = read_and_cache_file(f,**kwargs)
+        data_in_category.append(data_file_tmp)
+        limit_tmp = limit_tmp - 1
+        if (limit_tmp == 0):
+            break
+    return data_in_category
+
+
 def set_and_cache_category_data(categories,force,cache_directory,limit):
     """
     loops through each category, reading in at most limit files per category,
@@ -44,20 +72,7 @@ def set_and_cache_category_data(categories,force,cache_directory,limit):
         nothing, but sets the data of set_categories
     """
     for i,r_obj in enumerate(categories):
-        # restart the limit each category
-        limit_tmp = limit
-        data_in_category = []
-        # get the label for this dataset.
-        dir_v = r_obj.directory
-        all_files = GenUtilities.getAllFiles(dir_v,ext=".csv")
-        kwargs =dict(cache_directory=cache_directory,
-                     has_events = r_obj.has_events,force=force)
-        # reach all the files until we reach the limit
-        for f in all_files:
-            data_file_tmp = read_and_cache_file(f,**kwargs)
-            data_in_category.append(data_file_tmp)
-            limit_tmp = limit_tmp - 1
-            if (limit_tmp == 0):
-                break
+        data = get_category_data(r_obj,force,cache_directory,limit)
         # set the data in this category
         r_obj.set_data(data_in_category)    
+
