@@ -144,7 +144,7 @@ def run():
     force = True
     debug_plots = True
     # limit (per category)
-    limit = 2
+    limit = 10
     thresh = 1e-2                                
     # for each category, predict where events are
     for i,category in enumerate(positive_categories):
