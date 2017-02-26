@@ -74,6 +74,22 @@ def adhesion_mask(surface_index,n_points,split_fec,
         return to_ret
     # POST: we have at least one event and one non-event 
     # (could be some adhesion!)
+    # first, walk to where the smoothed y is at or abovethe median force
+    # finally, make sure the smoothed force is back to zero
+    # XXX switch to faster
+    retract = split_fec.retract
+    time = retract.Time
+    smoothed_force = split_fec.retract_spline_interpolator()(time)
+    # XXX fit a line to it instead?... by nice if this were approach based only
+    force_threshold = np.median(smoothed_force[min_idx:])
+    where_smoothed =  np.where(smoothed_force < force_threshold)[0]
+    where_smoothed_and_greater = [e for e in where_smoothed if e >= min_idx] 
+    if (len(where_smoothed_and_greater) == 0):
+        return to_ret
+    # POST: have some point where we are at or above the threshold
+    min_idx = where_smoothed_and_greater[0]
+    to_ret[:min_idx] = 0
+    # determine events that contain the surface index
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries  
@@ -83,44 +99,9 @@ def adhesion_mask(surface_index,n_points,split_fec,
     # POST: at least one event contains the surface. Update the minimum index
     # to go to the end of the (last) event below or at the surface, unless
     # the end's end is below the surface, then just stick to our guns
-    idx_after_last_surface_event = events_containing_surface[-1].stop + \
-                                   min_points_between
-    to_ret[:idx_after_last_surface_event] = 0
-    # determine when we go back the median 
-    med = np.median(probability_distribution)
-    where_greater_than_median = np.where(probability_distribution > med)[0]
-    if (len(where_greater_than_median) == 0):
-        return to_ret    
-    prob_median_boundaries = _event_slices_from_mask(where_greater_than_median,
-                                                     min_points_between)
-    prob_median_boundaries = [e for e in prob_median_boundaries 
-                              if e.start >  idx_after_last_surface_event
-                              and e.stop-e.start > min_points_between]
-    if (len(prob_median_boundaries) == 0):
-        return to_ret
-    # POST: have some point greater than the last 
-    final_event_boundary = prob_median_boundaries[0].start                                     
-    min_idx = max(idx_after_last_surface_event,min_idx)
-    to_ret[min_idx] = 0
-    # finally, make sure the smoothed force is back to zero
-    retract = split_fec.retract
-    time = retract.Time
-    smoothed_force = split_fec.retract_spline_interpolator()(time)
-    force_median = np.median(smoothed_force[min_idx:])
-    where_smoothed =  np.where(smoothed_force < force_median)[0]
-    where_smoothed_and_greater = [e for e in where_smoothed if e > min_idx]    
-    if (len(where_smoothed_and_greater) == 0):
-        return to_ret
-    # POST: under median somewhere
-    min_idx = where_smoothed_and_greater[0]
-    to_ret[:min_idx] = 0
-    # get a list of the events with a starting point below the surface
-    events_containing_force_baseline = [e for e in event_boundaries  
-                                       if (e.start <= min_idx)]  
-    if (len(events_containing_force_baseline) == 0):
-        return to_ret
-    # new minimum index is based on whatever event contains this   
-    min_idx = events_containing_force_baseline[-1].stop + min_points_between
+    last_event_containing_surface_end = \
+        events_containing_surface[-1].stop + min_points_between
+    min_idx = max(min_idx,last_event_containing_surface_end)
     to_ret[:min_idx] = 0
     return to_ret                     
                      
@@ -252,8 +233,8 @@ def _event_slices_from_mask(mask,min_points_between):
     event_slices = [slice(start,end,1) 
                     for start,end in zip(event_idx_start,event_idx_end)]    
     return event_slices
-    
-def event_by_loading_rate(x,y,slice_event):
+
+def _loading_rate_helper(x,y,slice_event):
     """
     Determine where a (single, local) event is occuring in the slice_event
     (of length N) part of x,y by:
@@ -266,11 +247,11 @@ def event_by_loading_rate(x,y,slice_event):
         x, y: x and y values. we assume an event is from high to low in y
         slice_event: where to fit
     Returns:
-        predicted index (absolute) in x,y where we think the event is happening
+        tuple of <fit_x,fit_y,predicted y based on fit, idx_above_predicted>
     """
     # determine the local maximum
     offset = slice_event.start
-    n_points = np.ceil((slice_event.stop-offset+1)/2)
+    n_points = int(np.ceil((slice_event.stop-offset+1)/2))
     y_event = y[slice_event]
     x_event = x[slice_event]
     local_max_idx = offset + np.argmax(y_event)
@@ -289,10 +270,22 @@ def event_by_loading_rate(x,y,slice_event):
     idx_above_predicted_rel = np.where(y_event > pred)[0]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
-    if (len(idx_above_predicted) == 0):
-        return fit_max_idx
+    return fit_x,fit_y,pred,idx_above_predicted
+    
+def event_by_loading_rate(*args,**kwargs):
+    """
+    see _loading_rate_helper 
+
+    Args:
+        see _loading_rate_helper
+    Returns:
+        predicted index (absolute) in x,y where we think the event is happening
+    """
+    fit_x,fit_y,pred,idx_above_predicted = _loading_rate_helper(*args,**kwargs)
     # POST: have a proper max, return the last time we are above
     # the linear prediction
+    if (len(idx_above_predicted) == 0):
+        return fit_max_idx
     return idx_above_predicted[-1]
 
 def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
