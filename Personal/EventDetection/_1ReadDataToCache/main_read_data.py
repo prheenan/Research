@@ -141,8 +141,8 @@ def run():
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]
-    force = True
-    debug_plots = True
+    force = False
+    debug_plots = False
     # limit (per category)
     limit = 10
     thresh = 1e-2                                

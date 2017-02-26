@@ -345,6 +345,9 @@ def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
     """
     x = time[slice_to_fit]
     y = force[slice_to_fit]
+    # XXX can fit a line, throw an error?
+    if (x.size < 2):
+        return 0,0
     coeffs = np.polyfit(y=y,x=x,deg=1)
     predicted = np.polyval(coeffs,x=x)
     loading_rate, _ = coeffs
