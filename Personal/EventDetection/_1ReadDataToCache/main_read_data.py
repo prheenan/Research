@@ -13,6 +13,23 @@ from Research.Personal.EventDetection.Util import \
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
+class fold:
+    def __init__(self,params,scores):
+        self.params = params
+        self.scores = scores
+
+class learning_curve:
+    def _init__(self,list_of_folds,list_of_params,func_to_call):
+        self.list_of_folds = list_of_folds
+        self.list_of_params = list_of_params
+        self.func_to_call = func_to_call
+
+class learners:
+    def __init__(self,no_event,fovea,wavelet):
+        self.no_event = no_event
+        self.fovea = fovea
+        self.wavelet = wavelet
+
 class ForceExtensionCategory:
     def __init__(self,number,directory,sample,velocity_nm_s,has_events):
         self.category_number = number
