@@ -60,7 +60,7 @@ def run():
                            for r in positive_meta]
     force = False
     # limit (per category)
-    limit = 2
+    limit = 10
     # get the positive events
     try:
         InputOutput.set_and_cache_category_data(positive_categories,
