@@ -69,29 +69,42 @@ class score:
         # how many events are there?
         self.n_events = len(idx_true)
         self.n_events_predicted = len(idx_predicted)
-        # get the 0/1 booleans arrays
-        true,predicted = self.get_boolean_arrays(x)
-        # have x start at 0...
-        self.precision = metrics.precision_score(true,predicted)
-        self.recall = metrics.precision_score(true,predicted)
-        # XXX fit: greedily pick true events, determine recall and precision
-        # in this manner... 
-        # get the x values where we think events are happenings
-        true_x = x[np.where(true)]
-        predicted_x = x[np.where(predicted)]
-        # get the minimum distance for each
+        try:
+            self.true_x = [x[i] for i in idx_true]
+            self.pred_x = [x[i] for i in idx_predicted]
+            self.ruptures_true,self.ruptures_predicted = \
+                get_true_and_predicted_rupture_information(split_fec,
+                                                           self.idx_true,
+                                                           self.idx_predicted)
+        except IndexError as e:
+            # fed a back index in true (annotator error) or predicted
+            # (a method went wacky). report it, and zero out this.
+            self.true_x,self.pred_x = [],[]
+            self.ruptures_true,self.ruptures_predicted = [],[]
+            true_ev = str(split_fec.retract.Events)
+            pred_ev = str(idx_predicted)
+            meta = retract.Meta
+            n = retract.Force.size
+            fec_name = "{:s}{:s}".format(meta.SourceFile,meta.Name)
+            # note: the true events are absolute-offset to facilitate
+            # easier finding and fixing them; predicted are relative.
+            print("{:s} (N_retract={:d}), bad events (true/pred): {:s}/{:s}".\
+                   format(fec_name,int(n),true_ev,pred_ev))
+            print(e)
+    def minimum_distance_median(self):
         """
-        closest_true = lambda x: true_x[np.argmin(np.abs(true_x-x))]
-        self.minimum_distance_distribution = [np.abs(x-closest_true(x))
-                                              for x in predicted_x]
-        self.minimum_distance_median = \
-            np.median(self.minimum_distance_distribution)
+        returns the median of the smallest distance to an event
+
+        if no predicted events, this value is none
         """
-        # XXX f that
-        self.ruptures_true,self.ruptures_predicted = \
-            get_true_and_predicted_rupture_information(split_fec,
-                                                       self.idx_true,
-                                                       self.idx_predicted)
+        closest_true = lambda x: self.true_x[np.argmin(np.abs(self.true_x-x))]
+        min_distance_distribution = [np.abs(x-closest_true(x)) 
+                                     for x in self.pred_x]
+        if (len(min_distance_distribution) > 0):
+            return np.median(min_distance_distribution)
+        else:
+            return None
+
     def get_boolean_arrays(self,time):
         """
         Returns:

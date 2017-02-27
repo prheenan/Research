@@ -39,7 +39,7 @@ def get_category_data(r_obj,force,cache_directory,limit):
         list of time,sep,force objects to use
     """
     # restart the limit each category
-    limit_tmp = 0
+    limit_tmp = limit
     data_in_category = []
     # get the label for this dataset.
     dir_v = r_obj.directory
@@ -51,7 +51,7 @@ def get_category_data(r_obj,force,cache_directory,limit):
         data_file_tmp = read_and_cache_file(f,**kwargs)
         data_in_category.append(data_file_tmp)
         limit_tmp = limit_tmp - 1
-        if (limit_tmp == 0):
+        if (limit_tmp <= 0):
             break
     return data_in_category
 

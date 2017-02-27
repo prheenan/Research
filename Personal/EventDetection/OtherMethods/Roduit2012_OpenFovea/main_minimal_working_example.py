@@ -49,7 +49,7 @@ def run():
         scorer = Scoring.get_scoring_info(split_fec,peaks_predicted)
         plot_classification(out_base,"weight={:.3f}".format(w),split_fec,scorer)
         scorers.append(scorer)
-    distances = [s.minimum_distance_median for s in scorers]
+    distances = [s.minimum_distance_median() for s in scorers]
     true = scorers[0].n_events
     predicted = np.array([s.n_events_predicted for s in scorers])
     relative_error = np.abs(predicted-true)/true
