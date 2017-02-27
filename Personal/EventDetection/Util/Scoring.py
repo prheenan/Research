@@ -69,6 +69,9 @@ class score:
         # how many events are there?
         self.n_events = len(idx_true)
         self.n_events_predicted = len(idx_predicted)
+        meta = retract.Meta
+        self.name = meta.Name
+        self.source_file = meta.SourceFile
         try:
             self.true_x = [x[i] for i in idx_true]
             self.pred_x = [x[i] for i in idx_predicted]
@@ -83,7 +86,6 @@ class score:
             self.ruptures_true,self.ruptures_predicted = [],[]
             true_ev = str(split_fec.retract.Events)
             pred_ev = str(idx_predicted)
-            meta = retract.Meta
             n = retract.Force.size
             fec_name = "{:s}{:s}".format(meta.SourceFile,meta.Name)
             # note: the true events are absolute-offset to facilitate
