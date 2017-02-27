@@ -373,7 +373,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
     # the surface
     return to_ret
 
-def predict(example,threshold=1e-2,debug_plots=False):
+def predict(example,threshold=1e-2,debug_plots=True):
     example_split = Analysis.zero_and_split_force_extension_curve(example)
     m_func = adhesion_function_for_split_fec(example_split)
     final_dict = dict(condition_function=m_func,threshold=threshold)

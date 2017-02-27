@@ -320,3 +320,25 @@ def debugging_plots(id_string,example_split,info):
     plot_prediction_info(example_split,info)
     PlotUtilities.savefig(fig,out_file_path + "info.png")
 
+
+
+
+def plot_individual_learner(cache_directory,learner):
+    """
+    Plots the results for a single, individual learner
+
+    Args:
+        cache_directory: where to save the plots
+        learner: learning_curve instance to use
+    Returns:
+        nothing
+    """
+    scores = learner._concatenate_all_scores()
+    if (len(scores) == 0) :
+        return
+    rupture_true = [r for s in scores for r in s.ruptures_true ]
+    rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
+    fig = PlotUtilities.figure(figsize=(8,8))
+    plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
+    out_file_stem = cache_directory + "{:s}".format(learner.description)
+    PlotUtilities.savefig(fig,out_file_stem + "rupture_loading.png")
