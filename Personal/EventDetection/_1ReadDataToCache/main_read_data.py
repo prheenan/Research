@@ -59,8 +59,7 @@ def run():
     force = True
     debug_plots = True
     # limit (per category)
-    limit = 21
-    thresh = 1e-2                                
+    limit = 30
     n_folds = 3
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)

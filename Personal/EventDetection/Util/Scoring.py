@@ -77,7 +77,7 @@ class score:
                                                            self.idx_true,
                                                            self.idx_predicted)
         except IndexError as e:
-            # fed a back index in true (annotator error) or predicted
+            # we were fed a bad index in true (annotator error) or predicted
             # (a method went wacky). report it, and zero out this.
             self.true_x,self.pred_x = [],[]
             self.ruptures_true,self.ruptures_predicted = [],[]

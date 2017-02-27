@@ -126,7 +126,7 @@ def get_all_folds_for_one_learner(learner,data,fold_idx):
         params_then_folds.append(folds)
     return params_then_folds
 
-def get_learners():
+def get_learners(n_points_no_event=7):
     """
     Returns a list of learning_curve objects
 
@@ -137,7 +137,8 @@ def get_learners():
     """
     no_event_args_to_dict = lambda arg_list: \
             [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.linspace(1e-4,1e-2,num=2)]
+    no_event_tuple = [Detector.predict,np.linspace(1e-4,1e-1,endpoint=True,
+                                                   num=n_points_no_event)]
     no_event_curve = learning_curve("No event",no_event_tuple[0],
                                     no_event_args_to_dict(no_event_tuple[1]))
     return [no_event_curve]
