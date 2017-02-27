@@ -7,7 +7,7 @@ import sys
 from scipy import signal,stats
 
 from Research.Personal.EventDetection.Util import Plotting,Analysis
-from GeneralUtil.python import PlotUtilities
+from GeneralUtil.python import PlotUtilities,GenUtilities
 
 def local_stdev(f,n):
     """
@@ -381,6 +381,7 @@ def predict(example,threshold=1e-2,debug_plots=True):
     if (debug_plots):
         meta = example.Meta
         cache_directory = "./debug_no_event/"
+        GenUtilities.ensureDirExists(cache_directory)
         id_data = "{:s}{:.1f}p={:s}".format(meta.Name,meta.Velocity,
                                             str(threshold))
         wave_name = example_split.retract.Meta.Name

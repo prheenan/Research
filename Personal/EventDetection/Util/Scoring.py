@@ -69,26 +69,13 @@ class score:
         # how many events are there?
         self.n_events = len(idx_true)
         self.n_events_predicted = len(idx_predicted)
-        """
-        # get the 0/1 booleans arrays
-        true,predicted = self.get_boolean_arrays(x)
-        # have x start at 0...
-        self.precision = metrics.precision_score(true,predicted)
-        self.recall = metrics.precision_score(true,predicted)
-        # XXX fit: greedily pick true events, determine recall and precision
-        # in this manner... 
-        # get the x values where we think events are happenings
-        true_x = x[np.where(true)]
-        predicted_x = x[np.where(predicted)]
-        # et the minimum distance for each
-        """
-        """
-        closest_true = lambda x: true_x[np.argmin(np.abs(true_x-x))]
-        self.minimum_distance_distribution = [np.abs(x-closest_true(x))
-                                              for x in predicted_x]
-        self.minimum_distance_median = \
-            np.median(self.minimum_distance_distribution)
-        """
+        try:
+            self.true_x = [x[i] for i in idx_true]
+            self.pred_x = [x[i] for i in idx_predicted]
+            raise IndexError("foobar")
+        except IndexError as e:
+            print("FEC {:s} was messed up, events at (absolute): {:s}".\
+                   format(retract.Meta.Name,str(split_fec.retract.Events))
         # XXX f that
         self.ruptures_true,self.ruptures_predicted = \
             get_true_and_predicted_rupture_information(split_fec,
