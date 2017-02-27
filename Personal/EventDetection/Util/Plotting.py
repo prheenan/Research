@@ -299,3 +299,24 @@ def plot_predicted_and_true_ruptures(true,predicted,title="",label_true="true",
                             frameon=True,legend_kwargs=dict(numpoints=1))
 
 
+
+def debugging_plots(id_string,example_split,info):
+    """
+    Plots the autocorrelation and prediction information
+
+    Args:
+        id_string: 
+        example_split: force extension curve to debug
+        info: return from predict_helper
+    Returns:
+        nothing, splits plots out like id_string
+    """
+    out_file_path =  id_string
+    fig = PlotUtilities.figure(figsize=(8,20))
+    plot_autocorrelation(example_split)
+    PlotUtilities.savefig(fig,out_file_path + "auto.png")   
+    # XXX fix threshhold
+    fig = PlotUtilities.figure(figsize=(8,12))    
+    plot_prediction_info(example_split,info)
+    PlotUtilities.savefig(fig,out_file_path + "info.png")
+
