@@ -11,13 +11,13 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis \
 
 def get_example(base="./"):
     """
-    <Description>
+    gets a single force extension curve to play with
 
     Args:
-        param1: This is the first param.
+        base: where to look for the file
     
     Returns:
-        This is a description of what is returned.
+        single force extension curve (not zeroed or split)s
     """
     file_folder_path = FEC_Util.default_data_root() + \
         "4Patrick/CuratedData/Masters_CSCI/Positive/650nm-4x-bio/csv/" + \
@@ -29,5 +29,4 @@ def get_example(base="./"):
     file_path = file_folder_path + file_name
     example = InputOutput.read_and_cache_file(file_path,cache_directory=base,
                                               force=False,has_events=True)
-    example_split = Analysis.zero_and_split_force_extension_curve(example)
-    return example_split
+    return example
