@@ -7,6 +7,8 @@ import sys
 
 from Research.Personal.EventDetection.Util import Analysis,InputOutput,Scoring
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
+from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
+    fovea
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.cross_validation import StratifiedKFold
 
@@ -116,13 +118,14 @@ def single_fold_score(fold_data,func,kwargs):
     Returns:
         fold object
     """
-    cache_directory = "./cache/"
     scores = []
     info = []
     for j,example in enumerate(fold_data):
         meta = example.Meta
+        # get the predicted event index
         event_idx = func(example,**kwargs)
         example_split = Analysis.zero_and_split_force_extension_curve(example)
+        # get the score
         score = Scoring.get_scoring_info(example_split,event_idx)
         info.append(fold_meta(meta))
         scores.append(score)
@@ -157,28 +160,66 @@ def get_all_folds_for_one_learner(learner,data,fold_idx):
             valid_data = [data[f] for f in test_idx]
             valid_fold = single_fold_score(valid_data,func_to_call,param)
             folds_valid.append(valid_fold)
+        # done with all the folds for this parameter; save them out
         params_then_folds.append(folds)
         param_validation_fold.append(folds_valid)
     return params_then_folds,param_validation_fold
 
-def get_learners(n_points_no_event=10):
+def _get_single_curve(name,tuple_v,func):
+    """
+    Returns a single learning curve object
+
+    Args:
+        name: the name of the curvess
+        tuple_v: tuple like <function to call, list of parameters>
+            
+        func: takes in list of single parameters, returns a list of kwargs  
+        dicts for func
+    Returns:
+        learning_curve object
+    """
+    return learning_curve(name,tuple_v[0],func(tuple_v[1]))
+    
+def get_learners(n_points_no_event=5,n_points_fovea=5):
     """
     Returns a list of learning_curve objects
 
     Args:
         n_points_no_event: number of points for varying the no event portion of 
         things
+            
+        n_points_fovea: number of points to use on fovea
     Returns:
-        list of lerning curvess
+        list of learning curves
     """
-    no_event_args_to_dict = lambda arg_list: \
-            [dict(threshold=t) for t in arg_list]
+    # make the no event example
+    no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
     no_event_tuple = [Detector.predict,np.linspace(1e-3,1e-1,endpoint=True,
                                                    num=n_points_no_event)]
-    no_event_curve = learning_curve("No event",no_event_tuple[0],
-                                    no_event_args_to_dict(no_event_tuple[1]))
-    return [no_event_curve]
+    no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                                
+    # make the fovea example
+    fovea_func = lambda arg_list: [dict(weight=w) for w in arg_list]
+    fovea_tuple = [fovea.predict,np.linspace(0.01,0.5,endpoint=True,
+                                             num=n_points_fovea)]
+    fovea_curve = _get_single_curve("Open Fovea",fovea_tuple,fovea_func)                                   
+    return [no_event_curve,fovea_curve]
 
+def get_single_learner_folds(l,data,fold_idx):
+    """
+    return the training and testing folds for a given learner
+
+    Args:
+        l : learner to use
+        d : data to use 
+        fold_idx: which indices to use for the folds
+    Returns:
+        tuple of <training,validation folds>
+    """
+    list_of_folds,validation_folds = get_all_folds_for_one_learner(l,data,
+                                                                   fold_idx)
+    return  list_of_folds,validation_folds                                                                                 
+
+    
 def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42):
     """
     caches all the results for every learner after reading in all the data
@@ -205,8 +246,11 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42):
     learners = get_learners()
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
-        list_of_folds,validation_folds = \
-            get_all_folds_for_one_learner(l,data,fold_idx)
+        cache_file = cache_directory + "folds_" + l.description + ".pkl"
+        tmp = CheckpointUtilities.getCheckpoint(cache_file,
+                                                get_single_learner_folds,force,
+                                                l,data,fold_idx)
+        list_of_folds,validation_folds = tmp
         l.set_list_of_folds(list_of_folds)
         l.set_validation_folds(validation_folds)
     return learners
