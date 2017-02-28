@@ -270,7 +270,7 @@ def _loading_rate_helper(x,y,slice_event):
     idx_above_predicted_rel = np.where(y_event > pred)[0]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
-    return fit_x,fit_y,pred,idx_above_predicted
+    return fit_x,fit_y,pred,idx_above_predicted,local_max_idx
     
 def event_by_loading_rate(*args,**kwargs):
     """
@@ -281,11 +281,11 @@ def event_by_loading_rate(*args,**kwargs):
     Returns:
         predicted index (absolute) in x,y where we think the event is happening
     """
-    fit_x,fit_y,pred,idx_above_predicted = _loading_rate_helper(*args,**kwargs)
+    fit_x,fit_y,pred,idx_above_predicted,local_max_idx = _loading_rate_helper(*args,**kwargs)
     # POST: have a proper max, return the last time we are above
     # the linear prediction
     if (len(idx_above_predicted) == 0):
-        return fit_max_idx
+        return local_max_idx
     return idx_above_predicted[-1]
 
 def _predict(x,y,n_points,interp,threshold,local_event_idx_function,

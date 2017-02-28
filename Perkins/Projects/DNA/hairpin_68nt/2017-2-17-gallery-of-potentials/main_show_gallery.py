@@ -42,8 +42,9 @@ def run():
        "2017-2-17-velocity-assay-single-attachments-no-adhesion" +  \
        "-1000nm-s-needs-to-be-redone/"
     out_dir = "./out/"
+    force = False
     files,force_extension_curves = \
-        FEC_Util.read_and_cache_pxp(directory,force=False)
+        FEC_Util.read_and_cache_pxp(directory,force=false)
     force_extension_curves = [f for f in force_extension_curves]
     # split everything 
     curves_split= \
@@ -54,9 +55,6 @@ def run():
     [FEC_Util.zero_split_fec_approach_and_retract(f,NFilterPoints=n_filter(f),
                                                   **kwargs) 
      for f in curves_split]
-    # XXX really awful  filtering
-    curves_split = [c for i,c in enumerate(curves_split) 
-                    if i not in [19,23,46,56,58,60,61,65,72]]
     # get just the retracts
     curves_retract = [ fec.retract for fec in curves_split]
     curves_approach = [ fec.approach for fec in curves_split]
@@ -91,7 +89,7 @@ def run():
         plt.xlim([-25,75])
         plt.ylim([-30,100])
         _,src_file = ntpath.split(appr.Meta.SourceFile)
-        save_name = "{:s}fec_{:d}_{:s}.png".\
+        save_name = "{:s}fec_{:d}_{:s}_{:s}.png".\
             format(out_dir,i,src_file,appr.Meta.Name)
         PlotUtilities.savefig(fig,save_name)
         
