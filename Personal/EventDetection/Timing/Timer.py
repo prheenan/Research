@@ -123,7 +123,7 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     positive_categories = Learning.\
         get_categories(positives_directory=positives_directory)
-    curve_numbers = [1,2,5,10,20,50,100,200][:2]
+    curve_numbers = [1,2,5,10,20,50]
     cache_dir = "../_1ReadDataToCache/cache/"
     for c in positive_categories:
         data = Learning.category_read(c,force=False,cache_directory=cache_dir,
