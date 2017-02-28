@@ -1,6 +1,7 @@
 import KmerUtil
 
 class Scales:
+    _250NM = "250nm"
     _100NM = "100nm"
     _25NM = "25nm"
 

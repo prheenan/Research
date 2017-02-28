@@ -303,3 +303,30 @@ def SmallestNonCoveredKmer(primerStr,thresh=1,CheckCircular=False):
         if ((numPossible-len(unique)) >= thresh):
             break
     return k
+
+def assert_hairpin_matches(seq,stem_length):
+    """
+    check that the desired hairpin matches
+
+    Args:
+        seq: the entire hairpin we want to check
+        stem_length: size of the basepair matching region
+    Returns:
+        nothing, throws an error if things go wrong
+    """
+    reverse_complement = ReverseComplement(seq)
+    # make sure that the reverse complement of the hairpin is equal to the 
+    # hairpin itself IE, we should have a match (excepting LOOP to LOOP')
+    # 5' - F - LOOP - R  - 3'    (ie: forward sequence)
+    # 3' - R'- LOOP'- F' - 5'    (ie: reverse complement)
+    check = lambda s1,s2: s1.lower() == s2.lower()
+    loop_length = (len(seq) - 2*stem_length)
+    # is the reverse complement of the forward equal to the forward
+    assert check(reverse_complement[:stem_length],
+                  seq[:stem_length])
+    # is the reverse complement of the reverse equal to the reverse
+    assert check(reverse_complement[-stem_length:],
+                 seq[-stem_length:])
+    # the loops should *not* match
+    assert not check(reverse_complement[stem_length:stem_length+loop_length],
+                     seq[stem_length:stem_length+ loop_length])
