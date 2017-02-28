@@ -18,14 +18,18 @@ def run():
     str_v = "GC" * 8
     np.random.seed(42)
     seq_loop = "TTTT"
+    # we have two T residues separating the hairpin from the surface
+    # and tip respectively
     len_spacers = 4
     len_loop = len(seq_loop)
     gc_start = "GC"
     n_start = len(gc_start)*2
     stem_size = int((desired_len - n_start - \
                      len(str_v) * 2-len_loop-len_spacers)/2)
+    # get the stem by randomly selecting 20% GC content
     seq_stem = np.random.choice(a=["a","t","g","c"],p=[0.4,0.4,0.1,0.1],
                                 size=stem_size)
+    # get the full hairpin by adding the loop and the complement of the sequence
     seq_stem = gc_start + "".join(seq_stem)
     seq = seq_stem + seq_loop + KmerUtil.ReverseComplement(seq_stem)
     stem_length = len(seq_stem)
