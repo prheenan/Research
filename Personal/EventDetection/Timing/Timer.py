@@ -16,11 +16,29 @@ class time_trials:
         self.num_curves = num_curves
         self.fec_num_points = fec_num_points
     def mean_time_for_fixed_number(self):
+        """
+        Returns:
+            mean times to complete each of self.num_curves
+        """
         return [np.mean(x) for x in self.times]
     def std_time_for_fixed_number(self):
+        """
+        Returns:
+            standard deviation of times to complete each of self.num_curves
+        """    
         return [np.std(x) for x in self.times]
     def total_number_of_points_per_curves(self):
+        """
+        Returns:
+            total number of points predicted for each of self.num_curves
+        """    
         return [sum(n) for n in self.fec_num_points]
+    def average_number_of_points_per_curve(self):
+        """
+        Returns:
+            average number of points per curve over all curves
+        """        
+        return np.mean(np.concatenate(self.fec_num_points))
     
 
 class time_trials_by_loading_rate:
@@ -29,9 +47,17 @@ class time_trials_by_loading_rate:
         self.list_of_time_trials = list_of_time_trials
         self.loading_rates = loading_rates
     def max_time_trial(self):
+        """
+        Returns:
+            the maximum time across all trials. useful for plotting
+        """
         return max([max(np.concatenate(l.times))
                     for l in self.list_of_time_trials])
     def min_time_trial(self):
+        """
+        Returns:
+            the minmumx time across all trials. useful for plotting
+        """    
         return min([min(np.concatenate(l.times))
                     for l in self.list_of_time_trials])                    
 
@@ -144,8 +170,11 @@ def run():
     curve_numbers = [1,2,5,10,20,50]
     cache_dir = "../_1ReadDataToCache/cache/"
     force = False
-    times = cache_all_learners(learners,positive_categories,curve_numbers,
-                               force=force,cache_directory=cache_dir)
+    times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
+                                              cache_all_learners,force,
+                                              learners,positive_categories,
+                                              curve_numbers,
+                                              cache_dir,force)
     max_time = max([l.max_time_trial() for l in times])
     min_time = min([l.min_time_trial() for l in times])
     for learner_trials in times:
@@ -154,14 +183,26 @@ def run():
         fudge = 2
         plt.ylim([min_time/fudge,max_time*fudge])
         plt.yscale('log')
+        PlotUtilities.legend(loc="lower right",frameon=True)
         PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
         
 def plot_single_learner(learner_trials):    
+    styles = [dict(color='r',marker='x',linestyle='--'),
+              dict(color='b',marker='o',linestyle='-'),
+              dict(color='k',marker='v',linestyle='-.')]
     for i,loading_rate_trial in enumerate(learner_trials.list_of_time_trials):
+        style = styles[i % len(styles)]
         num_curves = loading_rate_trial.num_curves
         mean = loading_rate_trial.mean_time_for_fixed_number()
         std = loading_rate_trial.std_time_for_fixed_number()
-        plt.errorbar(x=num_curves,y=mean,yerr=std,fmt='ro-')
+        pts_per_curve = loading_rate_trial.average_number_of_points_per_curve()
+        decimal_places = int(np.floor(np.log10(abs(pts_per_curve))))
+        round_pts_per_curve = int(np.round(pts_per_curve,-decimal_places))
+        velocity = learner_trials.loading_rates[i]
+        velocity_label = r"v={:4d}nm/s".format(velocity)
+        number_label = r"<Points per curve>={:d}".format(round_pts_per_curve)
+        label = "{:s} ({:s})".format(velocity_label,number_label)
+        plt.errorbar(x=num_curves,y=mean,yerr=std,label=label,**style)
     PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time","")
 
 if __name__ == "__main__":
