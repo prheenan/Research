@@ -105,7 +105,7 @@ def category_read(category,force,cache_directory,limit):
         all_files = [CheckpointUtilities.getCheckpoint(f,None,False)
                      for f in file_names]
         return all_files
-
+        
 def single_fold_score(fold_data,func,kwargs):
     """
     Gets the fold object for a single set of data (ie: a single fold)

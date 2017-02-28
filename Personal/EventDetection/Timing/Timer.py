@@ -34,7 +34,7 @@ def time_single(func,data):
 stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/25823885#2582388
 
     Args:
-        func: to call
+        func: to call, just takes in the FEC
         data: what to use
     Returns:
         time, in seconds, that it takes to run. 
@@ -58,8 +58,10 @@ def get_all_times(learner,data,list_of_curve_numbers,trials_per_curve_set=5):
     sizes_all_trials = []
     num_curves_all_trials = []
     for l in list_of_curve_numbers:
-        if (l >= len(data)):
+        # dont do trials that we cant actually time
+        if (l > len(data)):
             continue
+        # determine the data set we will use for this one
         data_tmp = data[:l]
         times = []
         sizes = [d.Force.size for d in data_tmp]
@@ -80,20 +82,22 @@ def single_learner(learner,curve_numbers,categories,**kwargs):
         a single time_trials_by_loading_rate
     """
     trials = []
+    # get the time trials for each category (loading rate)
     for c in categories:
         data = c.data
         trials.append(get_all_times(learner,data,curve_numbers,**kwargs))
-        break
     loading_rates = [c.velocity_nm_s for c in categories]
     return time_trials_by_loading_rate(learner,trials,loading_rates)
 
-def cache_all_learners(learners,categories,curve_numbers,force=True,**kwargs):
+def cache_all_learners(learners,categories,curve_numbers,cache_directory,
+                       force=True,**kwargs):
     """
     caches and returns the timing results for all the learners
 
     Args:
         learners: list ofLearning.learnin_curve object to use
         categories: list of Learninrg.ForceExtensionCtegories to use
+        cache_directory: where the cache lives
         curve_numbers: how many curves to use (from each category;
         they are all used separately)
         **kwargs: passed to curve_numbers
@@ -101,6 +105,13 @@ def cache_all_learners(learners,categories,curve_numbers,force=True,**kwargs):
         list of time_trials_by_loading_rate objects
     """
     times = []
+    # read in all the data
+    for c in categories:
+        data = Learning.category_read(c,force=force,
+                                      cache_directory=cache_directory,
+                                      limit=max(curve_numbers))
+        c.set_data(data)  
+    # get all the trials for all the learners        
     for l in learners:
         t = CheckpointUtilities.getCheckpoint(l.description,single_learner,
                                               force,l,curve_numbers,categories,
@@ -125,16 +136,22 @@ def run():
         get_categories(positives_directory=positives_directory)
     curve_numbers = [1,2,5,10,20,50]
     cache_dir = "../_1ReadDataToCache/cache/"
-    for c in positive_categories:
-        data = Learning.category_read(c,force=False,cache_directory=cache_dir,
-                                      limit=max(curve_numbers))
-        c.set_data(data)
+    force = True
     times = cache_all_learners(learners,positive_categories,curve_numbers,
-                               force=False)
-    example =times[0].list_of_time_trials[0]
-    mean,std =  example.mean_and_stdev_time_for_fixed_number_of_curves()
-    print(mean,std,example.total_number_of_points_per_curves(),
-          example.num_curves) 
+                               force=force,cache_directory=cache_dir)
+    for learner in times:
+        analyze_single_learner(learner)
+        
+def analyze_single_learner(learner_trials):    
+    fig = PlotUtilities.figure()
+    for i,loading_rate_trial in enumerate(learner_trials.list_of_time_trials):
+        num_curves = loading_rate_trial.num_curves
+        mean,std =  \
+            loading_rate_trial.mean_and_stdev_time_for_fixed_number_of_curves()
+        print(i,mean,std)
+        plt.errorbar(x=num_curves,y=mean,yerr=std,fmt='ro-')
+    PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time","")
+    PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
 
 if __name__ == "__main__":
     run()
