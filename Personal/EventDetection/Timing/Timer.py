@@ -15,9 +15,10 @@ class time_trials:
         self.times = times
         self.num_curves = num_curves
         self.fec_num_points = fec_num_points
-    def mean_and_stdev_time_for_fixed_number_of_curves(self):
-        walk = lambda f : [f(x) for x in self.times]
-        return walk(np.mean),walk(np.std)
+    def mean_time_for_fixed_number(self):
+        return [np.mean(x) for x in self.times]
+    def std_time_for_fixed_number(self):
+        return [np.std(x) for x in self.times]
     def total_number_of_points_per_curves(self):
         return [sum(n) for n in self.fec_num_points]
     
@@ -27,6 +28,12 @@ class time_trials_by_loading_rate:
         self.learner = learner
         self.list_of_time_trials = list_of_time_trials
         self.loading_rates = loading_rates
+    def max_time_trial(self):
+        return max([max(np.concatenate(l.times))
+                    for l in self.list_of_time_trials])
+    def min_time_trial(self):
+        return min([min(np.concatenate(l.times))
+                    for l in self.list_of_time_trials])                    
 
 def time_single(func,data):
     """
@@ -136,22 +143,26 @@ def run():
         get_categories(positives_directory=positives_directory)
     curve_numbers = [1,2,5,10,20,50]
     cache_dir = "../_1ReadDataToCache/cache/"
-    force = True
+    force = False
     times = cache_all_learners(learners,positive_categories,curve_numbers,
                                force=force,cache_directory=cache_dir)
-    for learner in times:
-        analyze_single_learner(learner)
+    max_time = max([l.max_time_trial() for l in times])
+    min_time = min([l.min_time_trial() for l in times])
+    for learner_trials in times:
+        fig = PlotUtilities.figure()
+        plot_single_learner(learner_trials)
+        fudge = 2
+        plt.ylim([min_time/fudge,max_time*fudge])
+        plt.yscale('log')
+        PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
         
-def analyze_single_learner(learner_trials):    
-    fig = PlotUtilities.figure()
+def plot_single_learner(learner_trials):    
     for i,loading_rate_trial in enumerate(learner_trials.list_of_time_trials):
         num_curves = loading_rate_trial.num_curves
-        mean,std =  \
-            loading_rate_trial.mean_and_stdev_time_for_fixed_number_of_curves()
-        print(i,mean,std)
+        mean = loading_rate_trial.mean_time_for_fixed_number()
+        std = loading_rate_trial.std_time_for_fixed_number()
         plt.errorbar(x=num_curves,y=mean,yerr=std,fmt='ro-')
     PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time","")
-    PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
 
 if __name__ == "__main__":
     run()
