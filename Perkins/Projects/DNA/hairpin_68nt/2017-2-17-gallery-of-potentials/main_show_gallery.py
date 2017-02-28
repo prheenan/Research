@@ -10,6 +10,23 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
 from Research.Personal.EventDetection.Util import Analysis
 from GeneralUtil.python import PlotUtilities
 
+
+def fjc_extension(L0,F,Lp,kbT,K0):
+    """
+
+    See: 
+    Wang, M. D., Yin, H., Landick, R., Gelles, J. & Block, S. M. 
+    Stretching DNA with optical tweezers. Biophys J 72, 1335–1346 (1997)
+    """
+    return L0 * np.coth( (2*F*Lp)/(kbT) - kbT/(2*F*Lp)) * (1+F/K0)
+
+def objective_l2(func_predict,true_values,*args):
+    predicted_values = func_predict(*args)
+    return np.abs(predicted_values-true_values)**2
+
+def brute_optimize(func_to_call,brute_dict=None,*args,**kwargs):
+
+
 def run():
     """
     <Description>
