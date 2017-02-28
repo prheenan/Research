@@ -4,6 +4,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys,random
+from timeit import default_timer as timer
 
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Learning
@@ -20,6 +21,21 @@ class time_trials_by_loading_rate:
         self.list_of_time_trials = list_of_time_trials
         self.loading_rates = loading_rates
 
+def time_single(func,data):
+    """
+    time a a single predicton of a set of data, per:
+stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/25823885#2582388
+
+    Args:
+        func: to call
+        data: what to use
+    Returns:
+        time, in seconds, that it takes to run. 
+    """
+    start = timer()
+    for d in data:
+        func(d)
+    return timer() - t
 
 def get_all_times(learner,data,list_of_curve_numbers,trials_per_curve_set=5):
     """
@@ -95,9 +111,10 @@ def run():
     """
     learners = Learning.get_learners()
     positive_categories = Learning.get_categories(positives_directory)
-    curve_numbers = [1,2,5,10,20,50,100,200]
+    curve_numbers = [1,2,5,10,20,50,100,200][:2]
+    cache_dir = "../_1ReadDataToCache/cache/"
     for c in positive_categories:
-        Learning.category_read(c,force=False,cache_directory="./cache/",
+        Learning.category_read(c,force=False,cache_directory=cache_dir,
                                limit=max(curve_numbers))
     times = cache_all_learners(learners,positive_categories,curves_numbers)
     print(times[0].list_of_time_trials[0].times)

@@ -161,7 +161,7 @@ def get_all_folds_for_one_learner(learner,data,fold_idx):
         param_validation_fold.append(folds_valid)
     return params_then_folds,param_validation_fold
 
-def get_learners(n_points_no_event=7):
+def get_learners(n_points_no_event=1):
     """
     Returns a list of learning_curve objects
 
@@ -228,4 +228,4 @@ def get_categories(positives_directory):
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]
-    
+    return positive_categories

@@ -31,8 +31,8 @@ def run():
     force = True
     debug_plots = True
     # limit (per category)
-    limit = 30
-    n_folds = 3
+    limit = 2
+    n_folds = 2
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     learners = CheckpointUtilities.\
