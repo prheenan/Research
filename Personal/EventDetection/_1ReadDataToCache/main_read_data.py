@@ -11,27 +11,6 @@ from Research.Personal.EventDetection.Util import Learning
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting
 
-class ForceExtensionCategory:
-    def __init__(self,number,directory,sample,velocity_nm_s,has_events):
-        self.category_number = number
-        self.directory = directory  
-        self.velocity_nm_s = velocity_nm_s
-        self.sample = sample
-        self.has_events = has_events
-        self.data = None
-        self.scores = None
-    def set_scores(self,scores):
-        self.scores = scores
-    def set_data(self,data):
-        """
-        sets the pointer to the list of TimeSepForce objects for this category
-        
-        Args:
-            data: list of TimeSepForce objects
-        Returns:
-            nothing
-        """
-        self.data = data 
 
 def run():
     """
@@ -48,14 +27,7 @@ def run():
     positives_directory = base_directory + "Positive/650nm-4x-bio/csv/"
     negatives_directory = "XXX TODO"
     cache_directory = "./cache/"
-    # tuple of <relative directory,sample,velocity> for FEC with events
-    positive_meta = \
-      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",1000],
-       [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
-       [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
-    # create objects to represent our data categories
-    positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
-                           for i,r in enumerate(positive_meta)]
+    positive_categories = Learning.get_categories(positives_directory)
     force = True
     debug_plots = True
     # limit (per category)
