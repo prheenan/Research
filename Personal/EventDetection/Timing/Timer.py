@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 
 sys.path.append("../../../../")
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
-from Research.Personal.EventDetection.Util import Learning
+from Research.Personal.EventDetection.Util import Learning,InputOutput
 
 class time_trials:
     def __init__(self,times,num_curves,fec_num_points):
@@ -120,7 +120,9 @@ def run():
         This is a description of what is returned.
     """
     learners = Learning.get_learners()
-    positive_categories = Learning.get_categories(positives_directory="foo")
+    positives_directory = InputOutput.get_positives_directory()
+    positive_categories = Learning.\
+        get_categories(positives_directory=positives_directory)
     curve_numbers = [1,2,5,10,20,50,100,200][:2]
     cache_dir = "../_1ReadDataToCache/cache/"
     for c in positive_categories:

@@ -9,7 +9,7 @@ sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util import Learning
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
-from Research.Personal.EventDetection.Util import Plotting
+from Research.Personal.EventDetection.Util import Plotting,InputOutput
 
 
 def run():
@@ -22,10 +22,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    network = FEC_Util.default_data_root()
-    base_directory = network + "/4Patrick/CuratedData/Masters_CSCI/"
-    positives_directory = base_directory + "Positive/650nm-4x-bio/csv/"
-    negatives_directory = "XXX TODO"
+    positives_directory = InputOutput.get_positives_directory()
     cache_directory = "./cache/"
     positive_categories = Learning.get_categories(positives_directory)
     force = True

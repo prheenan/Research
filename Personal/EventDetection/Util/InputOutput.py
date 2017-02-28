@@ -9,6 +9,23 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
+def get_positives_directory(data_base=None):
+    """
+    reads the (csv) file at file_path, cachine it to cache_directory,
+    reading in events 
+    
+    Args;
+        data_base: where the data lives
+    Returns
+        positive categories base directory
+    """
+    if (data_base is None):
+        data_base = FEC_Util.default_data_root()
+    network = data_base
+    base_directory = network + "/4Patrick/CuratedData/Masters_CSCI/"
+    positives_directory = base_directory + "Positive/650nm-4x-bio/csv/"
+    return positives_directory
+
 def read_and_cache_file(file_path,cache_directory,has_events=False,force=True):
     """
     reads the (csv) file at file_path, cachine it to cache_directory,
