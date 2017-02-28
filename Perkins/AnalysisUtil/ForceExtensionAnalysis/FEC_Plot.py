@@ -12,6 +12,7 @@ import copy
 def_conversion_opts =dict(ConvertX = lambda x: x*1e9,
                           ConvertY = lambda y: y*1e12)
 
+
 def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
                           x_func = lambda x: x.Separation,
                           y_func = lambda y: y.Force, 
