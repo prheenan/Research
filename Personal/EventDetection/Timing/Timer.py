@@ -6,14 +6,21 @@ import matplotlib.pyplot as plt
 import sys,random
 from timeit import default_timer as timer
 
+sys.path.append("../../../../")
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Learning
 
 class time_trials:
-    def __init__(self,times,num_curves,sizes):
+    def __init__(self,times,num_curves,fec_num_points):
         self.times = times
         self.num_curves = num_curves
         self.fec_num_points = fec_num_points
+    def mean_and_stdev_time_for_fixed_number_of_curves(self):
+        walk = lambda f : [f(x) for x in self.times]
+        return walk(np.mean),walk(np.std)
+    def total_number_of_points_per_curves(self):
+        return [sum(n) for n in self.fec_num_points]
+    
 
 class time_trials_by_loading_rate:
     def __init__(self,learner,list_of_time_trials,loading_rates):
@@ -35,7 +42,8 @@ stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/25823885#2582
     start = timer()
     for d in data:
         func(d)
-    return timer() - t
+    elapsed_time =  timer() - start
+    return elapsed_time
 
 def get_all_times(learner,data,list_of_curve_numbers,trials_per_curve_set=5):
     """
@@ -48,19 +56,19 @@ def get_all_times(learner,data,list_of_curve_numbers,trials_per_curve_set=5):
     """
     times_all_trials = []
     sizes_all_trials = []
+    num_curves_all_trials = []
     for l in list_of_curve_numbers:
-        shuffled_data = random.shuffle(data)
-        if (l < len(shuffled_data)):
+        if (l >= len(data)):
             continue
-        data_tmp = shuffled_data[:l]
+        data_tmp = data[:l]
         times = []
         sizes = [d.Force.size for d in data_tmp]
-        for t in trials_per_curve_set:
+        for t in range(trials_per_curve_set):
             times.append(time_single(learner.func_to_call,data_tmp))
         times_all_trials.append(times)
         sizes_all_trials.append(sizes)
         num_curves_all_trials.append(len(data_tmp))
-    return time_trial(times_all_trials,num_curves_all_trials,sizes_all_trials)
+    return time_trials(times_all_trials,num_curves_all_trials,sizes_all_trials)
 
 def single_learner(learner,curve_numbers,categories,**kwargs):
     """
@@ -71,13 +79,15 @@ def single_learner(learner,curve_numbers,categories,**kwargs):
     Returns:
         a single time_trials_by_loading_rate
     """
+    trials = []
     for c in categories:
         data = c.data
         trials.append(get_all_times(learner,data,curve_numbers,**kwargs))
+        break
     loading_rates = [c.velocity_nm_s for c in categories]
     return time_trials_by_loading_rate(learner,trials,loading_rates)
 
-def cache_all_learners(learners,categories,curves_numbers,**kwargs):
+def cache_all_learners(learners,categories,curve_numbers,force=True,**kwargs):
     """
     caches and returns the timing results for all the learners
 
@@ -92,11 +102,11 @@ def cache_all_learners(learners,categories,curves_numbers,**kwargs):
     """
     times = []
     for l in learners:
-        t = CheckpointUtilities.getCheckpoint(l.description,
-                                              l,curve_numbers,categories,
+        t = CheckpointUtilities.getCheckpoint(l.description,single_learner,
+                                              force,l,curve_numbers,categories,
                                               **kwargs)
         times.append(t)
-    return t
+    return times
         
         
 def run():
@@ -110,14 +120,19 @@ def run():
         This is a description of what is returned.
     """
     learners = Learning.get_learners()
-    positive_categories = Learning.get_categories(positives_directory)
+    positive_categories = Learning.get_categories(positives_directory="foo")
     curve_numbers = [1,2,5,10,20,50,100,200][:2]
     cache_dir = "../_1ReadDataToCache/cache/"
     for c in positive_categories:
-        Learning.category_read(c,force=False,cache_directory=cache_dir,
-                               limit=max(curve_numbers))
-    times = cache_all_learners(learners,positive_categories,curves_numbers)
-    print(times[0].list_of_time_trials[0].times)
+        data = Learning.category_read(c,force=False,cache_directory=cache_dir,
+                                      limit=max(curve_numbers))
+        c.set_data(data)
+    times = cache_all_learners(learners,positive_categories,curve_numbers,
+                               force=False)
+    example =times[0].list_of_time_trials[0]
+    mean,std =  example.mean_and_stdev_time_for_fixed_number_of_curves()
+    print(mean,std,example.total_number_of_points_per_curves(),
+          example.num_curves) 
 
 if __name__ == "__main__":
     run()
