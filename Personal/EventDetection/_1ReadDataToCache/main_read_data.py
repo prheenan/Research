@@ -10,6 +10,8 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util import Learning
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
+from Research.Personal.EventDetection._2SplineEventDetector import Detector
+
         
 
 
@@ -58,9 +60,11 @@ def run():
     folds = [f for f in learner.validation_folds[best_param_idx]]
     # get all the scores in the folds for the best parameters
     scores = [score for f in folds for score in f.scores]
-    print(scores)
     # get all the distances
-    distances = [s.minimum_distance_median() for s in scores]
+    true_pred = [s.n_true_and_predicted_events() for s in scores]
+    metric_median_dist = [s.minimum_distance_median() for s in scores]
+    metric_number_relative = [abs(t-p)/t for t,p in true_pred]
+    distances = metric_number_relative
     distances_idx_where_none = np.where(distances is None)[0]
     # get the worst (largest) distances where we arent none
     # XXX note: None is smaller than everything, seems like, so argsort is OK
@@ -68,6 +72,31 @@ def run():
     worst_n_idx =  sort_idx_high_to_low[:num_to_plot]
     file_names = [scores[i].source_file + scores[i].name 
                   for i in worst_n_idx]
+    print(distances)
+    print([distances[i] for i in worst_n_idx])
+    # os.path.split gives <before file,after file>
+    load_paths = [cache_directory + os.path.basename(f) +".csv.pkl"
+                  for f in file_names]
+    # replace the final underscore...
+    load_paths = [ l.replace(".pxp",".pxp_") for l in load_paths]
+    print("loading: {:s}".format(load_paths))
+    for p in load_paths:
+        assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
+    examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
+                for f in load_paths]
+    threshold = best_x
+    for example in examples:
+        example_split,pred_info = \
+            Detector._predict_full(example,threshold=threshold)
+        meta = example.Meta
+        GenUtilities.ensureDirExists(cache_directory)
+        id_data = "{:s}{:.1f}p={:s}".format(meta.Name,meta.Velocity,
+                                            str(threshold))
+        wave_name = example_split.retract.Meta.Name
+        id_string = debug_directory + "db_" + id_data + "_" + wave_name 
+        Plotting.debugging_plots(id_string,example_split,pred_info)
+
+    print(file_names)
     # load the worst n back into memory
     # redo the prediction for the worst N, saving to the debug directory
     for l in learners:

@@ -373,19 +373,26 @@ def _predict_helper(split_fec,threshold,**kwargs):
     # the surface
     return to_ret
 
-def predict(example,threshold=1e-2):
+def _predict_full(example,threshold=1e-2):
+    """
+    see predict, example returns tuple of <split FEC,prediction_info>
+    """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
     m_func = adhesion_function_for_split_fec(example_split)
     final_dict = dict(condition_function=m_func,threshold=threshold)
     pred_info = _predict_helper(example_split,**final_dict)
-    if (debug_plots):
-        meta = example.Meta
-        cache_directory = "./debug_no_event/"
-        GenUtilities.ensureDirExists(cache_directory)
-        id_data = "{:s}{:.1f}p={:s}".format(meta.Name,meta.Velocity,
-                                            str(threshold))
-        wave_name = example_split.retract.Meta.Name
-        id_string = cache_directory + "db_" + id_data + "_" + wave_name 
-        Plotting.debugging_plots(id_string,example_split,pred_info)
+    return example_split,pred_info
+
+def predict(example,threshold=1e-2):
+    """
+    predict a single event from a force extension curve
+
+    Args:
+        example: TimeSepForce
+        threshold: maximum probability under the no-event hypothesis
+    Returns:
+        list of event starts
+    """
+    example_split,pred_info = _predict_full(example,threshold=threshold)
     return pred_info.event_idx
 
