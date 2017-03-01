@@ -25,17 +25,22 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     cache_directory = "./cache/"
     positive_categories = Learning.get_categories(positives_directory)
-    force = True
+    force = False
     debug_plots = True
     # limit (per category)
     limit = 5
     n_folds = 3
+    n_tuning_points = 10
+    learners_kwargs = dict(n_points_no_event=n_tuning_points,
+                           n_points_fovea=n_tuning_points,
+                           n_points_wavelet=n_tuning_points)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,force,
                              positive_categories,
-                             force,cache_directory,limit,n_folds)
+                             force,cache_directory,limit,n_folds,
+                             learners_kwargs=learners_kwargs)
     for l in learners:
         Plotting.plot_individual_learner(cache_directory,l)
 

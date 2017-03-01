@@ -57,10 +57,94 @@ class learning_curve:
         self.list_of_folds = folds
     def set_validation_folds(self,folds):
         self.validation_folds = folds
-    def _concatenate_all_scores(self):
-        fold_score_list = [f for folds in self.list_of_folds for f in folds]
-        all_scores = [s for fold in fold_score_list for s in fold.scores]
-        return all_scores
+    def _scores_by_params(self,train=True):
+        fold_list = self.list_of_folds if train else self.validation_folds
+        scores_by_params = [ [[s for s in fold.scores]
+                              for fold in folds_by_param]
+                             for folds_by_param in fold_list]
+        return scores_by_params
+
+def _walk_scores(scores,
+                 func_score=lambda x : x,
+                 func_fold =lambda x : x,
+                 func_param=lambda x : x,
+                 func_top  = lambda x:x):
+    """
+    function for 'easily' walking through list of scores
+
+    Args:
+        func_<x>: applied at the level of x (e.g. func_score is for a single
+        score, func_fold is a list of scores meaning a fold, etc)
+    Returns:
+         result of the chained functions
+    """
+    return  func_top([ func_param([ func_fold([func_score(s) for s in scores])
+                          for scores in by_param])
+                       for by_param in scores])
+
+
+def safe_scores(scores,value_func=lambda x: x,eval_func=lambda x:x):
+    """
+    function for getting possibly None values and evaluating them
+
+    Args:
+        scores: list of scores
+        value:func: takes a score, gives a value
+        eval_func: for evaluating the non-None values
+    Returns:
+         result of the chained functions
+    """
+    raw = [value_func(s) for s in scores]
+    safe = [r for r in raw if r is not None]
+    if (len(safe) > 0):
+        return eval_func(safe)
+    else:
+        return None
+
+def safe_median(scores):
+    """
+    function for safely evaluating the median
+
+    Args:
+        scores: see safe_scores
+    Returns:
+         result of the chained functions
+    """
+    return safe_scores(scores,eval_func=np.median)
+
+def median_dist_per_param(scores):
+    """
+    function for safely getting the median of the scores we want
+
+    Args:
+        scores: see safe_scores
+    Returns:
+        median of the minimum distance to an event, per paramter across folds
+        (1-D arrray)
+    """
+    score_func = lambda x: x.minimum_distance_median()
+    func_fold = lambda x: safe_scores(x,value_func=score_func,
+                                      eval_func=np.median)
+    return _walk_scores(scores,func_fold =func_fold,
+                        func_param=safe_median,func_top=np.array)
+
+def stdev_dist_per_param(scores):
+    """
+    function for safely getting the median of the scores we want
+
+    Args:
+        scores: see safe_scores
+    Returns:
+        stdev of the minimum distance to an event, per paramter across folds
+        (1-D arrray)
+    """
+    score_func = lambda x: x.minimum_distance_distribution()
+    eval_func = lambda x: np.std(np.concatenate(x))
+    func_fold = lambda x: safe_scores(x,value_func=score_func,
+                                      eval_func=eval_func)
+    return _walk_scores(scores,func_fold =func_fold,
+                        func_param=safe_median,func_top=np.array)
+
 
 class ForceExtensionCategory:
     def __init__(self,number,directory,sample,velocity_nm_s,has_events):
@@ -237,9 +321,10 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.linspace(1e-3,1e-1,endpoint=True,
+    no_event_tuple = [Detector.predict,np.logspace(-3.5,-1.5,endpoint=True,
+                                                   base=10,
                                                    num=n_points_no_event)]
-    no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                                
+    no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                
     # make the fovea example
     fovea_func = lambda arg_list: [dict(weight=w) for w in arg_list]
     fovea_tuple = [fovea.predict,np.linspace(0.01,0.5,endpoint=True,
@@ -277,7 +362,8 @@ def get_single_learner_folds(l,data,fold_idx,
     return  list_of_folds,validation_folds                                                                                 
 
     
-def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42):
+def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42,
+                     learners_kwargs=dict()):
     """
     caches all the results for every learner after reading in all the data
 
@@ -300,7 +386,7 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42):
     # determine the folds to use
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
-    learners = get_learners()
+    learners = get_learners(**learners_kwargs)
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"
