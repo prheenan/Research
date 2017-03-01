@@ -100,7 +100,7 @@ def run():
     curves_approach = [ fec.approach for fec in curves_split]
     # XXX debugging...
     ex = curves_retract[2]
-    surface_idx = np.where(Force > 0)[0]
+    surface_idx = 1300
     max_idx = np.argmax(ex.Force)
     zeroed_force = ex.Force[surface_idx:max_idx]
     zeroed_separation = ex.Separation[surface_idx:max_idx]

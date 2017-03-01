@@ -9,6 +9,8 @@ from Research.Personal.EventDetection.Util import Analysis,InputOutput,Scoring
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
     fovea
+from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
+    wavelet_predictor
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.cross_validation import StratifiedKFold
 
@@ -180,7 +182,7 @@ def _get_single_curve(name,tuple_v,func):
     """
     return learning_curve(name,tuple_v[0],func(tuple_v[1]))
     
-def get_learners(n_points_no_event=5,n_points_fovea=5):
+def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     Returns a list of learning_curve objects
 
@@ -202,7 +204,12 @@ def get_learners(n_points_no_event=5,n_points_fovea=5):
     fovea_tuple = [fovea.predict,np.linspace(0.01,0.5,endpoint=True,
                                              num=n_points_fovea)]
     fovea_curve = _get_single_curve("Open Fovea",fovea_tuple,fovea_func)                                   
-    return [no_event_curve,fovea_curve]
+    # make the CWT example
+    cwt_func = lambda arg_list: [dict(min_snr=w) for w in arg_list]
+    cwt_tuple = [wavelet_predictor.predict,
+                 np.linspace(start=20,stop=150,num=n_points_wavelet)]
+    wavelet_curve = _get_single_curve("Wavelet transform",cwt_tuple,cwt_func)   
+    return [no_event_curve,fovea_curve,wavelet_curve]
 
 def get_single_learner_folds(l,data,fold_idx):
     """

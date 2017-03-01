@@ -10,7 +10,10 @@ from Research.Personal.EventDetection.OtherMethods import method_helper
 from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
 
 from GeneralUtil.python import PlotUtilities
-import fovea
+
+from scipy.signal import find_peaks_cwt
+import wavelet_predictor
+
 
 def run():
     """
@@ -26,9 +29,9 @@ def run():
     split_fec = Analysis.zero_and_split_force_extension_curve(fec)
     out_base = "./out/"
     scorers = []
-    weights = np.linspace(start=0.1,stop=0.15,num=15)
+    weights = np.linspace(start=20,stop=150,num=3)
     for w in weights:
-        peaks_predicted = fovea.predict(fec,weight=w)
+        peaks_predicted = wavelet_predictor.predict(fec,min_snr=w)
         scorer = Scoring.get_scoring_info(split_fec,peaks_predicted)
         fig = PlotUtilities.figure(figsize=(8,12))
         Plotting.plot_classification(split_fec,scorer)  
