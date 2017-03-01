@@ -280,7 +280,8 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-3,-1,endpoint=True,base=10,
+    no_event_tuple = [Detector.predict,np.logspace(-3.5,-1.5,endpoint=True,
+                                                   base=10,
                                                    num=n_points_no_event)]
     no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                
     # make the fovea example
