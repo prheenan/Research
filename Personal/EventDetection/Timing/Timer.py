@@ -167,9 +167,9 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     positive_categories = Learning.\
         get_categories(positives_directory=positives_directory)
-    curve_numbers = [1,2,5,10,20,50]
+    curve_numbers = [1,2,5,10,20,50,100,200]
     cache_dir = "../_1ReadDataToCache/cache/"
-    force = False
+    force = True
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
