@@ -311,7 +311,8 @@ def get_single_learner_folds(l,data,fold_idx):
     return  list_of_folds,validation_folds                                                                                 
 
     
-def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42):
+def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42,
+                     learners_kwargs=dict()):
     """
     caches all the results for every learner after reading in all the data
 
@@ -334,7 +335,7 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42):
     # determine the folds to use
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
-    learners = get_learners()
+    learners = get_learners(**learners_kwargs)
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"
