@@ -155,5 +155,6 @@ class score:
             events_predicted[s_predicted] = 1
         return events,events_predicted
 
+
 def get_scoring_info(split_fec_with_events,idx_predicted_centers):
     return score(split_fec_with_events,idx_predicted_centers)

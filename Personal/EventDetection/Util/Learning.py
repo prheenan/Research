@@ -14,6 +14,30 @@ from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.cross_validation import StratifiedKFold
 
+
+
+class ForceExtensionCategory:
+    def __init__(self,number,directory,sample,velocity_nm_s,has_events):
+        self.category_number = number
+        self.directory = directory  
+        self.velocity_nm_s = velocity_nm_s
+        self.sample = sample
+        self.has_events = has_events
+        self.data = None
+        self.scores = None
+    def set_scores(self,scores):
+        self.scores = scores
+    def set_data(self,data):
+        """
+        sets the pointer to the list of TimeSepForce objects for this category
+        
+        Args:
+            data: list of TimeSepForce objects
+        Returns:
+            nothing
+        """
+        self.data = data 
+
 class fold_meta:
     def __init__(self,meta):
         self.velocity = meta.Velocity
@@ -210,28 +234,6 @@ def valid_scores_erors_and_params(params,scores,score_func,error_func):
     good_idx = good_idx_func(dist,dist_std)
     return params[good_idx],dist[good_idx],dist_std[good_idx]
 
-
-class ForceExtensionCategory:
-    def __init__(self,number,directory,sample,velocity_nm_s,has_events):
-        self.category_number = number
-        self.directory = directory  
-        self.velocity_nm_s = velocity_nm_s
-        self.sample = sample
-        self.has_events = has_events
-        self.data = None
-        self.scores = None
-    def set_scores(self,scores):
-        self.scores = scores
-    def set_data(self,data):
-        """
-        sets the pointer to the list of TimeSepForce objects for this category
-        
-        Args:
-            data: list of TimeSepForce objects
-        Returns:
-            nothing
-        """
-        self.data = data 
 
 
 def category_read(category,force,cache_directory,limit):

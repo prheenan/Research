@@ -22,7 +22,11 @@ def get_scoring_metrics(cache_directory,learners_kwargs,n_folds,limit,force):
                              force,cache_directory,limit,n_folds,
                              learners_kwargs=learners_kwargs)
     for l in learners:
+        # determine where things went wrong 
+        
+        # plot everything
         Plotting.plot_individual_learner(cache_directory,l)
+        
 
 
 def run():
