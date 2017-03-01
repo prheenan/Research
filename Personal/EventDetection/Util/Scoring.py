@@ -63,6 +63,7 @@ class score:
         retract = split_fec.retract
         self.tau_num_points = split_fec.tau_num_points
         x = retract.Separation
+        self.max_x = max(x)
         # save where the events are
         self.idx_true = idx_true
         self.idx_predicted = idx_predicted
