@@ -187,8 +187,8 @@ def fold_number_events_off(scores):
     true_list = [t[0] for t in true_pred]
     pred_list = [t[1] for t in true_pred]
     missed_list = [abs(true-pred) for true,pred in zip(true_list,pred_list)]
-    relative_missed = np.array(missed_list)/np.array(true_list)
-    to_ret = np.median(relative_missed)
+    relative_missed = np.sum(missed_list)/np.sum(true_list)
+    to_ret = relative_missed
     return to_ret
 
 def number_events_off_per_param(params,scores):
