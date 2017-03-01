@@ -93,15 +93,19 @@ class score:
             print("{:s} (N_retract={:d}), bad events (true/pred): {:s}/{:s}".\
                    format(fec_name,int(n),true_ev,pred_ev))
             print(e)
+    def minimum_distance_distribution(self):
+        closest_true = lambda x: self.true_x[np.argmin(np.abs(self.true_x-x))]
+        min_distance_distribution = [np.abs(x-closest_true(x)) 
+                                     for x in self.pred_x]
+        return min_distance_distribution
+
     def minimum_distance_median(self):
         """
         returns the median of the smallest distance to an event
 
         if no predicted events, this value is none
         """
-        closest_true = lambda x: self.true_x[np.argmin(np.abs(self.true_x-x))]
-        min_distance_distribution = [np.abs(x-closest_true(x)) 
-                                     for x in self.pred_x]
+        min_distance_distribution = self.minimum_distance_distribution()
         if (len(min_distance_distribution) > 0):
             return np.median(min_distance_distribution)
         else:

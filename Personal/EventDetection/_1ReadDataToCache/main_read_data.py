@@ -25,7 +25,7 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     cache_directory = "./cache/"
     positive_categories = Learning.get_categories(positives_directory)
-    force = True
+    force = False
     debug_plots = True
     # limit (per category)
     limit = 10
