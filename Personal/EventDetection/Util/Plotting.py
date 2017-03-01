@@ -341,26 +341,24 @@ def plot_individual_learner(cache_directory,learner):
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     # get the metrics and errors by parameters
-    train_dist = Learning.median_dist_per_param(train_scores)
-    valid_dist = Learning.median_dist_per_param(valid_scores)
-    train_dist_std = Learning.stdev_dist_per_param(train_scores)
-    valid_dist_std = Learning.stdev_dist_per_param(valid_scores)
+    to_true = True
+    score_func_pred = lambda x: Learning.median_dist_per_param(x,
+                                                               to_true=to_true)
+    error_func_pred = lambda x: Learning.stdev_dist_per_param(x,
+                                                              to_true=to_true)
     x_values = np.array([p.values()[0] for p in params])
-    valid_func = lambda x: (~np.equal(x,None))
-    good_idx = lambda train,valid : np.where( valid_func(train) & \
-                                              valid_func(valid))[0]
-    good_idx_train = good_idx(train_dist,train_dist_std)
-    good_idx_valid = good_idx(valid_dist,valid_dist_std)
+    kw_pred = dict(score_func=score_func_pred,error_func=error_func_pred)
+    x_train,train_dist,train_dist_std = \
+        Learning.valid_scores_erors_and_params(x_values,train_scores,**kw_pred)
+    x_valid,valid_dist,valid_dist_std = \
+        Learning.valid_scores_erors_and_params(x_values,valid_scores,**kw_pred)
     y_plot = lambda y: y * 1e9
-    train_dist_plot,train_error_plot = y_plot(train_dist[good_idx_train]),\
-                                       y_plot(train_dist_std[good_idx_train])
-    valid_dist_plot,valid_error_plot = y_plot(valid_dist[good_idx_valid]),\
-                                       y_plot(valid_dist_std[good_idx_valid])
+    train_dist_plot,train_error_plot = y_plot(train_dist),y_plot(train_dist_std)
+    valid_dist_plot,valid_error_plot = y_plot(valid_dist),y_plot(valid_dist_std)
     fig = PlotUtilities.figure()
-    x_train,x_test = x_values[good_idx_train],x_values[good_idx_valid]
     plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
                  color='r',marker='o',linestyle='--',label="Training")
-    plt.errorbar(x=x_test,y=valid_dist_plot,yerr=valid_error_plot,
+    plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
                  color='g',marker='v',linestyle='-',label="Validation")
     plt.xscale('log')
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",

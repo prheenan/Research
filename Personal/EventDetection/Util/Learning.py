@@ -111,38 +111,61 @@ def safe_median(scores):
     """
     return safe_scores(scores,eval_func=np.median)
 
-def median_dist_per_param(scores):
+def median_dist_per_param(scores,**kwargs):
     """
     function for safely getting the median of the scores we want
 
     Args:
         scores: see safe_scores
+        **kwargs: passed to minimum_distance_median
     Returns:
         median of the minimum distance to an event, per paramter across folds
         (1-D arrray)
     """
-    score_func = lambda x: x.minimum_distance_median()
+    score_func = lambda x: x.minimum_distance_median(**kwargs)
     func_fold = lambda x: safe_scores(x,value_func=score_func,
                                       eval_func=np.median)
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
-def stdev_dist_per_param(scores):
+def stdev_dist_per_param(scores,**kwargs):
     """
     function for safely getting the median of the scores we want
 
     Args:
         scores: see safe_scores
+        kwargs: see median_dist_per_param
     Returns:
         stdev of the minimum distance to an event, per paramter across folds
         (1-D arrray)
     """
-    score_func = lambda x: x.minimum_distance_distribution()
+    score_func = lambda x: x.minimum_distance_distribution(**kwargs)
     eval_func = lambda x: np.std(np.concatenate(x))
     func_fold = lambda x: safe_scores(x,value_func=score_func,
                                       eval_func=eval_func)
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
+
+def valid_scores_erors_and_params(params,scores,score_func,error_func):
+    """
+    given a function for getting scores and errors, finds where the results
+    are valid, selecting the x,y, and erro there
+
+    Args:
+        params: what the x values are 
+        scores: the scores we will search using score/error_func
+        <score/error>_func: functions giving the scores and errors of scores
+        at each value of params. If undefined, then is None
+    Returns:
+        tuple of <valid x, valid score, valid score error>
+    """
+    dist = score_func(scores)
+    dist_std = error_func(scores)
+    valid_func = lambda x: (~np.equal(x,None))
+    good_idx_func = lambda train,valid : np.where( valid_func(train) & \
+                                                   valid_func(valid))[0]
+    good_idx = good_idx_func(dist,dist_std)
+    return params[good_idx],dist[good_idx],dist_std[good_idx]
 
 
 class ForceExtensionCategory:

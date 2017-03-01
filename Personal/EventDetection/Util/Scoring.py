@@ -93,19 +93,35 @@ class score:
             print("{:s} (N_retract={:d}), bad events (true/pred): {:s}/{:s}".\
                    format(fec_name,int(n),true_ev,pred_ev))
             print(e)
-    def minimum_distance_distribution(self):
-        closest_true = lambda x: self.true_x[np.argmin(np.abs(self.true_x-x))]
-        min_distance_distribution = [np.abs(x-closest_true(x)) 
-                                     for x in self.pred_x]
-        return min_distance_distribution
+    def minimum_distance_distribution(self,to_true=True):
+        """
+        returns the median of the smallest distance from <predicted/true>
+        to <true/predicted> if to_true is <true,false>
 
-    def minimum_distance_median(self):
+        if no predicted events, this value is none
+
+        Args:
+             kwargs: passed to minimum_distance_distribution
+        """
+        if (to_true):
+            baseline = self.true_x
+            search = self.pred_x
+        else:
+            baseline = self.pred_x
+            search = self.true_x
+        closest_true = lambda x: self.true_x[np.argmin(np.abs(baseline-x))]
+        min_distance_distribution = [np.abs(x-closest_true(x)) for x in search]
+        return min_distance_distribution
+    def minimum_distance_median(self,**kwargs):
         """
         returns the median of the smallest distance to an event
 
         if no predicted events, this value is none
+
+        Args:
+             kwargs: passed to minimum_distance_distribution
         """
-        min_distance_distribution = self.minimum_distance_distribution()
+        min_distance_distribution = self.minimum_distance_distribution(**kwargs)
         if (len(min_distance_distribution) > 0):
             return np.median(min_distance_distribution)
         else:
