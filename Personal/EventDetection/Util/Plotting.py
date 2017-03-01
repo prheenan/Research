@@ -9,6 +9,10 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
 import Analysis,Learning
+
+style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
+style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
+
                             
 def plot_autocorrelation_log(x,*args):
     """
@@ -325,12 +329,13 @@ def plot_ruptures_of_scores(scores):
     rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
     plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
 
-def cross_validation_distance_metric(params,train_scores,valid_scores,to_true):
+def cross_validation_distance_metric(x_values,train_scores,valid_scores,
+                                     to_true):
     """
     Plots the cross validation training and validation distance metric
 
     Args:
-        params: x values
+        x_values: x values
         <train/valid>_scores: the training and validation scores used
         to_true: distance metric plotted is *from* predicted *to* true 
         (ie: something like recall) if true, otherwise vice versa
@@ -343,7 +348,6 @@ def cross_validation_distance_metric(params,train_scores,valid_scores,to_true):
                                                                to_true=to_true)
     error_func_pred = lambda x: Learning.stdev_dist_per_param(x,
                                                               to_true=to_true)
-    x_values = np.array([p.values()[0] for p in params])
     kw_pred = dict(score_func=score_func_pred,error_func=error_func_pred)
     x_train,train_dist,train_dist_std = \
         Learning.valid_scores_erors_and_params(x_values,train_scores,**kw_pred)
@@ -352,8 +356,6 @@ def cross_validation_distance_metric(params,train_scores,valid_scores,to_true):
     y_plot = lambda y: y * 1e9
     train_dist_plot,train_error_plot = y_plot(train_dist),y_plot(train_dist_std)
     valid_dist_plot,valid_error_plot = y_plot(valid_dist),y_plot(valid_dist_std)
-    style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
-    style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
     plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
                  **style_train)
     plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
@@ -362,6 +364,32 @@ def cross_validation_distance_metric(params,train_scores,valid_scores,to_true):
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
                             frameon=True)
 
+    
+def plot_num_events_off(x_values,train_scores,valid_scores):
+    """
+    Plots the number of 
+
+    Args:
+        cache_directory: where to save the plots
+        learner: learning_curve instance to use
+    Returns:
+        nothing
+    """
+    x_train,train_dist,train_dist_std = \
+        Learning.number_events_off_per_param(x_values,train_scores)
+    x_valid,valid_dist,valid_dist_std = \
+        Learning.number_events_off_per_param(x_values,train_scores)
+    train_dist_plot,train_error_plot = train_dist,train_dist_std
+    valid_dist_plot,valid_error_plot = valid_dist,valid_dist_std
+    plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
+                 **style_train)
+    plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
+                 **style_valid)
+    PlotUtilities.lazyLabel("Tuning parameter",
+                            "Relative number of missing or incorrect events",
+                            "")
+    plt.xscale('log')    
+    plt.yscale('log')    
 
 def plot_individual_learner(cache_directory,learner):
     """
@@ -374,11 +402,15 @@ def plot_individual_learner(cache_directory,learner):
         nothing
     """
     params = learner.list_of_params
+    out_file_stem = cache_directory + "{:s}".format(learner.description)
     # get the scoring objects by paramter by fold
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
+    x_values = np.array([p.values()[0] for p in params])
     fig = PlotUtilities.figure()
-    cross_validation_distance_metric(params,train_scores,valid_scores,
+    plot_num_events_off(x_values,train_scores,valid_scores)
+    PlotUtilities.savefig(fig,out_file_stem + "n_off.png")
+    fig = PlotUtilities.figure()
+    cross_validation_distance_metric(x_values,train_scores,valid_scores,
                                      to_true=True)
-    out_file_stem = cache_directory + "{:s}".format(learner.description)
     PlotUtilities.savefig(fig,out_file_stem + "dist.png")

@@ -146,6 +146,49 @@ def stdev_dist_per_param(scores,**kwargs):
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
+def fold_number_events_off(scores):
+    """
+    see number_events_off_per_param
+
+    Args:
+         scores: see number_events_off_per_param
+         learning_curve._scores_by_params
+    returns:
+         sum of missed events divided by sum of true events
+    """
+    true_pred = [x.n_true_and_predicted_events() for x in scores]
+    true_list = [t[0] for t in true_pred]
+    pred_list = [t[1] for t in true_pred]
+    missed_list = [abs(true-pred) for true,pred in zip(true_list,pred_list)]
+    relative_missed = np.array(missed_list)/np.array(true_list)
+    to_ret = np.median(relative_missed)
+    return to_ret
+
+def number_events_off_per_param(params,scores):
+    """
+    gets the (relative) number of events we were off by:
+    (1) gettting the predicted and true number of events in a fold
+    (2) getting rel=missed - true
+    (3) taking the mean and stdev of rel across all folds
+
+    Args:
+         params: the x value to use
+         scores: the scorer object to use, formatted like 
+         learning_curve._scores_by_params
+    returns;
+         tuple of <valid params, valid scores, valie errors>
+    """
+    cat_median = lambda x: safe_median(np.concatenate(x))
+    cat_std = lambda x: np.std(np.concatenate(x))
+    score_func = lambda s : _walk_scores(s,func_fold=fold_number_events_off,
+                                         func_param=safe_median,
+                                         func_top=np.array)
+    error_func = lambda s:  _walk_scores(s,func_fold=fold_number_events_off,
+                                         func_param=np.std,
+                                         func_top=np.array)
+    kw = dict(score_func=score_func,error_func=error_func)
+    return valid_scores_erors_and_params(params,scores,**kw)
+
 def valid_scores_erors_and_params(params,scores,score_func,error_func):
     """
     given a function for getting scores and errors, finds where the results
@@ -163,7 +206,7 @@ def valid_scores_erors_and_params(params,scores,score_func,error_func):
     dist_std = error_func(scores)
     valid_func = lambda x: (~np.equal(x,None))
     good_idx_func = lambda train,valid : np.where( valid_func(train) & \
-                                                   valid_func(valid))[0]
+                                                   valid_func(valid))
     good_idx = good_idx_func(dist,dist_std)
     return params[good_idx],dist[good_idx],dist_std[good_idx]
 
