@@ -76,6 +76,9 @@ class learning_curve:
         self.validation_folds = None
         self.list_of_params = list_of_params
         self.func_to_call = func_to_call
+    def param_values(self):
+        # XXX assume 1-D search, only one parameters per list
+        return np.array([l.values()[0] for l in self.list_of_params])
     def set_list_of_folds(self,folds):
         self.list_of_folds = folds
     def set_validation_folds(self,folds):
@@ -212,6 +215,23 @@ def number_events_off_per_param(params,scores):
                                          func_top=np.array)
     kw = dict(score_func=score_func,error_func=error_func)
     return valid_scores_erors_and_params(params,scores,**kw)
+
+def median_dist_metric(x_values,scores,**kwargs):
+    """
+    function for safely getting the median metric
+
+    Args:
+        x_values: the parameters
+        scores: see safe_scores
+        **kwargs: passed to minimum_distance_median...
+    Returns:
+        see valid_scores_erors_and_params
+    """
+    score_func_pred = lambda x: median_dist_per_param(x,**kwargs)
+    error_func_pred = lambda x: stdev_dist_per_param(x,**kwargs)
+    kw_pred = dict(score_func=score_func_pred,error_func=error_func_pred)
+    x,dist,dist_std = valid_scores_erors_and_params(x_values,scores,**kw_pred)
+    return x,dist,dist_std
 
 def valid_scores_erors_and_params(params,scores,score_func,error_func):
     """

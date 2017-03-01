@@ -344,15 +344,10 @@ def cross_validation_distance_metric(x_values,train_scores,valid_scores,
         nothing
     """
     # get the metrics and errors by parameters
-    score_func_pred = lambda x: Learning.median_dist_per_param(x,
-                                                               to_true=to_true)
-    error_func_pred = lambda x: Learning.stdev_dist_per_param(x,
-                                                              to_true=to_true)
-    kw_pred = dict(score_func=score_func_pred,error_func=error_func_pred)
     x_train,train_dist,train_dist_std = \
-        Learning.valid_scores_erors_and_params(x_values,train_scores,**kw_pred)
+        Learning.median_dist_metric(x_values,train_scores,to_true=to_true)
     x_valid,valid_dist,valid_dist_std = \
-        Learning.valid_scores_erors_and_params(x_values,valid_scores,**kw_pred)
+        Learning.median_dist_metric(x_values,valid_scores,to_true=to_true)
     y_plot = lambda y: y * 1e9
     train_dist_plot,train_error_plot = y_plot(train_dist),y_plot(train_dist_std)
     valid_dist_plot,valid_error_plot = y_plot(valid_dist),y_plot(valid_dist_std)
@@ -401,12 +396,11 @@ def plot_individual_learner(cache_directory,learner):
     Returns:
         nothing
     """
-    params = learner.list_of_params
     out_file_stem = cache_directory + "{:s}".format(learner.description)
     # get the scoring objects by paramter by fold
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
-    x_values = np.array([p.values()[0] for p in params])
+    x_values = learner.param_values()
     fig = PlotUtilities.figure()
     plot_num_events_off(x_values,train_scores,valid_scores)
     PlotUtilities.savefig(fig,out_file_stem + "n_off.png")
