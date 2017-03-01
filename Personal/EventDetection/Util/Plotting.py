@@ -359,10 +359,11 @@ def plot_individual_learner(cache_directory,learner):
     fig = PlotUtilities.figure()
     x_train,x_test = x_values[good_idx_train],x_values[good_idx_valid]
     plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
-                 color='r',marker='o',linestyle='--')
+                 color='r',marker='o',linestyle='--',label="Training")
     plt.errorbar(x=x_test,y=valid_dist_plot,yerr=valid_error_plot,
-                 color='g',marker='v',linestyle='-')
+                 color='g',marker='v',linestyle='-',label="Validation")
     plt.xscale('log')
-    PlotUtilities.lazyLabel("Tuning Parameter","Median event distant","")
+    PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
+                            frameon=True)
     out_file_stem = cache_directory + "{:s}".format(learner.description)
     PlotUtilities.savefig(fig,out_file_stem + "dist.png")
