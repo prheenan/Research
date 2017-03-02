@@ -26,6 +26,7 @@ def run():
     fec = method_helper.get_example()
     thresh = 2e-2
     split_fec = Analysis.zero_and_split_force_extension_curve(fec)   
+    retract = split_fec.retract
     _,info = Detector._predict_full(fec,threshold=thresh)
     # XXX fix threshhold
     fig = PlotUtilities.figure(figsize=(8,12))    

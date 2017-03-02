@@ -299,7 +299,8 @@ def auto_correlation_helper(auto):
     fit_idx_max =  fit_idx_max[0]
     return auto_norm,statistical_norm,log_norm,fit_idx_max
     
-def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
+def auto_correlation_tau(x,f_user,deg_autocorrelation=1,
+                         autocorrelation_skip_points=None,fit_idx_max=None):
     """
     get the atucorrelation time of f (ie: fit polynomial to log(autocorrelation)
     vs x, so the tau is more or less the exponential decay constant
@@ -321,6 +322,8 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,fit_idx_max=None):
     # only want the last half (should be identical?) 
     size = int(auto.size/2)
     auto = auto[size:]
+    if (autocorrelation_skip_points is not None):
+        auto = auto[autocorrelation_skip_points:]
     auto_norm,statistical_norm,log_norm,fit_idx_max_tmp = \
         auto_correlation_helper(auto)
     if fit_idx_max is None:
