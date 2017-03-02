@@ -4,6 +4,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys,os
+from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
@@ -84,8 +85,8 @@ def run():
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
-    load_paths = [cache_directory + os.path.basename(f) +".csv.pkl"
-                  for f in file_names]
+    load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
+    load_paths = [cache_directory + f for f in load_files]
     # replace the final underscore...
     load_paths = [ l.replace(".pxp",".pxp_") for l in load_paths]
     print("loading: {:s}".format(load_paths))
@@ -94,7 +95,11 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x
-    for example in examples:
+    for i,example in enumerate(examples):
+        # copy the pkl file to the debugging location
+        debugging_file_path = debug_directory + load_files[i]
+        copyfile(load_paths[i],debugging_file_path)
+        # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
         meta = example.Meta
