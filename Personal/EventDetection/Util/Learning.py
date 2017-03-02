@@ -400,14 +400,17 @@ def get_single_learner_folds(l,data,fold_idx):
     return  list_of_folds,validation_folds                                                                                 
 
     
-def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42,
-                     learners_kwargs=dict()):
+def get_cached_folds(categories,force_read,force_learn,
+                     cache_directory,limit,n_folds,seed=42,
+                     learners_kwargs=dict(),learners=None):
     """
     caches all the results for every learner after reading in all the data
 
     Args:
+    
         categories: list of velocity-separated data
-        force: if the csv fiels should be re-read
+        force_read: if the csv fiels should be re-read
+        force_learn: if the learner objects should be re-read
         cache_directoy: where to put the pkl files
         limit: how many examples to read in 
         n_folds: now many folds to use
@@ -416,7 +419,7 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42,
         list, one element per paramter. each element is a list of folds
     """
     for c in categories:
-        data_tmp = category_read(c,force,cache_directory,limit)
+        data_tmp = category_read(c,force_read,cache_directory,limit)
         c.set_data(data_tmp)
     labels_data = [ [i,d] for i,cat in enumerate(categories) for d in cat.data]
     labels = [l[0] for l in labels_data]
@@ -424,12 +427,14 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,seed=42,
     # determine the folds to use
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
-    learners = get_learners(**learners_kwargs)
+    if (learners is None):
+        learners = get_learners(**learners_kwargs)
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"
         tmp = CheckpointUtilities.getCheckpoint(cache_file,
-                                                get_single_learner_folds,force,
+                                                get_single_learner_folds,
+                                                force_learn,
                                                 l,data,fold_idx)
         list_of_folds,validation_folds = tmp
         l.set_list_of_folds(list_of_folds)
