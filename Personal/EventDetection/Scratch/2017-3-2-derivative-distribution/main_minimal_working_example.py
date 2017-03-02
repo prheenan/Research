@@ -29,7 +29,8 @@ def run():
         # get the zeroed force extension curve
         split_fec = Analysis.zero_and_split_force_extension_curve(fec)
         retract = split_fec.retract
-        time = retract.Time
+        time = retract.Time 
+        time -= min(time)
         interpolator_force_onto_time = split_fec.retract_spline_interpolator()
         derivative_force = interpolator_force_onto_time.derivative()(time)
         interpolated_force = interpolator_force_onto_time(time)
@@ -41,26 +42,27 @@ def run():
         deriv_plot = deriv_plot * (max_interp-min_interp) + min_interp
         # get the median and std of deriv
         med_deriv = np.median(deriv_plot)
-        q25,q75 = np.percentile(deriv_plot,[25,75])
-        iqr_region_idx = np.where( (deriv_plot <= q75) & 
-                                   (deriv_plot >= q25))[0]
+        q_low,q_high = np.percentile(deriv_plot,[0,100])
+        iqr_region_idx = np.where( (deriv_plot <= q_high) & 
+                                   (deriv_plot >= q_low))[0]
         std_iqr = np.std(deriv_plot[iqr_region_idx])
         probability = np.zeros(deriv_plot.size)
         probability[np.where(deriv_plot >= med_deriv - std_iqr)]  = 1
-        possible_idx = np.where(deriv_plot <= med_deriv - std_iqr)
+        possible_idx = np.where(deriv_plot < med_deriv)
         possible_deriv = deriv_plot[possible_idx]
         k = (possible_deriv-med_deriv)/std_iqr
         probability[possible_idx]  = 1/k**2
         probability = np.minimum(probability,1)
         probability_plot = probability
         plt.subplot(2,1,1)
-        plt.plot(retract.Force,color='k',alpha=0.3)
-        plt.plot(interpolated_force,color='g',linewidth=4)
+        plt.plot(time,retract.Force,color='k',alpha=0.3)
+        plt.plot(time,interpolated_force,color='g',linewidth=4)
+        plt.plot(time,deriv_plot)
         plt.axhline(med_deriv,color='k')
         plt.axhline(med_deriv+std_iqr,color='b',linestyle='--')
         plt.axhline(med_deriv-std_iqr,color='b',linestyle='--')
         plt.subplot(2,1,2)
-        plt.plot( probability_plot,color='r',linestyle='--')
+        plt.plot(time,probability_plot,color='r',linestyle='--')
         plt.semilogy()
         plt.show()
     
