@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import sys
 from scipy import signal,stats
 
-from Research.Personal.EventDetection.Util import Plotting,Analysis
+from Research.Personal.EventDetection.Util import Analysis
 from GeneralUtil.python import PlotUtilities,GenUtilities
 
 def local_stdev(f,n):

@@ -7,7 +7,7 @@ import sys
 from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea.\
     openfovea_src.openfovea.fovea_toolbox import curve
 
-from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
+from Research.Personal.EventDetection.Util import Analysis
 
 def call_fovea(split_fec,weight=10,poc=0):
     """

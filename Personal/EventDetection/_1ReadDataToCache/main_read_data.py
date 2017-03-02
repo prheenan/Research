@@ -62,18 +62,20 @@ def run():
     scores = [score for f in folds for score in f.scores]
     # get all the distances
     true_pred = [s.n_true_and_predicted_events() for s in scores]
-    metric_median_dist = [s.minimum_distance_median() for s in scores]
-    metric_number_relative = [abs(t-p)/t for t,p in true_pred]
-    distances = metric_number_relative
-    distances_idx_where_none = np.where(distances is None)[0]
+    median_dist = [s.minimum_distance_median() for s in scores]
+    number_relative = [int(abs(t-p)) for t,p in true_pred]
     # get the worst (largest) distances where we arent none
     # XXX note: None is smaller than everything, seems like, so argsort is OK
-    sort_idx_high_to_low = np.argsort(distances)[::-1]
-    worst_n_idx =  sort_idx_high_to_low[:num_to_plot]
+    sort_idx = np.arange(0,len(scores),1)
+    # sort from high to low, first elements are most missed and farest off...
+    sort_idx = sorted(sort_idx,reverse=True,
+                      key=lambda i:(number_relative[i],median_dist[i]))
+    worst_n_idx =  sort_idx[:num_to_plot]
     file_names = [scores[i].source_file + scores[i].name 
                   for i in worst_n_idx]
-    print(distances)
-    print([distances[i] for i in worst_n_idx])
+    print(median_dist)
+    print(number_relative)
+    print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_paths = [cache_directory + os.path.basename(f) +".csv.pkl"
                   for f in file_names]
