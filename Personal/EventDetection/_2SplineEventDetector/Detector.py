@@ -473,15 +473,27 @@ def _predict_helper(split_fec,threshold,condition_functions=None,**kwargs):
     # the surface
     return to_ret
 
+def _predict_functor(example,f):
+    """
+    python doesn't like creating lambda functions using 
+    function references in a list (2017-3-1), so I use a functor instead
+
+    Args:
+        example: first argument of type like f. split_fec is used in predict
+        f: function we are calling. should take split_fec, then *args,**kwargs
+        (see _predict
+    returns:
+        a lambda function passing arguments and keyword argument to f 
+    """
+    return lambda *args,**kwargs : f(example,*args,**kwargs)
+
 def _predict_full(example,threshold=1e-2):
     """
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
     f_refs = [derivative_mask_function,adhesion_mask_function_for_split_fec]
-    funcs = [ \
-        (lambda *a,**kw : derivative_mask_function(example_split,*a,**kw) ),\
-(lambda *a,**kw : adhesion_mask_function_for_split_fec(example_split,*a,**kw))]
+    funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(condition_functions=funcs,
                       threshold=threshold)
     pred_info = _predict_helper(example_split,**final_dict)
