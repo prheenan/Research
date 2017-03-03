@@ -327,10 +327,6 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     probability_distribution = np.ones(y.size)          
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
-    spline_distribution = _spline_derivative_probability_generic(x,interp)
-    where = np.where((spline_distribution == 1))
-    probability_distribution[where] = 1
-    probability_distribution *= spline_distribution
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):

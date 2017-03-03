@@ -60,7 +60,7 @@ def run():
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(cache_directory,l)
-    num_to_plot = 5
+    num_to_plot = 3
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -100,7 +100,7 @@ def run():
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 5e-2
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
