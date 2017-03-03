@@ -15,6 +15,30 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.cross_validation import StratifiedKFold
 import multiprocessing
 
+
+
+class ForceExtensionCategory:
+    def __init__(self,number,directory,sample,velocity_nm_s,has_events):
+        self.category_number = number
+        self.directory = directory  
+        self.velocity_nm_s = velocity_nm_s
+        self.sample = sample
+        self.has_events = has_events
+        self.data = None
+        self.scores = None
+    def set_scores(self,scores):
+        self.scores = scores
+    def set_data(self,data):
+        """
+        sets the pointer to the list of TimeSepForce objects for this category
+        
+        Args:
+            data: list of TimeSepForce objects
+        Returns:
+            nothing
+        """
+        self.data = data 
+
 class fold_meta:
     def __init__(self,meta):
         self.velocity = meta.Velocity
@@ -53,6 +77,9 @@ class learning_curve:
         self.validation_folds = None
         self.list_of_params = list_of_params
         self.func_to_call = func_to_call
+    def param_values(self):
+        # XXX assume 1-D search, only one parameters per list
+        return np.array([l.values()[0] for l in self.list_of_params])
     def set_list_of_folds(self,folds):
         self.list_of_folds = folds
     def set_validation_folds(self,folds):
@@ -112,61 +139,122 @@ def safe_median(scores):
     """
     return safe_scores(scores,eval_func=np.median)
 
-def median_dist_per_param(scores):
+def median_dist_per_param(scores,**kwargs):
     """
     function for safely getting the median of the scores we want
 
     Args:
         scores: see safe_scores
+        **kwargs: passed to minimum_distance_median
     Returns:
         median of the minimum distance to an event, per paramter across folds
         (1-D arrray)
     """
-    score_func = lambda x: x.minimum_distance_median()
+    score_func = lambda x: x.minimum_distance_median(**kwargs)
     func_fold = lambda x: safe_scores(x,value_func=score_func,
                                       eval_func=np.median)
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
-def stdev_dist_per_param(scores):
+def stdev_dist_per_param(scores,**kwargs):
     """
     function for safely getting the median of the scores we want
 
     Args:
         scores: see safe_scores
+        kwargs: see median_dist_per_param
     Returns:
         stdev of the minimum distance to an event, per paramter across folds
         (1-D arrray)
     """
-    score_func = lambda x: x.minimum_distance_distribution()
+    score_func = lambda x: x.minimum_distance_distribution(**kwargs)
     eval_func = lambda x: np.std(np.concatenate(x))
     func_fold = lambda x: safe_scores(x,value_func=score_func,
                                       eval_func=eval_func)
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
+def fold_number_events_off(scores):
+    """
+    see number_events_off_per_param
 
-class ForceExtensionCategory:
-    def __init__(self,number,directory,sample,velocity_nm_s,has_events):
-        self.category_number = number
-        self.directory = directory  
-        self.velocity_nm_s = velocity_nm_s
-        self.sample = sample
-        self.has_events = has_events
-        self.data = None
-        self.scores = None
-    def set_scores(self,scores):
-        self.scores = scores
-    def set_data(self,data):
-        """
-        sets the pointer to the list of TimeSepForce objects for this category
-        
-        Args:
-            data: list of TimeSepForce objects
-        Returns:
-            nothing
-        """
-        self.data = data 
+    Args:
+         scores: see number_events_off_per_param
+         learning_curve._scores_by_params
+    returns:
+         sum of missed events divided by sum of true events
+    """
+    true_pred = [x.n_true_and_predicted_events() for x in scores]
+    true_list = [t[0] for t in true_pred]
+    pred_list = [t[1] for t in true_pred]
+    missed_list = [abs(true-pred) for true,pred in zip(true_list,pred_list)]
+    relative_missed = np.sum(missed_list)/np.sum(true_list)
+    to_ret = relative_missed
+    return to_ret
+
+def number_events_off_per_param(params,scores):
+    """
+    gets the (relative) number of events we were off by:
+    (1) gettting the predicted and true number of events in a fold
+    (2) getting rel=missed - true
+    (3) taking the mean and stdev of rel across all folds
+
+    Args:
+         params: the x value to use
+         scores: the scorer object to use, formatted like 
+         learning_curve._scores_by_params
+    returns;
+         tuple of <valid params, valid scores, valie errors>
+    """
+    cat_median = lambda x: safe_median(np.concatenate(x))
+    cat_std = lambda x: np.std(np.concatenate(x))
+    score_func = lambda s : _walk_scores(s,func_fold=fold_number_events_off,
+                                         func_param=safe_median,
+                                         func_top=np.array)
+    error_func = lambda s:  _walk_scores(s,func_fold=fold_number_events_off,
+                                         func_param=np.std,
+                                         func_top=np.array)
+    kw = dict(score_func=score_func,error_func=error_func)
+    return valid_scores_erors_and_params(params,scores,**kw)
+
+def median_dist_metric(x_values,scores,**kwargs):
+    """
+    function for safely getting the median metric
+
+    Args:
+        x_values: the parameters
+        scores: see safe_scores
+        **kwargs: passed to minimum_distance_median...
+    Returns:
+        see valid_scores_erors_and_params
+    """
+    score_func_pred = lambda x: median_dist_per_param(x,**kwargs)
+    error_func_pred = lambda x: stdev_dist_per_param(x,**kwargs)
+    kw_pred = dict(score_func=score_func_pred,error_func=error_func_pred)
+    x,dist,dist_std = valid_scores_erors_and_params(x_values,scores,**kw_pred)
+    return x,dist,dist_std
+
+def valid_scores_erors_and_params(params,scores,score_func,error_func):
+    """
+    given a function for getting scores and errors, finds where the results
+    are valid, selecting the x,y, and erro there
+
+    Args:
+        params: what the x values are 
+        scores: the scores we will search using score/error_func
+        <score/error>_func: functions giving the scores and errors of scores
+        at each value of params. If undefined, then is None
+    Returns:
+        tuple of <valid x, valid score, valid score error>
+    """
+    dist = score_func(scores)
+    dist_std = error_func(scores)
+    valid_func = lambda x: (~np.equal(x,None))
+    good_idx_func = lambda train,valid : np.where( valid_func(train) & \
+                                                   valid_func(valid))
+    good_idx = good_idx_func(dist,dist_std)
+    return params[good_idx],dist[good_idx],dist_std[good_idx]
+
 
 
 def category_read(category,force,cache_directory,limit,debugging=False):
@@ -405,14 +493,18 @@ def get_single_learner_folds(cache_directory,force,l,data,fold_idx,pool_size):
     return  list_of_folds,validation_folds                                                                                 
 
     
-def get_cached_folds(categories,force,cache_directory,limit,n_folds,pool_size,
-                     seed=42,learners_kwargs=dict()):
+
+def get_cached_folds(categories,force_read,force_learn,
+                     cache_directory,limit,n_folds,seed=42,
+                     learners=None,pool_size=1):
     """
     caches all the results for every learner after reading in all the data
 
     Args:
+    
         categories: list of velocity-separated data
-        force: if the csv fiels should be re-read
+        force_read: if the csv fiels should be re-read
+        force_learn: if the learner objects should be re-read
         cache_directoy: where to put the pkl files
         limit: how many examples to read in 
         n_folds: now many folds to use
@@ -421,7 +513,7 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,pool_size,
         list, one element per paramter. each element is a list of folds
     """
     for c in categories:
-        data_tmp = category_read(c,force,cache_directory,limit)
+        data_tmp = category_read(c,force_read,cache_directory,limit)
         c.set_data(data_tmp)
     labels_data = [ [i,d] for i,cat in enumerate(categories) for d in cat.data]
     labels = [l[0] for l in labels_data]
@@ -429,13 +521,14 @@ def get_cached_folds(categories,force,cache_directory,limit,n_folds,pool_size,
     # determine the folds to use
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
-    learners = get_learners(**learners_kwargs)
+    if (learners is None):
+        learners = get_learners(**learners_kwargs)
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"
         tmp = CheckpointUtilities.getCheckpoint(cache_file,
-                                                get_single_learner_folds,force,
-                                                cache_directory,force,
+                                                get_single_learner_folds,force_learn,
+                                                cache_directory,force_learn,
                                                 l,data=data,fold_idx=fold_idx,
                                                 pool_size=pool_size)
         list_of_folds,validation_folds = tmp

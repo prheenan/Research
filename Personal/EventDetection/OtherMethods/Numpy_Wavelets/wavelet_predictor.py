@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-from Research.Personal.EventDetection.Util import Analysis,Plotting,Scoring
+from Research.Personal.EventDetection.Util import Analysis
 from scipy.signal import find_peaks_cwt
 
 def predict(fec,widths=None,min_snr=10,**kwargs):

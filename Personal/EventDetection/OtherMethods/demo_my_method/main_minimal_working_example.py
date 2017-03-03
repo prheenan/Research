@@ -23,14 +23,14 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    ex = method_helper.get_example()
+    fec = method_helper.get_example()
     thresh = 2e-2
-    m_func =Detector.adhesion_function_for_split_fec(ex)
-    info = Detector._predict_helper(ex,threshold=thresh,
-                                    condition_function=m_func)
+    split_fec = Analysis.zero_and_split_force_extension_curve(fec)   
+    retract = split_fec.retract
+    _,info = Detector._predict_full(fec,threshold=thresh)
     # XXX fix threshhold
     fig = PlotUtilities.figure(figsize=(8,12))    
-    Plotting.plot_prediction_info(ex,info)
+    Plotting.plot_prediction_info(split_fec,info)
     PlotUtilities.savefig(fig,"./out.png")
 
 if __name__ == "__main__":
