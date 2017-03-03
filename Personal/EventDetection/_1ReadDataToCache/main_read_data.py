@@ -48,14 +48,6 @@ def run():
                              force_read,force_learn,
                              cache_directory,limit,n_folds,learners=learners,
                              learners_kwargs=learners_kwargs)
-    # XXX debugging
-    print(learners)
-    learners_debug = Learning.get_learners(**learners_kwargs)
-    l = learners_debug[0]
-    list_of_folds,validation_folds = learners
-    l.set_list_of_folds(list_of_folds)
-    l.set_validation_folds(validation_folds)
-    learners = [l]
     for l in learners:
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
