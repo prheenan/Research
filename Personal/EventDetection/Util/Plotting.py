@@ -8,16 +8,12 @@ from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
-import Analysis
+import Analysis,Learning
+
+style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
+style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
+
                             
-def plot_surface_idx(surface_idx,n_smooth,Obj):
-    smoothed = FEC_Util.GetFilteredForce(Obj,n_smooth)
-    x,f = Obj.Time, Obj.Force
-    x_smoothed, f_smoothed = smoothed.Time, smoothed.Force
-    plt.plot(x,f,color='k',alpha=0.3)
-    plt.plot(x_smoothed,f_smoothed,color='b')
-    plt.plot(x[surface_idx],f[surface_idx],'ro')
-    
 def plot_autocorrelation_log(x,*args):
     """
     plots the autocorrelation function and fit
@@ -151,8 +147,10 @@ def plot_prediction_info(ex,info,xlabel="Time",
     tol=min(info.cdf/2)
     plt.semilogy(x,mask_boolean+tol,alpha=0.7,linestyle='--',color='r',
                  label="mask for events")
-    plt.semilogy(x,info.condition_result+tol,alpha=0.7,linestyle='-.',color='b',
-                 label="mask for adhesions")
+    for i,c in enumerate(info.condition_results):
+        plt.semilogy(x,c+tol,alpha=0.7,
+                     linestyle='-.',color='b',
+                     label="mask {:d}".format(i))
     plt.axhline(thresh,label="threshold",linestyle='-',color='k')
     PlotUtilities.lazyLabel("","No-Event CDF ","",frameon=True,
                             loc='lower right')
@@ -320,8 +318,75 @@ def debugging_plots(id_string,example_split,info):
     plot_prediction_info(example_split,info)
     PlotUtilities.savefig(fig,out_file_path + "info.png")
 
+def plot_ruptures_of_scores(scores):
+    """
+    Given a list of score objects, plots the rupture distributions
 
+    Args:
+         scorer objects
+    Returns:
+         nothing
+    """
+    rupture_true = [r for s in scores for r in s.ruptures_true ]
+    rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
+    plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
 
+def cross_validation_distance_metric(x_values,train_scores,valid_scores,
+                                     to_true):
+    """
+    Plots the cross validation training and validation distance metric
+
+    Args:
+        x_values: x values
+        <train/valid>_scores: the training and validation scores used
+        to_true: distance metric plotted is *from* predicted *to* true 
+        (ie: something like recall) if true, otherwise vice versa
+
+    Returns:
+        nothing
+    """
+    # get the metrics and errors by parameters
+    x_train,train_dist,train_dist_std = \
+        Learning.median_dist_metric(x_values,train_scores,to_true=to_true)
+    x_valid,valid_dist,valid_dist_std = \
+        Learning.median_dist_metric(x_values,valid_scores,to_true=to_true)
+    y_plot = lambda y: y * 1e9
+    train_dist_plot,train_error_plot = y_plot(train_dist),y_plot(train_dist_std)
+    valid_dist_plot,valid_error_plot = y_plot(valid_dist),y_plot(valid_dist_std)
+    plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
+                 **style_train)
+    plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
+                 **style_valid)
+    plt.xscale('log')
+    PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
+                            frameon=True)
+
+    
+def plot_num_events_off(x_values,train_scores,valid_scores):
+    """
+    Plots the number of 
+
+    Args:
+        cache_directory: where to save the plots
+        learner: learning_curve instance to use
+    Returns:
+        nothing
+    """
+    x_train,train_dist,train_dist_std = \
+        Learning.number_events_off_per_param(x_values,train_scores)
+    x_valid,valid_dist,valid_dist_std = \
+        Learning.number_events_off_per_param(x_values,train_scores)
+    train_dist_plot,train_error_plot = train_dist,train_dist_std
+    valid_dist_plot,valid_error_plot = valid_dist,valid_dist_std
+    plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
+                 **style_train)
+    plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
+                 **style_valid)
+    PlotUtilities.lazyLabel("Tuning parameter",
+                            "Relative number of missing or incorrect events",
+                            "")
+    plt.xscale('log')    
+    plt.yscale('log')    
 
 def plot_individual_learner(cache_directory,learner):
     """
@@ -333,12 +398,15 @@ def plot_individual_learner(cache_directory,learner):
     Returns:
         nothing
     """
-    scores = learner._concatenate_all_scores()
-    if (len(scores) == 0) :
-        return
-    rupture_true = [r for s in scores for r in s.ruptures_true ]
-    rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
-    fig = PlotUtilities.figure(figsize=(8,8))
-    plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
     out_file_stem = cache_directory + "{:s}".format(learner.description)
-    PlotUtilities.savefig(fig,out_file_stem + "rupture_loading.png")
+    # get the scoring objects by paramter by fold
+    train_scores = learner._scores_by_params(train=True)
+    valid_scores = learner._scores_by_params(train=False)
+    x_values = learner.param_values()
+    fig = PlotUtilities.figure()
+    plot_num_events_off(x_values,train_scores,valid_scores)
+    PlotUtilities.savefig(fig,out_file_stem + "n_off.png")
+    fig = PlotUtilities.figure()
+    cross_validation_distance_metric(x_values,train_scores,valid_scores,
+                                     to_true=True)
+    PlotUtilities.savefig(fig,out_file_stem + "dist.png")
