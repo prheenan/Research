@@ -9,6 +9,8 @@ from scipy import signal,stats
 from Research.Personal.EventDetection.Util import Analysis
 from GeneralUtil.python import PlotUtilities,GenUtilities
 
+from scipy.ndimage.filters import uniform_filter1d
+
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 
@@ -22,8 +24,17 @@ def local_stdev(f,n):
     """
     max_n = f.size
     # go from (i-n to i+n)
-    return np.array([np.std(f[max(0,i-n):min(max_n,i+n)]) 
-                     for i in range(max_n)])
+    """
+    for linear stdev, see: 
+    stackoverflow.com/questions/18419871/
+    improving-code-efficiency-standard-deviation-on-sliding-windows
+    """
+    c1 = uniform_filter1d(f, size=n*2, mode='nearest', origin=-n)
+    c2 = uniform_filter1d(f*f, size=n*2, mode='nearest', origin=-n)
+    # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
+    safe_variance = np.maximum(0,c2 - c1*c1)
+    stdev = (safe_variance**.5)
+    return stdev
 
 def spline_derivative_probability(split_fec):
     """
@@ -39,8 +50,20 @@ def spline_derivative_probability(split_fec):
     """
     retract = split_fec.retract
     time = retract.Time 
-    interpolator_force_onto_time = split_fec.retract_spline_interpolator()
-    derivative_force = interpolator_force_onto_time.derivative()(time)
+    interpolator = split_fec.retract_spline_interpolator()
+    return _spline_derivative_probability_generic(time,interpolator)
+
+def _spline_derivative_probability_generic(x,interpolator):
+    """
+    see  spline_derivative_probability, except a genertic method
+    
+    Args:
+        x: x values
+        interpolator: to interpolate along
+    Returns:
+        see spline_derivative_probability
+    """
+    derivative_force = interpolator.derivative()(x)
     # get the median and std of deriv
     med_deriv = np.median(derivative_force)
     q_loq_percentile = 0
@@ -81,6 +104,8 @@ def derivative_mask_function(split_fec,*args,**kwargs):
     Args:
         split_fec: the split_force_extension object we want to mask the 
         adhesions of 
+
+        *args,**kwargs: ignored
     Returns:
         see adhesion_mask_function_for_split_fec, except derivative mask
     """
@@ -94,6 +119,8 @@ def adhesion_mask_function_for_split_fec(split_fec,*args,**kwargs):
     Args:
         split_fec: the split_force_extension object we want to mask the 
         adhesions of 
+
+        *args,**kwargs: see adhesion
     Returns:
         adhesion_mask, 0 to 1 boolean array like split_fec.retract
     """
@@ -271,12 +298,12 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     # note: chebyshev cant be more than 1 (could happen if the stdev is really 
     # close to the mean)
     chebyshev = np.minimum((1/k_chebyshev)**2,1)
-    norm_dist = 1-stats.norm.cdf(stdev_masked,loc=median_local_stdev,
-                                 scale=scale)
     # for the edge cases, assume the probability is one                         
     probability_distribution = np.ones(y.size)          
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
+    # XXX use the spline distribution
+    spline_distribution = _spline_derivative_probability_generic(x,interp)
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):

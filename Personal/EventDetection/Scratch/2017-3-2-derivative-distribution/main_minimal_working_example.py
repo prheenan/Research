@@ -29,7 +29,7 @@ def run():
     for fec in data:
         split_fec = Analysis.zero_and_split_force_extension_curve(fec)
         files = GenUtilities.ensureDirExists(out_dir)
-        _,info = Detector._predict_full(fec,threshold=1e-2)
+        _,info = Detector._predict_full(fec,threshold=0.5)
         # XXX fix threshhold
         fig = PlotUtilities.figure(figsize=(8,12))    
         Plotting.plot_prediction_info(split_fec,info)
