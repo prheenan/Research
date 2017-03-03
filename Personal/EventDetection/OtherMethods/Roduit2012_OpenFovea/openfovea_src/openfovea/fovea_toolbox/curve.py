@@ -756,7 +756,7 @@ def event_complete(curve_x, curve_y, position):
         event = event_list[event_nbr]
         # Complete the events to the right
         next_is_higher = 1
-        right_pos = event['Slice'].stop
+        right_pos = int(event['Slice'].stop)
         while next_is_higher and right_pos + 1 < len(curve_y):
             if curve_y[right_pos + 1] >= curve_y[right_pos]:
                 right_pos = right_pos + 1
@@ -765,7 +765,7 @@ def event_complete(curve_x, curve_y, position):
                 next_is_higher -= 1
         # And complete to the left.
         previous_is_lower = 1
-        left_pos = event['Slice'].start
+        left_pos = int(event['Slice'].start)
         while previous_is_lower:
             if curve_y[left_pos - 1] < curve_y[left_pos]:
                 left_pos = left_pos - 1
@@ -791,7 +791,7 @@ def event_complete(curve_x, curve_y, position):
             else:
                 left_pos = left_pos - 1
                 previous_is_higher = previous_is_higher - 1
-        left_pos = left_pos + nbr_test
+        left_pos = int(left_pos + nbr_test)
         #print curve_x[left_pos]
         if left_pos <= nbr_test or curve_x[left_pos] <= 5:
             # This is a jump off contact

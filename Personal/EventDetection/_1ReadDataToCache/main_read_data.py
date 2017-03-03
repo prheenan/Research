@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,os
+import sys,os,multiprocessing
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
@@ -25,11 +25,12 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     cache_directory = "./cache/"
     positive_categories = Learning.get_categories(positives_directory)
-    force = False
+    force = True
     debug_plots = True
     # limit (per category)
-    limit = 5
-    n_folds = 3
+    limit = 50
+    n_folds = 5
+    pool_size =  multiprocessing.cpu_count()-1
     n_tuning_points = 10
     learners_kwargs = dict(n_points_no_event=n_tuning_points,
                            n_points_fovea=n_tuning_points,
@@ -40,7 +41,8 @@ def run():
                getCheckpoint(file_name_cache,Learning.get_cached_folds,force,
                              positive_categories,
                              force,cache_directory,limit,n_folds,
-                             learners_kwargs=learners_kwargs)
+                             learners_kwargs=learners_kwargs,
+                             pool_size=pool_size)
     for l in learners:
         Plotting.plot_individual_learner(cache_directory,l)
 
