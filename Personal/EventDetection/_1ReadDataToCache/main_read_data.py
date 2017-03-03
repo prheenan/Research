@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,os
+import sys,os,multiprocessing
 from shutil import copyfile
 
 sys.path.append("../../../../")
@@ -25,12 +25,15 @@ def run():
         This is a description of what is returned.
     """
     cache_directory = "./cache/"
-    force_relearn = False
-    force_read = False
-    force_learn = False
+    positives_directory = InputOutput.get_positives_directory()
+    positive_categories = Learning.get_categories(positives_directory)
     # limit (per category)
-    limit = 3
-    n_folds = 5
+    limit = 20
+    n_folds = 3
+    pool_size =  multiprocessing.cpu_count()-1
+    force_relearn = True
+    force_read = True
+    force_learn = True
     n_tuning_points = 10
     debug_directory = "./debug_no_event/"
     learners_kwargs = dict(n_points_no_event=n_tuning_points,
@@ -41,13 +44,13 @@ def run():
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first learner
-    learners = [Learning.get_learners(**learners_kwargs)[0]]
+    learners = Learning.get_learners(**learners_kwargs)
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
-                             force_read,force_learn,
-                             cache_directory,limit,n_folds,learners=learners,
-                             learners_kwargs=learners_kwargs)
+                             force_read,force_learn,cache_directory,limit,
+                             n_folds,pool_size=pool_size,
+                             learners=learners)
     for l in learners:
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything

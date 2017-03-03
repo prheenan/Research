@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,traceback
 
 from Research.Personal.EventDetection.Util import Analysis,InputOutput,Scoring
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -13,6 +13,7 @@ from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
     wavelet_predictor
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.cross_validation import StratifiedKFold
+import multiprocessing
 
 
 
@@ -256,7 +257,7 @@ def valid_scores_erors_and_params(params,scores,score_func,error_func):
 
 
 
-def category_read(category,force,cache_directory,limit):
+def category_read(category,force,cache_directory,limit,debugging=False):
     """
     Reads in all the data associated with a category
 
@@ -271,16 +272,79 @@ def category_read(category,force,cache_directory,limit):
     try:
         return InputOutput.get_category_data(category,force,cache_directory,
                                              limit)
-    except OSError:
+    except OSError as e:
+        if (not debugging):
+            raise(e)
         if (category.category_number != 0):
             return []
+        print(e)
         # just read in the files that live here XXX just for debugging
         file_names = GenUtilities.getAllFiles(cache_directory,ext="csv.pkl")
         all_files = [CheckpointUtilities.getCheckpoint(f,None,False)
                      for f in file_names]
         return all_files
         
-def single_fold_score(fold_data,func,kwargs):
+def single_example_info_and_score(func,example,**kwargs):
+    """
+    Returns a list of learning_curve objects
+
+    Args:
+        func: a method taking in example and **kwargs and returning event
+        indices
+        
+        example: TimeSepForce object
+        **kwargs: for func
+    Returns:
+        tuple of <scoring object, folding_meta object>
+    """
+    meta = example.Meta
+    # get the predicted event index
+    event_idx = func(example,**kwargs)
+    example_split = Analysis.zero_and_split_force_extension_curve(example)
+    # get the score
+    score = Scoring.get_scoring_info(example_split,event_idx)
+    return score,fold_meta(meta)
+
+def run_functor(functor):
+    """
+    Given a no-argument functor, run it and return its result. We can 
+    use this with multiprocessing.map and map it over a list of job 
+    functors to do them.
+
+    Handles getting more than multiprocessing's pitiful exception output
+    
+    Args:
+        functor: a no-argument function (probably a lambda)
+    Returns:
+        whatever functor does, possibly raising an exception
+    """
+    try:
+        # This is where you do your actual work
+        return functor()
+    except:
+        # Put all exception text into an exception and raise that
+        err_string = "".join(traceback.format_exception(*sys.exc_info()))
+        raise Exception(err_string)    
+    
+def single_example_multiproc(args):
+    """
+    multiprocesing interface to single_example_info_and_score
+
+    Args:
+        tuple of arguments to single_example_info_and_score
+    Returns:
+         see single_example_info_and_score
+    """
+    func,example,dict_kwargs = args
+    return single_example_info_and_score(func,example,**dict_kwargs)        
+        
+class multiprocessing_functor(object):
+    def __init__(self):
+        pass
+    def __call__(self,*args):
+        return single_example_multiproc(*args)
+            
+def single_fold_score(fold_data,func,kwargs,pool):
     """
     Gets the fold object for a single set of data (ie: a single fold)
     for a fixed parameter set
@@ -288,32 +352,54 @@ def single_fold_score(fold_data,func,kwargs):
     Args:
         fold_data: set of TimeSepForce objects to use
         func: to call, should return a list of predicted event starts
-        **kwargs: fixed parameters to pass to func
+        kwargs: dict, fixed parameters to pass to func
+        pool: if not none, a Multiprocessing pool for parallel processing...
     Returns:
         fold object
     """
     scores = []
     info = []
-    for j,example in enumerate(fold_data):
-        meta = example.Meta
-        # get the predicted event index
-        event_idx = func(example,**kwargs)
-        example_split = Analysis.zero_and_split_force_extension_curve(example)
-        # get the score
-        score = Scoring.get_scoring_info(example_split,event_idx)
-        info.append(fold_meta(meta))
-        scores.append(score)
+    if (pool is None):
+        scores_info = [single_example_info_and_score(func,ex,**kwargs) 
+                       for ex in fold_data]
+    else:
+        # we make a list of functor objects (functions + arguments)
+        # that we can then safely run
+        functors_args = [ (func,ex,kwargs) for ex in fold_data]
+        scores_info = pool.map(multiprocessing_functor(),functors_args)
+    # POST: got the scores an info, somehow...
+    scores = [s[0] for s in scores_info]
+    info = [s[1] for s in scores_info]
     return fold(kwargs,scores,info)
 
-
-def get_all_folds_for_one_learner(learner,data,fold_idx):
+def folds_for_one_param(data,param,fold_idx,func_to_call,pool):
+    folds = []
+    folds_valid = []
+    for train_idx,test_idx in fold_idx:
+        # get the training scores
+        fold_data = [data[f] for f in train_idx]
+        folds_tmp = single_fold_score(fold_data,func_to_call,param,
+                                      pool=pool)
+        folds.append(folds_tmp)
+        # get the validation scores
+        valid_data = [data[f] for f in test_idx]
+        valid_fold = single_fold_score(valid_data,func_to_call,param,
+                                       pool=pool)
+        folds_valid.append(valid_fold)    
+    return folds,folds_valid
+    
+def get_all_folds_for_one_learner(cache_directory,force,learner,data,fold_idx,
+                                  pool):
     """
     Gets all the folds for a single learner
 
     Args:
+        cache_directory: base where we cache things
+        force: if true, force re-reading of all folds
         learner: learning_curve to use
         data: list of TimeSepForce objects to use
         fold_idx: list of <train,test>; one tuple per fold
+        pool: a multiprocessing pool to draw from (if not None)
     Returns:
         tuple of :
          (0) list, one element per paramter. each element is a list of folds
@@ -322,18 +408,13 @@ def get_all_folds_for_one_learner(learner,data,fold_idx):
     """
     func_to_call = learner.func_to_call
     params_then_folds,param_validation_fold = [],[]
-    for param in learner.list_of_params:
-        folds = []
-        folds_valid = []
-        for train_idx,test_idx in fold_idx:
-            # get the training scores
-            fold_data = [data[f] for f in train_idx]
-            folds_tmp = single_fold_score(fold_data,func_to_call,param)
-            folds.append(folds_tmp)
-            # get the validation scores
-            valid_data = [data[f] for f in test_idx]
-            valid_fold = single_fold_score(valid_data,func_to_call,param)
-            folds_valid.append(valid_fold)
+    for i,param in enumerate(learner.list_of_params):    
+        cache_name = "{:s}_{:s}_param_{:d}.pkl".\
+           format(cache_directory,learner.description,i)
+        ret = CheckpointUtilities.getCheckpoint(cache_name,folds_for_one_param,
+                                                force,data,param,fold_idx,
+                                                func_to_call,pool=pool)
+        folds,folds_valid = ret
         # done with all the folds for this parameter; save them out
         params_then_folds.append(folds)
         param_validation_fold.append(folds_valid)
@@ -368,13 +449,14 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-3.5,-1.5,endpoint=True,
+    no_event_tuple = [Detector.predict,np.logspace(-4,np.log10(0.9),    
+                                                   endpoint=True,
                                                    base=10,
                                                    num=n_points_no_event)]
     no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                
     # make the fovea example
     fovea_func = lambda arg_list: [dict(weight=w) for w in arg_list]
-    fovea_tuple = [fovea.predict,np.linspace(0.01,0.5,endpoint=True,
+    fovea_tuple = [fovea.predict,np.logspace(0.001,0.2,endpoint=True,
                                              num=n_points_fovea)]
     fovea_curve = _get_single_curve("Open Fovea",fovea_tuple,fovea_func)                                   
     # make the CWT example
@@ -384,25 +466,37 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     wavelet_curve = _get_single_curve("Wavelet transform",cwt_tuple,cwt_func)   
     return [no_event_curve,fovea_curve,wavelet_curve]
 
-def get_single_learner_folds(l,data,fold_idx):
+def get_single_learner_folds(cache_directory,force,l,data,fold_idx,pool_size):
     """
     return the training and testing folds for a given learner
 
     Args:
+        cache_directory: where to cache individual parameter folds
+        force: if caching should be forced
         l : learner to use
         d : data to use 
         fold_idx: which indices to use for the folds
+        pool_size: number of processing to use. If <=1, just uses 1 
+        (no parallelism)
     Returns:
         tuple of <training,validation folds>
     """
-    list_of_folds,validation_folds = get_all_folds_for_one_learner(l,data,
-                                                                   fold_idx)
+    if (pool_size <= 1):
+        # dont use a multiprocessing pool
+        pool = None
+    else:
+        pool = multiprocessing.Pool(pool_size)
+    print("Using {:d} processes for {:s}".format(pool_size,l.description))
+    ret = get_all_folds_for_one_learner(cache_directory,force,
+                                        l,data,fold_idx,pool=pool)
+    list_of_folds,validation_folds = ret
     return  list_of_folds,validation_folds                                                                                 
 
     
+
 def get_cached_folds(categories,force_read,force_learn,
                      cache_directory,limit,n_folds,seed=42,
-                     learners_kwargs=dict(),learners=None):
+                     learners=None,pool_size=1):
     """
     caches all the results for every learner after reading in all the data
 
@@ -433,9 +527,10 @@ def get_cached_folds(categories,force_read,force_learn,
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"
         tmp = CheckpointUtilities.getCheckpoint(cache_file,
-                                                get_single_learner_folds,
-                                                force_learn,
-                                                l,data,fold_idx)
+                                                get_single_learner_folds,force_learn,
+                                                cache_directory,force_learn,
+                                                l,data=data,fold_idx=fold_idx,
+                                                pool_size=pool_size)
         list_of_folds,validation_folds = tmp
         l.set_list_of_folds(list_of_folds)
         l.set_validation_folds(validation_folds)
