@@ -13,8 +13,6 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-        
-
 
 def run():
     """
@@ -59,7 +57,7 @@ def run():
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(cache_directory,l)
-    num_to_plot = 2
+    num_to_plot = 3
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -84,7 +82,7 @@ def run():
     sort_idx = np.arange(0,len(scores),1)
     # sort from high to low, first elements are most missed and farest off...
     sort_idx = sorted(sort_idx,reverse=True,
-                      key=lambda i:(number_relative[i],median_dist[i]))
+                      key=lambda i:(median_dist[i],number_relative[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     file_names = [scores[i].source_file + scores[i].name 
                   for i in worst_n_idx]
@@ -99,7 +97,7 @@ def run():
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 5e-2
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]

@@ -11,6 +11,29 @@ from GeneralUtil.python import PlotUtilities,GenUtilities
 
 from scipy.ndimage.filters import uniform_filter1d
 
+
+
+from itertools import chain
+
+def join_contiguous_slices(slices, offset=0):
+    """
+    # XXX see:
+    stackoverflow.com/questions/24317211/
+    merge-overlapping-numeric-ranges-into-continuous-ranges
+    """
+    flatten = chain.from_iterable
+    LEFT, RIGHT = 1, -1
+    data = [[s.start,s.stop] for s in slices]
+    data = sorted(flatten(((start, LEFT), (stop + offset, RIGHT))
+            for start, stop in data))
+    c = 0
+    for value, label in data:
+        if c == 0:
+            x = value
+        c += label
+        if c == 0:
+            yield slice(x, value - offset,1)
+
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 
@@ -304,10 +327,6 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     probability_distribution = np.ones(y.size)          
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
-    spline_distribution = _spline_derivative_probability_generic(x,interp)
-    where = np.where((spline_distribution == 1))
-    probability_distribution[where] = 1
-    probability_distribution *= spline_distribution
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
@@ -389,6 +408,7 @@ def event_by_loading_rate(*args,**kwargs):
         return local_max_idx
     return idx_above_predicted[-1]
 
+
 def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
              condition_functions=None):
     """
@@ -428,6 +448,10 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                         for e in event_slices]
     event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
+    # POST: slices are of length min points, determine which events overlap, 
+    # combine them if they do.
+    event_slices = list(join_contiguous_slices(event_slices))
+    # POST: event slices aren't contiguous
     event_idx = [local_event_idx_function(x,y,e) for e in event_slices]
     to_ret = prediction_info(event_idx = event_idx,
                              event_slices = event_slices,
