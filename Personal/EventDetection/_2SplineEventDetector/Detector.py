@@ -29,8 +29,9 @@ def local_stdev(f,n):
     stackoverflow.com/questions/18419871/
     improving-code-efficiency-standard-deviation-on-sliding-windows
     """
-    c1 = uniform_filter1d(f, size=n*2, mode='nearest', origin=-n)
-    c2 = uniform_filter1d(f*f, size=n*2, mode='nearest', origin=-n)
+    mode = 'reflect'
+    c1 = uniform_filter1d(f, size=n*2, mode=mode, origin=-n)
+    c2 = uniform_filter1d(f*f, size=n*2, mode=mode, origin=-n)
     # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
     safe_variance = np.maximum(0,c2 - c1*c1)
     stdev = (safe_variance**.5)
@@ -249,9 +250,10 @@ def _event_mask(probability,threshold,condition_functions=None):
     """
     boolean_thresh = (probability <= threshold)
     if (condition_functions is not None):  
-        condition_results = [func(probability,threshold)
-                             for func in condition_functions]
-        conditions =(boolean_thresh & np.prod(condition_results,axis=0))
+        condition_results = [f(probability,threshold) 
+                             for f in condition_functions]
+        product =np.prod(condition_results,axis=0) 
+        conditions =(boolean_thresh & product)
     else:
         condition_results = None
         conditions = boolean_thresh  
@@ -302,8 +304,10 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     probability_distribution = np.ones(y.size)          
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
-    # XXX use the spline distribution
     spline_distribution = _spline_derivative_probability_generic(x,interp)
+    where = np.where((spline_distribution == 1))
+    probability_distribution[where] = 1
+    probability_distribution *= spline_distribution
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
@@ -436,7 +440,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                              condition_results=condition_results)
     return to_ret                                
                              
-def _predict_helper(split_fec,threshold,**kwargs):
+def _predict_helper(split_fec,threshold,condition_functions=None,**kwargs):
     """
     uses spline interpolation and local stadard deviations to predict
     events.
@@ -463,6 +467,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
                       interp=interp,
                       threshold=threshold,
                       local_event_idx_function=event_by_loading_rate,
+                      condition_functions=condition_functions,
                       **kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface
@@ -473,11 +478,11 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    m_funcs = [adhesion_mask_function_for_split_fec]
-    condition_functions = [lambda *args,**kwargs : 
-                           f(example_split,*args,**kwargs) 
-                           for f in m_funcs]
-    final_dict = dict(condition_functions=condition_functions,
+    f_refs = [derivative_mask_function,adhesion_mask_function_for_split_fec]
+    funcs = [ \
+        (lambda *a,**kw : derivative_mask_function(example_split,*a,**kw) ),\
+(lambda *a,**kw : adhesion_mask_function_for_split_fec(example_split,*a,**kw))]
+    final_dict = dict(condition_functions=funcs,
                       threshold=threshold)
     pred_info = _predict_helper(example_split,**final_dict)
     return example_split,pred_info
