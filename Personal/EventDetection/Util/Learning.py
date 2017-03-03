@@ -522,7 +522,7 @@ def get_cached_folds(categories,force_read,force_learn,
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
     if (learners is None):
-        learners = get_learners(**learners_kwargs)
+        learners = get_learners()
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"

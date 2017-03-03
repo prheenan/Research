@@ -33,11 +33,12 @@ def run():
     limit = 20
     n_folds = 3
     pool_size =  multiprocessing.cpu_count()-1
+    force_read = False
     force_relearn = True
-    force_read = True
     force_learn = True
     n_tuning_points = 10
     debug_directory = "./debug_no_event/"
+    GenUtilities.ensureDirExists(debug_directory)
     learners_kwargs = dict(n_points_no_event=n_tuning_points,
                            n_points_fovea=n_tuning_points,
                            n_points_wavelet=n_tuning_points)
@@ -45,8 +46,9 @@ def run():
     positive_categories = Learning.get_categories(positives_directory)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
-    # XXX use just the first learner
-    learners = Learning.get_learners(**learners_kwargs)
+    # XXX use just the first N learners
+    n_learners = 1
+    learners = Learning.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
