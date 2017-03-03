@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,random
+import sys,random,multiprocessing
 from timeit import default_timer as timer
 
 sys.path.append("../../../../")
@@ -77,8 +77,23 @@ stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/25823885#2582
         func(d)
     elapsed_time =  timer() - start
     return elapsed_time
-
-def get_all_times(learner,data,list_of_curve_numbers,trials_per_curve_set=5):
+    
+def time_single_multiproc(args):
+    return time_single(*args)
+    
+def get_single_trial_times(trials_per_curve_set,learner,data_tmp,
+                           pool_size=None):
+    if (pool_size is None):
+        pool_size = multiprocessing.cpu_count() -1 
+    pool = multiprocessing.Pool(pool_size)
+    args = [(learner.func_to_call,data_tmp) 
+            for t in range(trials_per_curve_set)]
+    times = pool.map(time_single_multiproc,args)
+    return times
+    
+def get_all_times(learner,data,list_of_curve_numbers,velocity,
+                  cache_directory,force_trials,timing_threshold=None,
+                  trials_per_curve_set=5):
     """
     gets the time_trials for a single loading rate (or whatever)
 
@@ -87,22 +102,29 @@ def get_all_times(learner,data,list_of_curve_numbers,trials_per_curve_set=5):
     Returns:
         a single time_trials object
     """
+    if (timing_threshold is None):
+        timing_threshold = 60
     times_all_trials = []
     sizes_all_trials = []
     num_curves_all_trials = []
-    for l in list_of_curve_numbers:
+    for i,l in enumerate(list_of_curve_numbers):
         # dont do trials that we cant actually time
         if (l > len(data)):
             continue
         # determine the data set we will use for this one
         data_tmp = data[:l]
-        times = []
         sizes = [d.Force.size for d in data_tmp]
-        for t in range(trials_per_curve_set):
-            times.append(time_single(learner.func_to_call,data_tmp))
+        cache_id = "{:s}{:s}_v={:.1f}_l={:d}.pkl".\
+                format(cache_directory,learner.description,velocity,l)
+        times = CheckpointUtilities.\
+            getCheckpoint(cache_id,get_single_trial_times,force_trials,
+                          trials_per_curve_set,learner,data_tmp)
         times_all_trials.append(times)
         sizes_all_trials.append(sizes)
         num_curves_all_trials.append(len(data_tmp))
+        # give up if it is taking too long, per curve
+        if (np.mean(times) > timing_threshold):
+            break
     return time_trials(times_all_trials,num_curves_all_trials,sizes_all_trials)
 
 def single_learner(learner,curve_numbers,categories,**kwargs):
@@ -116,10 +138,11 @@ def single_learner(learner,curve_numbers,categories,**kwargs):
     """
     trials = []
     # get the time trials for each category (loading rate)
-    for c in categories:
+    loading_rates = [c.velocity_nm_s for c in categories]    
+    for c,velocity in zip(categories,loading_rates):
         data = c.data
-        trials.append(get_all_times(learner,data,curve_numbers,**kwargs))
-    loading_rates = [c.velocity_nm_s for c in categories]
+        trials.append(get_all_times(learner,data,curve_numbers,
+                                    velocity=velocity,**kwargs))
     return time_trials_by_loading_rate(learner,trials,loading_rates)
 
 def cache_all_learners(learners,categories,curve_numbers,cache_directory,
@@ -140,7 +163,7 @@ def cache_all_learners(learners,categories,curve_numbers,cache_directory,
     times = []
     # read in all the data
     for c in categories:
-        data = Learning.category_read(c,force=force,
+        data = Learning.category_read(c,force=False,
                                       cache_directory=cache_directory,
                                       limit=max(curve_numbers))
         c.set_data(data)  
@@ -148,7 +171,8 @@ def cache_all_learners(learners,categories,curve_numbers,cache_directory,
     for l in learners:
         t = CheckpointUtilities.getCheckpoint(l.description,single_learner,
                                               force,l,curve_numbers,categories,
-                                              **kwargs)
+                                              cache_directory=cache_directory,
+                                              force_trials=force,**kwargs)
         times.append(t)
     return times
         
@@ -167,7 +191,7 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     positive_categories = Learning.\
         get_categories(positives_directory=positives_directory)
-    curve_numbers = [1,2,5,10,20,50,100,200]
+    curve_numbers = [1,2,5,20,35,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
     force = True
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
