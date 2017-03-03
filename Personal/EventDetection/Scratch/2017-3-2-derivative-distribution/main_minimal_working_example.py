@@ -23,49 +23,18 @@ def run():
         This is a description of what is returned.
     """
     base_debug = "../../_1ReadDataToCache/debug_no_event/"
+    out_dir = "./out/"
     files = GenUtilities.getAllFiles(base_debug,ext=".pkl")
     data = [CheckpointUtilities.getCheckpoint(f,None,False) for f in files]
     for fec in data:
-        # get the zeroed force extension curve
         split_fec = Analysis.zero_and_split_force_extension_curve(fec)
-        retract = split_fec.retract
-        time = retract.Time 
-        time -= min(time)
-        interpolator_force_onto_time = split_fec.retract_spline_interpolator()
-        derivative_force = interpolator_force_onto_time.derivative()(time)
-        interpolated_force = interpolator_force_onto_time(time)
-        min_interp,max_interp = \
-            [min(interpolated_force),max(interpolated_force)]
-        min_d = min(derivative_force)
-        max_d = max(derivative_force)
-        deriv_plot = (derivative_force-min_d)/(max_d-min_d) 
-        deriv_plot = deriv_plot * (max_interp-min_interp) + min_interp
-        # get the median and std of deriv
-        med_deriv = np.median(deriv_plot)
-        q_low,q_high = np.percentile(deriv_plot,[0,100])
-        iqr_region_idx = np.where( (deriv_plot <= q_high) & 
-                                   (deriv_plot >= q_low))[0]
-        std_iqr = np.std(deriv_plot[iqr_region_idx])
-        probability = np.zeros(deriv_plot.size)
-        probability[np.where(deriv_plot >= med_deriv - std_iqr)]  = 1
-        possible_idx = np.where(deriv_plot < med_deriv)
-        possible_deriv = deriv_plot[possible_idx]
-        k = (possible_deriv-med_deriv)/std_iqr
-        probability[possible_idx]  = 1/k**2
-        probability = np.minimum(probability,1)
-        probability_plot = probability
-        plt.subplot(2,1,1)
-        plt.plot(time,retract.Force,color='k',alpha=0.3)
-        plt.plot(time,interpolated_force,color='g',linewidth=4)
-        plt.plot(time,deriv_plot)
-        plt.axhline(med_deriv,color='k')
-        plt.axhline(med_deriv+std_iqr,color='b',linestyle='--')
-        plt.axhline(med_deriv-std_iqr,color='b',linestyle='--')
-        plt.subplot(2,1,2)
-        plt.plot(time,probability_plot,color='r',linestyle='--')
-        plt.semilogy()
-        plt.show()
-    
+        files = GenUtilities.ensureDirExists(out_dir)
+        _,info = Detector._predict_full(fec,threshold=1e-2)
+        # XXX fix threshhold
+        fig = PlotUtilities.figure(figsize=(8,12))    
+        Plotting.plot_prediction_info(split_fec,info)
+        PlotUtilities.savefig(fig,"{:s}{:s}.png".format(out_dir,fec.Meta.Name))
+
 
 
 if __name__ == "__main__":

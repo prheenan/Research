@@ -147,8 +147,10 @@ def plot_prediction_info(ex,info,xlabel="Time",
     tol=min(info.cdf/2)
     plt.semilogy(x,mask_boolean+tol,alpha=0.7,linestyle='--',color='r',
                  label="mask for events")
-    plt.semilogy(x,info.condition_result+tol,alpha=0.7,linestyle='-.',color='b',
-                 label="mask for adhesions")
+    for i,c in enumerate(info.condition_results):
+        plt.semilogy(x,c+tol,alpha=0.7,
+                     linestyle='-.',color='b',
+                     label="mask {:d}".format(i))
     plt.axhline(thresh,label="threshold",linestyle='-',color='k')
     PlotUtilities.lazyLabel("","No-Event CDF ","",frameon=True,
                             loc='lower right')
