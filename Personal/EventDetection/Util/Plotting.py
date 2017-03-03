@@ -161,6 +161,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
         plt.axvline(x[fwd],linestyle='--',color='r')
         plt.axvline(x[rev],linestyle='-.',color='g')
+        plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
+                 label="predicted")
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.subplot(n_plots,n_cols,4)
