@@ -20,19 +20,19 @@ class time_trials:
         Returns:
             mean times to complete each of self.num_curves
         """
-        return [np.mean(x) for x in self.times]
+        return np.array([np.mean(x) for x in self.times])
     def std_time_for_fixed_number(self):
         """
         Returns:
             standard deviation of times to complete each of self.num_curves
         """    
-        return [np.std(x) for x in self.times]
+        return np.array([np.std(x) for x in self.times])
     def total_number_of_points_per_curves(self):
         """
         Returns:
             total number of points predicted for each of self.num_curves
         """    
-        return [sum(n) for n in self.fec_num_points]
+        return np.array([sum(n) for n in self.fec_num_points])
     def average_number_of_points_per_curve(self):
         """
         Returns:
@@ -82,10 +82,12 @@ stackoverflow.com/questions/7370801/measure-time-elapsed-in-python/25823885#2582
         time, in seconds, that it takes to run. 
     """
     if (pool_size is None):
-        pool_size = multiprocessing.cpu_count() -2
+        pool_size = multiprocessing.cpu_count() - 1
     pool = multiprocessing.Pool(pool_size)   
     args = [ (func,d) for d in data]
     time_increments =  pool.map(time_example_multiproc,args)
+    pool.close()    
+    pool.join()        
     return sum(time_increments)
     
 def get_single_trial_times(trials_per_curve_set,learner,data_tmp):
@@ -105,7 +107,7 @@ def get_all_times(learner,data,list_of_curve_numbers,velocity,
         a single time_trials object
     """
     if (timing_threshold is None):
-        timing_threshold = 120
+        timing_threshold = 300
     times_all_trials = []
     sizes_all_trials = []
     num_curves_all_trials = []
@@ -166,7 +168,7 @@ def cache_all_learners(learners,categories,curve_numbers,cache_directory,
     times = []
     # read in all the data
     for c in categories:
-        data = Learning.category_read(c,force=False,
+        data = Learning.category_read(c,force=True,
                                       cache_directory=cache_directory,
                                       limit=max(curve_numbers))
         c.set_data(data)  
@@ -196,7 +198,7 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     positive_categories = Learning.\
         get_categories(positives_directory=positives_directory)
-    curve_numbers = [1,2,5,20,35,50,100,150,200]
+    curve_numbers = [1,2,5,10,20,35,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
     force = True
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
@@ -211,7 +213,9 @@ def run():
         plot_single_learner(learner_trials)
         fudge = 2
         plt.ylim([min_time/fudge,max_time*fudge])
+        plt.xlim([1/fudge,max(curve_numbers)*fudge])
         plt.yscale('log')
+        plt.xscale('log')        
         PlotUtilities.legend(loc="lower right",frameon=True)
         PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
         
@@ -225,14 +229,17 @@ def plot_single_learner(learner_trials):
         mean = loading_rate_trial.mean_time_for_fixed_number()
         std = loading_rate_trial.std_time_for_fixed_number()
         pts_per_curve = loading_rate_trial.average_number_of_points_per_curve()
-        decimal_places = int(np.floor(np.log10(abs(pts_per_curve))))
-        round_pts_per_curve = int(np.round(pts_per_curve,-decimal_places))
+        kpts_per_curve = pts_per_curve/1000
+        decimal_places = int(np.floor(np.log10(abs(kpts_per_curve))))
+        round_kpts_per_curve = int(np.round(kpts_per_curve,-decimal_places))
         velocity = learner_trials.loading_rates[i]
         velocity_label = r"v={:4d}nm/s".format(velocity)
-        number_label = r"<Points per curve>={:d}".format(round_pts_per_curve)
+        number_label = r"<N>={:d}K".format(round_kpts_per_curve)
         label = "{:s} ({:s})".format(velocity_label,number_label)
-        plt.errorbar(x=num_curves,y=mean,yerr=std,label=label,**style)
-    PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time","")
+        plt.errorbar(x=num_curves,y=mean,yerr=std/num_curves,
+                     label=number_label,**style)
+    PlotUtilities.lazyLabel("Number of Force-Extension Curves",
+                            "Time","")
 
 if __name__ == "__main__":
     run()
