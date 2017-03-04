@@ -449,7 +449,7 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-4,np.log10(0.9),    
+    no_event_tuple = [Detector.predict,np.logspace(-3,np.log10(0.5),    
                                                    endpoint=True,
                                                    base=10,
                                                    num=n_points_no_event)]
@@ -522,7 +522,7 @@ def get_cached_folds(categories,force_read,force_learn,
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
     if (learners is None):
-        learners = get_learners(**learners_kwargs)
+        learners = get_learners()
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"

@@ -119,7 +119,6 @@ def plot_prediction_info(ex,info,xlabel="Time",
     stdevs = info.local_stdev
     # plot everything
     style_events = dict(color='r',label="True events")
-    n_plots = 3
     x = x_func(retract)
     surface_index = ex.get_predicted_retract_surface_index()
     min_x,max_x = min(x),max(x)
@@ -129,41 +128,51 @@ def plot_prediction_info(ex,info,xlabel="Time",
     x_limits = [min_x - fudge,max_x + fudge]
     force_plot = force * 1e12
     interpolated_force_plot = interpolated_force*1e12
-    plt.subplot(n_plots,1,1)
-    plt.plot(x,force_plot,color='k',alpha=0.3)
-    plt.plot(x,interpolated_force_plot,color='b',linewidth=2)
+    # get the informaiton relevant to the CDF
+    cdf = info.cdf
+    tol=min(cdf/2)
+    masked_cdf = np.zeros(cdf.size) + tol
+    masked_cdf[mask] = cdf
+    n_plots = 2
+    n_cols = 2
+    lazy_kwargs = dict(frameon=True,loc = "lower right")
+    plt.subplot(n_plots,n_cols,1)
+    plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
+    plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
     plt.axvline(x[surface_index],label="Predicted surface location")
     highlight_events(event_slices,x,force_plot,**style_events)
-    PlotUtilities.lazyLabel("",ylabel,"")
+    PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)
     plt.xlim(x_limits)
-    plt.subplot(n_plots,1,2)
+    plt.subplot(n_plots,n_cols,2)
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    plt.semilogy(x,info.cdf)
-    highlight_events(event_slices,x,info.cdf,linewidth=5,**style_events)
+    plt.semilogy(x,cdf,color='k',alpha=0.3,label="cdf")
+    plt.semilogy(x,masked_cdf,color='b',linewidth=1,label="masked cdf")
+    plt.axhline(thresh,color='k',linestyle='--',label="threshold")
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
-    tol=min(info.cdf/2)
-    plt.semilogy(x,mask_boolean+tol,alpha=0.7,linestyle='--',color='r',
-                 label="mask for events")
-    for i,c in enumerate(info.condition_results):
-        plt.semilogy(x,c+tol,alpha=0.7,
-                     linestyle='-.',color='b',
-                     label="mask {:d}".format(i))
-    plt.axhline(thresh,label="threshold",linestyle='-',color='k')
-    PlotUtilities.lazyLabel("","No-Event CDF ","",frameon=True,
-                            loc='lower right')
-    plt.xlim(x_limits)
-    plt.subplot(n_plots,1,3)
+    PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
+    plt.subplot(n_plots,n_cols,3)
     # XXX check mask has at least one...
-    plt.plot(x,force_plot,'b-',color='k',alpha=0.3)
+    plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
+    plt.plot(x[mask],force_plot[mask],color='k',alpha=0.8,
+             label="Predicted event regions")
     for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
         plt.axvline(x[fwd],linestyle='--',color='r')
-        plt.axvline(x[rev],color='g')
-        plt.axvline(x[event],linewidth=3)
+        plt.axvline(x[rev],linestyle='-.',color='g')
+        plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
+                 label="predicted")
     plt.xlim(x_limits)
-    PlotUtilities.lazyLabel(xlabel,ylabel,"")
+    PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
+    plt.subplot(n_plots,n_cols,4)
+    mask_styles = [dict(linewidth=3,color='k',linestyle='-.',alpha=0.3),
+                   dict(linewidth=1,color='r',linestyle='--',alpha=0.7)]
+    for i,c in enumerate(info.condition_results):
+        style = mask_styles[i % len(mask_styles)]
+        plt.semilogy(x,c+tol,label="mask {:d}".format(i),**style)
+    plt.xlim(x_limits)
+    PlotUtilities.lazyLabel(xlabel,"mask (au)","",**lazy_kwargs)
 
 def plot_classification(split_object,scoring_object):
     """
@@ -298,7 +307,7 @@ def plot_predicted_and_true_ruptures(true,predicted,title="",label_true="true",
 
 
 
-def debugging_plots(id_string,example_split,info):
+def debugging_plots(id_string,example_split,info,plot_auto=False):
     """
     Plots the autocorrelation and prediction information
 
@@ -310,11 +319,12 @@ def debugging_plots(id_string,example_split,info):
         nothing, splits plots out like id_string
     """
     out_file_path =  id_string
-    fig = PlotUtilities.figure(figsize=(8,20))
-    plot_autocorrelation(example_split)
-    PlotUtilities.savefig(fig,out_file_path + "auto.png")   
+    if (plot_auto):
+        fig = PlotUtilities.figure(figsize=(8,20))
+        plot_autocorrelation(example_split)
+        PlotUtilities.savefig(fig,out_file_path + "auto.png")   
     # XXX fix threshhold
-    fig = PlotUtilities.figure(figsize=(8,12))    
+    fig = PlotUtilities.figure(figsize=(12,12))    
     plot_prediction_info(example_split,info)
     PlotUtilities.savefig(fig,out_file_path + "info.png")
 

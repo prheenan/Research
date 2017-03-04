@@ -13,8 +13,6 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-        
-
 
 def run():
     """
@@ -30,14 +28,15 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     positive_categories = Learning.get_categories(positives_directory)
     # limit (per category)
-    limit = 20
-    n_folds = 3
+    limit = 100
+    n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    force_relearn = True
-    force_read = True
-    force_learn = True
-    n_tuning_points = 10
+    force_read = False
+    force_relearn = False
+    force_learn = False
+    n_tuning_points = 15
     debug_directory = "./debug_no_event/"
+    GenUtilities.ensureDirExists(debug_directory)
     learners_kwargs = dict(n_points_no_event=n_tuning_points,
                            n_points_fovea=n_tuning_points,
                            n_points_wavelet=n_tuning_points)
@@ -45,8 +44,9 @@ def run():
     positive_categories = Learning.get_categories(positives_directory)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
-    # XXX use just the first learner
-    learners = Learning.get_learners(**learners_kwargs)
+    # XXX use just the first N learners
+    n_learners = 2
+    learners = Learning.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
@@ -91,7 +91,7 @@ def run():
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
     load_paths = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    load_paths = [ l.replace(".pxp",".pxp_") for l in load_paths]
+    load_paths = [ l for l in load_paths]
     print("loading: {:s}".format(load_paths))
     for p in load_paths:
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)

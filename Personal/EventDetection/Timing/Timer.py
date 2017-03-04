@@ -33,12 +33,27 @@ class time_trials:
             total number of points predicted for each of self.num_curves
         """    
         return np.array([sum(n) for n in self.fec_num_points])
+
+    def stdev_number_of_points_per_curves(self):
+        """
+        Returns:
+            total number of points predicted for each of self.num_curves
+        """    
+        return [sum(n) for n in self.fec_num_points]
+
     def average_number_of_points_per_curve(self):
         """
         Returns:
             average number of points per curve over all curves
         """        
         return np.mean(np.concatenate(self.fec_num_points))
+    def stdev_number_of_points_per_curve(self):
+        """
+        Returns:
+            stdev number of points per curve over all curves
+        """        
+        return np.std(np.concatenate(self.fec_num_points))
+
     
 
 class time_trials_by_loading_rate:
@@ -59,7 +74,28 @@ class time_trials_by_loading_rate:
             the minmumx time across all trials. useful for plotting
         """    
         return min([min(np.concatenate(l.times))
-                    for l in self.list_of_time_trials])                    
+                    for l in self.list_of_time_trials])        
+
+
+class timing_info:
+    def __init__(self,learner_trials):
+        n = len(learner_trials.list_of_time_trials)
+        arr = lambda : np.zeros(n)
+        self.nums,self.means,self.stdevs = [],[],[]
+        self.velocities,self.pts_per,self.pts_std = arr(),arr(),arr()
+        for i,trial in enumerate(learner_trials.list_of_time_trials):
+            num_curves = trial.num_curves
+            mean = trial.mean_time_for_fixed_number()
+            std = trial.std_time_for_fixed_number()
+            self.nums.append(num_curves)
+            self.means.append(mean)
+            self.stdevs.append(std)
+            self.velocities[i] = learner_trials.loading_rates[i]
+            self.pts_per[i] = trial.average_number_of_points_per_curve()
+            self.pts_std[i] = trial.stdev_number_of_points_per_curve()
+    @property
+    def size(self):
+        return self.nums.size                           
                     
 def time_example_running(func,d):
     start = timer()
@@ -200,7 +236,7 @@ def run():
         get_categories(positives_directory=positives_directory)
     curve_numbers = [1,2,5,10,20,35,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
-    force = True
+    force = False
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
@@ -209,37 +245,100 @@ def run():
     max_time = max([l.max_time_trial() for l in times])
     min_time = min([l.min_time_trial() for l in times])
     for learner_trials in times:
+        # plot the timing stuff 
         fig = PlotUtilities.figure()
-        plot_single_learner(learner_trials)
+        plot_learner_versus_loading_rate_and_number(learner_trials)
         fudge = 2
         plt.ylim([min_time/fudge,max_time*fudge])
         plt.xlim([1/fudge,max(curve_numbers)*fudge])
         plt.yscale('log')
         plt.xscale('log')        
         PlotUtilities.legend(loc="lower right",frameon=True)
-        PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
-        
-def plot_single_learner(learner_trials):    
+        PlotUtilities.savefig(fig,learner_trials.learner.description + "_t.png")
+        # plot the slopes
+        fig = PlotUtilities.figure()
+        plot_learner_slope_versus_loading_rate(learner_trials)
+        PlotUtilities.legend(loc="lower right",frameon=True)
+        PlotUtilities.savefig(fig,learner_trials.learner.description + "_s.png")
+
+def plot_learner_slope_versus_loading_rate(learner_trials):
+    """
+    Makes a plot of the (slope of runtime versus number of curves) versus
+    loading rate
+
+    Args:
+        learner_trials: a single learner object
+    Returns:
+        nothing, makes a pretty plot
+    """
+    inf = timing_info(learner_trials)
+    coeffs = []
+    for num,mean in zip(inf.nums,inf.means):
+        coeffs.append(GenUtilities.GenFit(x=num,y=mean))
+    # the slope is the time per force extension curve (less an offset; get that
+    # per loading rate
+    velocities = inf.velocities
+    x,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False)
+    params = [c[0][0] for c in coeffs]
+    params_std = [c[1][0] for c in coeffs]
+    plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,fmt='ro')
+    PlotUtilities.lazyLabel("Thousands of points per curve",
+                            "Runtime per curve","")
+
+
+
+def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal):
+    """
+    gets the average number of points per curve in a given loading rate
+    and the error (1 standard deviaiton)
+
+    Args:
+        inf: the timing_info object
+    Returns:
+        tuple of <mean number of points per curve, stdev of points per curve>
+    """
+    n_deci = lambda x: int(np.floor(np.log10(abs(x))))
+    rounded = lambda x :int(np.round(x,-n_deci(x)))
+    n = inf.pts_per.size
+    pts,pts_err = np.zeros(shape=n),np.zeros(shape=n)
+    for i,(pts_tmp,xerr_tmp) in enumerate(zip(inf.pts_per,inf.pts_std)):
+        pts[i] = pts_tmp/1000
+        pts_err[i] = xerr_tmp/1000
+    if (not round_to_one_decimal):
+        pass
+    else:
+        # POST: need  to round
+        pts = np.array([rounded(p) for p in pts])
+        pts_err = np.array([rounded(e) for e in pts_err if e >0])
+    return pts,pts_err
+
+def plot_learner_versus_loading_rate_and_number(learner_trials):    
+    """
+    makes a plot of the runtimes versus number of force extension curves
+    for each loading rate used.
+    
+    Args:
+        learner_trials: a single learner object
+    Returns:
+        nothing, makes a pretty plot
+    """
     styles = [dict(color='r',marker='x',linestyle='--'),
               dict(color='b',marker='o',linestyle='-'),
               dict(color='k',marker='v',linestyle='-.')]
-    for i,loading_rate_trial in enumerate(learner_trials.list_of_time_trials):
+    inf = timing_info(learner_trials)
+    pts,xerr = _timing_plot_pts_and_pts_error(inf,True)
+    for i,(num,mean,yerr,vel) in enumerate(zip(inf.nums,inf.means,inf.stdevs,
+                                               inf.velocities)):
         style = styles[i % len(styles)]
-        num_curves = loading_rate_trial.num_curves
-        mean = loading_rate_trial.mean_time_for_fixed_number()
-        std = loading_rate_trial.std_time_for_fixed_number()
-        pts_per_curve = loading_rate_trial.average_number_of_points_per_curve()
-        kpts_per_curve = pts_per_curve/1000
-        decimal_places = int(np.floor(np.log10(abs(kpts_per_curve))))
-        round_kpts_per_curve = int(np.round(kpts_per_curve,-decimal_places))
-        velocity = learner_trials.loading_rates[i]
-        velocity_label = r"v={:4d}nm/s".format(velocity)
-        number_label = r"<N>={:d}K".format(round_kpts_per_curve)
-        label = "{:s} ({:s})".format(velocity_label,number_label)
-        plt.errorbar(x=num_curves,y=mean,yerr=std/num_curves,
-                     label=number_label,**style)
-    PlotUtilities.lazyLabel("Number of Force-Extension Curves",
-                            "Time","")
+        velocity_label = r"v={:4d}nm/s".format(int(vel))
+        number_label = r"N={:d}$\pm${:d}".\
+                       format(pts[i],xerr[i])
+        label = "{:s}\n({:s})".format(velocity_label,number_label)
+        plt.errorbar(x=num,y=mean,yerr=yerr,label=label,**style)
+    title = "Runtime verus loading rate and number of curves\n" + \
+           "(N, kilopoints/curve, in parenthesis) "
+    PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time",title)
+
 
 if __name__ == "__main__":
     run()
