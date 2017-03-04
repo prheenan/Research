@@ -199,13 +199,13 @@ def read_categories(categories,force_read,cache_directory,limit):
     highest_sampled_category = categories[highest_sampled_idx]
     for c in categories:
         if (not c.is_simulated):
-            continue
+            continue       
+        vel_eff = highest_sampled_category.velocity_nm_s*c.downsample_factor
+        c.velocity_nm_s = vel_eff
         file_path = "{:s}_sim_{:.1f}".format(cache_directory,c.velocity_nm_s)
         data_tmp = CheckpointUtilities.\
             getCheckpoint(file_path,simulated_read,force_read,  
                           highest_sampled_category,c,limit)
-        vel_eff = highest_sampled_category.velocity_nm_s/c.downsample_factor
-        c.velocity = vel_eff
         c.set_data(data_tmp)
     return categories
 
