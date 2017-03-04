@@ -232,8 +232,9 @@ def run():
     """
     learners = Learning.get_learners()
     positives_directory = InputOutput.get_positives_directory()
-    positive_categories = Learning.\
-        get_categories(positives_directory=positives_directory)
+    positive_categories = InputOutput.\
+        get_categories(positives_directory=positives_directory,
+                       use_simulated=True)
     curve_numbers = [1,2,5,10,20,35,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
     force = False

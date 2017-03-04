@@ -9,6 +9,37 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
+
+class ForceExtensionCategory:
+    def __init__(self,number,directory=None,sample=None,velocity_nm_s=None,
+                 has_events=False,downsample=None,
+                 simulated_loading_max=None):
+        self.category_number = number
+        self.directory = directory  
+        self.velocity_nm_s = velocity_nm_s
+        self.sample = sample
+        self.has_events = has_events
+        self.data = None
+        self.downsample_factor =downsample
+        self.scores = None
+        if (downsample is not None):
+            self.is_simulated=True
+            self.velocity_nm_s = simulated_loading_max/downsample
+    def set_scores(self,scores):
+        self.scores = scores
+    def set_data(self,data):
+        """
+        sets the pointer to the list of TimeSepForce objects for this category
+        
+        Args:
+            data: list of TimeSepForce objects
+        Returns:
+            nothing
+        """
+        self.data = data 
+
+
+
 def get_positives_directory(data_base=None):
     """
     reads the (csv) file at file_path, cachine it to cache_directory,
@@ -93,3 +124,116 @@ def set_and_cache_category_data(categories,force,cache_directory,limit):
         # set the data in this category
         r_obj.set_data(data_in_category)    
 
+
+
+def category_read(category,force,cache_directory,limit,debugging=False):
+    """
+    Reads in all the data associated with a category
+
+    Args:
+        category: ForceExtensionCategory object
+        force: if true, force re-reading
+        cache_directory: if force is not true, where to re-read from
+        limit: maximum number to re-read
+    Returns:
+        list of TimeSepForce objects
+    """
+    try:
+        return InputOutput.get_category_data(category,force,cache_directory,
+                                             limit)
+    except OSError as e:
+        if (not debugging):
+            raise(e)
+        if (category.category_number != 0):
+            return []
+        print(e)
+        # just read in the files that live here XXX just for debugging
+        file_names = GenUtilities.getAllFiles(cache_directory,ext="csv.pkl")
+        all_files = [CheckpointUtilities.getCheckpoint(f,None,False)
+                     for f in file_names]
+        return all_files
+
+def simulated_read(downsample_from,category,limit):
+    """
+    a function which reads in the first [limit] force extension curves from
+    downsample_from, slicing the data by category.downsample_factor (assumed 
+    > 1)
+
+    Args:
+        categories: list of categories to read in
+        force_read,cache_directory,limit): see Learning.get_cached_folds
+    """
+    n_step = int(category.downsample_factor)
+    tol = 1e-9
+    assert n_step > 1, "simulation should have downfactor > 1"
+    assert abs((n_step-int(n_step))) < tol,\
+               "simulation should have integer downfactor"
+    data = []
+    for l in range(limit):
+        tmp = downsample_from.data[l]
+        slice_v = slice(0,None,n_step)
+        data_tmp = FEC_Util.MakeTimeSepForceFromSlice(tmp,slice_v)
+        data.append(data_tmp)
+    category.set_data(data)
+    
+def read_categories(categories,force_read,cache_directory,limit):
+    """
+    a function to read in a most limit force-extension curves, caching as we go
+
+    Args:
+        categories: list of categories to read in
+        force_read,cache_directory,limit): see Learning.get_cached_folds
+    """
+    for c in categories:
+        # skip simulated categories initially
+        if (c.is_simulated):
+            continue
+        data_tmp = category_read(c,force_read,cache_directory,limit)
+        c.set_data(data_tmp)
+    # POST: actual data is set up. go ahead and get any simulated data
+    # get the lowest loading rate data to downsample
+    loading_rates_effective  = [c.velocity_nm_s 
+                                if not c.is_simulated else np.inf
+                                for c in categories]
+    highest_sampled_idx = np.argmin(loading_rates_effective)
+    # use the highest sampled
+    highest_sampled_category = categories[highest_sampled_idx]
+    for c in categories:
+        if (not c.is_simulated):
+            continue
+        file_path = "{:s}_sim_{:s}".format(cache_directory,c.velocity_nm_s)
+        data_tmp = checkpointUtilities.\
+            getCheckpoint(file_path,simulated_read,force_read,c,limit)
+    return categories
+
+
+def get_categories(positives_directory,use_simulated=False):
+    """
+    get all the categories associated with the loading rates we will use
+
+    Args:
+        positives_directory: base directory where things live
+    Returns:
+        list of ForceExtensionCategory
+    """
+    # tuple of <relative directory,sample,velocity> for FEC with events
+    max_load = 1000
+    positive_meta = \
+    [[positives_directory + "1000-nanometers-per-second/","650nm DNA",max_load],
+     [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
+     [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
+    # create objects to represent our data categories
+    positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
+                           for i,r in enumerate(positive_meta)]
+    if (use_simulated):
+        downsample_factors = [2,3,20,100,1000]
+        kw = lambda i: dict(number=(len( positive_categories) + i))
+        simulated_categories = [\
+            ForceExtensionCategory(downsample=d,simulated_loading_max=max_load,
+                                   **kw(i))
+                                for i,d in enumerate(downsample_factors)]
+    else:
+        simulated_categories = []
+    return positive_categories + simulated_categories
+
+    

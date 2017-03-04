@@ -25,8 +25,6 @@ def run():
         This is a description of what is returned.
     """
     cache_directory = "./cache/"
-    positives_directory = InputOutput.get_positives_directory()
-    positive_categories = Learning.get_categories(positives_directory)
     # limit (per category)
     limit = 100
     n_folds = 5
@@ -41,7 +39,7 @@ def run():
                            n_points_fovea=n_tuning_points,
                            n_points_wavelet=n_tuning_points)
     positives_directory = InputOutput.get_positives_directory()
-    positive_categories = Learning.get_categories(positives_directory)
+    positive_categories = InputOutput.get_categories(positives_directory)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners

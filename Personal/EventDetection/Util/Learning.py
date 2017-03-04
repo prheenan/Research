@@ -16,29 +16,6 @@ from sklearn.cross_validation import StratifiedKFold
 import multiprocessing
 
 
-
-class ForceExtensionCategory:
-    def __init__(self,number,directory,sample,velocity_nm_s,has_events):
-        self.category_number = number
-        self.directory = directory  
-        self.velocity_nm_s = velocity_nm_s
-        self.sample = sample
-        self.has_events = has_events
-        self.data = None
-        self.scores = None
-    def set_scores(self,scores):
-        self.scores = scores
-    def set_data(self,data):
-        """
-        sets the pointer to the list of TimeSepForce objects for this category
-        
-        Args:
-            data: list of TimeSepForce objects
-        Returns:
-            nothing
-        """
-        self.data = data 
-
 class fold_meta:
     def __init__(self,meta):
         self.velocity = meta.Velocity
@@ -254,35 +231,6 @@ def valid_scores_erors_and_params(params,scores,score_func,error_func):
                                                    valid_func(valid))
     good_idx = good_idx_func(dist,dist_std)
     return params[good_idx],dist[good_idx],dist_std[good_idx]
-
-
-
-def category_read(category,force,cache_directory,limit,debugging=False):
-    """
-    Reads in all the data associated with a category
-
-    Args:
-        category: ForceExtensionCategory object
-        force: if true, force re-reading
-        cache_directory: if force is not true, where to re-read from
-        limit: maximum number to re-read
-    Returns:
-        list of TimeSepForce objects
-    """
-    try:
-        return InputOutput.get_category_data(category,force,cache_directory,
-                                             limit)
-    except OSError as e:
-        if (not debugging):
-            raise(e)
-        if (category.category_number != 0):
-            return []
-        print(e)
-        # just read in the files that live here XXX just for debugging
-        file_names = GenUtilities.getAllFiles(cache_directory,ext="csv.pkl")
-        all_files = [CheckpointUtilities.getCheckpoint(f,None,False)
-                     for f in file_names]
-        return all_files
         
 def single_example_info_and_score(func,example,**kwargs):
     """
@@ -490,9 +438,7 @@ def get_single_learner_folds(cache_directory,force,l,data,fold_idx,pool_size):
     ret = get_all_folds_for_one_learner(cache_directory,force,
                                         l,data,fold_idx,pool=pool)
     list_of_folds,validation_folds = ret
-    return  list_of_folds,validation_folds                                                                                 
-
-    
+    return  list_of_folds,validation_folds   
 
 def get_cached_folds(categories,force_read,force_learn,
                      cache_directory,limit,n_folds,seed=42,
@@ -512,22 +458,23 @@ def get_cached_folds(categories,force_read,force_learn,
     Returns:
         list, one element per paramter. each element is a list of folds
     """
-    for c in categories:
-        data_tmp = category_read(c,force_read,cache_directory,limit)
-        c.set_data(data_tmp)
     labels_data = [ [i,d] for i,cat in enumerate(categories) for d in cat.data]
     labels = [l[0] for l in labels_data]
     data = [l[1] for l in labels_data]
     # determine the folds to use
     fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
                                random_state=seed)
+    # read and update all the categories
+    categories = InputOutput.\
+                 read_categories(categories,force_read,cache_directory,limit)
     if (learners is None):
         learners = get_learners()
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"
         tmp = CheckpointUtilities.getCheckpoint(cache_file,
-                                                get_single_learner_folds,force_learn,
+                                                get_single_learner_folds,
+                                                force_learn,
                                                 cache_directory,force_learn,
                                                 l,data=data,fold_idx=fold_idx,
                                                 pool_size=pool_size)
@@ -535,22 +482,3 @@ def get_cached_folds(categories,force_read,force_learn,
         l.set_list_of_folds(list_of_folds)
         l.set_validation_folds(validation_folds)
     return learners
-
-def get_categories(positives_directory):
-    """
-    get all the categories associated with the loading rates we will use
-
-    Args:
-        positives_directory: base directory where things live
-    Returns:
-        list of ForceExtensionCategory
-    """
-    # tuple of <relative directory,sample,velocity> for FEC with events
-    positive_meta = \
-      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",1000],
-       [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
-       [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
-    # create objects to represent our data categories
-    positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
-                           for i,r in enumerate(positive_meta)]
-    return positive_categories
