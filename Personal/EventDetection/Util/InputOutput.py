@@ -25,6 +25,8 @@ class ForceExtensionCategory:
         if (downsample is not None):
             self.is_simulated=True
             self.velocity_nm_s = simulated_loading_max/downsample
+        else:
+            self.is_simulated = False
     def set_scores(self,scores):
         self.scores = scores
     def set_data(self,data):
@@ -139,8 +141,7 @@ def category_read(category,force,cache_directory,limit,debugging=False):
         list of TimeSepForce objects
     """
     try:
-        return InputOutput.get_category_data(category,force,cache_directory,
-                                             limit)
+        return get_category_data(category,force,cache_directory,limit)
     except OSError as e:
         if (not debugging):
             raise(e)
@@ -174,8 +175,8 @@ def simulated_read(downsample_from,category,limit):
         slice_v = slice(0,None,n_step)
         data_tmp = FEC_Util.MakeTimeSepForceFromSlice(tmp,slice_v)
         data.append(data_tmp)
-    category.set_data(data)
-    
+    return data
+        
 def read_categories(categories,force_read,cache_directory,limit):
     """
     a function to read in a most limit force-extension curves, caching as we go
@@ -201,9 +202,13 @@ def read_categories(categories,force_read,cache_directory,limit):
     for c in categories:
         if (not c.is_simulated):
             continue
-        file_path = "{:s}_sim_{:s}".format(cache_directory,c.velocity_nm_s)
-        data_tmp = checkpointUtilities.\
-            getCheckpoint(file_path,simulated_read,force_read,c,limit)
+        file_path = "{:s}_sim_{:.1f}".format(cache_directory,c.velocity_nm_s)
+        data_tmp = CheckpointUtilities.\
+            getCheckpoint(file_path,simulated_read,force_read,  
+                          highest_sampled_category,c,limit)
+        vel_eff = highest_sampled_category.velocity_nm_s/c.downsample_factor
+        c.velocity = vel_eff
+        c.set_data(data_tmp)
     return categories
 
 

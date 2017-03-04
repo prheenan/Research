@@ -203,11 +203,8 @@ def cache_all_learners(learners,categories,curve_numbers,cache_directory,
     """
     times = []
     # read in all the data
-    for c in categories:
-        data = Learning.category_read(c,force=True,
-                                      cache_directory=cache_directory,
-                                      limit=max(curve_numbers))
-        c.set_data(data)  
+    categories = InputOutput.read_categories(categories,force,cache_directory,
+                                             limit=max(curve_numbers))
     # get all the trials for all the learners        
     for l in learners:
         learner_file = (cache_directory + "_l_" + l.description)
@@ -235,9 +232,9 @@ def run():
     positive_categories = InputOutput.\
         get_categories(positives_directory=positives_directory,
                        use_simulated=True)
-    curve_numbers = [1,2,5,10,20,35,50,100,150,200]
+    curve_numbers = [1,2,5,10,30,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
-    force = False
+    force = True
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
