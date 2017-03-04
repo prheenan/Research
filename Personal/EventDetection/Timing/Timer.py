@@ -59,8 +59,11 @@ class time_trials:
 class time_trials_by_loading_rate:
     def __init__(self,learner,list_of_time_trials,loading_rates):
         self.learner = learner
-        self.list_of_time_trials = list_of_time_trials
-        self.loading_rates = loading_rates
+        # sort the time trials, sorting increasing by number of points
+        idx_sort = np.argsort([t.average_number_of_points_per_curve
+                               for t in list_of_time_trials])
+        self.list_of_time_trials = [list_of_time_trials[i] for i in idx_sort]
+        self.loading_rates = [loading_rates[i] for i in idx_sort]
     def max_time_trial(self):
         """
         Returns:
@@ -243,6 +246,7 @@ def run():
                                               learners,positive_categories,
                                               curve_numbers,
                                               cache_dir,force)
+    # sort the times by their loading rates
     max_time = max([l.max_time_trial() for l in times])
     min_time = min([l.min_time_trial() for l in times])
     for learner_trials in times:

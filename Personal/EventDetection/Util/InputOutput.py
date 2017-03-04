@@ -12,8 +12,7 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
 class ForceExtensionCategory:
     def __init__(self,number,directory=None,sample=None,velocity_nm_s=None,
-                 has_events=False,downsample=None,
-                 simulated_loading_max=None):
+                 has_events=False,downsample=None):
         self.category_number = number
         self.directory = directory  
         self.velocity_nm_s = velocity_nm_s
@@ -24,7 +23,6 @@ class ForceExtensionCategory:
         self.scores = None
         if (downsample is not None):
             self.is_simulated=True
-            self.velocity_nm_s = simulated_loading_max/downsample
     def set_scores(self,scores):
         self.scores = scores
     def set_data(self,data):
@@ -228,9 +226,7 @@ def get_categories(positives_directory,use_simulated=False):
     if (use_simulated):
         downsample_factors = [2,3,20,100,1000]
         kw = lambda i: dict(number=(len( positive_categories) + i))
-        simulated_categories = [\
-            ForceExtensionCategory(downsample=d,simulated_loading_max=max_load,
-                                   **kw(i))
+        simulated_categories = [ForceExtensionCategory(downsample=d,**kw(i))
                                 for i,d in enumerate(downsample_factors)]
     else:
         simulated_categories = []
