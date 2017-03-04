@@ -224,12 +224,12 @@ def get_categories(positives_directory,use_simulated=False):
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]
     if (use_simulated):
-        downsample_factors = [2,3,20,100,1000]
+        downsample_factors = sorted([2,3,20,100,1000])
         kw = lambda i: dict(number=(len( positive_categories) + i))
         simulated_categories = [ForceExtensionCategory(downsample=d,**kw(i))
                                 for i,d in enumerate(downsample_factors)]
     else:
         simulated_categories = []
-    return positive_categories + simulated_categories
+    return simulated_categories[::-1] + positive_categories
 
     
