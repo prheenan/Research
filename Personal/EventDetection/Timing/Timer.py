@@ -237,7 +237,7 @@ def run():
                        use_simulated=True)
     curve_numbers = [1,2,5,10,30,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
-    force = True
+    force = False
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
@@ -280,22 +280,26 @@ def plot_learner_slope_versus_loading_rate(learner_trials):
     # the slope is the time per force extension curve (less an offset; get that
     # per loading rate
     velocities = inf.velocities
-    x,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False)
+    x,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False,
+                                            factor=1)
     params = [c[0][0] for c in coeffs]
     params_std = [c[1][0] for c in coeffs]
     plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,fmt='ro')
-    PlotUtilities.lazyLabel("Thousands of points per curve",
+    ax = plt.gca()
+    ax.set_xscale('log')
+    PlotUtilities.lazyLabel("Points per curve",
                             "Runtime per curve","")
 
 
 
-def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal):
+def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal,factor=1000):
     """
     gets the average number of points per curve in a given loading rate
     and the error (1 standard deviaiton)
 
     Args:
         inf: the timing_info object
+        factor: what to divide by (defaults to thousand of points)
     Returns:
         tuple of <mean number of points per curve, stdev of points per curve>
     """
@@ -304,8 +308,8 @@ def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal):
     n = inf.pts_per.size
     pts,pts_err = np.zeros(shape=n),np.zeros(shape=n)
     for i,(pts_tmp,xerr_tmp) in enumerate(zip(inf.pts_per,inf.pts_std)):
-        pts[i] = pts_tmp/1000
-        pts_err[i] = xerr_tmp/1000
+        pts[i] = pts_tmp/factor
+        pts_err[i] = xerr_tmp/factor
     if (not round_to_one_decimal):
         pass
     else:

@@ -12,7 +12,7 @@ from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
 from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
     wavelet_predictor
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 import multiprocessing
 
 
@@ -462,8 +462,8 @@ def get_cached_folds(categories,force_read,force_learn,
     labels = [l[0] for l in labels_data]
     data = [l[1] for l in labels_data]
     # determine the folds to use
-    fold_idx = StratifiedKFold(labels,n_folds=n_folds,shuffle=True,
-                               random_state=seed)
+    fold_obj = StratifiedKFold(n_folds=n_folds,shuffle=True,random_state=seed)
+    fold_idx = fold_obj.split(X=np.zeros(len(labels)),y=labels)
     # read and update all the categories
     categories = InputOutput.\
                  read_categories(categories,force_read,cache_directory,limit)
