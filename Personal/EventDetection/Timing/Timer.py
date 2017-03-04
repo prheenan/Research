@@ -33,12 +33,26 @@ class time_trials:
             total number of points predicted for each of self.num_curves
         """    
         return [sum(n) for n in self.fec_num_points]
+    def stdev_number_of_points_per_curves(self):
+        """
+        Returns:
+            total number of points predicted for each of self.num_curves
+        """    
+        return [sum(n) for n in self.fec_num_points]
+
     def average_number_of_points_per_curve(self):
         """
         Returns:
             average number of points per curve over all curves
         """        
         return np.mean(np.concatenate(self.fec_num_points))
+    def stdev_number_of_points_per_curve(self):
+        """
+        Returns:
+            stdev number of points per curve over all curves
+        """        
+        return np.std(np.concatenate(self.fec_num_points))
+
     
 
 class time_trials_by_loading_rate:
@@ -59,7 +73,27 @@ class time_trials_by_loading_rate:
             the minmumx time across all trials. useful for plotting
         """    
         return min([min(np.concatenate(l.times))
-                    for l in self.list_of_time_trials])                    
+                    for l in self.list_of_time_trials])     
+
+class learner_info:
+    def __init__(self,learner_trials):
+        n = len(learner_trials.list_of_time_trials)
+        arr = lambda : np.zeros(n)
+        self.nums,self.means,self.stdevs = [],[],[]
+        self.velocities,self.pts_per,self.pts_std = arr(),arr(),arr()
+        for i,trial in enumerate(learner_trials.list_of_time_trials):
+            num_curves = trial.num_curves
+            mean = trial.mean_time_for_fixed_number()
+            std = trial.std_time_for_fixed_number()
+            self.nums.append(num_curves)
+            self.means.append(mean)
+            self.stdevs.append(std)
+            self.velocities[i] = learner_trials.loading_rates[i]
+            self.pts_per[i] = trial.average_number_of_points_per_curve()
+            self.pts_std[i] = trial.stdev_number_of_points_per_curve()
+    @property
+    def size(self):
+        return self.nums.size               
 
 def time_single(func,data):
     """
@@ -169,7 +203,7 @@ def run():
         get_categories(positives_directory=positives_directory)
     curve_numbers = [1,2,5,10,20,50,100,200]
     cache_dir = "../_1ReadDataToCache/cache/"
-    force = True
+    force = False
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
@@ -185,24 +219,31 @@ def run():
         plt.yscale('log')
         PlotUtilities.legend(loc="lower right",frameon=True)
         PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
-        
+
 def plot_single_learner(learner_trials):    
+
     styles = [dict(color='r',marker='x',linestyle='--'),
               dict(color='b',marker='o',linestyle='-'),
               dict(color='k',marker='v',linestyle='-.')]
-    for i,loading_rate_trial in enumerate(learner_trials.list_of_time_trials):
+    inf = learner_info(learner_trials)
+    for i,(num,mean,yerr,vel,pts,xerr) in \
+        enumerate(zip(inf.nums,inf.means,inf.stdevs,inf.velocities,
+                      inf.pts_per,inf.pts_std)):
+        pts_plot = pts/1000
+        xerr_plot = xerr/1000
+        decimal_places = int(np.floor(np.log10(abs(pts_plot))))
+        round_pts_per_curve = int(np.round(pts_plot,-decimal_places))
+        if (xerr > 0):
+            decimal_places_error = int(np.floor(np.log10(abs(xerr_plot))))
+            round_xerr = int(np.round(xerr_plot,-decimal_places_error))
+        else:
+            round_xerr = 0
         style = styles[i % len(styles)]
-        num_curves = loading_rate_trial.num_curves
-        mean = loading_rate_trial.mean_time_for_fixed_number()
-        std = loading_rate_trial.std_time_for_fixed_number()
-        pts_per_curve = loading_rate_trial.average_number_of_points_per_curve()
-        decimal_places = int(np.floor(np.log10(abs(pts_per_curve))))
-        round_pts_per_curve = int(np.round(pts_per_curve,-decimal_places))
-        velocity = learner_trials.loading_rates[i]
-        velocity_label = r"v={:4d}nm/s".format(velocity)
-        number_label = r"<Points per curve>={:d}".format(round_pts_per_curve)
-        label = "{:s} ({:s})".format(velocity_label,number_label)
-        plt.errorbar(x=num_curves,y=mean,yerr=std,label=label,**style)
+        velocity_label = r"v={:4d}nm/s".format(int(vel))
+        number_label = r"{:d}$\pm${:d}".\
+                       format(round_pts_per_curve,round_xerr)
+        label = "{:s}\n({:s})".format(velocity_label,number_label)
+        plt.errorbar(x=num,y=mean,yerr=yerr,label=label,**style)
     PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time","")
 
 if __name__ == "__main__":
