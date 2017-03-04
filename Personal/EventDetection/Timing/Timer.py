@@ -75,7 +75,7 @@ class time_trials_by_loading_rate:
         return min([min(np.concatenate(l.times))
                     for l in self.list_of_time_trials])     
 
-class learner_info:
+class timing_info:
     def __init__(self,learner_trials):
         n = len(learner_trials.list_of_time_trials)
         arr = lambda : np.zeros(n)
@@ -224,7 +224,6 @@ def run():
         fig = PlotUtilities.figure()
         plot_learner_slope_versus_loading_rate(learner_trials)
         PlotUtilities.legend(loc="lower right",frameon=True)
-        plt.xlim([0,1200])
         PlotUtilities.savefig(fig,learner_trials.learner.description + "_s.png")
 
 def plot_learner_slope_versus_loading_rate(learner_trials):
@@ -237,19 +236,46 @@ def plot_learner_slope_versus_loading_rate(learner_trials):
     Returns:
         nothing, makes a pretty plot
     """
-    inf = learner_info(learner_trials)
+    inf = timing_info(learner_trials)
     coeffs = []
     for num,mean in zip(inf.nums,inf.means):
         coeffs.append(GenUtilities.GenFit(x=num,y=mean))
     # the slope is the time per force extension curve (less an offset; get that
     # per loading rate
     velocities = inf.velocities
+    x,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False)
     params = [c[0][0] for c in coeffs]
     params_std = [c[1][0] for c in coeffs]
-    print(velocities,params,params_std)
-    plt.errorbar(x=velocities,y=params,yerr=params_std,fmt='ro')
-    PlotUtilities.lazyLabel("Loading rate","Runtime per curve","")
+    plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,fmt='ro')
+    PlotUtilities.lazyLabel("Thousands of points per curve",
+                            "Runtime per curve","")
 
+
+
+def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal):
+    """
+    gets the average number of points per curve in a given loading rate
+    and the error (1 standard deviaiton)
+
+    Args:
+        inf: the timing_info object
+    Returns:
+        tuple of <mean number of points per curve, stdev of points per curve>
+    """
+    n_deci = lambda x: int(np.floor(np.log10(abs(x))))
+    rounded = lambda x :int(np.round(x,-n_deci(x)))
+    n = inf.pts_per.size
+    pts,pts_err = np.zeros(shape=n),np.zeros(shape=n)
+    for i,(pts_tmp,xerr_tmp) in enumerate(zip(inf.pts_per,inf.pts_std)):
+        pts[i] = pts_tmp/1000
+        pts_err[i] = xerr_tmp/1000
+    if (not round_to_one_decimal):
+        pass
+    else:
+        # POST: need  to round
+        pts = np.array([rounded(p) for p in pts])
+        pts_err = np.array([rounded(e) for e in pts_err if e >0])
+    return pts,pts_err
 
 def plot_learner_versus_loading_rate_and_number(learner_trials):    
     """
@@ -264,23 +290,14 @@ def plot_learner_versus_loading_rate_and_number(learner_trials):
     styles = [dict(color='r',marker='x',linestyle='--'),
               dict(color='b',marker='o',linestyle='-'),
               dict(color='k',marker='v',linestyle='-.')]
-    inf = learner_info(learner_trials)
-    for i,(num,mean,yerr,vel,pts,xerr) in \
-        enumerate(zip(inf.nums,inf.means,inf.stdevs,inf.velocities,
-                      inf.pts_per,inf.pts_std)):
-        pts_plot = pts/1000
-        xerr_plot = xerr/1000
-        decimal_places = int(np.floor(np.log10(abs(pts_plot))))
-        round_pts_per_curve = int(np.round(pts_plot,-decimal_places))
-        if (xerr > 0):
-            decimal_places_error = int(np.floor(np.log10(abs(xerr_plot))))
-            round_xerr = int(np.round(xerr_plot,-decimal_places_error))
-        else:
-            round_xerr = 0
+    inf = timing_info(learner_trials)
+    pts,xerr = _timing_plot_pts_and_pts_error(inf,True)
+    for i,(num,mean,yerr,vel) in enumerate(zip(inf.nums,inf.means,inf.stdevs,
+                                               inf.velocities)):
         style = styles[i % len(styles)]
         velocity_label = r"v={:4d}nm/s".format(int(vel))
         number_label = r"N={:d}$\pm${:d}".\
-                       format(round_pts_per_curve,round_xerr)
+                       format(pts[i],xerr[i])
         label = "{:s}\n({:s})".format(velocity_label,number_label)
         plt.errorbar(x=num,y=mean,yerr=yerr,label=label,**style)
     title = "Runtime verus loading rate and number of curves\n" + \
