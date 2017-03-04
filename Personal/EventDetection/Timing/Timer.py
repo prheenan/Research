@@ -212,16 +212,55 @@ def run():
     max_time = max([l.max_time_trial() for l in times])
     min_time = min([l.min_time_trial() for l in times])
     for learner_trials in times:
+        # plot the timing stuff 
         fig = PlotUtilities.figure()
-        plot_single_learner(learner_trials)
+        plot_learner_versus_loading_rate_and_number(learner_trials)
         fudge = 2
         plt.ylim([min_time/fudge,max_time*fudge])
         plt.yscale('log')
         PlotUtilities.legend(loc="lower right",frameon=True)
-        PlotUtilities.savefig(fig,learner_trials.learner.description + ".png")
+        PlotUtilities.savefig(fig,learner_trials.learner.description + "_t.png")
+        # plot the slopes
+        fig = PlotUtilities.figure()
+        plot_learner_slope_versus_loading_rate(learner_trials)
+        PlotUtilities.legend(loc="lower right",frameon=True)
+        plt.xlim([0,1200])
+        PlotUtilities.savefig(fig,learner_trials.learner.description + "_s.png")
 
-def plot_single_learner(learner_trials):    
+def plot_learner_slope_versus_loading_rate(learner_trials):
+    """
+    Makes a plot of the (slope of runtime versus number of curves) versus
+    loading rate
 
+    Args:
+        learner_trials: a single learner object
+    Returns:
+        nothing, makes a pretty plot
+    """
+    inf = learner_info(learner_trials)
+    coeffs = []
+    for num,mean in zip(inf.nums,inf.means):
+        coeffs.append(GenUtilities.GenFit(x=num,y=mean))
+    # the slope is the time per force extension curve (less an offset; get that
+    # per loading rate
+    velocities = inf.velocities
+    params = [c[0][0] for c in coeffs]
+    params_std = [c[1][0] for c in coeffs]
+    print(velocities,params,params_std)
+    plt.errorbar(x=velocities,y=params,yerr=params_std,fmt='ro')
+    PlotUtilities.lazyLabel("Loading rate","Runtime per curve","")
+
+
+def plot_learner_versus_loading_rate_and_number(learner_trials):    
+    """
+    makes a plot of the runtimes versus number of force extension curves
+    for each loading rate used.
+    
+    Args:
+        learner_trials: a single learner object
+    Returns:
+        nothing, makes a pretty plot
+    """
     styles = [dict(color='r',marker='x',linestyle='--'),
               dict(color='b',marker='o',linestyle='-'),
               dict(color='k',marker='v',linestyle='-.')]
@@ -240,11 +279,14 @@ def plot_single_learner(learner_trials):
             round_xerr = 0
         style = styles[i % len(styles)]
         velocity_label = r"v={:4d}nm/s".format(int(vel))
-        number_label = r"{:d}$\pm${:d}".\
+        number_label = r"N={:d}$\pm${:d}".\
                        format(round_pts_per_curve,round_xerr)
         label = "{:s}\n({:s})".format(velocity_label,number_label)
         plt.errorbar(x=num,y=mean,yerr=yerr,label=label,**style)
-    PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time","")
+    title = "Runtime verus loading rate and number of curves\n" + \
+           "(N, kilopoints/curve, in parenthesis) "
+    PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time",title)
+           
 
 if __name__ == "__main__":
     run()
