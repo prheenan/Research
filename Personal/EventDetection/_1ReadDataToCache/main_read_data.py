@@ -31,9 +31,9 @@ def run():
     limit = 100
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    force_read = True
-    force_relearn = True
-    force_learn = True
+    force_read = False
+    force_relearn = False
+    force_learn = False
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
     GenUtilities.ensureDirExists(debug_directory)
@@ -91,7 +91,7 @@ def run():
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
     load_paths = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    load_paths = [ l.replace(".pxp",".pxp_") for l in load_paths]
+    load_paths = [ l for l in load_paths]
     print("loading: {:s}".format(load_paths))
     for p in load_paths:
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
