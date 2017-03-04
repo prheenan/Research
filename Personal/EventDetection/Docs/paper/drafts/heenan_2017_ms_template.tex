@@ -424,12 +424,12 @@ This section detailis the mathematics and choices behind the event-detection alg
 
 \eqs{ F(q) = g(q) + X(0,\sigma^2) }
 
-where `g(q)' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, |g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
+where `g(q)' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, E(q)\equiv|g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
 
-\eqs{ R(q) \equiv F(q) - g^{*}(q) = 
-  \epsilon + X(0,\sigma^2)  }
+\eqs{ R(q) \equiv F(q) - g^{*}(q) \le \pm\epsilon + X(0,\sigma^2) 
+  \le \epsilon + X(0,\sigma^2) }
 
-The expectation value of R(q) is $\epsilon$, and the variance of R(q) is $\sigma^2$. The probability `P' of measuring r(q) is bounded by Chebyshev's inequality is:
+For the rest of the paper, we assume the inequality is tight enough to be treated as an equality, justified by the experimental results. Under this assumption, the expectation value of R(q) is $\epsilon$, and the variance of R(q) is $\sigma^2$. The probability `P' of measuring r(q) is bounded by Chebyshev's inequality is:
 
 \eqs{ P( |R(q)-\epsilon| \ge r(q)-\epsilon ) \le
  (\frac{\sigma}{r(q)-\epsilon})^2 }
@@ -450,7 +450,7 @@ XXX table?
 
 \subsubsection{Improvements}
 
-XXX figure out how to determine where the adhesion ends, how to improve SNR by derivative stuff.
+XXX figure out how to determine where the adhesion ends, how to improve SNR by derivative stuffls.
 
 
 
