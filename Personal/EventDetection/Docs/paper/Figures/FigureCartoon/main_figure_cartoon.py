@@ -40,7 +40,7 @@ def fmt(remove_x_labels=True,remove_y_labels=True):
         ax.yaxis.set_ticklabels([])
     PlotUtilities.lazyLabel("","","")
     plt.ylim([-30,60])
-    plt.xlim([-15,500])
+    plt.xlim([-30,700])
 
 def run(base="./"):
     """
@@ -77,7 +77,7 @@ def run(base="./"):
     cartoon_files = [tip_base.format(i+1) for i in range(n_cases)]
     offset = 80
     delta = 20
-    tip_panels = [sc.Panel(sc.SVG(file_path)).scale(2.5).move(offset*i,0)
+    tip_panels = [sc.Panel(sc.SVG(file_path)).scale(2.5).move(offset*i+delta,0)
                   for i,file_path in enumerate(cartoon_files)]
     data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
     all_panels = tip_panels + data_panels
