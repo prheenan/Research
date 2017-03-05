@@ -58,13 +58,14 @@ class time_trials:
     
 
 class time_trials_by_loading_rate:
-    def __init__(self,learner,list_of_time_trials,loading_rates):
+    def __init__(self,learner,list_of_time_trials,loading_rates,curve_numbers):
         self.learner = learner
         # sort the time trials, sorting increasing by number of points
         idx_sort = np.argsort([t.average_number_of_points_per_curve
                                for t in list_of_time_trials])
         self.list_of_time_trials = [list_of_time_trials[i] for i in idx_sort]
         self.loading_rates = [loading_rates[i] for i in idx_sort]
+        self.curve_numbers = curve_numbers
     def max_time_trial(self):
         """
         Returns:
@@ -167,7 +168,8 @@ def single_learner(learner,curve_numbers,categories,**kwargs):
         data = c.data
         trials.append(get_all_times(learner,data,curve_numbers,
                                     velocity=velocity,**kwargs))
-    return time_trials_by_loading_rate(learner,trials,loading_rates)
+    return time_trials_by_loading_rate(learner,trials,loading_rates,
+                                       curve_numbers)
 
 def cache_all_learners(learners,categories,curve_numbers,cache_directory,
                        force=True,**kwargs):
@@ -223,6 +225,8 @@ def run():
                                               learners,positive_categories,
                                               curve_numbers,
                                               cache_dir,force)
+    out_base = "./out/"
+    GenUtilities.ensureDirExists(out_base)
     # sort the times by their loading rates
     max_time = max([l.max_time_trial() for l in times])
     min_time = min([l.min_time_trial() for l in times])
@@ -230,9 +234,9 @@ def run():
     fig = PlotUtilities.figure()
     TimePlot.plot_learner_prediction_time_comparison(times)
     PlotUtilities.legend(loc="lower right",frameon=True)
-    PlotUtilities.savefig(fig,"compare.png")
+    PlotUtilities.savefig(fig,out_base + "compare.png")
     for learner_trials in times:
-        base_name = learner_trials.learner.description
+        base_name = out_base + learner_trials.learner.description
         # plot the timing veruses loading rate and number of points 
         fig = PlotUtilities.figure()
         TimePlot.plot_learner_versus_loading_rate_and_number(learner_trials)
