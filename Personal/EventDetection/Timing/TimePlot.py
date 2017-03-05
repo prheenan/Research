@@ -91,12 +91,13 @@ def autolabel(rects,label_func=lambda i,r: str(r.get_height()),**kwargs):
         ax.text(rect.get_x() + rect.get_width()/2., 1.2*height,
                 text,ha='center', va='bottom',**kwargs)
 
-def plot_learner_prediction_time_comparison(learners):
+def plot_learner_prediction_time_comparison(learners,color='b'):
     """
     plots the asympotic slope of the learners
 
     Args:
         learners: list of learners
+        color: passed to histogram
     Returns:
         nothing, makes a pretty plot
     """
@@ -116,14 +117,14 @@ def plot_learner_prediction_time_comparison(learners):
     ind = np.arange(N)  # the x locations for the groups
     width = 0.4       # the width of the bars
     ax = plt.gca()
-    rects = ax.bar(ind , plot_y, width, color='b',alpha=0.2,linewidth=0,
+    rects = ax.bar(ind , plot_y, width,color=color,alpha=0.2,linewidth=0,
                    yerr=plot_y_error,log=True,
                    error_kw=dict(ecolor='k',linewidth=2,capsize=15))
     # add some text for labels, title and axes ticks
     ax.set_xticks(ind + width / 2)
     ax.set_xticklabels(labels)
     xlim = plt.xlim()
-    fudge = width/4
+    fudge = width/2
     xlim = [min(xlim)-fudge,max(xlim) + fudge]
     plt.xlim(xlim)
     formatted_with_errors = [pretty_exp_with_error(r.get_height(),e) \
@@ -136,39 +137,52 @@ def plot_learner_prediction_time_comparison(learners):
                             "Points classified per second","")
     
         
-def plot_learner_slope_versus_loading_rate(learner_trials):
+def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
+                                           style_pred=None,min_pred=1e-3):
     """
     Makes a plot of the (slope of runtime versus number of curves) versus
     loading rate
 
     Args:
         learner_trials: a single learner object
+        style_<data/pred>: style for the data points and predictions
     Returns:
         nothing, makes a pretty plot
     """
+    if (style_data is None):
+        style_data = dict(color='r',linestyle="None",marker='o')
+    if (style_pred is None):
+        style_pred = dict(color='b',linestyle="--")
     inf = timing_info(learner_trials)
     params,params_std = get_loading_rate_slopes_and_errors(inf)
     # the slope is the time per force extension curve (less an offset; get that
     # per loading rate
     velocities = inf.velocities
     x,xerr = _timing_plot_pts_and_pts_error(inf)
-    coeffs,coeffs_err,x_pred_plot,y_pred = get_linear_runtime(x,params)
+    coeffs,coeffs_err,x_pred,y_pred = get_linear_runtime(x,params)
     # fit a linear model to the runtime
     fudge = 1.75
-    plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,fmt='ro')
+    plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,**style_data)
     slope = coeffs[0]
     lower_label = r"{:.2f}$ c_0 N \leq $".format(fudge)
     upper_label = r"$\leq \frac{c_0}{" + "{:.2f}".format(fudge) + "} N$"
-    label_timing = lower_label + "T(N)"  + upper_label
-    style_timing = dict(color='b',linestyle='--')
-    plt.plot(x_pred_plot,y_pred/fudge,label=label_timing,**style_timing)
-    plt.plot(x_pred_plot,y_pred*fudge,**style_timing)
+    label_timing = learner_trials.learner.description.lower()
+    style_timing = style_pred
+    idx_good  = np.where(y_pred > min_pred)
+    x_pred_plot = x_pred[idx_good]
+    y_pred_plot = y_pred[idx_good]
+    # only plot where the prediction is reasonable
+    plt.plot(x_pred_plot,y_pred_plot/fudge,**style_timing)
+    plt.plot(x_pred_plot,y_pred_plot*fudge,**style_timing)
     ax = plt.gca()
     ax.set_xscale('log')
     ax.set_yscale('log')
-    PlotUtilities.lazyLabel("N, Points per curve",
+    # plot something just for the legend entry
+    plt.plot([],[],label=label_timing,marker=style_data['marker'],
+             **style_timing)
+    PlotUtilities.lazyLabel("N (points per curve)",
                             "Runtime per curve (s)",
-                            "Runtime per curve, T(N), is $\Theta(N)$")
+                            "Runtime per curve, T(N), is $\Theta(\mathrm{N})$")
 
 
 
