@@ -13,6 +13,16 @@ from Research.Personal.EventDetection.Timing import TimePlot
 from Research.Personal.EventDetection.Timing.Timer import \
     time_trials_by_loading_rate,time_trials
 
+def algorithm_colors():
+    return ['b','k','y']
+
+def algorithm_markers():
+    return ['s','o','v']
+
+def algorithm_linestyles():
+    return ['--','-.','-']
+
+
 def get_supplemental_figure(output_path,trials):
     """
     creates the 'supplemental' timing figure (for use in the appendix) 
@@ -22,7 +32,7 @@ def get_supplemental_figure(output_path,trials):
     """
 
     # make a plot comparing *all* of the Big-O plots of the data
-
+    plt.subplot(3,2,1)
     # make a plot comparing the constants
     pass
 
@@ -36,20 +46,15 @@ def get_main_figure(output_path,trials):
     """
     xlim = [500,1e6]
     ylim=[1e-2,5e2]
+    colors,markers,linestyles = algorithm_colors(),algorithm_markers(),\
+                                algorithm_linestyles()
     # picturing 3x2, where we show the 'in the weeds' plots...
-    colors = ['r','b','k']
-    predict_styles = [dict(linestyle='--'),dict(linestyle='-.'),
-                      dict(linestyle='-')]
-    kw = dict(linestyle='None')
-    style_data=[dict(marker='s',**kw),dict(marker='o',**kw),
-                dict(marker='v',**kw)]
-    markers = [s['marker'] for s in style_data]
-    for i,c in enumerate(colors):
-        style_data[i]['color'] = c
+    style_data=[dict(marker=m,color=c,linestyle='None')
+                for m,c in zip(markers,colors)]
     fig = PlotUtilities.figure(figsize=(16,8))
     plt.subplot(1,2,1)
     for i,learner_trials in enumerate(trials):
-        style_pred = dict(color=colors[i],**predict_styles[i])
+        style_pred = dict(color=colors[i],linestyle=linestyles[i])
         TimePlot.\
             plot_learner_slope_versus_loading_rate(learner_trials,
                                                    style_data=style_data[i],
@@ -60,7 +65,7 @@ def get_main_figure(output_path,trials):
     plt.subplot(1,2,2)
     TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
     PlotUtilities.legend(loc="lower right",frameon=True)
-    PlotUtilities.title(r"No event asymptotic T(N) $\geq$10x faster")
+    PlotUtilities.title(r"No event asymptotic T(N) is $\geq$10x faster")
     PlotUtilities.savefig(fig,output_path)
 
 

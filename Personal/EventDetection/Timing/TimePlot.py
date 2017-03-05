@@ -117,7 +117,7 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
     ind = np.arange(N)  # the x locations for the groups
     width = 0.4       # the width of the bars
     ax = plt.gca()
-    rects = ax.bar(ind , plot_y, width,color=color,alpha=0.2,linewidth=0,
+    rects = ax.bar(ind , plot_y, width,color=color,alpha=0.4,linewidth=0,
                    yerr=plot_y_error,log=True,
                    error_kw=dict(ecolor='k',linewidth=2,capsize=15))
     # add some text for labels, title and axes ticks
