@@ -401,7 +401,7 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
                                                    endpoint=True,
                                                    base=10,
                                                    num=n_points_no_event)]
-    no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                
+    no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)  
     # make the fovea example
     fovea_func = lambda arg_list: [dict(weight=w) for w in arg_list]
     fovea_tuple = [fovea.predict,np.logspace(0.001,0.2,endpoint=True,

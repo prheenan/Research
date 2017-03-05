@@ -86,7 +86,12 @@ class timing_info:
         arr = lambda : np.zeros(n)
         self.nums,self.means,self.stdevs = [],[],[]
         self.velocities,self.pts_per,self.pts_std = arr(),arr(),arr()
-        for i,trial in enumerate(learner_trials.list_of_time_trials):
+        trials = learner_trials.list_of_time_trials
+        # sort the trials by number of points
+        pts = [t.average_number_of_points_per_curve() for t in trials]
+        sort_idx = np.argsort(pts)
+        trials = [trials[i] for i in sort_idx]
+        for i,trial in enumerate(trials):
             num_curves = trial.num_curves
             mean = trial.mean_time_for_fixed_number()
             std = trial.std_time_for_fixed_number()
@@ -284,15 +289,31 @@ def plot_learner_slope_versus_loading_rate(learner_trials):
                                             factor=1)
     params = [c[0][0] for c in coeffs]
     params_std = [c[1][0] for c in coeffs]
+    # fit a linear model to the runtime
+    fudge = 1.5
+    sort_idx = np.argsort(x)
+    x_pred = np.array(x)[sort_idx]
+    y_pred = np.array(params)[sort_idx]
+    coeffs = np.polyfit(x=x_pred,y=y_pred,deg=1)
+    log_bounds = np.log10([min(x_pred)/2,max(x_pred)*2])
+    x_pred_plot = np.logspace(*log_bounds,base=10,endpoint=True)
+    pred = np.polyval(coeffs,x=x_pred_plot)
     plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,fmt='ro')
+    slope = coeffs[0]
+    label_timing = r"$\Theta$(N$_{\mathrm{curve}}$)"
+    style_timing = dict(color='b',linestyle='--')
+    plt.plot(x_pred_plot,pred/2,label=label_timing,**style_timing)
+    plt.plot(x_pred_plot,pred*2,**style_timing)
     ax = plt.gca()
     ax.set_xscale('log')
+    ax.set_yscale('log')
     PlotUtilities.lazyLabel("Points per curve",
-                            "Runtime per curve","")
+                            "Runtime per curve (s)",
+                            "Runtime per curve is linear")
 
 
 
-def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal,factor=1000):
+def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal,factor=1):
     """
     gets the average number of points per curve in a given loading rate
     and the error (1 standard deviaiton)
@@ -330,19 +351,22 @@ def plot_learner_versus_loading_rate_and_number(learner_trials):
     """
     styles = [dict(color='r',marker='x',linestyle='--'),
               dict(color='b',marker='o',linestyle='-'),
-              dict(color='k',marker='v',linestyle='-.')]
+              dict(color='k',marker='v',linestyle='-.'),
+              dict(color='g',marker='s',linestyle='-',linewidth=3),
+              dict(color='m',marker='*',linestyle='-.',linewidth=3)]
     inf = timing_info(learner_trials)
-    pts,xerr = _timing_plot_pts_and_pts_error(inf,True)
+    pts,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False,
+                                              factor=1)
     for i,(num,mean,yerr,vel) in enumerate(zip(inf.nums,inf.means,inf.stdevs,
                                                inf.velocities)):
         style = styles[i % len(styles)]
         velocity_label = r"v={:4d}nm/s".format(int(vel))
-        number_label = r"N={:d}$\pm${:d}".\
-                       format(pts[i],xerr[i])
+        number_label = r"N={:2.0g}".format(pts[i],xerr[i])
+        number_pretty = number_label.replace("e+0","$\cdot10^{") + "}$"
         label = "{:s}\n({:s})".format(velocity_label,number_label)
-        plt.errorbar(x=num,y=mean,yerr=yerr,label=label,**style)
+        plt.errorbar(x=num,y=mean,yerr=yerr,label=number_pretty,**style)
     title = "Runtime verus loading rate and number of curves\n" + \
-           "(N, kilopoints/curve, in parenthesis) "
+           "(N, points/curve, in parenthesis) "
     PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time",title)
 
 
