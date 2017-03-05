@@ -255,12 +255,14 @@ def run():
         # plot the timing stuff 
         fig = PlotUtilities.figure()
         plot_learner_versus_loading_rate_and_number(learner_trials)
-        fudge = 2
-        plt.ylim([min_time/fudge,max_time*fudge])
-        plt.xlim([1/fudge,max(curve_numbers)*fudge])
+        fudge_x_low = 10
+        fudge_x_high = 2
+        fudge_y = 1.5
+        plt.ylim([min_time/fudge_y,max_time*fudge_y])
+        plt.xlim([1/fudge_x_low,max(curve_numbers)*fudge_x_high])
         plt.yscale('log')
         plt.xscale('log')        
-        PlotUtilities.legend(loc="lower right",frameon=True)
+        PlotUtilities.legend(loc="upper left",frameon=True)
         PlotUtilities.savefig(fig,learner_trials.learner.description + "_t.png")
         # plot the slopes
         fig = PlotUtilities.figure()
@@ -353,7 +355,12 @@ def plot_learner_versus_loading_rate_and_number(learner_trials):
               dict(color='b',marker='o',linestyle='-'),
               dict(color='k',marker='v',linestyle='-.'),
               dict(color='g',marker='s',linestyle='-',linewidth=3),
-              dict(color='m',marker='*',linestyle='-.',linewidth=3)]
+              dict(color='m',marker='*',linestyle='-.',linewidth=3),
+              dict(color='k',marker='8',linestyle='-',linewidth=2),
+              dict(color='r',marker='p',linestyle='-.',linewidth=2),
+              dict(color='b',marker='d',linestyle='--'),
+              dict(color='k',marker='<',linestyle='-'),
+              dict(color='g',marker='+',linestyle='-.')]
     inf = timing_info(learner_trials)
     pts,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False,
                                               factor=1)
@@ -361,10 +368,11 @@ def plot_learner_versus_loading_rate_and_number(learner_trials):
                                                inf.velocities)):
         style = styles[i % len(styles)]
         velocity_label = r"v={:4d}nm/s".format(int(vel))
-        number_label = r"N={:2.0g}".format(pts[i],xerr[i])
+        number_label = r"N$\approx${:2.0g}".format(pts[i],xerr[i])
         number_pretty = number_label.replace("e+0","$\cdot10^{") + "}$"
         label = "{:s}\n({:s})".format(velocity_label,number_label)
-        plt.errorbar(x=num,y=mean,yerr=yerr,label=number_pretty,**style)
+        plt.errorbar(x=num,y=mean,yerr=yerr,label=number_pretty,alpha=0.7,
+                     **style)
     title = "Runtime verus loading rate and number of curves\n" + \
            "(N, points/curve, in parenthesis) "
     PlotUtilities.lazyLabel("Number of Force-Extension Curves","Time",title)
