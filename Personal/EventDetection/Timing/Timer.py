@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,random,multiprocessing
+import sys,random,multiprocessing,re
 from timeit import default_timer as timer
 
 sys.path.append("../../../../")
@@ -251,8 +251,14 @@ def run():
     # sort the times by their loading rates
     max_time = max([l.max_time_trial() for l in times])
     min_time = min([l.min_time_trial() for l in times])
+    # plot the Theta(n) coefficient for each
+    fig = PlotUtilities.figure()
+    plot_learner_prediction_time_comparison(times)
+    PlotUtilities.legend(loc="lower right",frameon=True)
+    PlotUtilities.savefig(fig,"compare.png")
     for learner_trials in times:
-        # plot the timing stuff 
+        base_name = learner_trials.learner.description
+        # plot the timing veruses loading rate and number of points 
         fig = PlotUtilities.figure()
         plot_learner_versus_loading_rate_and_number(learner_trials)
         fudge_x_low = 10
@@ -263,13 +269,12 @@ def run():
         plt.yscale('log')
         plt.xscale('log')        
         PlotUtilities.legend(loc="upper left",frameon=True)
-        PlotUtilities.savefig(fig,learner_trials.learner.description + "_t.png")
+        PlotUtilities.savefig(fig,  base_name + "_all_trials.png")
         # plot the slopes
         fig = PlotUtilities.figure()
         plot_learner_slope_versus_loading_rate(learner_trials)
         PlotUtilities.legend(loc="lower right",frameon=True)
-        PlotUtilities.savefig(fig,learner_trials.learner.description + "_s.png")
-
+        PlotUtilities.savefig(fig, base_name + "_slopes.png")
 
 def get_loading_rate_slopes_and_errors(inf):
     """
@@ -310,6 +315,68 @@ def get_linear_runtime(x,times,fudge=1):
     y_pred_plot = np.polyval(params,x=x_pred_plot)
     return params,params_std,x_pred_plot,y_pred_plot
 
+
+def autolabel(rects,label_func=lambda i,r: str(r.get_height())):
+    """
+    Attach a text label above each bar displaying its height
+
+    Args:
+        rects: return from ax.bar
+        label_func: takes a rect and its index, returs the label
+    Returns:
+        nothing, but sets text labels
+    """
+    ax = plt.gca()
+    for i,rect in enumerate(rects):
+        height = rect.get_height()
+        text = label_func(i,rect)
+        ax.text(rect.get_x() + rect.get_width()/2., 1.2*height,
+                text,ha='center', va='bottom')
+
+def plot_learner_prediction_time_comparison(learners):
+    """
+    plots the asympotic slope of the learners
+
+    Args:
+        learners: list of learners
+    Returns:
+        nothing, makes a pretty plot
+    """
+    time_per_point,time_per_point_error = [],[]
+    for l in learners:
+        inf = timing_info(l)
+        params,_ = get_loading_rate_slopes_and_errors(inf)
+        x,_ = _timing_plot_pts_and_pts_error(inf)
+        coeffs,coeffs_err,_,_ = get_linear_runtime(x,params)
+        time_per_point.append(coeffs[0])
+        time_per_point_error.append(coeffs_err[0])
+    plot_y = 1/np.array(time_per_point)
+    # d(1/f) = (1/f^2) * df
+    plot_y_error = plot_y**2 * (np.array(time_per_point_error))
+    N = len(time_per_point)
+    labels = [l.learner.description.lower() for l in learners]
+    ind = np.arange(N)  # the x locations for the groups
+    width = 0.4       # the width of the bars
+    ax = plt.gca()
+    rects = ax.bar(ind , plot_y, width, color='b',alpha=0.2,linewidth=0,
+                   yerr=plot_y_error,log=True,
+                   error_kw=dict(ecolor='k',linewidth=2,capsize=10))
+    # add some text for labels, title and axes ticks
+    ax.set_xticks(ind + width / 2)
+    ax.set_xticklabels(labels)
+    xlim = plt.xlim()
+    fudge = width/4
+    xlim = [min(xlim)-fudge,max(xlim) + fudge]
+    plt.xlim(xlim)
+    formatted_with_errors = [pretty_exp_with_error(r.get_height(),e) \
+                             for r,e in zip(rects,plot_y_error)]
+    # add labels with the errors for each
+    label_func = lambda i,r : formatted_with_errors[i]
+    autolabel(rects,label_func)
+    PlotUtilities.lazyLabel("Event finding method",
+                            "Points classified per second","")
+    
+        
 def plot_learner_slope_versus_loading_rate(learner_trials):
     """
     Makes a plot of the (slope of runtime versus number of curves) versus
@@ -325,8 +392,7 @@ def plot_learner_slope_versus_loading_rate(learner_trials):
     # the slope is the time per force extension curve (less an offset; get that
     # per loading rate
     velocities = inf.velocities
-    x,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False,
-                                            factor=1)
+    x,xerr = _timing_plot_pts_and_pts_error(inf)
     coeffs,coeffs_err,x_pred_plot,y_pred = get_linear_runtime(x,params)
     # fit a linear model to the runtime
     fudge = 1.75
@@ -347,7 +413,7 @@ def plot_learner_slope_versus_loading_rate(learner_trials):
 
 
 
-def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal,factor=1):
+def _timing_plot_pts_and_pts_error(inf,factor=1):
     """
     gets the average number of points per curve in a given loading rate
     and the error (1 standard deviaiton)
@@ -358,20 +424,80 @@ def _timing_plot_pts_and_pts_error(inf,round_to_one_decimal,factor=1):
     Returns:
         tuple of <mean number of points per curve, stdev of points per curve>
     """
-    n_deci = lambda x: int(np.floor(np.log10(abs(x))))
-    rounded = lambda x :int(np.round(x,-n_deci(x)))
     n = inf.pts_per.size
     pts,pts_err = np.zeros(shape=n),np.zeros(shape=n)
     for i,(pts_tmp,xerr_tmp) in enumerate(zip(inf.pts_per,inf.pts_std)):
         pts[i] = pts_tmp/factor
         pts_err[i] = xerr_tmp/factor
-    if (not round_to_one_decimal):
-        pass
-    else:
-        # POST: need  to round
-        pts = np.array([rounded(p) for p in pts])
-        pts_err = np.array([rounded(e) for e in pts_err if e >0])
     return pts,pts_err
+
+def get_sigfig_sign_and_exponent(number,format_str="{:3.0e}"):
+    """
+    gets the significant figure(s), sign, and exponent of a number
+
+    Args:
+        number: the number we want
+        format_str: how it should be formatted (limiting number of sig figs)
+    Returns:
+        tuple of <sig figs,sign,exponent>
+    """
+    scientific = format_str.format(number)
+    pattern = r"""
+               (\d+[\.]*\d*) # number.numbers
+               e          # literal e
+              ([+-])0*(\d+)     # either plus or minus, then exponent
+              """
+    sig = re.match(pattern,scientific,re.VERBOSE)
+    return sig.groups()
+
+def pretty_exp_with_error(number,error,error_fmt="{:.1f}",**kwargs):
+    """
+    retrns
+
+    Args:
+        number: the number we want
+        error_str: how it should be formatted (limiting number of sig figs)
+        **kwargs: passed to get_sigfig_sign_and_exponent
+    Returns:
+        pretty-printed (latex) of number +/- error, like: '(a +/- b) * 10^(c)'
+    """
+    sigfig,sign,exponent = get_sigfig_sign_and_exponent(number,**kwargs)
+    # get the error in terms of the exponent of the number
+    exponent_num = float(exponent) * -1 if sign == "-" else float(exponent)
+    error_rel = error/(10**(exponent_num))
+    string_number_and_error = sigfig + r"\pm" + error_fmt.format(error_rel)
+    # add parenths
+    string_number_and_error = "(" + string_number_and_error + ")"
+    return _pretty_format_exp(string_number_and_error,sign,exponent)
+
+
+def _pretty_format_exp(sig_fig,sign,exponent):
+    """
+    pretty prints the number sig_fig as <number * 10^(exponent)>
+    
+    Args:
+        sig_fig: number to print
+        sign: literal +/-
+        exponent: what to put in 10^{right here}
+    Returns:
+        formatted string
+    """
+    sign_str = "" if sign == "+" else "-"
+    to_ret = r"$" +  sig_fig + r"\cdot 10^{" + sign  + exponent + r"}$" 
+    return to_ret
+
+def pretty_exp(number,**kwargs):
+    """
+    takes a number and returns its pretty-printed exponent format
+
+    Args:
+        number: see pretty_exp_with_error
+        **kwargs: passed to get_sigfig_sign_and_exponent
+    Returns:
+        see pretty_exp_with_error
+    """
+    args = get_sigfig_sign_and_exponent(number,**kwargs)
+    return _pretty_format_exp(*args)
 
 def plot_learner_versus_loading_rate_and_number(learner_trials):    
     """
@@ -394,15 +520,13 @@ def plot_learner_versus_loading_rate_and_number(learner_trials):
               dict(color='k',marker='<',linestyle='-'),
               dict(color='g',marker='+',linestyle='-.')]
     inf = timing_info(learner_trials)
-    pts,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False,
-                                              factor=1)
+    pts,xerr = _timing_plot_pts_and_pts_error(inf,factor=1)
     for i,(num,mean,yerr,vel) in enumerate(zip(inf.nums,inf.means,inf.stdevs,
                                                inf.velocities)):
         style = styles[i % len(styles)]
         velocity_label = r"v={:4d}nm/s".format(int(vel))
-        number_label = r"N$\approx${:2.0g}".format(pts[i],xerr[i])
-        number_pretty = number_label.replace("e+0","$\cdot10^{") + "}$"
-        label = "{:s}\n({:s})".format(velocity_label,number_label)
+        number_pretty = r"N$\approx$"  + pretty_exp(pts[i])
+        label = "{:s}\n({:s})".format(velocity_label,number_pretty)
         plt.errorbar(x=num,y=mean,yerr=yerr,label=number_pretty,alpha=0.7,
                      **style)
     title = "Runtime verus loading rate and number of curves\n" + \
