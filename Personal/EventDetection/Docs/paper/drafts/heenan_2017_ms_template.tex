@@ -41,7 +41,6 @@
   keywordstyle=\color{blue}\ttfamily,
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{green}\ttfamily}
-\usepackage{graphicx}% Include figure files
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
 % amsmath: for align, etc
@@ -65,6 +64,7 @@
 % 1 inch margins
 % http://kb.mit.edu/confluence/pages/viewpage.action?pageId=3907057
 \usepackage[margin=1in]{geometry}
+\usepackage{graphicx}% Include figure files
 % reducing heading madness
 % http://tex.stackexchange.com/questions/53338/reducing-spacing-after-headings
 \newcommand{\captionspacing}[0]{4pt plus 2pt minus 2pt}
@@ -284,11 +284,20 @@ During an AFM experiment, an atomically sharp tip attached to a cantilever inter
 
 In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip interacts with a molecule and stretches it to measure the relationship between force and extension over time. This experiment records the force-extension curve of the molecule (see figure XXX). Force-extension curves yield information such as kinetic rates of processive enzymes \citePRH{comstock_direct_2015}, protein-ligand bond strength \citePRH{yuan_energy_2000}, and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. \pl
 
+\begin{figure}
+\centering
+\includegraphics[width=4in]{../Figures/Finals/final.pdf}% Here is how to import EPS art
+\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\end{figure}
+
+
 The analysis and interpretability of \singlemol{} experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, attachment rates between commercially-available AFM tips and most molecules are much less than 0.1\% (XXX cite, see Figure XXX, good example bad example). Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite XXX), but the majority of the data taken is still uninterpretable and must be filtered out. Filtering data without events is a major challenge in AFM data management and analysis.\pl
 
 Methods have been proposed to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
 
 This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (XXX figure). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple loading rates, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance (XXX timing?) to previously proposed methods. \pl
+
+
 
 
 \section{\sLabel{Materials}Materials and Methods}
@@ -443,7 +452,7 @@ XXX autocorrelation time motivation \pl
 The approximation to the noiseless force $g^{*}(q)$ is obtained by fitting a least-squares second-order basis spline (b-spline, XXX) to the force versus extension curve. The spline is second-order to ensure a continuous first derivative (see XXX), and the spline knots are spaced uniformly at intervals of $\tau$. Figure XXX is a representative demonstration of the spline fitting. Determining  $g^{*}(q)$ immediately gives r(q) by eq XX.  \pl
 
 Using r(q) as shown in eq XXX does not provide a strong signal in the presence of an event(see supplemental Figure XXX). In order to improve the method, the distribution of windowed standard deviations `s(q)' centered at q with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of r(q) in the algorithm. Using s(q) instead of r(q) provides a much stronger signal (see Figure XXX).  \pl
-
+.
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations s(q). From this distribution, $\sigma$ is set to the standard deviation of s(q) within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to remove the influence of possible events. The removal of possible events is necessary to ensure accurate estimations of $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
 
 XXX table?
