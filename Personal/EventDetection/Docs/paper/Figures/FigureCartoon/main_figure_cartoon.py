@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,os
 
 import svgutils.compose as sc
 sys.path.append("../../../../../../../")
@@ -30,6 +30,7 @@ def plot_fec(example,color='r',n_filter=250):
     style = dict(color=color)
     plt.plot(sep,force,alpha=0.3,**style)
     plt.plot(sep_filtered,force_filtered,**style)
+    plt.tight_layout()
 
 def fmt(remove_x_labels=True,remove_y_labels=True):
     ax = plt.gca()
@@ -47,30 +48,45 @@ def run(base="./"):
     """
     data_base = base + "data/"
     kw = dict(cache_directory=data_base,force=False)
-    multiple = read_and_cache_file(data_base + "multiple.csv",**kw)
-    single = read_and_cache_file(data_base + "single.csv",**kw)
-    no = read_and_cache_file(data_base + "no.csv",has_events=False,**kw)
-    fig = PlotUtilities.figure((16,8))
-    plt.subplot(1,3,1)
-    plot_fec(no,color='k')
-    fmt(remove_y_labels=False,remove_x_labels=False)
-    PlotUtilities.ylabel("Force (pN)")
-    PlotUtilities.xlabel("Separation (nm)")
-    plt.subplot(1,3,2)
-    plot_fec(single,color='g')
-    fmt()
-    plt.subplot(1,3,3)
-    plot_fec(multiple,color='r')
-    fmt()
-    out_tmp = "FigureCartoon.svg"
-    PlotUtilities.savefig(fig,out_tmp)
-    # XXX need to fix this...
-    # see: 
-    #stackoverflow.com/questions/31452451/importing-an-svg-file-a-matplotlib-figure
-    sc.Figure("16in", "16in", 
-        sc.Panel(sc.SVG("./tip_attachments.svg").scale(3)),
-        sc.Panel(sc.SVG(out_tmp)).move(0,600)
-    ).save(out_tmp)
+    file_names = ["no","single","multiple"]
+    file_paths = [data_base + f +".csv" for f in file_names]
+    cases = [read_and_cache_file(f,**kw) for f in file_paths]
+    n_cases = len(cases)
+    out_names = []
+    styles = [dict(color='k'),
+              dict(color='g'),
+              dict(color='r')]
+    for i,c in enumerate(cases):
+        fig = PlotUtilities.figure((16,8))
+        plt.subplot(1,3,1)
+        style = styles[i]
+        plot_fec(c,**style)
+        not_first_plot = i != 0
+        fmt(remove_y_labels=False,remove_x_labels=False)
+        PlotUtilities.ylabel("Force (pN)")
+        PlotUtilities.xlabel("Separation (nm)")
+        out_tmp = "FigureCartoon{:d}.svg".format(i)
+        out_names.append(out_tmp)
+        PlotUtilities.savefig(fig,out_tmp)
+    """
+    see: 
+    stackoverflow.com/questions/31452451/importing-an-svg-file-a-matplotlib-figure
+    """
+    tip_base = base  + "cartoon/2017-2-event-detection/" + \
+               "SurfaceChemistry Dig10p3_pmod-0{:d}.svg"
+    cartoon_files = [tip_base.format(i+1) for i in range(n_cases)]
+    offset = 80
+    delta = 20
+    tip_panels = [sc.Panel(sc.SVG(file_path)).scale(2.5).move(offset*i,0)
+                  for i,file_path in enumerate(cartoon_files)]
+    data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
+    all_panels = tip_panels + data_panels
+    sc.Figure("32cm", "32cm", 
+              *(tip_panels + data_panels)
+    ).tile(3, 2).save("final.svg")
+    # remove all the files
+    for f in out_names:
+        os.remove(f) 
     
 
 if __name__ == "__main__":
