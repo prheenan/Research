@@ -270,6 +270,46 @@ def run():
         PlotUtilities.legend(loc="lower right",frameon=True)
         PlotUtilities.savefig(fig,learner_trials.learner.description + "_s.png")
 
+
+def get_loading_rate_slopes_and_errors(inf):
+    """
+    given a timing_info object, gets the slopes of runtime versus number of
+    curves for each loading rate
+
+    Args:
+        inf: timing info object
+    Returns:
+        tuple of <slopes, slope errors>
+    """
+    coeffs = []
+    for num,mean in zip(inf.nums,inf.means):
+        coeffs.append(GenUtilities.GenFit(x=num,y=mean))
+    params = [c[0][0] for c in coeffs]
+    params_std = [c[1][0] for c in coeffs]
+    return params,params_std
+
+def get_linear_runtime(x,times,fudge=1):
+    """
+    given x and times (assumed d), gets the coefficients for a linear fit
+    to times vs x
+
+    Args:
+        x: the x values
+        times: time y values used
+        fudge: when returning the prediction, how much to 'pad' in +/- x
+    Returns:
+        tuple of <coefficents for linear fit,their errors x predictions,
+        y predictions>
+    """
+    sort_idx = np.argsort(x)
+    x_pred = np.array(x)[sort_idx]
+    y_pred = np.array(times)[sort_idx]
+    params,params_std,_ = GenUtilities.GenFit(x=x_pred,y=y_pred)
+    log_bounds = np.log10([min(x_pred)/fudge,max(x_pred)*fudge])
+    x_pred_plot = np.logspace(*log_bounds,base=10,endpoint=True)
+    y_pred_plot = np.polyval(params,x=x_pred_plot)
+    return params,params_std,x_pred_plot,y_pred_plot
+
 def plot_learner_slope_versus_loading_rate(learner_trials):
     """
     Makes a plot of the (slope of runtime versus number of curves) versus
@@ -281,37 +321,29 @@ def plot_learner_slope_versus_loading_rate(learner_trials):
         nothing, makes a pretty plot
     """
     inf = timing_info(learner_trials)
-    coeffs = []
-    for num,mean in zip(inf.nums,inf.means):
-        coeffs.append(GenUtilities.GenFit(x=num,y=mean))
+    params,params_std = get_loading_rate_slopes_and_errors(inf)
     # the slope is the time per force extension curve (less an offset; get that
     # per loading rate
     velocities = inf.velocities
     x,xerr = _timing_plot_pts_and_pts_error(inf,round_to_one_decimal=False,
                                             factor=1)
-    params = [c[0][0] for c in coeffs]
-    params_std = [c[1][0] for c in coeffs]
+    coeffs,coeffs_err,x_pred_plot,y_pred = get_linear_runtime(x,params)
     # fit a linear model to the runtime
-    fudge = 1.5
-    sort_idx = np.argsort(x)
-    x_pred = np.array(x)[sort_idx]
-    y_pred = np.array(params)[sort_idx]
-    coeffs = np.polyfit(x=x_pred,y=y_pred,deg=1)
-    log_bounds = np.log10([min(x_pred)/2,max(x_pred)*2])
-    x_pred_plot = np.logspace(*log_bounds,base=10,endpoint=True)
-    pred = np.polyval(coeffs,x=x_pred_plot)
+    fudge = 1.75
     plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,fmt='ro')
     slope = coeffs[0]
-    label_timing = r"$\Theta$(N$_{\mathrm{curve}}$)"
+    lower_label = r"{:.2f}$ c_0 N \leq $".format(fudge)
+    upper_label = r"$\leq \frac{c_0}{" + "{:.2f}".format(fudge) + "} N$"
+    label_timing = lower_label + "T(N)"  + upper_label
     style_timing = dict(color='b',linestyle='--')
-    plt.plot(x_pred_plot,pred/2,label=label_timing,**style_timing)
-    plt.plot(x_pred_plot,pred*2,**style_timing)
+    plt.plot(x_pred_plot,y_pred/fudge,label=label_timing,**style_timing)
+    plt.plot(x_pred_plot,y_pred*fudge,**style_timing)
     ax = plt.gca()
     ax.set_xscale('log')
     ax.set_yscale('log')
-    PlotUtilities.lazyLabel("Points per curve",
+    PlotUtilities.lazyLabel("N, Points per curve",
                             "Runtime per curve (s)",
-                            "Runtime per curve is linear")
+                            "Runtime per curve, T(N), is $\Theta(N)$")
 
 
 
