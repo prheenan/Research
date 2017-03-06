@@ -38,15 +38,29 @@ def run():
     fig = PlotUtilities.figure((16,8))
     plt.subplot(1,2,1)
     kwargs = dict(vmin=qlow,vmax=qhigh,cmap=plt.cm.afmhot,range_plot=range_plot)
-    ax = ImageUtil.PlotImage(wave,**kwargs)
+    ImageUtil.PlotImage(wave,**kwargs)
     PlotUtilities.lazyLabel("nanometers","nanometers",
                             "AFM image of mica-bound DNA")
     PlotUtilities.colorbar("Height (nm)")
     plt.subplot(1,2,2)
     plt.imshow(image,extent=[0,1,0,1])
     PlotUtilities.FormatImageAxis(aspect="auto")
+    # add an arrow at the 2KB line
+    ax = plt.gca()
+    ax.annotate('2kbp standard', fontsize=20, xy=(.10, .60),
+                xycoords='data', xytext=(50, -150),
+                textcoords='offset points',
+                arrowprops=dict(width = 5.,
+                                headwidth = 20.,
+                                frac = 0.2,
+                                shrink = 0.05,
+                                linewidth = 2,
+                                alpha=0.5,
+                                color = 'orange'),
+                bbox=dict(boxstyle="round", fc="orange",alpha=0.3)
+            )
     PlotUtilities.lazyLabel("","","Electrophoretic purification of 647nm DNA")
-    PlotUtilities.savefig(fig,"./out.png")
+    PlotUtilities.savefig(fig,"./out.svg")
 
 
 if __name__ == "__main__":
