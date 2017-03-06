@@ -160,10 +160,13 @@ def plot_prediction_info(ex,info,xlabel="Time",
     plt.plot(x[mask],force_plot[mask],color='k',alpha=0.8,
              label="Predicted event regions")
     for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
-        plt.axvline(x[fwd],linestyle='--',color='r')
-        plt.axvline(x[rev],linestyle='-.',color='g')
-        plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
-                 label="predicted")
+        try:
+            plt.axvline(x[fwd],linestyle='--',color='r')
+            plt.axvline(x[rev],linestyle='-.',color='g')
+            plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
+                    label="predicted")
+        except IndexError as e:
+            print(e)
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.subplot(n_rows,n_cols,4)

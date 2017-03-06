@@ -333,7 +333,7 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     # XXX debugging
     prob = _spline_derivative_probability_generic(x,interp)    
     where_one = np.where(prob == 1)
-    probability_distribution[where_one] = 1
+    probability_distribution *= prob
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
