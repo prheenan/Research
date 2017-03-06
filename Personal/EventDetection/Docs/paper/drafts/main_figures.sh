@@ -21,10 +21,11 @@ function make_and_copy_figure()
 	in_tmp="$in_path/$i"
 	# latex is unhappy with things like .svg.pdf, so just use .pdf
 	in_without_extension=${i%.*}
-	out_tmp="$out_path/$in_without_extension.pdf"
+	out_tmp="$out_path/$in_without_extension"
 	# export_latex needed to avoid crappy rendering:
 	# tex.stackexchange.com/questions/2099/how-to-include-svg-diagrams-in-latex
-	inkscape "$in_tmp" --export-pdf="$out_tmp"
+	inkscape "$in_tmp" --export-ps="${out_tmp}.ps"
+	pstopdf "${out_tmp}.ps" -o "${out_tmp}.pdf"
     done
     cd -
 }

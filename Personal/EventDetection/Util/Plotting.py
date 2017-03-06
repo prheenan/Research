@@ -135,7 +135,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     masked_cdf[mask] = cdf
     n_rows = 4
     n_cols = 1
-    lazy_kwargs = dict(frameon=True,loc = "lower right")
+    lazy_kwargs = dict(frameon=True,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
@@ -159,11 +159,13 @@ def plot_prediction_info(ex,info,xlabel="Time",
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x[mask],force_plot[mask],color='k',alpha=0.8,
              label="Predicted event regions")
-    for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
+    for i,(fwd,rev,event) in \
+        enumerate(zip(event_idx_end,event_idx_start,event_idx)):
         plt.axvline(x[fwd],linestyle='--',color='r')
         plt.axvline(x[rev],linestyle='-.',color='g')
+        label = "predicted" if (i ==0) else ""
         plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
-                 label="predicted")
+                 label=label)
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.subplot(n_rows,n_cols,4)
