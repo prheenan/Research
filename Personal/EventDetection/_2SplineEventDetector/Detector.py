@@ -525,7 +525,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [derivative_mask_function,adhesion_mask_function_for_split_fec]
+    f_refs = [adhesion_mask_function_for_split_fec]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(condition_functions=funcs,
                       threshold=threshold)

@@ -48,6 +48,34 @@ def default_data_root():
 		raise OSError("Didn't recognize OS name: {:s}".format(os_name))
 	return to_ret
 	
+def _groups_to_time_sep_force(m_data,limit):
+    """
+    converts a list of <name:<wave type:data>> objects into TimeSepForce objects
+    
+    Args:
+        m_data: return of (e.g.) PxpLoader.LoadPxp
+        Limit: see ReadInData
+    Returns: at most Limit objects
+    """
+    # convert the waves into TimeSepForce objects
+    Objs = [TimeSepForceObj.TimeSepForceObj(WaveDataGroup(v)) 
+            for _,v in m_data.items()]
+    # note: limit=None gives everything on upper bound
+    return Objs[:limit]
+    
+def read_ibw_directory(directory,grouping_function,limit=None):
+    """
+    Reads all ibw files in the given directory
+    
+    Args:
+        directory: where to read from
+        grouping_function: how to group the ibw files, by file name
+        limit: how many to load
+    Returns: at most Limit objects
+    """
+    data = PxpLoader.\
+        load_ibw_from_directory(directory,grouping_function=grouping_function)
+    return _groups_to_time_sep_force(data,limit=limit)
 
 def ReadInData(FullName,Limit=None,**kwargs):
     """
@@ -60,11 +88,7 @@ def ReadInData(FullName,Limit=None,**kwargs):
         **kwargs: passed to LoadPxp
     """
     MData = PxpLoader.LoadPxp(FullName,**kwargs)
-    # convert the waves into TimeSepForce objects
-    Objs = [TimeSepForceObj.TimeSepForceObj(WaveDataGroup(v)) 
-            for _,v in MData.items()]
-    # note: limit=None gives everything on upper bound
-    return Objs[:Limit]
+    return _groups_to_time_sep_force(MData,Limit)
 
 
 def read_single_directory(directory,**kwargs):

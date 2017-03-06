@@ -159,7 +159,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x[mask],force_plot[mask],color='k',alpha=0.8,
              label="Event region")
-    for fwd,rev,event in zip(event_idx_end,event_idx_start,event_idx):
+    for i,(fwd,rev,event) in \
+        enumerate(zip(event_idx_end,event_idx_start,event_idx)):
         try:
             plt.axvline(x[fwd],linestyle='--',color='r')
             plt.axvline(x[rev],linestyle='-.',color='g')
