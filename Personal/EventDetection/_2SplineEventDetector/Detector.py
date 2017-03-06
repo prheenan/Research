@@ -449,6 +449,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         event_slices = _event_slices_from_mask(mask,min_points_between)
     else:
         event_slices = []
+    # XXX reject events with a very small time?
+    event_duration = [ (e.stop-e.start) for e in event_slices]
     # determine where the events are happening locally (guarentee at least
     # a search window of min_points)
     remainder_split = [ int(np.ceil((min_points_between-(e.stop-e.start)/2)))
