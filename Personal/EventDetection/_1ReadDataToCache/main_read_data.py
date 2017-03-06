@@ -26,12 +26,12 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 100
+    limit = 50
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     force_read = False
-    force_relearn = False
-    force_learn = False
+    force_relearn = True
+    force_learn = True
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
     GenUtilities.ensureDirExists(debug_directory)
@@ -43,7 +43,7 @@ def run():
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
-    n_learners = 2
+    n_learners = 1
     learners = Learning.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
