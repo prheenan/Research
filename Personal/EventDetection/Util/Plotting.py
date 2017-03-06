@@ -133,17 +133,17 @@ def plot_prediction_info(ex,info,xlabel="Time",
     tol=min(cdf/2)
     masked_cdf = np.zeros(cdf.size) + tol
     masked_cdf[mask] = cdf
-    n_plots = 2
-    n_cols = 2
+    n_rows = 4
+    n_cols = 1
     lazy_kwargs = dict(frameon=True,loc = "lower right")
-    plt.subplot(n_plots,n_cols,1)
+    plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
     plt.axvline(x[surface_index],label="Predicted surface location")
     highlight_events(event_slices,x,force_plot,**style_events)
     PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)
     plt.xlim(x_limits)
-    plt.subplot(n_plots,n_cols,2)
+    plt.subplot(n_rows,n_cols,2)
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
@@ -153,7 +153,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
-    plt.subplot(n_plots,n_cols,3)
+    plt.xlim(x_limits)
+    plt.subplot(n_rows,n_cols,3)
     # XXX check mask has at least one...
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x[mask],force_plot[mask],color='k',alpha=0.8,
@@ -165,7 +166,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
                  label="predicted")
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
-    plt.subplot(n_plots,n_cols,4)
+    plt.subplot(n_rows,n_cols,4)
     mask_styles = [dict(linewidth=3,color='k',linestyle='-.',alpha=0.3),
                    dict(linewidth=1,color='r',linestyle='--',alpha=0.7)]
     for i,c in enumerate(info.condition_results):
@@ -324,7 +325,7 @@ def debugging_plots(id_string,example_split,info,plot_auto=False):
         plot_autocorrelation(example_split)
         PlotUtilities.savefig(fig,out_file_path + "auto.png")   
     # XXX fix threshhold
-    fig = PlotUtilities.figure(figsize=(12,12))    
+    fig = PlotUtilities.figure(figsize=(8,16))    
     plot_prediction_info(example_split,info)
     PlotUtilities.savefig(fig,out_file_path + "info.png")
 
@@ -368,9 +369,9 @@ def cross_validation_distance_metric(x_values,train_scores,valid_scores,
     plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
                  **style_valid)
     plt.xscale('log')
+    plt.yscale('log')
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
                             frameon=True)
-
     
 def plot_num_events_off(x_values,train_scores,valid_scores):
     """
@@ -398,6 +399,31 @@ def plot_num_events_off(x_values,train_scores,valid_scores):
     plt.xscale('log')    
     plt.yscale('log')    
 
+def distance_distribution_plot(learner,**kwargs):
+    """
+    plots the distribution of distances to/from predicted events from/to
+    actual events, dependning on kwargs
+    
+    Args:
+        learner: the learner object to use
+        kwargs: passed to event_distance_distribution (ie: to_true=T/F)
+    """
+    train_scores = learner._scores_by_params(train=True)
+    valid_scores = learner._scores_by_params(train=False)
+    name = learner.description.lower()
+    x_values = learner.param_values()
+    train_dist = Learning.event_distance_distribution(train_scores,**kwargs)
+    valid_dist = Learning.event_distance_distribution(valid_scores,**kwargs)
+    dist_plot = lambda x: [v * 1e9 for v in x]
+    train_plot = dist_plot(train_dist)
+    valid_plot = dist_plot(valid_dist)
+    plt.boxplot(x=train_plot)
+    plt.boxplot(x=valid_plot)
+    plt.gca().set_yscale('log')
+    PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
+                            "Event distributions for {:s}".format(name))
+    
+
 def plot_individual_learner(cache_directory,learner):
     """
     Plots the results for a single, individual learner
@@ -408,11 +434,18 @@ def plot_individual_learner(cache_directory,learner):
     Returns:
         nothing
     """
-    out_file_stem = cache_directory + "{:s}".format(learner.description)
+    learner_name = learner.description
+    out_file_stem = cache_directory + "{:s}".format(learner_name)
     # get the scoring objects by paramter by fold
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
+    fig = PlotUtilities.figure()
+    distance_distribution_plot(learner,to_true=True)
+    PlotUtilities.savefig(fig,out_file_stem + "histogram_to_true.png")
+    fig = PlotUtilities.figure()
+    distance_distribution_plot(learner,to_true=False)
+    PlotUtilities.savefig(fig,out_file_stem + "histogram_to_predicted.png")
     fig = PlotUtilities.figure()
     plot_num_events_off(x_values,train_scores,valid_scores)
     PlotUtilities.savefig(fig,out_file_stem + "n_off.png")

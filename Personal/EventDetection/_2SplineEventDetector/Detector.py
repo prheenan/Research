@@ -327,9 +327,13 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     # actually calculate the upper bound for the probability
     chebyshev[cheby_idx] = (1/k_chebyshev[cheby_idx])**2
     # for the edge cases, assume the probability is one                         
-    probability_distribution = np.ones(y.size)          
+    probability_distribution = np.ones(y.size)      
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
+    # XXX debugging
+    prob = _spline_derivative_probability_generic(x,interp)    
+    where_one = np.where(prob == 1)
+    probability_distribution[where_one] = 1
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
