@@ -9,6 +9,26 @@ IFS=$'\n\t'
 # datestring, used in many different places...
 dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
+function make_and_copy_figure()
+{
+    out_path=$1
+    in_path_tmp=$2
+    cd $in_path_tmp
+    in_path=`pwd`
+    ext=".svg"
+    # make all the PDFs!
+    for i in *.svg; do
+	in_tmp="$in_path/$i"
+	# latex is unhappy with things like .svg.pdf, so just use .pdf
+	in_without_extension=${i%.*}
+	out_tmp="$out_path/$in_without_extension.pdf"
+	# export_latex needed to avoid crappy rendering:
+	# tex.stackexchange.com/questions/2099/how-to-include-svg-diagrams-in-latex
+	inkscape "$in_tmp" --export-pdf="$out_tmp"
+    done
+    cd -
+}
+
 # Description:
 
 # Arguments:
@@ -23,19 +43,11 @@ cd $out_dir
 out_path=`pwd`
 # go back and get the input directory absolute
 cd - 
-figure_dir="../Figures/FigureCartoon/"
-cd $figure_dir
-in_path=`pwd`
-ext=".svg"
-# make all the PDFs!
-for i in *.svg; do
-    in_tmp="$in_path/$i"
-    # latex is unhappy with things like .svg.pdf, so just use .pdf
-    in_without_extension=${i%.*}
-    out_tmp="$out_path/$in_without_extension.pdf"
-    # export_latex needed to avoid crappy rendering:
-    # tex.stackexchange.com/questions/2099/how-to-include-svg-diagrams-in-latex
-    inkscape "$in_tmp" --export-pdf="$out_tmp"
-done
+base_dir_rel="../Figures/"
+cartoon_dir="${base_dir_rel}FigureCartoon/"
+timing_dir="${base_dir_rel}FigureTiming/"
+make_and_copy_figure $out_path $timing_dir
+make_and_copy_figure $out_path $cartoon_dir
+
 
 

@@ -44,7 +44,7 @@ def get_supplemental_figure(output_path,trials):
     style_data,style_pred = style_data_and_pred()
     x_label = "C (number of curves)"
     y_label = "Runtime for C curves of length N"
-    xlabel_big_o = "N (points per curve)"
+    x_label_big_o = "N (points per curve)"
     y_label_big_o = "Runtime per curve"
     ylim_big_o = [1e-3,1e3]
     for i,learner_trials in enumerate(trials):
@@ -66,8 +66,7 @@ def get_supplemental_figure(output_path,trials):
                                 legend_kwargs=dict(fontsize=15))
         if (not useLegend):
             plt.gca().legend().remove()
-        if (useLegend):
-            PlotUtilities.ylabel(y_label)
+        PlotUtilities.ylabel(y_label)
         if (last):
             PlotUtilities.xlabel(x_label)            
         PlotUtilities.title("Runtime, C curves of length N ({:s})".\
@@ -79,9 +78,10 @@ def get_supplemental_figure(output_path,trials):
         PlotUtilities.title("Runtime/curve of length N ({:s})".\
                             format(description))
         if (last):
-            PlotUtilities.xlabel(x_label)      
-        if (useLegend):
-            PlotUtilities.ylabel(y_label_big_o)
+            PlotUtilities.xlabel(x_label_big_o)
+        else:
+            PlotUtilities.xlabel("")
+        PlotUtilities.ylabel(y_label_big_o)
         plt.ylim(ylim_big_o)
     PlotUtilities.savefig(fig, output_path)
 
@@ -115,7 +115,6 @@ def make_main_figure(output_path,trials):
     # picturing 3x2, where we show the 'in the weeds' plots...
     fig = PlotUtilities.figure(figsize=(16,8))
     plt.subplot(1,2,1)
-    print(style_data,style_pred)
     for i,learner_trials in enumerate(trials):
         TimePlot.\
             plot_learner_slope_versus_loading_rate(learner_trials,
@@ -138,10 +137,10 @@ def run(base="./"):
     data_file = base + "all.pkl"
     with open(data_file,"r") as f:
         trials = pickle.load(f)
-    out_base = base + "out/"
+    out_base = base 
     GenUtilities.ensureDirExists(out_base)
-    make_main_figure(output_path=out_base+"timing.pdf",trials=trials)
-    get_supplemental_figure(output_path=out_base+"supplemental.pdf",
+    make_main_figure(output_path=out_base+"timing.svg",trials=trials)
+    get_supplemental_figure(output_path=out_base+"supplemental.svg",
                             trials=trials)
 
 if __name__ == "__main__":
