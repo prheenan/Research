@@ -366,7 +366,7 @@ def single_fold_score(fold_data,func,kwargs,pool):
         # we make a list of functor objects (functions + arguments)
         # that we can then safely run
         functors_args = [ (func,ex,kwargs) for ex in fold_data]
-        scores_info = pool.map(multiprocessing_functor(),functors_args)
+        scores_info = pool.map(multiprocessing_functor(),functors_args)     
     # POST: got the scores an info, somehow...
     scores = [s[0] for s in scores_info]
     info = [s[1] for s in scores_info]
@@ -456,13 +456,15 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)                                
     # make the fovea example
     fovea_func = lambda arg_list: [dict(weight=w) for w in arg_list]
-    fovea_tuple = [fovea.predict,np.logspace(0.001,0.2,endpoint=True,
+    fovea_tuple = [fovea.predict,np.logspace(np.log10(0.001),np.log10(0.5),
+                                            endpoint=True,
                                              num=n_points_fovea)]
     fovea_curve = _get_single_curve("Open Fovea",fovea_tuple,fovea_func)                                   
     # make the CWT example
     cwt_func = lambda arg_list: [dict(min_snr=w) for w in arg_list]
     cwt_tuple = [wavelet_predictor.predict,
-                 np.linspace(start=20,stop=150,num=n_points_wavelet)]
+                 np.logspace(start=np.log10(10),stop=np.log10(500),endpoint=True,
+                    num=n_points_wavelet)]
     wavelet_curve = _get_single_curve("Wavelet transform",cwt_tuple,cwt_func)   
     return [no_event_curve,fovea_curve,wavelet_curve]
 
@@ -547,9 +549,9 @@ def get_categories(positives_directory):
     """
     # tuple of <relative directory,sample,velocity> for FEC with events
     positive_meta = \
-      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",1000],
-       [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
-       [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
+      [[positives_directory + "1000-nanometers-per-second/","650nm DNA",1000]]
+       #[positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
+       #[positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]
