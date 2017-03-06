@@ -105,8 +105,8 @@ def run():
             Detector._predict_full(example,threshold=threshold)
         meta = example.Meta
         GenUtilities.ensureDirExists(cache_directory)
-        id_data = "{:s}{:.1f}p={:s}".format(meta.Name,meta.Velocity,
-                                            str(threshold))
+        id_data = "{:d}{:s}{:.1f}p={:s}".format(i,meta.Name,meta.Velocity,
+                                                str(threshold))
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
