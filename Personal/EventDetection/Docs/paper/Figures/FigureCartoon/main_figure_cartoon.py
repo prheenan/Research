@@ -15,7 +15,7 @@ from Research.Personal.EventDetection.Util import Analysis
 # /!\ note the 'SVG' function also in svgutils.compose
 from IPython.display import SVG 
 
-def plot_fec(example,color='r',n_filter=250):
+def plot_fec(example,color='r',n_filter=1000):
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
     retract = fec_split.retract
     retract.Force -= np.median(retract.Force)
@@ -65,6 +65,7 @@ def run(base="./"):
         fmt(remove_y_labels=False,remove_x_labels=False)
         PlotUtilities.ylabel("Force (pN)")
         PlotUtilities.xlabel("Separation (nm)")
+        plt.xlim([-30,650])
         out_tmp = "FigureCartoon{:d}.svg".format(i)
         out_names.append(out_tmp)
         PlotUtilities.savefig(fig,out_tmp)
