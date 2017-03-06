@@ -371,9 +371,10 @@ def get_all_folds_for_one_learner(cache_directory,force,learner,data,fold_idx,
     """
     func_to_call = learner.func_to_call
     params_then_folds,param_validation_fold = [],[]
-    for i,param in enumerate(learner.list_of_params):    
-        cache_name = "{:s}_{:s}_param_{:d}.pkl".\
-           format(cache_directory,learner.description,i)
+    for i,param in enumerate(learner.list_of_params):   
+        param_val = param.values()[0]
+        cache_name = "{:s}_{:s}_param_{:d}_{:.3g}.pkl".\
+           format(cache_directory,learner.description,i,param_val)
         ret = CheckpointUtilities.getCheckpoint(cache_name,folds_for_one_param,
                                                 force,data,param,fold_idx,
                                                 func_to_call,pool=pool)
@@ -473,15 +474,17 @@ def get_cached_folds(categories,force_read,force_learn,
     Returns:
         list, one element per paramter. each element is a list of folds
     """
+    # read and update all the categories
+    categories = InputOutput.\
+                 read_categories(categories,force_read,cache_directory,limit)
     labels_data = [ [i,d] for i,cat in enumerate(categories) for d in cat.data]
     labels = [l[0] for l in labels_data]
     data = [l[1] for l in labels_data]
     # determine the folds to use
-    fold_obj = StratifiedKFold(n_folds=n_folds,shuffle=True,random_state=seed)
-    fold_idx = fold_obj.split(X=np.zeros(len(labels)),y=labels)
-    # read and update all the categories
-    categories = InputOutput.\
-                 read_categories(categories,force_read,cache_directory,limit)
+    fold_obj = StratifiedKFold(n_splits=n_folds,shuffle=True,random_state=seed)
+    # .split returns a generator by default; convert to a list to avoid
+    # making it only used for the first fold 
+    fold_idx = list(fold_obj.split(X=np.zeros(len(labels)),y=labels))
     if (learners is None):
         learners = get_learners()
     # POST: all data read in. get all the scores for all the learners.
