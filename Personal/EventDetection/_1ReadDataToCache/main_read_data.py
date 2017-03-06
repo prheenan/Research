@@ -26,12 +26,12 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 50
+    limit = 100
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     force_read = False
-    force_relearn = True
-    force_learn = True
+    force_relearn = False
+    force_learn = False
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
     GenUtilities.ensureDirExists(debug_directory)
@@ -82,7 +82,7 @@ def run():
     sort_idx = sorted(sort_idx,reverse=True,
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
-    file_names = [scores[i].source_file + scores[i].name 
+    file_names = [scores[i].source_file + "_" + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
