@@ -25,8 +25,6 @@ def run():
         This is a description of what is returned.
     """
     cache_directory = "./cache/"
-    positives_directory = InputOutput.get_positives_directory()
-    positive_categories = Learning.get_categories(positives_directory)
     # limit (per category)
     limit = 50
     n_folds = 5
@@ -41,11 +39,11 @@ def run():
                            n_points_fovea=n_tuning_points,
                            n_points_wavelet=n_tuning_points)
     positives_directory = InputOutput.get_positives_directory()
-    positive_categories = Learning.get_categories(positives_directory)
+    positive_categories = InputOutput.get_categories(positives_directory)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
-    n_learners = 3
+    n_learners = 1
     learners = Learning.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
@@ -57,7 +55,7 @@ def run():
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(cache_directory,l)
-    num_to_plot = 2
+    num_to_plot = 10
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -91,7 +89,7 @@ def run():
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
     load_paths = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    load_paths = [ l.replace(".pxp",".pxp_") for l in load_paths]
+    load_paths = [ l for l in load_paths]
     print("loading: {:s}".format(load_paths))
     for p in load_paths:
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
@@ -107,8 +105,8 @@ def run():
             Detector._predict_full(example,threshold=threshold)
         meta = example.Meta
         GenUtilities.ensureDirExists(cache_directory)
-        id_data = "{:s}{:.1f}p={:s}".format(meta.Name,meta.Velocity,
-                                            str(threshold))
+        id_data = "{:d}{:s}{:.1f}p={:s}".format(i,meta.Name,meta.Velocity,
+                                                str(threshold))
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)

@@ -320,13 +320,20 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     # we write k = (s(q) - epsilon)/scale
     denom = (stdev_masked-median_local_stdev)
     k_chebyshev = denom/scale
-    # note: chebyshev cant be more than 1 (could happen if the stdev is really 
-    # close to the mean)
-    chebyshev = np.minimum((1/k_chebyshev)**2,1)
+    # determine where the chebyshev is 'safe', otherwise we are at or above
+    # the mean estimate and hence not a useful metric
+    cheby_idx = np.where(k_chebyshev >= 1)
+    chebyshev = np.ones(k_chebyshev.size)
+    # actually calculate the upper bound for the probability
+    chebyshev[cheby_idx] = (1/k_chebyshev[cheby_idx])**2
     # for the edge cases, assume the probability is one                         
-    probability_distribution = np.ones(y.size)          
+    probability_distribution = np.ones(y.size)      
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
+    # XXX debugging
+    prob = _spline_derivative_probability_generic(x,interp)    
+    where_one = np.where(prob == 1)
+    probability_distribution[where_one] = 1
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
