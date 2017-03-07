@@ -152,7 +152,7 @@ def adhesion_mask_function_for_split_fec(split_fec,*args,**kwargs):
     n_points = split_fec.tau_num_points
     return adhesion_mask(surface_index,n_points,split_fec,
                          *args,**kwargs)
-    
+
 def _min_points_between(autocorrelation_tau_num_points):
     """
     returns the minimum recquired points between two discrete events,
@@ -251,6 +251,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
         to_ret[offset + where_derivative_one] = 0
     return to_ret                     
                      
+
 class prediction_info:
     def __init__(self,event_idx,event_slices,local_stdev,interp,mask,
                  cdf,slice_fit,threshold,condition_results=None):
@@ -548,6 +549,7 @@ def _predict_functor(example,f):
         a lambda function passing arguments and keyword argument to f 
     """
     return lambda *args,**kwargs : f(example,*args,**kwargs)
+
 
 def _predict_full(example,threshold=1e-2):
     """
