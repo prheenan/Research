@@ -218,8 +218,9 @@ def adhesion_mask(surface_index,n_points,split_fec,
         # update the boundaries of the events to include the 
         # derivative events; if these are near the surface, we also want
         # to ignore them
-        event_boundaries += _event_slices_from_mask(where_derivative_slices,
-                                                    min_points_between)
+        slices_deriv = _event_slices_from_mask(where_derivative_with_adhesions,
+                                               min_points_between)
+        event_boundaries += slices_deriv
         event_boundaries = sorted(event_boundaries)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries  
