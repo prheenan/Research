@@ -37,12 +37,6 @@ def run():
     image = plt.imread(src_gel_photo)
     fig = PlotUtilities.figure((16,8))
     plt.subplot(1,2,1)
-    kwargs = dict(vmin=qlow,vmax=qhigh,cmap=plt.cm.afmhot,range_plot=range_plot)
-    ImageUtil.PlotImage(wave,**kwargs)
-    PlotUtilities.lazyLabel("nanometers","nanometers",
-                            "AFM image of mica-bound DNA")
-    PlotUtilities.colorbar("Height (nm)")
-    plt.subplot(1,2,2)
     plt.imshow(image,extent=[0,1,0,1])
     PlotUtilities.FormatImageAxis(aspect="auto")
     # add an arrow at the 2KB line
@@ -59,6 +53,12 @@ def run():
                                 color = 'orange'),
                 bbox=dict(boxstyle="round", fc="orange",alpha=0.3)
             )
+    plt.subplot(1,2,2)
+    kwargs = dict(vmin=qlow,vmax=qhigh,cmap=plt.cm.afmhot,range_plot=range_plot)
+    ImageUtil.PlotImage(wave,**kwargs)
+    PlotUtilities.lazyLabel("nanometers","nanometers",
+                            "AFM image of mica-bound DNA")
+    PlotUtilities.colorbar("Height (nm)")
     PlotUtilities.lazyLabel("","","Electrophoretic purification of 647nm DNA")
     PlotUtilities.savefig(fig,"./out.svg")
 
