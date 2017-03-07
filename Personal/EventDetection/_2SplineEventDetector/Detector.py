@@ -248,7 +248,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
         # set where the derivative probability ~1, outside of adhesions, to 0
         # (ie: ignore these points)
         offset = min_idx
-        to_ret[offset + where_derivative] = 0
+        to_ret[offset + where_derivative_one] = 0
     return to_ret                     
                      
 class prediction_info:
