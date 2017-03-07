@@ -18,7 +18,7 @@ class split_force_extension:
         self.dwell = dwell
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
-    def retract_spline_interpolator(self,**kwargs):
+    def retract_spline_interpolator(self,slice_to_fit=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau
         for the retract force versus time curbe
@@ -27,7 +27,10 @@ class split_force_extension:
             kwargs: passed to spline_interpolator
         """
         x,f = self.retract.Time,self.retract.Force
-        return spline_interpolator(self.tau,x,f,**kwargs)
+        if (slice_to_fit is None):
+            slice_to_fit = slice(0,None,1)
+        return spline_interpolator(self.tau,x[slice_to_fit],f[slice_to_fit],
+                                   **kwargs)
     def retract_separation_interpolator(self,**kwargs):
         """
         returns an interpolator for separation based on the stored time
