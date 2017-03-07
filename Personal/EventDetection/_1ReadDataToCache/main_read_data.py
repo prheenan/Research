@@ -89,7 +89,6 @@ def run():
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
     load_paths = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    load_paths = [ l.replace(".pxp",".pxp_") for l in load_paths]
     print("loading: {:s}".format(load_paths))
     for p in load_paths:
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)

@@ -180,16 +180,6 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
     # boolean mask is set to zero
     spline_boolean[:absolute_min_idx] = 0
     probability_updated[:absolute_min_idx] = 1
-    """
-    plt.subplot(2,1,1)
-    plt.plot(retract.Force)
-    plt.subplot(2,1,2)  
-    plt.plot(spline_boolean)
-    plt.axvline(min_idx)
-    plt.plot(probability_updated)    
-    plt.show()        
-    exit(1)
-    """
     return (spline_boolean & boolean_array) , probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
@@ -213,16 +203,28 @@ def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
                                   probability_distribution=probability,
                                   threshold=threshold,*args,**kwargs)
     where_not_adhesion = np.where(bool_adhesion)[0]
-    if (where_not_adhesion.size > 0):
+    if (where_not_adhesion.size > 1):
         adhesions_removed = boolean_array.copy()
         start = where_not_adhesion[0]
         end = where_not_adhesion[-1]
+        # remove the starting and ending adhesion
         adhesions_removed[:start] = 0
         adhesions_removed[end:] = 0
-        return adhesions_removed,probability
+        # update the no-event probabilities
+        slice_update = slice(start,end,1)
+        retract = split_fec.retract
+        time = retract.Time
+        force = retract.Force
+        interp = split_fec.\
+            retract_spline_interpolator(slice_to_fit=slice_update)
+        probability_updated = np.ones( boolean_array.size)
+        prob_tmp, _ = _no_event_probability(time,interp,force,n_points,
+                                            slice_fit=slice_update)
+        probability_updated[slice_update] = np.minimum(1,prob_tmp)
+        return adhesions_removed,probability_updated
     else:
-        return boolean_array,boolean_array
-    
+        return boolean_array,probability
+
 def _min_points_between(autocorrelation_tau_num_points):
     """
     returns the minimum recquired points between two discrete events,
@@ -293,6 +295,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
     to_ret[:min_idx] = 0
     return to_ret                     
                      
+
 class prediction_info:
     def __init__(self,event_idx,event_slices,local_stdev,interp,mask,
                  cdf,slice_fit,threshold,probabilities=None,
@@ -345,39 +348,37 @@ def _event_mask(probability,threshold):
     """
     boolean_thresh = (probability <= threshold)
     return np.where(boolean_thresh)[0]
-        
-def _event_probabilities(x,y,interp,n_points,threshold):
-    """
-    determines the mask (and associated event detection information)
-    
-    Args:
-        x,y: independent and dependent variable
-        interp: the approximation to y vs x (ie: g*)
-        n_points: number of points from autocorrelation function (ie: tau)
 
-        threshold: maximum probability that a given datapoint fits the 
-        model
-    Returns:
-        tuple of :
-            probability_distribution : no-event probability for each point in y
-            slice_fit : the part of x and y that mask is valid for
-            stdevs: the local, windowed standard deviation, s(q)
+def _no_event_probability(x,interp,y,n_points,slice_fit=None):
     """
-    min_points_between = _min_points_between(n_points)
-    interp_first_deriv = interp.derivative(1)(x)
-    # get the interpolated derivative
+    returns the no-event probability at each point in y
+
+    Args:
+        x: the x values that interp takes, see _event_probabilities
+        y: the y values we are searching for an event, see _event_probabilities
+        interp: see _event_probabilities
+        n_points: number of points to use in estimating r(q)=g-g* by the 
+        local standard deviaiton of y-interp(x)
+    
+        slice_fit: an optional slice to use to compute the probabilities
+    Returns:
+        tuple of <probability, local stdevs>
+    """
+    if (slice_fit is None):
+        slice_fit = slice(0,None,1)
+    x = x[slice_fit]
+    y = y[slice_fit]
+    # get the interpolated function
     interpolated_y = interp(x)
-    # get a model for the local standard deviaiton using the autocorrelation
-    # time from the event
+    # get a model for the local standard deviaiton
     diff = y-interpolated_y
     stdevs = local_stdev(diff,n_points)
     # get the cwt of the wavelet; see pp219 of Mallat, Wavelet Tour (XXX TODO)
     median_local_stdev = np.median(stdevs)
-    slice_fit = slice(min_points_between,-min_points_between,1)
     stdev_masked = stdevs[slice_fit]
-    q25,q75 = np.percentile(stdev_masked,[25,75])
-    iqr = q75-q25
-    scale_idx = np.where( (stdev_masked <= q75) & (stdev_masked >= q25))
+    qlow,qhigh = np.percentile(stdev_masked,[0,75])
+    iqr = qlow-qhigh
+    scale_idx = np.where( (stdev_masked >= qlow) & (stdev_masked <= qhigh))
     scale = np.std(stdev_masked[scale_idx])
     # note: chebyshev is like
     # P(|X - mu| >=  k * sigma) <= 1/k^2
@@ -394,6 +395,31 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     probability_distribution = np.ones(y.size)      
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
+    return probability_distribution,stdevs
+        
+def _event_probabilities(x,y,interp,n_points,threshold):
+    """
+    determines the mask (and associated event detection information)
+    
+    Args:
+        x,y: independent and dependent variable (ie: 'q' and 'g'
+        interp: the approximation to y vs x (ie: g*)
+        n_points: number of points from autocorrelation function (ie: tau)
+
+        threshold: maximum probability that a given datapoint fits the 
+        model
+    Returns:
+        tuple of :
+            probability_distribution : no-event probability for each point in y
+            slice_fit : the part of x and y that mask is valid for
+            stdevs: the local, windowed standard deviation, s(q)
+    """
+    min_points_between = _min_points_between(n_points)
+    slice_fit = slice(min_points_between,-min_points_between,1)
+    probability_distribution_in_slice,stdevs = \
+        _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit)
+    probability_distribution = np.ones_like(x)
+    probability_distribution[slice_fit] =  probability_distribution_in_slice
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
@@ -498,18 +524,20 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     min_points_between = _min_points_between(n_points)
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold)
-    bool = probability_distribution < threshold
-    masks,probabilities = [np.where(bool)[0]],[probability_distribution.copy()]
+    bool_array = probability_distribution < threshold
+    masks = [np.where(bool_array)[0]]
+    probabilities = [probability_distribution.copy()]
     if (remasking_functions is not None):
         for f in remasking_functions:
-            res = f(boolean_array=bool,probability=probability_distribution,
+            res = f(boolean_array=bool_array,
+                    probability=probability_distribution,
                     threshold=threshold)
-            bool,probability_distribution = res
+            bool_array,probability_distribution = res
             probabilities.append(probability_distribution)
-            masks.append(np.where(bool)[0])
+            masks.append(np.where(bool_array)[0])
     # only keep points where we are farther than min_points between from the 
     # edges (ie: from index 0 and N-1)
-    mask = np.where(bool)[0]
+    mask = np.where(bool_array)[0]
     n = mask.size
     mask = mask[np.where( (mask >= min_points_between ) | 
                           (mask <= n-min_points_between ) )]
@@ -587,6 +615,7 @@ def _predict_functor(example,f):
         a lambda function passing arguments and keyword argument to f 
     """
     return lambda *args,**kwargs : f(example,*args,**kwargs)
+
 
 def _predict_full(example,threshold=1e-2):
     """

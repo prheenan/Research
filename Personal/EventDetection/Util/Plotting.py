@@ -149,13 +149,19 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    plt.semilogy(x,cdf,color='k',alpha=0.3,label="cdf")
+    styles = [dict(color='k',linestyle='-'),
+              dict(color='g',linestyle='-.'),
+              dict(color='r',linestyle=':')]
+    for i,c in enumerate(info.probabilities):
+        sty = styles[i % len(styles)]
+        plt.semilogy(x,c,alpha=0.3,label="cdf{:d}".format(i),**sty)
     plt.semilogy(x,masked_cdf,color='b',linewidth=1,label="masked cdf")
     plt.axhline(thresh,color='k',linestyle='--',label="threshold")
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
     plt.xlim(x_limits)
+    plt.ylim([min(cdf)/2,2])
     plt.subplot(n_rows,n_cols,3)
     # XXX check mask has at least one...
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
