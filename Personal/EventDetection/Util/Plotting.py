@@ -129,10 +129,12 @@ def plot_prediction_info(ex,info,xlabel="Time",
     force_plot = force * 1e12
     interpolated_force_plot = interpolated_force*1e12
     # get the informaiton relevant to the CDF
-    cdf = info.cdf
-    tol=min(cdf/2)
-    masked_cdf = np.zeros(cdf.size) + tol
-    masked_cdf[mask] = cdf
+    original_cdf = info.probabilities[0]
+    cdf = original_cdf
+    boolean_mask = np.zeros_like(cdf)
+    boolean_mask[mask] = 1
+    masked_cdf = cdf.copy()
+    masked_cdf *= boolean_mask
     n_rows = 4
     n_cols = 1
     lazy_kwargs = dict(frameon=True,loc="best")
@@ -147,33 +149,47 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    plt.semilogy(x,cdf,color='k',alpha=0.3,label="cdf")
+    styles = [dict(color='k',linestyle='-'),
+              dict(color='g',linestyle='-.'),
+              dict(color='r',linestyle=':')]
+    for i,c in enumerate(info.probabilities):
+        sty = styles[i % len(styles)]
+        plt.semilogy(x,c,alpha=0.3,label="cdf{:d}".format(i),**sty)
     plt.semilogy(x,masked_cdf,color='b',linewidth=1,label="masked cdf")
     plt.axhline(thresh,color='k',linestyle='--',label="threshold")
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
     plt.xlim(x_limits)
+    plt.ylim([min(cdf)/2,2])
     plt.subplot(n_rows,n_cols,3)
     # XXX check mask has at least one...
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x[mask],force_plot[mask],color='k',alpha=0.8,
-             label="Predicted event regions")
+             label="Event region")
     for i,(fwd,rev,event) in \
         enumerate(zip(event_idx_end,event_idx_start,event_idx)):
-        plt.axvline(x[fwd],linestyle='--',color='r')
-        plt.axvline(x[rev],linestyle='-.',color='g')
-        label = "predicted" if (i ==0) else ""
-        plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
-                 label=label)
+        try:
+            plt.axvline(x[fwd],linestyle='--',color='r')
+            plt.axvline(x[rev],linestyle='-.',color='g')
+            label = "predicted" if (i ==0) else ""            
+            plt.plot(x[event],force_plot[event],marker='o',color='b',alpha=0.3,
+                    label=label)
+        except IndexError as e:
+            print(e)
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.subplot(n_rows,n_cols,4)
     mask_styles = [dict(linewidth=3,color='k',linestyle='-.',alpha=0.3),
-                   dict(linewidth=1,color='r',linestyle='--',alpha=0.7)]
+                   dict(linewidth=1,color='r',linestyle='-',alpha=0.7),
+                   dict(linewidth=2,color='b',linestyle='--',alpha=0.7)]
+    tol = 1e-6
     for i,c in enumerate(info.condition_results):
+        bool = np.zeros_like(x)
+        bool[c] = 1
         style = mask_styles[i % len(mask_styles)]
-        plt.semilogy(x,c+tol,label="mask {:d}".format(i),**style)
+        plt.semilogy(x,bool+tol,label="mask {:d}".format(i),**style)
+    plt.plot(x,boolean_mask,color='k',linestyle='-',label="final mask")
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,"mask (au)","",**lazy_kwargs)
 

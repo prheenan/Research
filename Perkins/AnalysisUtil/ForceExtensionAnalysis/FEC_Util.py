@@ -48,6 +48,66 @@ def default_data_root():
 		raise OSError("Didn't recognize OS name: {:s}".format(os_name))
 	return to_ret
 	
+def _groups_to_time_sep_force(m_data,limit):
+    """
+    converts a list of <name:<wave type:data>> objects into TimeSepForce objects
+    
+    Args:
+        m_data: return of (e.g.) PxpLoader.LoadPxp
+        Limit: see ReadInData
+    Returns: at most Limit objects
+    """
+    # convert the waves into TimeSepForce objects
+    Objs = [TimeSepForceObj.TimeSepForceObj(WaveDataGroup(v)) 
+            for _,v in m_data.items()]
+    # note: limit=None gives everything on upper bound
+    return Objs[:limit]
+    
+def read_ibw_directory(directory,grouping_function,limit=None):
+    """
+    Reads all ibw files in the given directory
+    
+    Args:
+        directory: where to read from
+        grouping_function: how to group the ibw files, by file name
+        limit: how many to load
+    Returns: at most Limit objects
+    """
+    data = PxpLoader.\
+        load_ibw_from_directory(directory,limit=limit,
+                                grouping_function=grouping_function)
+    return _groups_to_time_sep_force(data,limit=limit)
+    
+def cache_ibw_directory(cache_directory,in_directory,limit=None,force=False,
+                        *args,**kwargs):
+    """
+    reads a directory of ibw files, caching each TimeSepForce object 
+    *individually* (which is critical for huge ibw's)
+    
+    Args:
+        cache_directory,in_directory: where to put the cache / read ibws from   
+        limit: maximum number of curves
+        *args,**kwargs: passed to read_ibw_directory
+    Returns:
+        list of TimeSepForce objects, after properly cachine
+    """
+    in_base = GenUtilities.getFileFromPath(in_directory)
+    file_base = "{:s}{:s}".format(cache_directory,in_base)
+    files = GenUtilities.getAllFiles(cache_directory,ext=".pkl")
+    # make sure these are the files we want
+    files_cached = [f for f in files][:limit]
+    # POST: files is a list of all files with the base we want
+    if (force or (len(files_cached) == 0)):
+        # then read everything back in 
+        data = read_ibw_directory(in_directory,*args,limit=limit,**kwargs)
+        # cache all the files
+        cached_names = [(file_base + d.Meta.Name +".pkl") for d in data]
+        for file_name,data_tmp in zip(cached_names,data):
+            CheckpointUtilities.lazy_save(file_name,data_tmp)
+    else:
+        # just read all the (cached) files
+        data = [CheckpointUtilities.lazy_load(f) for f in files_cached]
+    return data 
 
 def ReadInData(FullName,Limit=None,**kwargs):
     """
@@ -60,11 +120,7 @@ def ReadInData(FullName,Limit=None,**kwargs):
         **kwargs: passed to LoadPxp
     """
     MData = PxpLoader.LoadPxp(FullName,**kwargs)
-    # convert the waves into TimeSepForce objects
-    Objs = [TimeSepForceObj.TimeSepForceObj(WaveDataGroup(v)) 
-            for _,v in MData.items()]
-    # note: limit=None gives everything on upper bound
-    return Objs[:Limit]
+    return _groups_to_time_sep_force(MData,Limit)
 
 
 def read_single_directory(directory,**kwargs):
