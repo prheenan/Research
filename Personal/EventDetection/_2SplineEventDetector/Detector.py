@@ -115,7 +115,7 @@ def mask_spline_derivative(split_fec):
     
     Args:
         split_fec: the split_force_extension object we want to mask the 
-        adhesions of 
+        derivative of 
     Returns:
         0/1 array of the same size as split_fec.retract.Force
     """
@@ -127,7 +127,7 @@ def derivative_mask_function(split_fec,*args,**kwargs):
     
     Args:
         split_fec: the split_force_extension object we want to mask the 
-        adhesions of 
+        derivative of 
 
         *args,**kwargs: ignored
     Returns:
@@ -181,8 +181,9 @@ def adhesion_mask(surface_index,n_points,split_fec,
     # determine the boundaries of the 'no events'
     min_points_between = _min_points_between(n_points)
     min_idx = surface_index + min_points_between    
-    # remove all things before the predicted surface
+    # remove all things before the predicted surface, and at the boundary
     to_ret[:min_idx] = 0    
+    to_ret[-min_idx:] = 0    
     no_event_mask = np.where(non_events)[0]
     # XXX finish current event, keep consuming events until startd/end
     # are beyond threshold
