@@ -332,7 +332,9 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     probability_distribution[slice_fit] = chebyshev
     # XXX debugging
     prob = _spline_derivative_probability_generic(x,interp)    
-    where_one = np.where(prob == 1)
+    tol = 1e-9
+    where_one = np.where( np.abs(prob-1) <= tol)
+    probability_distribution[where_one] = 1
     probability_distribution *= prob
     return probability_distribution,slice_fit,stdevs
 
@@ -525,7 +527,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec]
+    f_refs = [derivative_mask_function,adhesion_mask_function_for_split_fec]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(condition_functions=funcs,
                       threshold=threshold)

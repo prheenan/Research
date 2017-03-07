@@ -33,12 +33,16 @@ def run():
         This is a description of what is returned.
     """
     base = FEC_Util.default_data_root()
-    relative_data_dir = "4Patrick/Scratch/Tmp_Data_Scratch/"
-    absolute_data_dir = base + relative_data_dir
-    data = FEC_Util.read_ibw_directory(absolute_data_dir,hao_grouping_function)
-    plt.plot(data[0].Force[::3000])
-    plt.show()
-    pass
+    relative_data_base = "/HighSpeedPull/FEC_30nms/"
+    relative_data_dir = "161011_FEC_raw/"
+    absolute_data_dir = base + relative_data_base + relative_data_dir
+    # XXX use Haos...
+    absolute_data_dir = base + "4Patrick/Scratch/Tmp_Data_Scratch/"
+    dict_kwargs = dict(cache_directory="./",
+                       in_directory=absolute_data_dir,
+                       grouping_function = hao_grouping_function,
+                       limit=3,force=True)
+    data = FEC_Util.cache_ibw_directory(**dict_kwargs)  
 
 if __name__ == "__main__":
     run()
