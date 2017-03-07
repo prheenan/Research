@@ -214,7 +214,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
     to_ret[:min_idx] = 0
     # determine events that contain the surface index
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
-    if (where_derivative_slices.size > 0):
+    if (where_derivative_with_adhesions.size > 0):
         # update the boundaries of the events to include the 
         # derivative events; if these are near the surface, we also want
         # to ignore them
