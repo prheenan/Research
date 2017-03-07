@@ -184,6 +184,11 @@ def adhesion_mask(surface_index,n_points,split_fec,
     # remove all things before the predicted surface, and at the boundary
     to_ret[:min_idx] = 0    
     to_ret[-min_idx:] = 0    
+    derivative_probability_with_adhesions = \
+            spline_derivative_probability(split_fec)
+    tol = 1e-9
+    where_derivative_with_adhesions = \
+        np.where(1-derivative_probability_with_adhesions > tol)[0]
     no_event_mask = np.where(non_events)[0]
     # XXX finish current event, keep consuming events until startd/end
     # are beyond threshold
@@ -209,6 +214,13 @@ def adhesion_mask(surface_index,n_points,split_fec,
     to_ret[:min_idx] = 0
     # determine events that contain the surface index
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
+    if (where_derivative_slices.size > 0):
+        # update the boundaries of the events to include the 
+        # derivative events; if these are near the surface, we also want
+        # to ignore them
+        event_boundaries += _event_slices_from_mask(where_derivative_slices,
+                                                    min_points_between)
+        event_boundaries = sorted(event_boundaries)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries  
                                  if (e.start <= min_idx)]
@@ -216,11 +228,26 @@ def adhesion_mask(surface_index,n_points,split_fec,
         return to_ret 
     # POST: at least one event contains the surface. Update the minimum index
     # to go to the end of the (last) event below or at the surface, unless
-    # the end's end is below the surface, then just stick to our guns
+    # the end is below the surface, then just keep the minimum at the surface
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)
     to_ret[:min_idx] = 0
+    # update the derivative distribution based on the new, adhesion-free
+    # region of the graph
+    slice_adhesion_free = slice(min_idx,-min_idx,1)
+    adhesion_free_x = time[slice_adhesion_free]
+    adhesion_free_interp = split_fec.\
+        retract_spline_interpolator(slice_to_fit=slice_adhesion_free)
+    updated_derivative_probability = \
+        _spline_derivative_probability_generic(adhesion_free_x,
+                                               ahdesion_free_interp)
+    where_derivative_one = np.where(1-updated_derivative_probability < tol)[0]
+    offset = min_idx
+    # set where the derivative probability ~1, outside of adhesions, to 0
+    # (ie: ignore these points)
+    if (where_derivative_one.size > 0):
+        to_ret[offset + where_derivative] = 0
     return to_ret                     
                      
 class prediction_info:
@@ -528,7 +555,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [derivative_mask_function,adhesion_mask_function_for_split_fec]
+    f_refs = [adhesion_mask_function_for_split_fec]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(condition_functions=funcs,
                       threshold=threshold)
