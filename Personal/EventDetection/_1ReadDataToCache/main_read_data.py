@@ -62,13 +62,13 @@ def run():
     x_values = learner.param_values()
     x_tmp,score_tmp,error_tmp = Learning.median_dist_metric(x_values,
                                                             valid_scores)
-    # get the lowest mediancorresponding validation folds
-    folds = [f for f in learner.validation_folds[best_param_idx]]
     # get all the scores in the distance ('best case')
     best_x = x_tmp[np.argmin(score_tmp)]
     # find what that means in the real values, if something was invalid
     # (assumes no duplicated params...)
     best_param_idx = np.argmin(np.abs(best_x-x_values))
+    # get the lowest mediancorresponding validation folds
+    folds = [f for f in learner.validation_folds[best_param_idx]]
     # get the  folds for the best parameters
     scores = [score for f in folds for score in f.scores]
     # get all the distances

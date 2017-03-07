@@ -130,9 +130,10 @@ def plot_prediction_info(ex,info,xlabel="Time",
     interpolated_force_plot = interpolated_force*1e12
     # get the informaiton relevant to the CDF
     cdf = info.cdf
-    tol=min(cdf/2)
-    masked_cdf = np.zeros(cdf.size) + tol
-    masked_cdf[mask] = cdf
+    boolean_mask = np.zeros_like(cdf)
+    boolean_mask[mask] = 1
+    masked_cdf = cdf.copy()
+    masked_cdf *= boolean_mask
     n_rows = 4
     n_cols = 1
     lazy_kwargs = dict(frameon=True,loc="best")
@@ -174,9 +175,13 @@ def plot_prediction_info(ex,info,xlabel="Time",
     plt.subplot(n_rows,n_cols,4)
     mask_styles = [dict(linewidth=3,color='k',linestyle='-.',alpha=0.3),
                    dict(linewidth=1,color='r',linestyle='--',alpha=0.7)]
+    tol = 1e-6
     for i,c in enumerate(info.condition_results):
+        bool = np.zeros_like(x)
+        bool[c] = 1
         style = mask_styles[i % len(mask_styles)]
-        plt.semilogy(x,c+tol,label="mask {:d}".format(i),**style)
+        plt.semilogy(x,bool+tol,label="mask {:d}".format(i),**style)
+    plt.plot(x,boolean_mask,color='k',linestyle='-',label="final mask")
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,"mask (au)","",**lazy_kwargs)
 
