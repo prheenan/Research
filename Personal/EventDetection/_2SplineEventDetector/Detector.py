@@ -121,7 +121,8 @@ def mask_spline_derivative(split_fec):
     """
     return (spline_derivative_probability(split_fec) < 1)
 
-def derivative_mask_function(split_fec,*args,**kwargs):
+def derivative_mask_function(split_fec,boolean_array,probability,threshold,
+                             *args,**kwargs):
     """
     returns mask_spline_derivative
     
@@ -133,7 +134,63 @@ def derivative_mask_function(split_fec,*args,**kwargs):
     Returns:
         see adhesion_mask_function_for_split_fec, except derivative mask
     """
-    return mask_spline_derivative(split_fec)
+    where_previous_happening = np.where(boolean_array > 0)[0]
+    # if we dont have any points, return
+    if (where_previous_happening.size == 0 ):
+        return boolean_array,probability
+    # POST: something to look at. find the spline-interpolated derivative
+    # probability
+    n_points = split_fec.tau_num_points
+    min_points_between = _min_points_between(n_points)
+    offset = where_previous_happening[0]
+    slice_v = slice(offset,None,1)
+    retract = split_fec.retract
+    x = retract.Time[slice_v]
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_v)
+    spline_probability_in_slice=\
+        _spline_derivative_probability_generic(x,interp)
+    # determine where the derivative is possibly outlying; that is a necessary
+    # but not sufficient condition for an event
+    tol = 1e-9
+    possible_event =  (1 - spline_probability_in_slice) > tol
+    event_slice_mask = np.where(possible_event)[0]
+    if (event_slice_mask.size == 0):
+        return boolean_array,probability
+    # POST: have at least one possible spline event
+    # only consider events which start after the offset, to avoid edge effects
+    absolute_min_idx = offset + min_points_between                
+    event_boundaries = _event_slices_from_mask(event_slice_mask,
+                                               min_points_between)    
+    events_starting_before_min_idx = [e for e in event_boundaries 
+                                      if e.start < min_points_between]
+    if (len(events_starting_before_min_idx) > 0):
+        event_end_in_slice = events_starting_before_min_idx[0].stop
+        #print(event_end_in_slice,absolute_min_idx,offset)
+        absolute_min_idx = max(absolute_min_idx,offset + event_end_in_slice)
+    # POST: absolute_min_idx is the index *in the original array* where we 
+    # should start looking for events. 
+    probability_updated = probability.copy()
+    # determine where the probability is
+    where_no_event = np.where(~possible_event)
+    spline_boolean = np.zeros_like(boolean_array)
+    spline_boolean[slice_v] = possible_event
+    probability_updated[slice_v] *= spline_probability_in_slice
+    probability_updated[slice_v][where_no_event] = 1
+    # mask everything until the minimum index; probability is set to one,
+    # boolean mask is set to zero
+    spline_boolean[:absolute_min_idx] = 0
+    probability_updated[:absolute_min_idx] = 1
+    """
+    plt.subplot(2,1,1)
+    plt.plot(retract.Force)
+    plt.subplot(2,1,2)  
+    plt.plot(spline_boolean)
+    plt.axvline(min_idx)
+    plt.plot(probability_updated)    
+    plt.show()        
+    exit(1)
+    """
+    return (spline_boolean & boolean_array) , probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
                                          probability,threshold,
@@ -155,7 +212,16 @@ def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
     bool_adhesion = adhesion_mask(surface_index,n_points,split_fec,
                                   probability_distribution=probability,
                                   threshold=threshold,*args,**kwargs)
-    return (bool_adhesion & boolean_array),probability
+    where_not_adhesion = np.where(bool_adhesion)[0]
+    if (where_not_adhesion.size > 0):
+        adhesions_removed = boolean_array.copy()
+        start = where_not_adhesion[0]
+        end = where_not_adhesion[-1]
+        adhesions_removed[:start] = 0
+        adhesions_removed[end:] = 0
+        return adhesions_removed,probability
+    else:
+        return boolean_array,boolean_array
     
 def _min_points_between(autocorrelation_tau_num_points):
     """
@@ -229,7 +295,8 @@ def adhesion_mask(surface_index,n_points,split_fec,
                      
 class prediction_info:
     def __init__(self,event_idx,event_slices,local_stdev,interp,mask,
-                 cdf,slice_fit,threshold,condition_results=None):
+                 cdf,slice_fit,threshold,probabilities=None,
+                 condition_results=None):
         """
         record the data from _predict_helper
 
@@ -259,6 +326,7 @@ class prediction_info:
         self.slice_fit = slice_fit
         self.threshold = threshold
         self.condition_results = condition_results
+        self.probabilities= probabilities
 
 def _event_mask(probability,threshold):
     """
@@ -431,13 +499,14 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold)
     bool = probability_distribution < threshold
-    condition_results = []
+    masks,probabilities = [np.where(bool)[0]],[probability_distribution.copy()]
     if (remasking_functions is not None):
         for f in remasking_functions:
             res = f(boolean_array=bool,probability=probability_distribution,
                     threshold=threshold)
             bool,probability_distribution = res
-            condition_results.append(np.where(bool)[0])
+            probabilities.append(probability_distribution)
+            masks.append(np.where(bool)[0])
     # only keep points where we are farther than min_points between from the 
     # edges (ie: from index 0 and N-1)
     mask = np.where(bool)[0]
@@ -469,7 +538,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                              cdf=probability_distribution,
                              slice_fit=slice_fit,
                              threshold=threshold,
-                             condition_results=condition_results)
+                             condition_results=masks,
+                             probabilities=probabilities)
     return to_ret                                
                              
 def _predict_helper(split_fec,threshold,**kwargs):
@@ -523,7 +593,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

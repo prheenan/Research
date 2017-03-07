@@ -129,7 +129,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     force_plot = force * 1e12
     interpolated_force_plot = interpolated_force*1e12
     # get the informaiton relevant to the CDF
-    cdf = info.cdf
+    original_cdf = info.probabilities[0]
+    cdf = original_cdf
     boolean_mask = np.zeros_like(cdf)
     boolean_mask[mask] = 1
     masked_cdf = cdf.copy()
@@ -174,7 +175,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.subplot(n_rows,n_cols,4)
     mask_styles = [dict(linewidth=3,color='k',linestyle='-.',alpha=0.3),
-                   dict(linewidth=1,color='r',linestyle='--',alpha=0.7)]
+                   dict(linewidth=1,color='r',linestyle='-',alpha=0.7),
+                   dict(linewidth=2,color='b',linestyle='--',alpha=0.7)]
     tol = 1e-6
     for i,c in enumerate(info.condition_results):
         bool = np.zeros_like(x)
