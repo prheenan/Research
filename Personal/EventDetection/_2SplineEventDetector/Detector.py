@@ -242,12 +242,12 @@ def adhesion_mask(surface_index,n_points,split_fec,
         retract_spline_interpolator(slice_to_fit=slice_adhesion_free)
     updated_derivative_probability = \
         _spline_derivative_probability_generic(adhesion_free_x,
-                                               ahdesion_free_interp)
+                                               adhesion_free_interp)
     where_derivative_one = np.where(1-updated_derivative_probability < tol)[0]
-    offset = min_idx
-    # set where the derivative probability ~1, outside of adhesions, to 0
-    # (ie: ignore these points)
     if (where_derivative_one.size > 0):
+        # set where the derivative probability ~1, outside of adhesions, to 0
+        # (ie: ignore these points)
+        offset = min_idx
         to_ret[offset + where_derivative] = 0
     return to_ret                     
                      
