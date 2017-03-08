@@ -464,26 +464,55 @@ def loading_rate_histogram(objs,**kwargs):
     _,loading_rates = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(loading_rates,**kwargs)
 
-def rupture_plot(true,pred,count_ticks=4,scatter_kwargs=dict()):
+def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=dict(),
+                 lim_load=None,lim_force=None,bins_load=None,bins_force=None,
+                 remove_ticks=False):
     gs = gridspec.GridSpec(2, 2,
-                           width_ratios=[1,4],
+                           width_ratios=[4,1],
                            height_ratios=[4,1])
-    ax1 = plt.subplot(gs[0])
-    rupture_force_histogram(true,orientation='horizontal')
-    PlotUtilities.lazyLabel("Count","Rupture Force [pN]","")
-    plt.locator_params(axis='x', nticks=count_ticks)
-    ax2 = plt.subplot(gs[1])
+    ruptures_true,loading_true = \
+        get_rupture_in_pN_and_loading_in_pN_per_s(true)
+    ruptures_pred,loading_pred = \
+        get_rupture_in_pN_and_loading_in_pN_per_s(true)
+    double_f = lambda f,*args: f([f(x) for x in args])
+    if (lim_force is None):
+        min_y = double_f(min,ruptures_pred,ruptures_true)
+        max_y = double_f(max,ruptures_pred,ruptures_true)
+        lim_force = [min_y/2,max_y*2]
+    if (lim_load is None):
+        safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
+        min_x = double_f(min,safe(loading_pred),safe(loading_true))
+        max_x = double_f(max,safe(loading_pred),safe(loading_true))
+        lim_load = [min_x*0.8,max_x*1.2]
+    if (bins_force is None):
+        bins_force= np.linspace(*lim_force,num=10)
+    if (bins_load is None):
+        min_y = max(min(lim_load),1e-2)
+        logy = np.log10([min_y,max(lim_load)])
+        bins_load = np.logspace(*logy,num=10)
+    ax0 = plt.subplot(gs[0])
     plot_true_and_predicted_ruptures(true,pred,**scatter_kwargs)
-    PlotUtilities.lazyLabel("","","")
-    ax3 = plt.subplot(gs[2])
-    # third one is just empty :-(
-    ax3.axis('off')
-    pass
-    ax4 = plt.subplot(gs[3])
-    loading_rate_histogram(true,orientation='vertical')
-    plt.locator_params(axis='y-', nticks=count_ticks)
+    PlotUtilities.xlabel("")
+    plt.xlim(lim_load)
+    plt.ylim(lim_force)
+    if (remove_ticks):
+        ax0.get_xaxis().set_ticklabels([])
+    ax1 = plt.subplot(gs[1])
+    rupture_force_histogram(true,orientation='horizontal',bins=bins_force)
+    rupture_force_histogram(pred,orientation='horizontal',bins=bins_force)
+    PlotUtilities.lazyLabel("Count","","")
+    if (remove_ticks):
+        ax1.get_yaxis().set_ticklabels([])
+    plt.ylim(lim_force)
+    ax4 = plt.subplot(gs[2])
+    loading_rate_histogram(true,orientation='vertical',bins=bins_load)
+    loading_rate_histogram(pred,orientation='vertical',bins=bins_load)
     PlotUtilities.lazyLabel("loading rate [pN/s]","Count","")
-
+    plt.xscale('log')
+    plt.xlim(lim_load)
+    ax3 = plt.subplot(gs[3])
+    # just empty :-(
+    ax3.axis('off')
 
 def rupture_distribution_plot(learner,out_file_stem):
     """
