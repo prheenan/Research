@@ -135,16 +135,15 @@ def derivative_mask_function(split_fec,slice_to_use,
     Returns:
         see adhesion_mask_function_for_split_fec, except derivative mask
     """
-    where_previous_happening = np.where(boolean_array > 0)[0]
+    slice_v = slice_to_use
+    offset = slice_v.start    
+    n_points = split_fec.tau_num_points
+    min_points_between = _min_points_between(n_points)    
     # if we dont have any points, return
-    if (where_previous_happening.size == 0 ):
+    if ((slice_v.stop - offset) < min_points_between):
         return slice_to_use,boolean_array,probability
     # POST: something to look at. find the spline-interpolated derivative
     # probability
-    n_points = split_fec.tau_num_points
-    min_points_between = _min_points_between(n_points)
-    slice_v = slice_to_use
-    offset = slice_v.start
     retract = split_fec.retract
     x = retract.Time[slice_v]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_v)

@@ -26,11 +26,12 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 60
+    limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
+    debugging = True
     force_read = False
-    force_relearn = False
+    force_relearn = True
     force_learn = False or force_relearn
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
@@ -55,7 +56,7 @@ def run():
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(debug_directory,l)
-    num_to_plot = 10
+    num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -82,7 +83,9 @@ def run():
     sort_idx = sorted(sort_idx,reverse=True,
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
-    file_names = [scores[i].source_file + scores[i].name 
+    # csv file names are formatted differently 
+    debugging_str = "_" if debugging else ""
+    file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
