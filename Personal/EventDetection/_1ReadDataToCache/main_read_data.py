@@ -54,7 +54,7 @@ def run():
     for l in learners:
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
-        Plotting.plot_individual_learner(cache_directory,l)
+        Plotting.plot_individual_learner(debug_directory,l)
     num_to_plot = 10
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]

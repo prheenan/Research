@@ -156,7 +156,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     possible_event =  (1 - spline_probability_in_slice) > tol
     event_slice_mask = np.where(possible_event)[0]
     if (event_slice_mask.size == 0):
-        return boolean_array,probability
+        return slice_to_use,boolean_array,probability
     # POST: have at least one possible spline event
     # only consider events which start after the offset, to avoid edge effects
     absolute_min_idx = offset + min_points_between          
@@ -182,8 +182,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     spline_boolean[:absolute_min_idx] = 0
     probability_updated[:absolute_min_idx] = 1
     slice_updated = slice(absolute_min_idx,slice_to_use.stop,1)
-
-    return slice_updated,(spline_boolean & boolean_array),probability_updated, 
+    return slice_updated,(spline_boolean & boolean_array),probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
