@@ -29,9 +29,9 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     force_read = False
-    force_relearn = True
+    force_relearn = False
     force_learn = False or force_relearn
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
@@ -84,7 +84,7 @@ def run():
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
-    debugging_str = "_" if debugging else ""
+    debugging_str = "_" if not debugging else ""
     file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])

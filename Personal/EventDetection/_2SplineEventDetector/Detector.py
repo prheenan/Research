@@ -172,16 +172,15 @@ def derivative_mask_function(split_fec,slice_to_use,
     probability_updated = probability.copy()
     # determine where the probability is
     where_no_event = np.where(~possible_event)
-    spline_boolean = np.zeros_like(boolean_array)
-    spline_boolean[slice_v] = possible_event
     probability_updated[slice_v] *= spline_probability_in_slice
     probability_updated[slice_v][where_no_event] = 1
     # mask everything until the minimum index; probability is set to one,
     # boolean mask is set to zero
-    spline_boolean[:absolute_min_idx] = 0
     probability_updated[:absolute_min_idx] = 1
     slice_updated = slice(absolute_min_idx,slice_to_use.stop,1)
-    return slice_updated,(spline_boolean & boolean_array),probability_updated
+    spline_boolean = probability_updated < threshold
+    spline_boolean[:absolute_min_idx] = 0
+    return slice_updated,spline_boolean,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
