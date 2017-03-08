@@ -343,7 +343,7 @@ def debugging_plots(id_string,example_split,info,plot_auto=False):
         plot_autocorrelation(example_split)
         PlotUtilities.savefig(fig,out_file_path + "auto.png")   
     # XXX fix threshhold
-    fig = PlotUtilities.figure(figsize=(8,16))    
+    fig = PlotUtilities.figure(figsize=(12,24))    
     plot_prediction_info(example_split,info)
     PlotUtilities.savefig(fig,out_file_path + "info.png")
 

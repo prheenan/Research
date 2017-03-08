@@ -158,7 +158,7 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
         return boolean_array,probability
     # POST: have at least one possible spline event
     # only consider events which start after the offset, to avoid edge effects
-    absolute_min_idx = offset + min_points_between                
+    absolute_min_idx = offset + min_points_between          
     event_boundaries = _event_slices_from_mask(event_slice_mask,
                                                min_points_between)    
     events_starting_before_min_idx = [e for e in event_boundaries 
@@ -166,7 +166,9 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
     if (len(events_starting_before_min_idx) > 0):
         event_end_in_slice = events_starting_before_min_idx[0].stop
         #print(event_end_in_slice,absolute_min_idx,offset)
-        absolute_min_idx = max(absolute_min_idx,offset + event_end_in_slice)
+        # XXX Wtf?
+        absolute_min_idx = max(absolute_min_idx,event_end_in_slice+offset)
+    print(absolute_min_idx,boolean_array.size)
     # POST: absolute_min_idx is the index *in the original array* where we 
     # should start looking for events. 
     probability_updated = probability.copy()
@@ -180,6 +182,21 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
     # boolean mask is set to zero
     spline_boolean[:absolute_min_idx] = 0
     probability_updated[:absolute_min_idx] = 1
+    time_lim = [min(retract.Time),max(retract.Time)]
+    """
+    plt.subplot(3,1,1)
+    plt.plot(retract.Time,retract.Force)
+    plt.xlim(time_lim)
+    plt.subplot(3,1,2)
+    plt.plot(x,retract.Force[slice_v])
+    plt.xlim(time_lim)
+    plt.subplot(3,1,3)
+    plt.plot(retract.Time,probability_updated)
+    plt.plot(x,spline_probability_in_slice)
+    plt.xlim(time_lim)
+    plt.yscale('log')
+    plt.show()
+    """
     return (spline_boolean & boolean_array) , probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
@@ -532,7 +549,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
             res = f(boolean_array=bool_array,
                     probability=probability_distribution,
                     threshold=threshold)
-            bool_array,probability_distribution = res
+            bool_array, probability_distribution = res
             probabilities.append(probability_distribution)
             masks.append(np.where(bool_array)[0])
     # only keep points where we are farther than min_points between from the 
