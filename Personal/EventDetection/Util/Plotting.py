@@ -150,19 +150,20 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    styles = [dict(color='k',linestyle='-'),
-              dict(color='g',linestyle='-.'),
+    styles = [dict(color='k',linestyle='-',alpha=0.3),
+              dict(color='g',linestyle='-.',alpha=0.7),
               dict(color='r',linestyle=':')]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
-        plt.semilogy(x,c,alpha=0.3,label="cdf{:d}".format(i),**sty)
+        plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
+    min_cdf = min([min(c) for c in info.probabilities])
     plt.semilogy(x,masked_cdf,color='b',linewidth=1,label="masked cdf")
     plt.axhline(thresh,color='k',linestyle='--',label="threshold")
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
     plt.xlim(x_limits)
-    plt.ylim([min(cdf)/2,2])
+    plt.ylim([min_cdf/2,2])
     plt.subplot(n_rows,n_cols,3)
     # XXX check mask has at least one...
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
@@ -587,7 +588,7 @@ def plot_individual_learner(cache_directory,learner):
                                      to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "dist.png")
 
-def debug_plot_derivative(retract,slice_v,probability_updated,
+def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           spline_probability_in_slice):
     """
     For debugging at the end of Detector.derivative_mask_function
@@ -598,13 +599,13 @@ def debug_plot_derivative(retract,slice_v,probability_updated,
         nothing, makes a pretty plot.
     """
     time_lim = [min(retract.Time),max(retract.Time)]
-    x = retract.Time[slice_v]
+    x = retract.Time[slice_to_use]
     plt.subplot(3,1,1)
     plt.plot(retract.Time,retract.Force,label="force")
     PlotUtilities.lazyLabel("","Force","")
     plt.xlim(time_lim)
     plt.subplot(3,1,2)
-    plt.plot(x,retract.Force[slice_v])
+    plt.plot(x,retract.Force[slice_to_use])
     PlotUtilities.lazyLabel("","Force","")
     plt.xlim(time_lim)
     plt.subplot(3,1,3)

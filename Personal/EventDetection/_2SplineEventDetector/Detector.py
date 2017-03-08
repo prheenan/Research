@@ -98,55 +98,50 @@ def _spline_derivative_probability_generic(x,interpolator):
                                (derivative_force >= q_low))[0]
     std_iqr = np.std(derivative_force[iqr_region_idx])
     probability = np.zeros(derivative_force.size)
-    # anything at or above the median isnt interesting
-    probability[np.where(derivative_force >= med_deriv - std_iqr)]  = 1
+    # anything at or above the median, or  (>= zero) isnt interesting
+    conditions_no_event = ((derivative_force >= med_deriv - std_iqr) | \
+                          (derivative_force >= 0))
+    probability[np.where(conditions_no_event)]  = 1
     # other things might be
-    possible_idx = np.where(derivative_force < med_deriv)
+    possible_idx = np.where(~conditions_no_event)
     possible_deriv = derivative_force[possible_idx]
     k = (possible_deriv-med_deriv)/std_iqr
     probability[possible_idx]  = 1/k**2
     probability = np.minimum(probability,1)
     return probability 
 
-def mask_spline_derivative(split_fec):
-    """
-    returns a mask on the spline derivative: we must be at least one 
-    standard deviation away for the mask to be one
-    
-    Args:
-        split_fec: the split_force_extension object we want to mask the 
-        derivative of 
-    Returns:
-        0/1 array of the same size as split_fec.retract.Force
-    """
-    return (spline_derivative_probability(split_fec) < 1)
-
 def derivative_mask_function(split_fec,slice_to_use,
                              boolean_array,probability,threshold,
                              *args,**kwargs):
     """
-    returns mask_spline_derivative
+    returns : see adhesion_mask_function_for_split_fec 
     
     Args:
         split_fec: the split_force_extension object we want to mask the 
         derivative of 
-
+    
+        other arguments: see adhesion_mask
         *args,**kwargs: ignored
     Returns:
         see adhesion_mask_function_for_split_fec, except derivative mask
     """
-    slice_v = slice_to_use
-    offset = slice_v.start    
+    offset = slice_to_use.start    
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)    
     # if we dont have any points, return
-    if ((slice_v.stop - offset) < min_points_between):
+    if ((slice_to_use.stop - offset) < min_points_between):
         return slice_to_use,boolean_array,probability
     # POST: something to look at. find the spline-interpolated derivative
     # probability
     retract = split_fec.retract
-    x = retract.Time[slice_v]
-    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_v)
+    x = retract.Time[slice_to_use]
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
+    interp_deriv = interp.derivative()(x)
+    median = np.median(interp_deriv)
+    where_above = np.where(interp_deriv < median)[0]
+    where_below = np.where(interp_deriv > median)[0]
+    last_index = offset + min(where_above[-1],where_below[-1])
+    absolute_max_index = min(slice_to_use.stop,last_index)
     spline_probability_in_slice=\
         _spline_derivative_probability_generic(x,interp)
     # determine where the derivative is possibly outlying; that is a necessary
@@ -163,6 +158,7 @@ def derivative_mask_function(split_fec,slice_to_use,
                                                min_points_between)    
     events_starting_before_min_idx = [e for e in event_boundaries 
                                       if e.start < min_points_between]
+    # determing where we first cross the median on the backwards array
     if (len(events_starting_before_min_idx) > 0):
         event_end_in_slice = events_starting_before_min_idx[0].stop
         # XXX Wtf?
@@ -172,14 +168,17 @@ def derivative_mask_function(split_fec,slice_to_use,
     probability_updated = probability.copy()
     # determine where the probability is
     where_no_event = np.where(~possible_event)
-    probability_updated[slice_v] *= spline_probability_in_slice
-    probability_updated[slice_v][where_no_event] = 1
+    probability_updated[slice_to_use] *= spline_probability_in_slice
+    probability_updated[slice_to_use][where_no_event] = 1
     # mask everything until the minimum index; probability is set to one,
     # boolean mask is set to zero
     probability_updated[:absolute_min_idx] = 1
-    slice_updated = slice(absolute_min_idx,slice_to_use.stop,1)
+    probability_updated[absolute_max_index:] = 1
+    slice_updated = slice(absolute_min_idx,absolute_max_index,1)
     spline_boolean = probability_updated < threshold
+    # remove the bad points
     spline_boolean[:absolute_min_idx] = 0
+    spline_boolean[absolute_max_index:] = 0
     return slice_updated,spline_boolean,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
