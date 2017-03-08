@@ -151,6 +151,25 @@ def stdev_dist_per_param(scores,**kwargs):
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
+def rupture_objects(scores,get_true):
+    """
+    get the rupture objects associated with the scores
+
+    Args: 
+         scores: see event_distance_distribution
+         get_true: if true, gets the *true* rupture objects associated with the
+    Returns: 
+         array of rupture objects, one per parameter
+    """
+    if (get_true):
+        func_tmp = lambda x: [v.ruptures_true for v in x]
+    else: 
+        func_tmp = lambda x: [v.ruptures_predicted for v in x]
+    # need to concatenate everything
+    func_fold = lambda *args,**kwargs: np.concatenate(func_tmp(*args,**kwargs))
+    return _walk_scores(scores,func_fold=func_fold,
+                        func_param=np.concatenate,func_top=np.array)
+
 def event_distance_distribution(scores,**kwargs):
     """
     gets the distribution of distances at each paramter value

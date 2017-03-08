@@ -9,6 +9,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
 import Analysis,Learning
+import matplotlib.gridspec as gridspec
 
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
@@ -280,6 +281,18 @@ def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
     PlotUtilities.lazyLabel("index (au)","boolean no event mask","",
                             loc="upper right")
         
+def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
+    """
+    Args:
+        objs: see _plot_rupture_objecs
+    Returns:
+        tuple of <rupture force in pN, loading rate in pN>
+    """
+    to_pN = lambda x: x * 1e12
+    rupture_forces_pN = [to_pN(obj.rupture_force) for obj in objs]
+    loading_rate_pN_per_s = [to_pN(obj.loading_rate) for obj in objs]
+    return rupture_forces_pN,loading_rate_pN_per_s
+
 def _plot_rupture_objects(to_plot,**kwargs):
     """
     given rupture objects, plots rupture force in pN (given N) vs
@@ -291,12 +304,11 @@ def _plot_rupture_objects(to_plot,**kwargs):
     Returns:
          Nothing
     """
-    to_pN = lambda x: x * 1e12
-    rupture_forces_pN = [to_pN(obj.rupture_force) for obj in to_plot]
-    loading_rate_pN_per_s = [to_pN(obj.loading_rate) for obj in to_plot]
+    rupture_forces_pN,loading_rate_pN_per_s = \
+        get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
 
-def plot_predicted_and_true_ruptures(true,predicted,title="",label_true="true",
+def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
                                      style_predicted=None):
     """
     given rupture objects, plots the true and predicted values of rupture
@@ -358,7 +370,7 @@ def plot_ruptures_of_scores(scores):
     """
     rupture_true = [r for s in scores for r in s.ruptures_true ]
     rupture_predicted = [r for s in scores for r in s.ruptures_predicted ]
-    plot_predicted_and_true_ruptures(rupture_true,rupture_predicted)
+    plot_true_and_predicted_ruptures(rupture_true,rupture_predicted)
 
 def cross_validation_distance_metric(x_values,train_scores,valid_scores,
                                      to_true):
@@ -441,6 +453,64 @@ def distance_distribution_plot(learner,**kwargs):
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
                             "Event distributions for {:s}".format(name))
     
+def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
+    plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+
+def rupture_force_histogram(objs,**kwargs):
+    ruptures,_ = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
+    _gen_rupture_hist(ruptures,**kwargs)
+
+def loading_rate_histogram(objs,**kwargs):
+    _,loading_rates = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
+    _gen_rupture_hist(loading_rates,**kwargs)
+
+def rupture_plot(true,pred,count_ticks=4,scatter_kwargs=dict()):
+    gs = gridspec.GridSpec(2, 2,
+                           width_ratios=[1,4],
+                           height_ratios=[4,1])
+    ax1 = plt.subplot(gs[0])
+    rupture_force_histogram(true,orientation='horizontal')
+    PlotUtilities.lazyLabel("Count","Rupture Force [pN]","")
+    plt.locator_params(axis='x', nticks=count_ticks)
+    ax2 = plt.subplot(gs[1])
+    plot_true_and_predicted_ruptures(true,pred,**scatter_kwargs)
+    PlotUtilities.lazyLabel("","","")
+    ax3 = plt.subplot(gs[2])
+    # third one is just empty :-(
+    ax3.axis('off')
+    pass
+    ax4 = plt.subplot(gs[3])
+    loading_rate_histogram(true,orientation='vertical')
+    plt.locator_params(axis='y-', nticks=count_ticks)
+    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","")
+
+
+def rupture_distribution_plot(learner,out_file_stem):
+    """
+    plots *and saves* the distributions of ruptures in *all* validation folds
+    (ie: the entire sample) 
+
+    Args:
+        learner: see plot_individual_learner
+        out_file_stem: base to save
+    Returns:
+        nothingS
+    """
+    train_scores = learner._scores_by_params(train=True)
+    valid_scores = learner._scores_by_params(train=False)
+    # get the validation ruptures (both truee and predicted)
+    ruptures_valid_true = Learning.rupture_objects(valid_scores,get_true=True)
+    ruptures_valid_pred = Learning.rupture_objects(valid_scores,get_true=False)
+    name = learner.description.lower()
+    x_values = learner.param_values()
+    for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
+                                             ruptures_valid_pred)):
+        fig = PlotUtilities.figure()
+        scatter_kwargs = dict(title="",label_true="true")
+        rupture_plot(true,pred,scatter_kwargs=scatter_kwargs)
+        PlotUtilities.savefig(fig,"{:s}{:s}{:d}.png".format(out_file_stem,
+                                                            name,i))
+
 
 def plot_individual_learner(cache_directory,learner):
     """
@@ -458,6 +528,7 @@ def plot_individual_learner(cache_directory,learner):
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
+    rupture_distribution_plot(learner,out_file_stem)
     fig = PlotUtilities.figure()
     distance_distribution_plot(learner,to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "histogram_to_true.png")
