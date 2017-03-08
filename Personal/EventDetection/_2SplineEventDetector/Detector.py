@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import sys
 from scipy import signal,stats
 
-from Research.Personal.EventDetection.Util import Analysis
+from Research.Personal.EventDetection.Util import Analysis,Plotting
 from GeneralUtil.python import PlotUtilities,GenUtilities
 
 from scipy.ndimage.filters import uniform_filter1d
@@ -121,7 +121,8 @@ def mask_spline_derivative(split_fec):
     """
     return (spline_derivative_probability(split_fec) < 1)
 
-def derivative_mask_function(split_fec,boolean_array,probability,threshold,
+def derivative_mask_function(split_fec,slice_to_use,
+                             boolean_array,probability,threshold,
                              *args,**kwargs):
     """
     returns mask_spline_derivative
@@ -137,13 +138,13 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
     where_previous_happening = np.where(boolean_array > 0)[0]
     # if we dont have any points, return
     if (where_previous_happening.size == 0 ):
-        return boolean_array,probability
+        return slice_to_use,boolean_array,probability
     # POST: something to look at. find the spline-interpolated derivative
     # probability
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)
-    offset = where_previous_happening[0]
-    slice_v = slice(offset,None,1)
+    slice_v = slice_to_use
+    offset = slice_v.start
     retract = split_fec.retract
     x = retract.Time[slice_v]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_v)
@@ -165,10 +166,8 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
                                       if e.start < min_points_between]
     if (len(events_starting_before_min_idx) > 0):
         event_end_in_slice = events_starting_before_min_idx[0].stop
-        #print(event_end_in_slice,absolute_min_idx,offset)
         # XXX Wtf?
         absolute_min_idx = max(absolute_min_idx,event_end_in_slice+offset)
-    print(absolute_min_idx,boolean_array.size)
     # POST: absolute_min_idx is the index *in the original array* where we 
     # should start looking for events. 
     probability_updated = probability.copy()
@@ -182,24 +181,11 @@ def derivative_mask_function(split_fec,boolean_array,probability,threshold,
     # boolean mask is set to zero
     spline_boolean[:absolute_min_idx] = 0
     probability_updated[:absolute_min_idx] = 1
-    time_lim = [min(retract.Time),max(retract.Time)]
-    """
-    plt.subplot(3,1,1)
-    plt.plot(retract.Time,retract.Force)
-    plt.xlim(time_lim)
-    plt.subplot(3,1,2)
-    plt.plot(x,retract.Force[slice_v])
-    plt.xlim(time_lim)
-    plt.subplot(3,1,3)
-    plt.plot(retract.Time,probability_updated)
-    plt.plot(x,spline_probability_in_slice)
-    plt.xlim(time_lim)
-    plt.yscale('log')
-    plt.show()
-    """
-    return (spline_boolean & boolean_array) , probability_updated
+    slice_updated = slice(absolute_min_idx,slice_to_use.stop,1)
 
-def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
+    return slice_updated,(spline_boolean & boolean_array),probability_updated, 
+
+def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          *args,**kwargs):
     """
@@ -238,9 +224,9 @@ def adhesion_mask_function_for_split_fec(split_fec,boolean_array,
         prob_tmp, _ = _no_event_probability(time,interp,force,n_points,
                                             slice_fit=slice_update)
         probability_updated[slice_update] = np.minimum(1,prob_tmp)
-        return adhesions_removed,probability_updated
     else:
-        return boolean_array,probability
+        slice_update = slice(0,None,1)
+    return slice_update,boolean_array,probability
 
 def _min_points_between(autocorrelation_tau_num_points):
     """
@@ -544,12 +530,14 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     bool_array = probability_distribution < threshold
     masks = [np.where(bool_array)[0]]
     probabilities = [probability_distribution.copy()]
+    slice_to_use = slice(0,None,1)
     if (remasking_functions is not None):
         for f in remasking_functions:
-            res = f(boolean_array=bool_array,
+            res = f(slice_to_use=slice_to_use,
+                    boolean_array=bool_array,
                     probability=probability_distribution,
                     threshold=threshold)
-            bool_array, probability_distribution = res
+            slice_to_use,bool_array, probability_distribution = res
             probabilities.append(probability_distribution)
             masks.append(np.where(bool_array)[0])
     # only keep points where we are farther than min_points between from the 

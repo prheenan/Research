@@ -471,3 +471,30 @@ def plot_individual_learner(cache_directory,learner):
     cross_validation_distance_metric(x_values,train_scores,valid_scores,
                                      to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "dist.png")
+
+def debug_plot_derivative(retract,slice_v,probability_updated,
+                          spline_probability_in_slice):
+    """
+    For debugging at the end of Detector.derivative_mask_function
+
+    Args:
+        see Detector.derivative_mask_function
+    Returns: 
+        nothing, makes a pretty plot.
+    """
+    time_lim = [min(retract.Time),max(retract.Time)]
+    x = retract.Time[slice_v]
+    plt.subplot(3,1,1)
+    plt.plot(retract.Time,retract.Force,label="force")
+    PlotUtilities.lazyLabel("","Force","")
+    plt.xlim(time_lim)
+    plt.subplot(3,1,2)
+    plt.plot(x,retract.Force[slice_v])
+    PlotUtilities.lazyLabel("","Force","")
+    plt.xlim(time_lim)
+    plt.subplot(3,1,3)
+    plt.plot(retract.Time,probability_updated,label="probability")
+    plt.plot(x,spline_probability_in_slice,label="probability")
+    plt.xlim(time_lim)
+    plt.yscale('log')
+    PlotUtilities.lazyLabel("Time","Probability","")
