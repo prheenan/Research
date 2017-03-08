@@ -309,7 +309,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
 
 def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
-                                     style_predicted=None):
+                                     style_predicted=None,style_true=None):
     """
     given rupture objects, plots the true and predicted values of rupture
     force verus loading rate
@@ -327,12 +327,15 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
     """
     line_style = dict(linestyle="None")
     if (style_predicted is None):
-        style_predicted  = dict(marker='x',color='k',label="predicted",
+        style_predicted = dict(color='k',label="predicted",
                                 linewidth=2,**line_style)
-    style_true = dict(marker='o',color='g',label=label_true,alpha=0.5,
-                      linewidth=0,**line_style)
-    _plot_rupture_objects(true,**style_true)
-    _plot_rupture_objects(predicted,**style_predicted)
+    if (style_true is None):
+        style_true = dict(color='g',label=label_true,alpha=0.5,**line_style)
+    
+    _plot_rupture_objects(true,marker='o',linewidth=0,linestyle="None",
+                          **style_true)
+    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
+                          **style_predicted)
     PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
                             frameon=True,legend_kwargs=dict(numpoints=1))
 
@@ -464,9 +467,10 @@ def loading_rate_histogram(objs,**kwargs):
     _,loading_rates = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(loading_rates,**kwargs)
 
-def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=dict(),
+def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
+                 style_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_force=None,
-                 remove_ticks=False):
+                 remove_ticks=True):
     gs = gridspec.GridSpec(2, 2,
                            width_ratios=[4,1],
                            height_ratios=[4,1])
@@ -475,6 +479,12 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=dict(),
     ruptures_pred,loading_pred = \
         get_rupture_in_pN_and_loading_in_pN_per_s(true)
     double_f = lambda f,*args: f([f(x) for x in args])
+    if (style_true is None):
+        style_true = dict(color='k',alpha=0.2)
+    if (style_pred is None):
+        style_pred = dict(color='g',alpha=0.7)
+    if (scatter_kwargs is None):
+        scatter_kwargs = dict(style_true=style_true,style_predicted=style_pred)
     if (lim_force is None):
         min_y = double_f(min,ruptures_pred,ruptures_true)
         max_y = double_f(max,ruptures_pred,ruptures_true)
@@ -498,15 +508,19 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=dict(),
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 = plt.subplot(gs[1])
-    rupture_force_histogram(true,orientation='horizontal',bins=bins_force)
-    rupture_force_histogram(pred,orientation='horizontal',bins=bins_force)
+    rupture_force_histogram(true,orientation='horizontal',bins=bins_force,
+                            **style_true)
+    rupture_force_histogram(pred,orientation='horizontal',bins=bins_force,
+                            **style_pred)
     PlotUtilities.lazyLabel("Count","","")
     if (remove_ticks):
         ax1.get_yaxis().set_ticklabels([])
     plt.ylim(lim_force)
     ax4 = plt.subplot(gs[2])
-    loading_rate_histogram(true,orientation='vertical',bins=bins_load)
-    loading_rate_histogram(pred,orientation='vertical',bins=bins_load)
+    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
+                           **style_true)
+    loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
+                           **style_pred)
     PlotUtilities.lazyLabel("loading rate [pN/s]","Count","")
     plt.xscale('log')
     plt.xlim(lim_load)
@@ -535,8 +549,7 @@ def rupture_distribution_plot(learner,out_file_stem):
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure()
-        scatter_kwargs = dict(title="",label_true="true")
-        rupture_plot(true,pred,scatter_kwargs=scatter_kwargs)
+        rupture_plot(true,pred)
         PlotUtilities.savefig(fig,"{:s}{:s}{:d}.png".format(out_file_stem,
                                                             name,i))
 
