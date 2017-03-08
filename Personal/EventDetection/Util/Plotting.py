@@ -429,7 +429,7 @@ def plot_num_events_off(x_values,train_scores,valid_scores):
     plt.xscale('log')    
     plt.yscale('log')    
 
-def distance_distribution_plot(learner,**kwargs):
+def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     """
     plots the distribution of distances to/from predicted events from/to
     actual events, dependning on kwargs
@@ -440,6 +440,8 @@ def distance_distribution_plot(learner,**kwargs):
     """
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
+    if (box_kwargs is None):
+        box_kwargs = dict(whis=[5,95])
     name = learner.description.lower()
     x_values = learner.param_values()
     train_dist = Learning.event_distance_distribution(train_scores,**kwargs)
@@ -447,8 +449,8 @@ def distance_distribution_plot(learner,**kwargs):
     dist_plot = lambda x: [v * 1e9 for v in x]
     train_plot = dist_plot(train_dist)
     valid_plot = dist_plot(valid_dist)
-    plt.boxplot(x=train_plot)
-    plt.boxplot(x=valid_plot)
+    plt.boxplot(x=train_plot,**box_kwargs)
+    plt.boxplot(x=valid_plot,**box_kwargs)
     plt.gca().set_yscale('log')
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
                             "Event distributions for {:s}".format(name))

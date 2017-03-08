@@ -31,7 +31,7 @@ def run():
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True
     force_read = False
-    force_relearn = False
+    force_relearn = True
     force_learn = False or force_relearn
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
