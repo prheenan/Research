@@ -528,20 +528,31 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     plt.xscale('log')
     plt.xlim(lim_load)
     ax3 = plt.subplot(gs[3])
-    coeff_load = Analysis.bhattacharyya_probability_coefficient(loading_true,
-                                                                loading_pred,
-                                                                bins_load)
-    coeff_force = Analysis.bhattacharyya_probability_coefficient(ruptures_true,
-                                                                 ruptures_pred,
-                                                                 bins_rupture)
-    coeffs = [coeff_load,coeff_force]
+    coeff_load = Analysis.\
+                 bhattacharyya_probability_coefficient_1d(loading_true,
+                                                         loading_pred,
+                                                         bins_load)
+    coeff_force = Analysis.\
+                  bhattacharyya_probability_coefficient_1d(ruptures_true,
+                                                          ruptures_pred,
+                                                          bins_rupture)
+    # do a 2-d coefficient
+    tuple_true = [loading_true,ruptures_true]
+    tuple_pred = [loading_pred,ruptures_pred]
+    tuple_bins = [bins_load,bins_rupture]
+    coeff_2d = Analysis.\
+            bhattacharyya_probability_coefficient_dd(tuple_true,tuple_pred,
+                                                     tuple_bins)
+    coeffs = [coeff_load,coeff_force,coeff_2d]
+    print(coeffs)
+    labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color='b')
     label_func = lambda i,r: "{:.2f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
     PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func)
-    plt.xticks(index + bar_width / 2, ("Loading Rate","Rupture Force"),
+    plt.xticks(index + bar_width / 2, labels_coeffs,
                rotation=30,fontsize=PlotUtilities.g_font_legend)
     PlotUtilities.ylabel("BC value")
     # just empty :-(
