@@ -314,13 +314,19 @@ def _plot_rupture_objects(to_plot,**kwargs):
     forces = rupture_forces_pN * 1e-12
     loading_rates = loading_rate_pN_per_s *1e-12
     range_tau0 = [1e-3,1e3]
-    range_x_tx = [1e-9,100e-9]
+    range_x_tx = [10e-9,200e-9]
     kbT = 4.1e-21
     range_DeltaG_tx = [kbT,200*kbT]
     good_idx = np.where(loading_rates > 0)
     fit_dict = dict(ranges=[range_tau0,range_x_tx,range_DeltaG_tx],Ns=20)
-    fit = Dudko2008Lifetime.dudko_fit(forces[good_idx],loading_rates[good_idx],
+    good_forces = forces[good_idx]
+    fit = Dudko2008Lifetime.dudko_fit(good_forces,loading_rates[good_idx],
                                       fit_dict=fit_dict)
+    space_forces = np.linspace(min(good_forces),max(good_forces))
+    pred_rates = 1e12 * fit.predict(space_forces)
+    plt.plot(pred_rates,space_forces*1e12,'r--',linewidth=3)
+    print(pred_rates)
+    plt.show()
     print("res!")
     print(fit.fit_result)
     exit(1)
