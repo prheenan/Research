@@ -111,6 +111,51 @@ class split_force_extension:
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
 
+def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
+    """
+    # return the bhattacharyya distance between two 1-d arras
+
+    Args:
+        v<1/2>: see  bhattacharyya_probability_coefficient_dd, except 1-D      
+        bins: how to bin them, see 
+    Returns:
+        bhattacharyya distance, see bhattacharyya_probability_coefficient
+    """
+    return bhattacharyya_probability_coefficient_dd(v1,v2,[bins])
+
+def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
+    """
+    # return the bhattacharyya distance between arbitrary-dimensional
+    #probabilities, see  bhattacharyya_probability_coefficient
+
+    Args:
+        v<1/2>: two arbitrary-dimensional lists to compare
+        bins: how to bin them
+    Returns:
+        bhattacharyya distance, see bhattacharyya_probability_coefficient
+    """
+    histogram_kwargs = dict(bins=bins,weights=None,normed=False)
+    v1_hist,v1_edges = np.histogramdd(sample=v1,**histogram_kwargs)
+    v2_hist,v2_edges = np.histogramdd(sample=v2,**histogram_kwargs)
+    return bhattacharyya_probability_coefficient(v1_hist,v2_hist)
+
+def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
+    """
+    # return the bhattacharyya distance between the probabilities, see:
+    # https://en.wikipedia.org/wiki/Bhattacharyya_distance
+
+    Args:
+        v<1/2>_hist: values of two ditributions in each bins
+    Returns:
+        bhattacharyya distance
+    """
+    v1_hist = v1_hist.flatten()
+    v2_hist = v2_hist.flatten()
+    p1 = v1_hist/np.sum(v1_hist)
+    p2 = v2_hist/np.sum(v2_hist)
+    return sum(np.sqrt(p1*p2))
+    
+
 def _surface_index(filtered_y,y,last_less_than=True):
     """
     Get the surface index
