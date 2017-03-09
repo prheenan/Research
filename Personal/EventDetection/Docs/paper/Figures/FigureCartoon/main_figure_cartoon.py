@@ -76,7 +76,7 @@ def run(base="./"):
         plt.xlim([-30,650])
     out_tmp = "FigureCartoon{:d}.svg".format(i)
     out_names.append(out_tmp)
-    w_space = 0.4
+    w_space = 0.5
     PlotUtilities.savefig(fig,out_tmp,
                           subplots_adjust=dict(wspace=w_space,hspace=0))
     """
@@ -90,14 +90,12 @@ def run(base="./"):
                   for i,file_path in enumerate(cartoon_files)]
     data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
     all_panels = tip_panels + data_panels
-    sc.Figure("41cm", "41cm", 
+    sc.Figure("41cm", "28cm", 
               *(tip_panels + data_panels)
     ).tile(1,2).save("final.svg")
-    # remove all the files
-    """
+    # remove all the intermediate svg files
     for f in out_names:
         os.remove(f) 
-    """
 
 if __name__ == "__main__":
     run()
