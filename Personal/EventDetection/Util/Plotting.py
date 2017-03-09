@@ -290,8 +290,8 @@ def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
         tuple of <rupture force in pN, loading rate in pN>
     """
     to_pN = lambda x: x * 1e12
-    rupture_forces_pN = [to_pN(obj.rupture_force) for obj in objs]
-    loading_rate_pN_per_s = [to_pN(obj.loading_rate) for obj in objs]
+    rupture_forces_pN = np.array([to_pN(obj.rupture_force) for obj in objs])
+    loading_rate_pN_per_s = np.array([to_pN(obj.loading_rate) for obj in objs])
     return rupture_forces_pN,loading_rate_pN_per_s
 
 def _plot_rupture_objects(to_plot,**kwargs):
@@ -308,6 +308,22 @@ def _plot_rupture_objects(to_plot,**kwargs):
     rupture_forces_pN,loading_rate_pN_per_s = \
         get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
+    # XXX debugging...
+    from FitUtil.EnergyLandscapes.Lifetime_Dudko2008.Python.Code import \
+        Dudko2008Lifetime
+    forces = rupture_forces_pN * 1e-12
+    loading_rates = loading_rate_pN_per_s *1e-12
+    range_tau0 = [1e-3,1e3]
+    range_x_tx = [1e-9,100e-9]
+    kbT = 4.1e-21
+    range_DeltaG_tx = [kbT,200*kbT]
+    good_idx = np.where(loading_rates > 0)
+    fit_dict = dict(ranges=[range_tau0,range_x_tx,range_DeltaG_tx],Ns=20)
+    fit = Dudko2008Lifetime.dudko_fit(forces[good_idx],loading_rates[good_idx],
+                                      fit_dict=fit_dict)
+    print("res!")
+    print(fit.fit_result)
+    exit(1)
 
 def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
                                      style_predicted=None,style_true=None):
