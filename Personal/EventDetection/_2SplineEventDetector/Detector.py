@@ -110,6 +110,47 @@ def _spline_derivative_probability_generic(x,interpolator):
     probability = np.minimum(probability,1)
     return probability 
 
+def force_value_mask_function(split_fec,slice_to_use,
+                              boolean_array,probability,threshold,
+                              *args,**kwargs):
+    """
+    masks the interpolated force to be at least one r(q) above the median
+
+    Args:
+         see adhesion_mask_function_for_split_fec 
+    Returns:
+         see adhesion_mask_function_for_split_fec, except tuples are dealing
+         with the force value mask.
+    """
+    # XXX debugging
+    retract = split_fec.retract
+    n_points = split_fec.tau_num_points
+    f = retract.Force[slice_to_use]
+    x = retract.Time[slice_to_use]
+    interp_f = split_fec.retract_spline_interpolator(slice_to_use)(x)
+    diff = f-interp_f
+    stdev = local_stdev(diff,n_points)
+    med = np.median(interp_f)
+    # essentially: when is the interpolated value 
+    # at least one (local) standard deviation above the median
+    # we admit an event might be possible
+    bool_interp = (interp_f - stdev > med)
+    where_no_event_possible = np.where(~bool_interp)[0]
+    where_event_possible = np.where(bool_interp)[0]
+    boolean_updated = boolean_array.copy()
+    probability_updated = probability.copy()
+    slice_start = slice_to_use.start
+    slice_end = slice_to_use.stop
+    if (where_no_event_possible.size > 0):
+        boolean_updated[slice_to_use][where_no_event_possible] = 0
+        probability_updated[slice_to_use][where_no_event_possible] =1
+    if (where_event_possible.size > 0):
+        slice_start = max(slice_start,where_event_possible[0])
+        slice_end = max(slice_end,where_event_possible[-1])
+    slice_updated = slice(slice_start,slice_end,1)
+    return slice_to_use,boolean_updated,probability_updated
+
+
 def derivative_mask_function(split_fec,slice_to_use,
                              boolean_array,probability,threshold,
                              *args,**kwargs):
@@ -623,7 +664,8 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,\
+              force_value_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

@@ -588,6 +588,30 @@ def plot_individual_learner(cache_directory,learner):
                                      to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "dist.png")
 
+def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
+                           slice_to_use,bool_interp):
+    """
+    For debugging at the end of Detector.force_value_mask_function function
+
+    Args:
+        see Detector.force_value_mask_function
+    Returns: 
+        nothing, makes a pretty plot.
+    """
+    force_plot = lambda x: x * 1e12
+    plt.subplot(2,1,1)
+    plt.plot(x, force_plot(f),alpha=0.3,color='k',label="raw")
+    plt.plot(x, force_plot(interp_f),color='b',label="interpolated")
+    PlotUtilities.lazyLabel("","Force","",loc='upper right')
+    plt.subplot(2,1,2)
+    plt.semilogy(x,bool_interp + 1e-2)
+    plt.semilogy(x,probability_updated[slice_to_use],color='r',linestyle='--',
+                 label="prob new")
+    plt.semilogy(x,probability[slice_to_use],color='k',alpha=0.3,
+                 label="prob orig")
+    PlotUtilities.lazyLabel("Time","Prob/Mask","",loc='upper right')
+
+
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           spline_probability_in_slice):
     """
@@ -600,17 +624,21 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     """
     time_lim = [min(retract.Time),max(retract.Time)]
     x = retract.Time[slice_to_use]
+    f = retract.Force * 1e12
     plt.subplot(3,1,1)
-    plt.plot(retract.Time,retract.Force,label="force")
+    plt.plot(retract.Time,f,label="force")
     PlotUtilities.lazyLabel("","Force","")
     plt.xlim(time_lim)
     plt.subplot(3,1,2)
-    plt.plot(x,retract.Force[slice_to_use])
+    plt.plot(x,f[slice_to_use])
     PlotUtilities.lazyLabel("","Force","")
     plt.xlim(time_lim)
     plt.subplot(3,1,3)
-    plt.plot(retract.Time,probability_updated,label="probability")
-    plt.plot(x,spline_probability_in_slice,label="probability")
+    plt.plot(retract.Time,probability_updated,label="prob (updated)",
+             linestyle='--')
+    plt.plot(x,spline_probability_in_slice,color='k',alpha=0.3,
+             label="prob (original)")
     plt.xlim(time_lim)
     plt.yscale('log')
+    plt.ylim([min(probability_updated)/5,2])
     PlotUtilities.lazyLabel("Time","Probability","")
