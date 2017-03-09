@@ -472,7 +472,7 @@ def loading_rate_histogram(objs,**kwargs):
 
 def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
                  style_true=None,
-                 lim_load=None,lim_force=None,bins_load=None,bins_force=None,
+                 lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True):
     gs = gridspec.GridSpec(2, 2,
                            width_ratios=[4,1],
@@ -480,7 +480,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     ruptures_true,loading_true = \
         get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(true)
+        get_rupture_in_pN_and_loading_in_pN_per_s(pred)
     double_f = lambda f,*args: f([f(x) for x in args])
     if (style_true is None):
         style_true = dict(color='k',alpha=0.2)
@@ -497,8 +497,8 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
         min_x = double_f(min,safe(loading_pred),safe(loading_true))
         max_x = double_f(max,safe(loading_pred),safe(loading_true))
         lim_load = [min_x*0.8,max_x*1.2]
-    if (bins_force is None):
-        bins_force= np.linspace(*lim_force,num=10)
+    if (bins_rupture is None):
+        bins_rupture= np.linspace(*lim_force,num=10)
     if (bins_load is None):
         min_y = max(min(lim_load),1e-2)
         logy = np.log10([min_y,max(lim_load)])
@@ -511,9 +511,9 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 = plt.subplot(gs[1])
-    rupture_force_histogram(true,orientation='horizontal',bins=bins_force,
+    rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
                             **style_true)
-    rupture_force_histogram(pred,orientation='horizontal',bins=bins_force,
+    rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
                             **style_pred)
     PlotUtilities.lazyLabel("Count","","")
     if (remove_ticks):
@@ -528,8 +528,23 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     plt.xscale('log')
     plt.xlim(lim_load)
     ax3 = plt.subplot(gs[3])
+    coeff_load = Analysis.bhattacharyya_probability_coefficient(loading_true,
+                                                                loading_pred,
+                                                                bins_load)
+    coeff_force = Analysis.bhattacharyya_probability_coefficient(ruptures_true,
+                                                                 ruptures_pred,
+                                                                 bins_rupture)
+    coeffs = [coeff_load,coeff_force]
+    index = np.array([i for i in range(len(coeffs))])
+    bar_width = 0.5
+    rects1 = plt.bar(index, coeffs,alpha=0.3,color='b')
+    label_func = lambda i,r: "{:.2f}".format(r.get_height())
+    y_func = lambda i,r: r.get_height()/2
+    PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func)
+    plt.xticks(index + bar_width / 2, ("Loading Rate","Rupture Force"),
+               rotation=30,fontsize=PlotUtilities.g_font_legend)
+    PlotUtilities.ylabel("BC value")
     # just empty :-(
-    ax3.axis('off')
 
 def rupture_distribution_plot(learner,out_file_stem):
     """
@@ -553,8 +568,8 @@ def rupture_distribution_plot(learner,out_file_stem):
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure()
         rupture_plot(true,pred)
-        PlotUtilities.savefig(fig,"{:s}{:s}{:d}.png".format(out_file_stem,
-                                                            name,i))
+        out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
+        PlotUtilities.savefig(fig,out_path)
 
 
 def plot_individual_learner(cache_directory,learner):
@@ -591,7 +606,7 @@ def plot_individual_learner(cache_directory,learner):
 def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
                            slice_to_use,bool_interp):
     """
-    For debugging at the end of Detector.force_value_mask_function function
+    For debugging at the end of Detector.force_value_mask_function
 
     Args:
         see Detector.force_value_mask_function

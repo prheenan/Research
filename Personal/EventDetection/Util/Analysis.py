@@ -111,6 +111,18 @@ class split_force_extension:
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
 
+def bhattacharyya_probability_coefficient(v1,v2,bins):
+    histogram_kwargs = dict(bins=bins,weights=None,normed=False,density=False)
+    v1_hist,v1_edges = np.histogram(a=v1,**histogram_kwargs)
+    v2_hist,v2_edges = np.histogram(a=v2,**histogram_kwargs)
+    # get the probabilities, p_i,j = n_i,j/N, so that sum_j p_i,j = 1
+    p1 = v1_hist/sum(v1_hist)
+    p2 = v2_hist/sum(v2_hist)
+    # return the bhattacharyya distance between the probabilities, see:
+    # https://en.wikipedia.org/wiki/Bhattacharyya_distance
+    return sum(np.sqrt(p1*p2))
+    
+
 def _surface_index(filtered_y,y,last_less_than=True):
     """
     Get the surface index

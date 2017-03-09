@@ -55,9 +55,8 @@ def run():
     for l in learners:
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
-        break
         Plotting.plot_individual_learner(debug_directory,l)
-    num_to_plot = 30
+    num_to_plot = 1
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
