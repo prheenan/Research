@@ -166,14 +166,21 @@ def derivative_mask_function(split_fec,slice_to_use,
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)    
     # if we dont have any points, return
+    boolean_ret = boolean_array.copy()
+    probability_updated = probability.copy()
     if ((slice_to_use.stop - offset) < min_points_between):
-        return slice_to_use,boolean_array,probability
+        return slice_to_use,boolean_ret,probability_updated
     # POST: something to look at. find the spline-interpolated derivative
     # probability
     retract = split_fec.retract
     x = retract.Time[slice_to_use]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
     interp_deriv = interp.derivative()(x)
+    # anywhere  the derivative is >= 0 isn't an event
+    where_deriv_ge_zero = offset + np.where(interp_deriv >= 0)[0]
+    if (where_deriv_ge_zero.size > 0):
+        boolean_ret[where_deriv_ge_zero] = 0
+    # POST: start looking at other points
     median = np.median(interp_deriv)
     # get rid of final outlying derivative points 
     where_above = np.where(interp_deriv < median)[0]
@@ -191,15 +198,16 @@ def derivative_mask_function(split_fec,slice_to_use,
     deriv_approach = spline_fit_approach.derivative()(approach_time_fit)
     prob_kwargs = dict(loc=np.median(deriv_approach),
                        scale=np.std(deriv_approach))
+    # XXX could use **prob_kwargs, debugging...
     spline_probability_in_slice=\
-        _spline_derivative_probability_generic(x,interp,**prob_kwargs)
+        _spline_derivative_probability_generic(x,interp)
     # determine where the derivative is possibly outlying; that is a necessary
     # but not sufficient condition for an event
     tol = 1e-9
     possible_event =  (1 - spline_probability_in_slice) > tol
     event_slice_mask = np.where(possible_event)[0]
     if (event_slice_mask.size == 0):
-        return slice_to_use,boolean_array,probability
+        return slice_to_use,boolean_ret,probability_updated
     # POST: have at least one possible spline event
     # only consider events which start after the offset, to avoid edge effects
     absolute_min_idx = offset + min_points_between          
@@ -214,7 +222,6 @@ def derivative_mask_function(split_fec,slice_to_use,
         absolute_min_idx = max(absolute_min_idx,event_end_in_slice+offset)
     # POST: absolute_min_idx is the index *in the original array* where we 
     # should start looking for events. 
-    probability_updated = probability.copy()
     # determine where the probability is
     where_no_event = np.where(~possible_event)
     probability_updated[slice_to_use] *= spline_probability_in_slice
@@ -224,11 +231,11 @@ def derivative_mask_function(split_fec,slice_to_use,
     probability_updated[:absolute_min_idx] = 1
     probability_updated[absolute_max_index:] = 1
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
-    spline_boolean = probability_updated < threshold
+    boolean_ret *= (probability_updated < threshold)
     # remove the bad points
-    spline_boolean[:absolute_min_idx] = 0
-    spline_boolean[absolute_max_index:] = 0
-    return slice_updated,spline_boolean,probability_updated
+    boolean_ret[:absolute_min_idx] = 0
+    boolean_ret[absolute_max_index:] = 0
+    return slice_updated,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
