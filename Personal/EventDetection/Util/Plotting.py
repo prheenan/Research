@@ -245,42 +245,29 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
                             loc="upper right")
 
-def debug_plot_adhesion_info(probability_distribution,no_event_mask,min_idx,
-                             no_event_boundaries,event_boundaries,threshold,
-                             to_ret):
+def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
+                             derivative_le_zero,to_ret):
     """
-    Used  insides of Detector.adhesion_mask to tell wtf is happening
+    Used inside of Detector.adhesion_mask to tell wtf is happening
     
     Args:
         all: internal Detector.adhesion_mask, see that function
     Returns:
         nothing
     """                             
-    boolean_debug = np.zeros(probability_distribution.size)
-    boolean_debug[no_event_mask] = 1
     plt.subplot(2,1,1)
-    plt.plot(probability_distribution,color='g',linewidth=0.5)
-    for i,e in enumerate(no_event_boundaries):
-        label = "no event start" if i ==0 else None
-        plt.axvline(e.start,linestyle='-',color='r',alpha=0.3,
-                    label=label)
-    for i,e in enumerate(event_boundaries):
-        label_start = "event start" if i ==0 else None    
-        label_end = "event end" if i ==0 else None  
-        plt.axvline(e.start,linestyle='-.',color='b',alpha=0.5,
-                    label=label_start)
-        plt.axvline(e.stop,linestyle='-.',color='b',linewidth=4,alpha=0.5,
-                    label=label_end)        
-    plt.axvline(min_idx,linewidth=4,color='k',alpha=0.3,linestyle="--",
-                label="minimum index used")
-    plt.axhline(threshold,label="probability threshold")
-    plt.yscale('log')
-    PlotUtilities.lazyLabel("","probability","",loc="upper right",
-                            frameon=True) 
+    plt.plot(time,force*1e12,color='k',alpha=0.3)
+    plt.plot(time,force_fit*1e12)
+    plt.axvline(time[min_idx])
+    PlotUtilities.lazyLabel("","Force","",loc="upper right",
+                            frameon=True)     
     plt.subplot(2,1,2)
-    plt.plot(to_ret)
-    PlotUtilities.lazyLabel("index (au)","boolean no event mask","",
-                            loc="upper right")
+    plt.plot(time,derivative_gt_zero)
+    plt.plot(time,derivative_le_zero)
+    plt.plot(time,to_ret,color='k',linestyle='--')
+    PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
+                            frameon=True)   
+
         
 def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
     """

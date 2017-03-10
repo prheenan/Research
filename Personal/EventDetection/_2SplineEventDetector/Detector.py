@@ -358,17 +358,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)    
-    to_ret[:min_idx] = 0     
-    plt.subplot(2,1,1)
-    plt.plot(time,force,color='k',alpha=0.3)
-    plt.plot(time_to_fit,force_fit)
-    plt.axvline(time[min_idx])
-    plt.subplot(2,1,2)
-    plt.plot(time_to_fit,derivative_gt_zero)
-    plt.plot(time_to_fit,derivative_le_zero)
-    plt.plot(time,to_ret,color='k',linestyle='--')
-    plt.show()
-    # find the first time the derivative is >= 0 after it is le zero
+    to_ret[:min_idx] = 0                                        
     return to_ret                     
                      
 
