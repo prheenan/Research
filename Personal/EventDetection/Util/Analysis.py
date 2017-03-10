@@ -24,13 +24,17 @@ class split_force_extension:
         for the retract force versus time curbe
 
         Args:
+            slice_to_fit: which part of the retract to fit
             kwargs: passed to spline_interpolator
         """
-        x,f = self.retract.Time,self.retract.Force
-        if (slice_to_fit is None):
-            slice_to_fit = slice(0,None,1)
-        return spline_interpolator(self.tau,x[slice_to_fit],f[slice_to_fit],
-                                   **kwargs)
+        return spline_fit_fec(self.tau,
+                              self.retract,slice_to_fit=slice_to_fit,**kwargs)
+    def approach_spline_interpolator(self,slice_to_fit=None,**kwargs):
+        """
+        See retract_spline_interpolator, but for the approach
+        """
+        return spline_fit_fec(self.tau,self.approach,
+                              slice_to_fit=slice_to_fit,**kwargs)        
     def retract_separation_interpolator(self,**kwargs):
         """
         returns an interpolator for separation based on the stored time
@@ -99,15 +103,58 @@ class split_force_extension:
         """
         get_mean = lambda ev: int(np.round(np.mean([ev.start,ev.stop]) ))
         return [ get_mean(ev) for ev in  self.get_retract_event_idx()]
+    def surface_distance_from_trigger(self):
+        """
+        returns the distance in separtion units from the trigger point
+        """
+        return abs(min(self.approach.Separation))
+    def get_predicted_approach_surface_index(self):
+        """
+        returns the predicted place the surface is on the approach
+        """    
+        return np.where(self.approach.Force >0)[0][-1]
     def get_predicted_retract_surface_index(self):
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        sep_diff = np.median(np.diff(self.retract.Separation))
-        offset_needed = abs(min(self.approach.Separation))
-        n_points = int(np.ceil(offset_needed/sep_diff))
+        n_points = _index_surface_relative(self.retract.Separation,
+                                           self.surface_distance_from_trigger())
         return n_points
 
+def _index_surface_relative(x,offset_needed):
+    """
+     returns a crude estimate for  the predicted index offset for the surface
+        
+    Args:
+        x: the time series of separation
+        offset_needed: the x offset 
+    Returns: 
+        number of points for x to displace by offset_needed
+    """    
+    sep_diff = np.median(np.abs(np.diff(x)))
+    n_points = int(np.ceil(offset_needed/sep_diff))
+    return n_points
+        
+def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
+    """
+    returns an interpolator object on the given TimeSepForce object
+     
+    Args:
+        tau: see spline_interpolator
+        time_sep_force: get t he time and force from this as x,y to 
+        spline_interpolator
+        
+        slice_to_fit: part of x,f to fit
+        **kwargs: passed to spline_interpolator
+    returns:
+        see spline_interpolator
+    """    
+    x,f = time_sep_force.Time,time_sep_force.Force
+    if (slice_to_fit is None):
+        slice_to_fit = slice(0,None,1)
+    return spline_interpolator(tau,x[slice_to_fit],f[slice_to_fit],
+                               **kwargs)        
+        
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
 

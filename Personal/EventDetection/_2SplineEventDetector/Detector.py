@@ -77,7 +77,7 @@ def spline_derivative_probability(split_fec):
     interpolator = split_fec.retract_spline_interpolator()
     return _spline_derivative_probability_generic(time,interpolator)
 
-def _spline_derivative_probability_generic(x,interpolator):
+def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     """
     see  spline_derivative_probability, except a genertic method
     
@@ -86,26 +86,22 @@ def _spline_derivative_probability_generic(x,interpolator):
         interpolator: to interpolate along
     Returns:
         see spline_derivative_probability
-    """
+    """ 
     derivative_force = interpolator.derivative()(x)
-    # get the median and std of deriv
-    med_deriv = np.median(derivative_force)
-    q_loq_percentile = 0
-    q_high_percentile = 100
-    q_low,q_high = np.percentile(derivative_force,
-                                 [q_loq_percentile,q_high_percentile])
-    iqr_region_idx = np.where( (derivative_force <= q_high) & 
-                               (derivative_force >= q_low))[0]
-    std_iqr = np.std(derivative_force[iqr_region_idx])
+    if (loc is None):
+        loc = np.median(derivative_force)
+    if (scale is None):
+        std_iqr = np.std(derivative_force)
+        scale = std_iqr
     probability = np.zeros(derivative_force.size)
     # anything at or above the median, or  (>= zero) isnt interesting
-    conditions_no_event = ((derivative_force >= med_deriv - std_iqr) | \
-                          (derivative_force >= 0))
+    conditions_no_event = ((derivative_force >= loc - scale) | \
+                           (derivative_force >= 0))
     probability[np.where(conditions_no_event)]  = 1
     # other things might be
     possible_idx = np.where(~conditions_no_event)
     possible_deriv = derivative_force[possible_idx]
-    k = (possible_deriv-med_deriv)/std_iqr
+    k = (possible_deriv-loc)/scale
     probability[possible_idx]  = 1/k**2
     probability = np.minimum(probability,1)
     return probability 
@@ -179,12 +175,24 @@ def derivative_mask_function(split_fec,slice_to_use,
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
     interp_deriv = interp.derivative()(x)
     median = np.median(interp_deriv)
+    # get rid of final outlying derivative points 
     where_above = np.where(interp_deriv < median)[0]
     where_below = np.where(interp_deriv > median)[0]
     last_index = offset + min(where_above[-1],where_below[-1])
     absolute_max_index = min(slice_to_use.stop,last_index)
+    # determine the approach derivative distribution, used to compute the 
+    # probabilities for the retract 
+    approach_surface_idx = split_fec.get_predicted_approach_surface_index()
+    slice_fit_approach= slice(0,approach_surface_idx,1)
+    spline_fit_approach = \
+        split_fec.approach_spline_interpolator(slice_to_fit=slice_fit_approach)
+    approach = split_fec.approach
+    approach_time_fit = approach.Time[slice_fit_approach]
+    deriv_approach = spline_fit_approach.derivative()(approach_time_fit)
+    prob_kwargs = dict(loc=np.median(deriv_approach),
+                       scale=np.std(deriv_approach))
     spline_probability_in_slice=\
-        _spline_derivative_probability_generic(x,interp)
+        _spline_derivative_probability_generic(x,interp,**prob_kwargs)
     # determine where the derivative is possibly outlying; that is a necessary
     # but not sufficient condition for an event
     tol = 1e-9
@@ -289,50 +297,76 @@ def adhesion_mask(surface_index,n_points,split_fec,
         list of event slices
     """
     to_ret = np.ones(probability_distribution.size,dtype=np.bool_)
-    non_events = probability_distribution > threshold
+    retract = split_fec.retract   
     # determine the boundaries of the 'no events'
     min_points_between = _min_points_between(n_points)
-    min_idx = surface_index + min_points_between    
+    min_idx = surface_index + min_points_between
     # remove all things before the predicted surface, and at the boundary
     to_ret[:min_idx] = 0    
-    to_ret[-min_idx:] = 0    
-    no_event_mask = np.where(non_events)[0]
+    to_ret[-min_points_between:] = 0    
+    # determine where the derivative after the predicted surface is first zero
+    time = retract.Time
+    # we *fit* the spline to the entire data set
+    slice_to_fit = slice(0,None,1)
+    # we only *consider* points that are above some marker (e.g. surface_index)
+    slice_idx = np.arange(0,time.size)
+    time_to_fit = time[slice_to_fit]
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_fit)
+    force_fit = interp(time_to_fit)
+    deriv = interp.derivative()(time_to_fit)
+    derivative_gt_zero = deriv > 0
+    derivative_le_zero = deriv <= 0
+    # must be above the surface *and* have a derivative <= 0 
+    where_deriv_le_zero = \
+        np.where(derivative_le_zero & (slice_idx > surface_index) )[0]
+    if (where_deriv_le_zero.size == 0):
+        return to_ret
+    # POST: have at least one point we can test, figure out where we get back
+    # to the force baseline
+    where_derivative_le_zero_absolute = where_deriv_le_zero
+    min_idx = where_derivative_le_zero_absolute[0]
+    to_ret[:min_idx] = 0
+    where_gt_zero_absolute = \
+        np.where(derivative_gt_zero & (slice_idx > min_idx))[0]
+    if (where_gt_zero_absolute.size == 0):
+        return to_ret 
+    min_idx = where_gt_zero_absolute[0]
+    to_ret[:min_idx] = 0 
+    # POST: we found a peak (or a flat point) followed by some kind of increase
+    # this means we should have passed (at least one) adhesion peak.
+    # however, if there is an event happening here, we need to continue
+    # consuming them (noting that we determine the probability distribution
+    # again, since that initial adhesion prolly messed us up 
+    force = retract.Force
+    probability_distribution = _no_event_probability(x=time,
+                                                     interp=interp,
+                                                     y=force,
+                                                     n_points=n_points)
+    non_events = probability_distribution > threshold    
+    # note: need to offset events
+    no_event_mask = np.where(non_events)[0] + min_idx
     # XXX finish current event, keep consuming events until startd/end
     # are beyond threshold
-    event_mask = np.where(~non_events)[0]
+    event_mask = np.where(~non_events)[0] + min_idx
     if (event_mask.size ==0 or no_event_mask.size == 0):
         return to_ret
-    # POST: we have at least one event and one non-event 
+    # POST: we have at least one event and one non-event
     # (could be some adhesion!)
-    # first, walk to where the smoothed y is at or abovethe median force
-    # finally, make sure the smoothed force is back to zero
-    # XXX switch to faster
-    retract = split_fec.retract
-    time = retract.Time
-    smoothed_force = split_fec.retract_spline_interpolator()(time)
-    # XXX fit a line to it instead?... by nice if this were approach based only
-    force_threshold = np.median(smoothed_force[min_idx:])
-    where_smoothed =  np.where(smoothed_force < force_threshold)[0]
-    where_smoothed_and_greater = [e for e in where_smoothed if e >= min_idx] 
-    if (len(where_smoothed_and_greater) == 0):
-        return to_ret
-    # POST: have some point where we are at or above the threshold
-    min_idx = where_smoothed_and_greater[0]
-    to_ret[:min_idx] = 0
     # determine events that contain the surface index
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
     # get a list of the events with a starting point below the surface
-    events_containing_surface = [e for e in event_boundaries  
+    events_containing_surface = [e for e in event_boundaries
                                  if (e.start <= min_idx)]
-    if (len(events_containing_surface) == 0):
-        return to_ret 
+    n_events_surface = len(events_containing_surface)  
+    if (n_events_surface == 0):
+        return to_ret
     # POST: at least one event contains the surface. Update the minimum index
     # to go to the end of the (last) event below or at the surface, unless
     # the end is below the surface, then just keep the minimum at the surface
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
-    min_idx = max(min_idx,last_event_containing_surface_end)
-    to_ret[:min_idx] = 0
+    min_idx = max(min_idx,last_event_containing_surface_end)    
+    to_ret[:min_idx] = 0                                        
     return to_ret                     
                      
 
