@@ -56,7 +56,7 @@ def run(base="./"):
     styles = [dict(color='k'),
               dict(color='g'),
               dict(color='r')]
-    fig = PlotUtilities.figure((16,8))
+    fig = PlotUtilities.figure((12,4))
     for i,c in enumerate(cases):
         plt.subplot(1,len(cases),(i+1))
         style = styles[i]
@@ -74,9 +74,10 @@ def run(base="./"):
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
         plt.xlim([-30,650])
+        PlotUtilities.tick_axis_number(num_x_major=5,num_y_major=3)
     out_tmp = "FigureCartoon{:d}.svg".format(i)
     out_names.append(out_tmp)
-    w_space = 0.4
+    w_space = 0.5
     PlotUtilities.savefig(fig,out_tmp,
                           subplots_adjust=dict(wspace=w_space,hspace=0))
     """
@@ -86,18 +87,16 @@ def run(base="./"):
     tip_base = base  + "cartoon/2017-2-event-detection/" + \
                "SurfaceChemistry Dig10p3_combined_no_extra.svg"
     cartoon_files = [tip_base]
-    tip_panels = [sc.Panel(sc.SVG(file_path)).scale(2.85)
+    tip_panels = [sc.Panel(sc.SVG(file_path)).scale(2.2)
                   for i,file_path in enumerate(cartoon_files)]
     data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
     all_panels = tip_panels + data_panels
-    sc.Figure("41cm", "41cm", 
+    sc.Figure("41cm", "20cm", 
               *(tip_panels + data_panels)
     ).tile(1,2).save("final.svg")
-    # remove all the files
-    """
+    # remove all the intermediate svg files
     for f in out_names:
         os.remove(f) 
-    """
 
 if __name__ == "__main__":
     run()
