@@ -19,14 +19,15 @@ def fmt(ax):
     ax.set_ylim([-50,40])
 
 
-def before_and_after(x,y,before_slice,after_slice,style):
+def before_and_after(x,y,before_slice,after_slice,style,label=None):
     color_before = 'b'
     color_after = 'r'
-    tuples = [ [x,y,before_slice,color_before,style],
-               [x,y,after_slice,color_after,style]]
-    for x_tmp,y_tmp,slice_v,color_tmp,style_tmp in tuples:
+    tuples = [ [x,y,before_slice,color_before,style,label],
+               [x,y,after_slice,color_after,style,None]]
+    for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:
         x_sliced = x_tmp[slice_v]
-        plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,**style_tmp)
+        plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,
+                 **style_tmp)
 
 
 def run(base="./"):
@@ -82,9 +83,10 @@ def run(base="./"):
     style_data = dict(alpha=0.3,linewidth=1)
     style_filtered = dict(alpha=1,linewidth=2)
     # plot the force etc
-    before_and_after(x,force,slice_before_event,slice_after_event,style_data)
+    before_and_after(x,force,slice_before_event,slice_after_event,style_data,
+                     label="Raw Data (25kHz)")
     before_and_after(x,force_filtered,slice_before_event,slice_after_event,
-                     style_filtered)
+                     style_filtered,label="Filtered Data (25Hz)")
     # add a rectangle and its border
     min_f = min(force)
     max_f = max(force)
@@ -97,18 +99,21 @@ def run(base="./"):
                 linewidth=3,**y_args)
     plt.axvspan(*xlim, fill=True,color='k',alpha=0.15,
                 **y_args)
-    PlotUtilities.lazyLabel("Time [s]","Force (pN)","")
+    PlotUtilities.lazyLabel("Time [s]","Force (pN)","",loc="lower right",
+                            frameon=True)
     # plot the rupture
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
     plt.subplot(1,2,2)
     before_and_after(x,force,slice_before_zoom,slice_after_zoom,style_data)
-    plt.plot(x_event,predicted,color='k',linestyle='--',linewidth=3)
+    plt.plot(x_event,predicted,color='k',linestyle='--',linewidth=3,
+             label="Loading rate line")
     plt.plot(x[index_absolute],predicted[index],'go',markersize=10,linewidth=0,
-             alpha=0.3)
+             alpha=0.3,label="Rupture Event")
     plt.xlim(xlim)
     plt.ylim(ylim)
-    PlotUtilities.lazyLabel("Time [s]","","")
+    PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
+                            legend_kwargs=dict(numpoints=1))
     PlotUtilities.savefig(fig,out_fig)
     
 
