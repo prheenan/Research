@@ -296,6 +296,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
         get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
     # XXX debugging...
+    """
     from FitUtil.EnergyLandscapes.Lifetime_Dudko2008.Python.Code import \
         Dudko2008Lifetime
     forces = rupture_forces_pN * 1e-12
@@ -317,6 +318,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
     print("res!")
     print(fit.fit_result)
     exit(1)
+    """
 
 def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
                                      style_predicted=None,style_true=None):
