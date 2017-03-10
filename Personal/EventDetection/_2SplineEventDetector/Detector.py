@@ -91,17 +91,11 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     if (loc is None):
         loc = np.median(derivative_force)
     if (scale is None):
-        q_loq_percentile = 0
-        q_high_percentile = 100
-        q_low,q_high = np.percentile(derivative_force,
-                                    [q_loq_percentile,q_high_percentile])
-        iqr_region_idx = np.where( (derivative_force <= q_high) & 
-                                   (derivative_force >= q_low))[0]
-        std_iqr = np.std(derivative_force[iqr_region_idx])
+        std_iqr = np.std(derivative_force)
         scale = std_iqr
     probability = np.zeros(derivative_force.size)
     # anything at or above the median, or  (>= zero) isnt interesting
-    conditions_no_event = ((derivative_force >= loc - std_iqr) | \
+    conditions_no_event = ((derivative_force >= loc - scale) | \
                            (derivative_force >= 0))
     probability[np.where(conditions_no_event)]  = 1
     # other things might be
@@ -181,12 +175,24 @@ def derivative_mask_function(split_fec,slice_to_use,
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
     interp_deriv = interp.derivative()(x)
     median = np.median(interp_deriv)
+    # get rid of final outlying derivative points 
     where_above = np.where(interp_deriv < median)[0]
     where_below = np.where(interp_deriv > median)[0]
     last_index = offset + min(where_above[-1],where_below[-1])
     absolute_max_index = min(slice_to_use.stop,last_index)
+    # determine the approach derivative distribution, used to compute the 
+    # probabilities for the retract 
+    approach_surface_idx = split_fec.get_predicted_approach_surface_index()
+    slice_fit_approach= slice(0,approach_surface_idx,1)
+    spline_fit_approach = \
+        split_fec.approach_spline_interpolator(slice_to_fit=slice_fit_approach)
+    approach = split_fec.approach
+    approach_time_fit = approach.Time[slice_fit_approach]
+    deriv_approach = spline_fit_approach.derivative()(approach_time_fit)
+    prob_kwargs = dict(loc=np.median(deriv_approach),
+                       scale=np.std(deriv_approach))
     spline_probability_in_slice=\
-        _spline_derivative_probability_generic(x,interp)
+        _spline_derivative_probability_generic(x,interp,**prob_kwargs)
     # determine where the derivative is possibly outlying; that is a necessary
     # but not sufficient condition for an event
     tol = 1e-9
