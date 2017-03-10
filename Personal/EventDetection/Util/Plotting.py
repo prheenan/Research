@@ -648,7 +648,8 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
 
 
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
-                          spline_probability_in_slice):
+                          boolean_ret,spline_probability_in_slice,
+                          slice_updated,threshold):
     """
     For debugging at the end of Detector.derivative_mask_function
 
@@ -657,23 +658,27 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     Returns: 
         nothing, makes a pretty plot.
     """
-    time_lim = [min(retract.Time),max(retract.Time)]
+    time = retract.Time
+    time_lim = [min(time),max(time)]
     x = retract.Time[slice_to_use]
     f = retract.Force * 1e12
-    plt.subplot(3,1,1)
-    plt.plot(retract.Time,f,label="force")
-    PlotUtilities.lazyLabel("","Force","")
-    plt.xlim(time_lim)
-    plt.subplot(3,1,2)
+    plt.subplot(2,1,1)
+    plt.plot(time,f,label="force",color='k',alpha=0.3)
     plt.plot(x,f[slice_to_use])
-    PlotUtilities.lazyLabel("","Force","")
+    PlotUtilities.lazyLabel("","Force","",loc="upper right")
     plt.xlim(time_lim)
-    plt.subplot(3,1,3)
-    plt.plot(retract.Time,probability_updated,label="prob (updated)",
+    plt.subplot(2,1,2)
+    plt.plot(time,probability_updated,label="prob (updated)",
              linestyle='--')
     plt.plot(x,spline_probability_in_slice,color='k',alpha=0.3,
              label="prob (original)")
     plt.xlim(time_lim)
+    plt.plot(time,boolean_ret+min(probability_updated),linewidth=1,alpha=0.3,
+             label="mask")
+    plt.axhline(threshold,label="t={:.3g}".format(threshold))
+    mask_ends = np.zeros(time.size)
+    mask_ends[slice_updated] = 1
+    plt.plot(time,mask_ends,label="end mask")
     plt.yscale('log')
     plt.ylim([min(probability_updated)/5,2])
-    PlotUtilities.lazyLabel("Time","Probability","")
+    PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")

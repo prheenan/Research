@@ -176,10 +176,6 @@ def derivative_mask_function(split_fec,slice_to_use,
     x = retract.Time[slice_to_use]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
     interp_deriv = interp.derivative()(x)
-    # anywhere  the derivative is >= 0 isn't an event
-    where_deriv_ge_zero = offset + np.where(interp_deriv >= 0)[0]
-    if (where_deriv_ge_zero.size > 0):
-        boolean_ret[where_deriv_ge_zero] = 0
     # POST: start looking at other points
     median = np.median(interp_deriv)
     # get rid of final outlying derivative points 
@@ -231,10 +227,16 @@ def derivative_mask_function(split_fec,slice_to_use,
     probability_updated[:absolute_min_idx] = 1
     probability_updated[absolute_max_index:] = 1
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
-    boolean_ret *= (probability_updated < threshold)
+    # completely new boolean array
+    boolean_ret = (probability_updated < threshold)
     # remove the bad points
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
+    # anywhere  the derivative is >= 0 isn't an event
+    where_deriv_ge_zero = offset + np.where(interp_deriv >= 0)[0]
+    if (where_deriv_ge_zero.size > 0):
+        boolean_ret[where_deriv_ge_zero] = 0
+        probability_updated[where_deriv_ge_zero] = 1
     return slice_updated,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
@@ -616,6 +618,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                     probability=probability_distribution,
                     threshold=threshold)
             slice_to_use,bool_array, probability_distribution = res
+            # mask on probability distribution, to keep things consistent
             probabilities.append(probability_distribution)
             masks.append(np.where(bool_array)[0])
     # only keep points where we are farther than min_points between from the 
