@@ -102,20 +102,21 @@ class split_force_extension:
     def surface_distance_from_trigger(self):
         return abs(min(self.approach.Separation))
     def get_predicted_approach_surface_index(self):
-        _index_surface_relative(self.approach.Separation,
-                                self.surface_distance_from_trigger())
+        n_points = _index_surface_relative(self.approach.Separation,
+                                           self.surface_distance_from_trigger())
+        return n_points                                            
     def get_predicted_retract_surface_index(self):
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        _index_surface_relative(self.retract.Separation,
-                                self.surface_distance_from_trigger())
+        n_points = _index_surface_relative(self.retract.Separation,
+                                           self.surface_distance_from_trigger())
         return n_points
 
 def _index_surface_relative(x,offset_needed):
     sep_diff = np.median(np.abs(np.diff(x)))
     n_points = int(np.ceil(offset_needed/sep_diff))
-
+    return n_points
         
         
 def filter_fec(obj,n_points):
