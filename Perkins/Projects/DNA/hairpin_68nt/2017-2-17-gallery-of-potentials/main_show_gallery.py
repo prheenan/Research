@@ -9,12 +9,19 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Personal.EventDetection.Util import Analysis
 from GeneralUtil.python import PlotUtilities
-
+from FitUtil import fit_base
 from scipy.interpolate import interp1d
-from scipy.optimize import brute
 
 def coth(x):
     return 1/np.tanh(x)
+    
+def fjc_predicted_force_at_ext(separation,force,*args,**kwargs):
+    ext_modelled,force_modelled = fjc_model_ext_and_force(force,*args,**kwargs)
+    # interpolate back onto the grid we care about 
+    interp = interp1d(ext_modelled,force_modelled,bounds_error=False,
+                      fill_value="extrapolate")
+    predicted_force = interp(separation)
+    return predicted_force
 
 def fjc_extension(F,L0,Lp,kbT,K0):
     """
@@ -33,34 +40,13 @@ def fjc_model_ext_and_force(F,*args,**kwargs):
     force_modelled = fjc_model_force(F,*args,**kwargs)
     ext_modelled = fjc_extension(force_modelled,*args,**kwargs)
     return ext_modelled,force_modelled
-    
-def fjc_predicted_force_at_ext(separation,force,*args,**kwargs):
-    ext_modelled,force_modelled = fjc_model_ext_and_force(force,*args,**kwargs)
-    # interpolate back onto the grid we care about 
-    interp = interp1d(ext_modelled,force_modelled,bounds_error=False,
-                      fill_value="extrapolate")
-    predicted_force = interp(separation)
-    return predicted_force
-    
-def objective_l2(func_predict,true_values,*args):
-    predicted_values = func_predict(*args)
-    values = np.abs(predicted_values-true_values)**2
-    to_ret =  sum(values)/sum(true_values**2)
-    return to_ret
 
-def brute_optimize(func_to_call,true_values,brute_dict=dict()):
-    objective = lambda *args: objective_l2(func_to_call,true_values,*args)
-    return brute(objective,disp=False,**brute_dict)
-    
 def fit_fjc_contour(separation,force,brute_dict=dict(),**kwargs):
     func = lambda *args: \
         fjc_predicted_force_at_ext(separation,force,*args,**kwargs)
-    ret = brute_optimize(func,force,brute_dict=brute_dict)
-    full_output_str = "full_output"
-    if ( (full_output_str in brute_dict) and (brute_dict[full_output_str])):
-        x0,fval,grid,Jout = ret
-    else:
-        x0 = ret
+    x0 = fit_base.brute_optimize(func,force,brute_dict=brute_dict,
+                                 full_output=False)
+    x0 = ret
     model_x, model_y = fjc_model_ext_and_force(force,*x0,**kwargs)
     min_sep = min(separation)
     idx = np.where(model_x >= min_sep)
