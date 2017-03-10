@@ -77,7 +77,7 @@ def spline_derivative_probability(split_fec):
     interpolator = split_fec.retract_spline_interpolator()
     return _spline_derivative_probability_generic(time,interpolator)
 
-def _spline_derivative_probability_generic(x,interpolator):
+def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     """
     see  spline_derivative_probability, except a genertic method
     
@@ -86,26 +86,28 @@ def _spline_derivative_probability_generic(x,interpolator):
         interpolator: to interpolate along
     Returns:
         see spline_derivative_probability
-    """
+    """ 
     derivative_force = interpolator.derivative()(x)
-    # get the median and std of deriv
-    med_deriv = np.median(derivative_force)
-    q_loq_percentile = 0
-    q_high_percentile = 100
-    q_low,q_high = np.percentile(derivative_force,
-                                 [q_loq_percentile,q_high_percentile])
-    iqr_region_idx = np.where( (derivative_force <= q_high) & 
-                               (derivative_force >= q_low))[0]
-    std_iqr = np.std(derivative_force[iqr_region_idx])
+    if (loc is None):
+        loc = np.median(derivative_force)
+    if (scale is None):
+        q_loq_percentile = 0
+        q_high_percentile = 100
+        q_low,q_high = np.percentile(derivative_force,
+                                    [q_loq_percentile,q_high_percentile])
+        iqr_region_idx = np.where( (derivative_force <= q_high) & 
+                                   (derivative_force >= q_low))[0]
+        std_iqr = np.std(derivative_force[iqr_region_idx])
+        scale = std_iqr
     probability = np.zeros(derivative_force.size)
     # anything at or above the median, or  (>= zero) isnt interesting
-    conditions_no_event = ((derivative_force >= med_deriv - std_iqr) | \
-                          (derivative_force >= 0))
+    conditions_no_event = ((derivative_force >= loc - std_iqr) | \
+                           (derivative_force >= 0))
     probability[np.where(conditions_no_event)]  = 1
     # other things might be
     possible_idx = np.where(~conditions_no_event)
     possible_deriv = derivative_force[possible_idx]
-    k = (possible_deriv-med_deriv)/std_iqr
+    k = (possible_deriv-loc)/scale
     probability[possible_idx]  = 1/k**2
     probability = np.minimum(probability,1)
     return probability 
