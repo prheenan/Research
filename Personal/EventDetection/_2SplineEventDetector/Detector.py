@@ -118,7 +118,6 @@ def force_value_mask_function(split_fec,slice_to_use,
          see adhesion_mask_function_for_split_fec, except tuples are dealing
          with the force value mask.
     """
-    # XXX debugging
     retract = split_fec.retract
     n_points = split_fec.tau_num_points
     f = retract.Force[slice_to_use]
@@ -173,9 +172,11 @@ def derivative_mask_function(split_fec,slice_to_use,
     # POST: something to look at. find the spline-interpolated derivative
     # probability
     retract = split_fec.retract
-    x = retract.Time[slice_to_use]
+    time = retract.Time
+    force = retract.Force
+    x =  time[slice_to_use]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
-    interp_deriv = interp.derivative()(x)
+    interp_deriv = interp.derivative()(x) 
     # POST: start looking at other points
     median = np.median(interp_deriv)
     # get rid of final outlying derivative points 
@@ -236,7 +237,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     where_deriv_ge_zero = offset + np.where(interp_deriv >= 0)[0]
     if (where_deriv_ge_zero.size > 0):
         boolean_ret[where_deriv_ge_zero] = 0
-        probability_updated[where_deriv_ge_zero] = 1
+        probability_updated[where_deriv_ge_zero] = 1        
     return slice_updated,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
@@ -676,7 +677,10 @@ def _predict_helper(split_fec,threshold,**kwargs):
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
     # N degree b-spline has continuous (N-1) derivative
-    interp = split_fec.retract_spline_interpolator(deg=2)
+    interp = split_fec.retract_spline_interpolator()
+    # set the knots based on the initial interpolator, so that
+    # any time we make a new splining object, we use the same knots
+    split_fec.set_retract_knots(interp)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,

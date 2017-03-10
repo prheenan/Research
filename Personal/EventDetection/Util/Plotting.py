@@ -136,13 +136,13 @@ def plot_prediction_info(ex,info,xlabel="Time",
     boolean_mask[mask] = 1
     masked_cdf = cdf.copy()
     masked_cdf *= boolean_mask
-    n_rows = 4
+    n_rows = 3
     n_cols = 1
     lazy_kwargs = dict(frameon=True,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
-    plt.axvline(x[surface_index],label="Predicted surface location")
+    plt.axvline(x[surface_index],label="Surface\n(pred)")
     highlight_events(event_slices,x,force_plot,**style_events)
     PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)
     plt.xlim(x_limits)
@@ -152,7 +152,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
     styles = [dict(color='k',linestyle='-',alpha=0.3),
               dict(color='g',linestyle='-.',alpha=0.7),
-              dict(color='r',linestyle=':')]
+              dict(color='r',linestyle=':'),
+              dict(color='m',linestyle='--')]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
         plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
@@ -163,7 +164,16 @@ def plot_prediction_info(ex,info,xlabel="Time",
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
     plt.xlim(x_limits)
-    plt.ylim([min_cdf/2,2])
+    plt.ylim([min_cdf/2,3])
+    mask_styles = styles
+    tol = 1.5 + 1e-6
+    for i,c in enumerate(info.condition_results):
+        bool = np.zeros_like(x)
+        bool[c] = 1
+        style = mask_styles[i % len(mask_styles)]
+        plt.semilogy(x,bool+tol,label="mask {:d}".format(i),**style)
+    plt.plot(x,boolean_mask,color='k',linestyle='-',label="final mask")
+    plt.xlim(x_limits)    
     plt.subplot(n_rows,n_cols,3)
     # XXX check mask has at least one...
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
@@ -181,19 +191,6 @@ def plot_prediction_info(ex,info,xlabel="Time",
             print(e)
     plt.xlim(x_limits)
     PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
-    plt.subplot(n_rows,n_cols,4)
-    mask_styles = [dict(linewidth=3,color='k',linestyle='-.',alpha=0.3),
-                   dict(linewidth=1,color='r',linestyle='-',alpha=0.7),
-                   dict(linewidth=2,color='b',linestyle='--',alpha=0.7)]
-    tol = 1e-6
-    for i,c in enumerate(info.condition_results):
-        bool = np.zeros_like(x)
-        bool[c] = 1
-        style = mask_styles[i % len(mask_styles)]
-        plt.semilogy(x,bool+tol,label="mask {:d}".format(i),**style)
-    plt.plot(x,boolean_mask,color='k',linestyle='-',label="final mask")
-    plt.xlim(x_limits)
-    PlotUtilities.lazyLabel(xlabel,"mask (au)","",**lazy_kwargs)
 
 def plot_classification(split_object,scoring_object):
     """
@@ -370,7 +367,7 @@ def debugging_plots(id_string,example_split,info,plot_auto=False):
         plot_autocorrelation(example_split)
         PlotUtilities.savefig(fig,out_file_path + "auto.png")   
     # XXX fix threshhold
-    fig = PlotUtilities.figure(figsize=(12,24))    
+    fig = PlotUtilities.figure(figsize=(8,12))    
     plot_prediction_info(example_split,info)
     PlotUtilities.savefig(fig,out_file_path + "info.png")
 
@@ -651,7 +648,7 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
 
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           boolean_ret,spline_probability_in_slice,
-                          slice_updated,threshold):
+                          slice_updated,threshold,interp):
     """
     For debugging at the end of Detector.derivative_mask_function
 
@@ -667,6 +664,7 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.subplot(2,1,1)
     plt.plot(time,f,label="force",color='k',alpha=0.3)
     plt.plot(x,f[slice_to_use])
+    plt.plot(x,interp(x)*1e12,color='r')
     PlotUtilities.lazyLabel("","Force","",loc="upper right")
     plt.xlim(time_lim)
     plt.subplot(2,1,2)

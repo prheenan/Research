@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,warnings
 from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
@@ -18,17 +18,44 @@ class split_force_extension:
         self.dwell = dwell
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
-    def retract_spline_interpolator(self,slice_to_fit=None,**kwargs):
+        self.retract_knots = None
+    def set_retract_knots(self,interpolator):
+        """
+        sets the retract knots; useful for gridding data
+        """
+        self.retract_knots = interpolator.get_knots()
+    def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau
         for the retract force versus time curbe
 
         Args:
             slice_to_fit: which part of the retract to fit
+            knots: where to put the spline knots. if none, defaults to
+            self.retract_knots (which could also be none; then just uniform)
+            
             kwargs: passed to spline_interpolator
         """
-        return spline_fit_fec(self.tau,
-                              self.retract,slice_to_fit=slice_to_fit,**kwargs)
+        if knots is None:
+            knots = self.retract_knots
+        if (knots is not None):
+            # POST: actually have some knots; find the ones we can use
+            x = self.retract.Time
+            start = slice_to_fit.start
+            stop = slice_to_fit.stop
+            if stop is None:
+                stop = -1
+            condition = ((knots >= x[start]) & (knots <= x[stop]))
+            good_idx = np.where(condition)[0]
+            if (good_idx.size  == 0):
+                err_str = "No valid knots! Analysis.retract_spline_interpolator"
+                warnings.warn(err_str, DeprecationWarning)
+                # give up on whatever we were trying to do 
+                knots = None
+            else:
+                knots = knots[good_idx]
+        return spline_fit_fec(self.tau,self.retract,slice_to_fit=slice_to_fit,
+                              knots=knots,**kwargs)
     def approach_spline_interpolator(self,slice_to_fit=None,**kwargs):
         """
         See retract_spline_interpolator, but for the approach
@@ -351,7 +378,7 @@ def spline_interpolated_by_index(f,nSmooth,**kwargs):
     x = np.arange(start=0,stop=f.size,step=1)
     return spline_interpolator(nSmooth,x,f,**kwargs)(x)
 
-def spline_interpolator(tau_x,x,f,deg=2):
+def spline_interpolator(tau_x,x,f,knots=None,deg=2):
     """
     returns a spline interpolator with knots uniformly spaced at tau_x over x
     
@@ -359,14 +386,18 @@ def spline_interpolator(tau_x,x,f,deg=2):
         tau_x: the step size in whatever units of c
         x: the unit of 'time'
         f: the function we want the autocorrelation of
+        knots: the locations of the knots (default to uniform in x)
         deg: the degree of the spline interpolator to use. continuous to 
         deg-1 derivative
     Returns:
         scipy.interpolate.LSQUnivariateSpline object, interpolating f on x
     """
-    # note: stop is *not* included in the iterval, so we add add an extra strep
-    step_knots = tau_x/2
-    knots = np.arange(start=min(x),stop=max(x)+step_knots,step=step_knots)
+    # note: stop is *not* included in the iterval, so we add an extra step 
+    # to make it included
+    if (knots is None):
+        step_knots = tau_x/2
+        knots = np.arange(start=min(x),stop=max(x)+step_knots,
+                          step=step_knots)
     # get the spline of the data
     spline_args = \
         dict(
