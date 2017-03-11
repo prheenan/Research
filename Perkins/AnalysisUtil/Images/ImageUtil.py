@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 import sys
 
 
-def PlotImage(Image,cmap=plt.cm.Greys,range_plot=None,**kwargs):
+def PlotImage(Image,height_to_plot=None,fix_extent=False,
+              cmap=plt.cm.Greys,range_plot=None,**kwargs):
     """
     Plots SurfaceImage as a greyscale map
     
@@ -17,8 +18,13 @@ def PlotImage(Image,cmap=plt.cm.Greys,range_plot=None,**kwargs):
     """
     if (range_plot is None):
         range_plot = Image.range_microns()
-    height_nm_relative =Image.height_nm_rel()
-    plt.imshow( height_nm_relative,extent=[0,range_plot,0,range_plot],
+    if (height_to_plot is None):
+        height_to_plot =Image.height_nm_rel()
+    if (fix_extent):
+        extent=[0,range_plot,0,range_plot]
+    else:
+        extent = None
+    plt.imshow( height_to_plot,extent=None,
                 cmap=cmap,aspect='auto',**kwargs)
     # remove the ticks
     plt.tick_params(axis='both', which='both', bottom='off', top='off',
