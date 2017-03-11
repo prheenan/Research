@@ -29,7 +29,7 @@ def run():
     limit = 50
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     force_read = False
     force_relearn = False
     force_learn = False or force_relearn
@@ -106,7 +106,7 @@ def run():
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
-        if (not debugging):
+        if (debugging):
             copyfile(load_paths[i],debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \

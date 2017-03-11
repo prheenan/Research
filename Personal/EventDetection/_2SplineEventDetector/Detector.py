@@ -346,12 +346,6 @@ def adhesion_mask(surface_index,n_points,split_fec,
     where_derivative_le_zero_absolute = where_deriv_le_zero
     min_idx = where_derivative_le_zero_absolute[0]
     to_ret[:min_idx] = 0
-    where_gt_zero_absolute = \
-        np.where(derivative_gt_zero & (slice_idx > min_idx))[0]
-    if (where_gt_zero_absolute.size == 0):
-        return to_ret 
-    min_idx = where_gt_zero_absolute[0]
-    to_ret[:min_idx] = 0 
     # POST: we found a peak (or a flat point) followed by some kind of increase
     # this means we should have passed (at least one) adhesion peak.
     # however, if there is an event happening here, we need to continue
