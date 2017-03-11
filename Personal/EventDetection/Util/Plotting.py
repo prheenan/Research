@@ -557,6 +557,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     plt.xticks(index + bar_width / 2, labels_coeffs,
                rotation=30,fontsize=PlotUtilities.g_font_legend)
     PlotUtilities.ylabel("BC value")
+    plt.ylim([0,1])
     # just empty :-(
 
 def rupture_distribution_plot(learner,out_file_stem):
