@@ -317,7 +317,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
     exit(1)
     """
 
-def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
+def plot_true_and_predicted_ruptures(true,predicted,title="",
                                      style_predicted=None,style_true=None):
     """
     given rupture objects, plots the true and predicted values of rupture
@@ -339,8 +339,7 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
         style_predicted = dict(color='k',label="predicted",
                                 linewidth=2,**line_style)
     if (style_true is None):
-        style_true = dict(color='g',label=label_true,alpha=0.5,**line_style)
-    
+        style_true = dict(color='g',label="true",alpha=0.5,**line_style)
     _plot_rupture_objects(true,marker='o',linewidth=0,linestyle="None",
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
@@ -471,6 +470,8 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
                             "Event distributions for {:s}".format(name))
     
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
+    if len(to_bin) == 0:
+        return
     plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
@@ -486,23 +487,25 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True):
     gs = gridspec.GridSpec(2, 2,
-                           width_ratios=[4,1],
-                           height_ratios=[4,1])
+                           width_ratios=[3,1],
+                           height_ratios=[3,1])
     ruptures_true,loading_true = \
         get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
         get_rupture_in_pN_and_loading_in_pN_per_s(pred)
-    double_f = lambda f,*args: f([f(x) for x in args])
+    double_f = lambda f,*args: f([f(x) for x in args if len(x) > 0])
     if (style_true is None):
-        style_true = dict(color='k',alpha=0.2)
+        style_true = dict(color='k',alpha=0.5)
     if (style_pred is None):
-        style_pred = dict(color='g',alpha=0.7)
+        style_pred = dict(color='g',alpha=0.3)
     if (scatter_kwargs is None):
-        scatter_kwargs = dict(style_true=style_true,style_predicted=style_pred)
+        scatter_kwargs = dict(style_true=dict(label="true",**style_true),
+                              style_predicted=dict(label="predicted",
+                                                   **style_pred))
     if (lim_force is None):
         min_y = double_f(min,ruptures_pred,ruptures_true)
         max_y = double_f(max,ruptures_pred,ruptures_true)
-        lim_force = [min_y/2,max_y*2]
+        lim_force = [min_y*0.9,max_y*1.1]
     if (lim_load is None):
         safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
         min_x = double_f(min,safe(loading_pred),safe(loading_true))
@@ -522,39 +525,34 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 = plt.subplot(gs[1])
-    rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
-                            **style_true)
+    hatch_true = "//"
+    true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
+    pred_style_histogam = dict(zorder=1,**style_pred)
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
-                            **style_pred)
-    PlotUtilities.lazyLabel("Count","","")
+                            label="predicted",**pred_style_histogam)
+    rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
+                            label="true",**true_style_histogram)
+    PlotUtilities.lazyLabel("Count","","",frameon=True,loc='upper right')
     if (remove_ticks):
         ax1.get_yaxis().set_ticklabels([])
     plt.ylim(lim_force)
+    plt.xscale('log')
     ax4 = plt.subplot(gs[2])
-    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
-                           **style_true)
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                           **style_pred)
+                           **pred_style_histogam)
+    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
+                           **true_style_histogram)
     PlotUtilities.lazyLabel("loading rate [pN/s]","Count","")
     plt.xscale('log')
+    plt.yscale('log')
     plt.xlim(lim_load)
     ax3 = plt.subplot(gs[3])
-    coeff_load = Analysis.\
-                 bhattacharyya_probability_coefficient_1d(loading_true,
-                                                         loading_pred,
-                                                         bins_load)
-    coeff_force = Analysis.\
-                  bhattacharyya_probability_coefficient_1d(ruptures_true,
-                                                          ruptures_pred,
-                                                          bins_rupture)
-    # do a 2-d coefficient
-    tuple_true = [loading_true,ruptures_true]
-    tuple_pred = [loading_pred,ruptures_pred]
-    tuple_bins = [bins_load,bins_rupture]
-    coeff_2d = Analysis.\
-            bhattacharyya_probability_coefficient_dd(tuple_true,tuple_pred,
-                                                     tuple_bins)
-    coeffs = [coeff_load,coeff_force,coeff_2d]
+    if (len(loading_pred) > 0):
+        coeffs = Analysis.\
+            bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
+                                    ruptures_true,ruptures_pred,bins_rupture)
+    else:
+        coeffs = [0,0,0]
     labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
@@ -578,19 +576,17 @@ def rupture_distribution_plot(learner,out_file_stem):
     Returns:
         nothingS
     """
-    train_scores = learner._scores_by_params(train=True)
-    valid_scores = learner._scores_by_params(train=False)
-    # get the validation ruptures (both truee and predicted)
-    ruptures_valid_true = Learning.rupture_objects(valid_scores,get_true=True)
-    ruptures_valid_pred = Learning.rupture_objects(valid_scores,get_true=False)
     name = learner.description.lower()
     x_values = learner.param_values()
+    ruptures_valid_true,ruptures_valid_pred = \
+        Learning.get_true_and_predicted_ruptures_per_param(learner)
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
-        fig = PlotUtilities.figure()
+        fig = PlotUtilities.figure(figsize=(12,12))
         rupture_plot(true,pred)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
+        break
 
 
 def plot_individual_learner(cache_directory,learner):

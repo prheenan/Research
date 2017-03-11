@@ -185,6 +185,37 @@ def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
 
+
+def bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
+                            ruptures_true,ruptures_pred,bins_rupture):
+    """
+    returns the bhattacharya coefficients for the distriutions of the loading
+    rate, rupture force, and 2-d version
+
+    Args:
+        <x>_<true/pred>: the list of <x> values that are ground truth or 
+        predicted
+
+        bins<x>: for histogramming
+    Return:
+        three-tuple of BC coefficient (between 0 and 1)for the distributions of
+        loading rate, rupture force, and their 2-tuple 
+    """
+    coeff_load = bhattacharyya_probability_coefficient_1d(loading_true,
+                                                          loading_pred,
+                                                          bins_load)
+    coeff_force = bhattacharyya_probability_coefficient_1d(ruptures_true,
+                                                           ruptures_pred,
+                                                           bins_rupture)
+    # do a 2-d coefficient
+    tuple_true = [loading_true,ruptures_true]
+    tuple_pred = [loading_pred,ruptures_pred]
+    tuple_bins = [bins_load,bins_rupture]
+    coeff_2d = bhattacharyya_probability_coefficient_dd(tuple_true,tuple_pred,
+                                                        tuple_bins)
+    coeffs = [coeff_load,coeff_force,coeff_2d]
+    return coeffs
+
 def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
     """
     # return the bhattacharyya distance between two 1-d arras

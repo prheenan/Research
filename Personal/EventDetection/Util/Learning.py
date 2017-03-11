@@ -170,6 +170,25 @@ def rupture_objects(scores,get_true):
     return _walk_scores(scores,func_fold=func_fold,
                         func_param=np.concatenate,func_top=np.array)
 
+
+def get_true_and_predicted_ruptures_per_param(learner):
+    """
+    gets the truee and preicted rupture objects for the *validation* folds
+    of each learner object 
+
+    Args:
+         learner: the learner_curve obect to use
+    Returns:
+         tuple of validation true, predicted ruptures
+    """
+    train_scores = learner._scores_by_params(train=True)
+    valid_scores = learner._scores_by_params(train=False)
+    # get the validation ruptures (both truee and predicted)
+    ruptures_valid_true = rupture_objects(valid_scores,get_true=True)
+    ruptures_valid_pred = rupture_objects(valid_scores,get_true=False)
+    return ruptures_valid_true,ruptures_valid_pred
+
+
 def event_distance_distribution(scores,**kwargs):
     """
     gets the distribution of distances at each paramter value
