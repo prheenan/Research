@@ -244,7 +244,7 @@ def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
     v2_hist,v2_edges = np.histogramdd(sample=v2,**histogram_kwargs)
     return bhattacharyya_probability_coefficient(v1_hist,v2_hist)
 
-def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
+def bhattacharyya_probability_coefficient(v1_hist,v2_hist,use_min=True):
     """
     # return the bhattacharyya distance between the probabilities, see:
     # https://en.wikipedia.org/wiki/Bhattacharyya_distance
@@ -258,7 +258,11 @@ def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
     v2_hist = v2_hist.flatten()
     p1 = v1_hist/np.sum(v1_hist)
     p2 = v2_hist/np.sum(v2_hist)
-    return sum(np.sqrt(p1*p2))
+    if (use_min):
+        prod = np.minimum(p1,p2)**2
+    else:    
+        prod = p1*p2
+    return sum(np.sqrt(prod))
     
 
 def _surface_index(filtered_y,y,last_less_than=True):
