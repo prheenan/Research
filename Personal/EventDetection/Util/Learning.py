@@ -246,19 +246,33 @@ def event_distance_distribution(scores,**kwargs):
                         func_param=np.concatenate,func_top=np.array)
 
 def f_score_dist(v):
-    kw = dict(floor_is_max)
+    """
+    returns the distance f score for the given score object v
+
+    Args:
+        v: to scoore
+    Returns;
+        f score, 0 to 1, higher is better. 
+    """
+    kw = dict(floor_is_max=True)
     dist_to_true = v.minimum_distance_distribution(to_true=True,**kw)
-    dist_to_pred = v.minimum_distance_distribution(to_true=True,**kw)
-    x_max = v.max_x
+    dist_to_pred = v.minimum_distance_distribution(to_true=False,**kw)
+    max_x = v.max_x
     # get the averages ? XXX
-    average_to_true = np.median(dist_to_true)
-    average_to_pred = np.median(dist_to_pred)
+    if (len(dist_to_true) != 0):
+        average_to_true = np.median(dist_to_true)
+    else:
+        average_to_true = 0
+    if (len(dist_to_pred) != 0):
+        average_to_pred = np.median(dist_to_pred)
+    else:
+        average_to_pred = 0
     # defining precision and recall in a distance-analogy sense
-    precision_dist = averge_to_true
+    precision_dist = average_to_true
     recall_dist = average_to_pred
     f_score = \
-      1-(2/x_max) * (precision_dist * recall_dist)/(precision_dist*recall_dist)
-    return f_sore
+      1-(2/max_x) * (precision_dist * recall_dist)/(precision_dist+recall_dist)
+    return f_score
 
 def event_distance_f_score(scores):
     """
@@ -267,7 +281,7 @@ def event_distance_f_score(scores):
     Args:
         scores: see fold_number_events_off
     """
-    func_fold = lambda x: np.concatenate([f_score_dist(v) for v in x])
+    func_fold = lambda x: [f_score_dist(v) for v in x]
     return _walk_scores(scores,func_fold = func_fold,
                         func_param=np.concatenate,func_top=np.array)
     

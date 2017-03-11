@@ -83,19 +83,28 @@ def run(base="./"):
         name = l.description.lower()
         true,pred =  ruptures_valid_true[best_param_idx],\
                      ruptures_valid_pred[best_param_idx]
-        best_fold.append([x_values,name,true,pred])
+        best_fold.append([x_values,name,true,pred,best_param_idx])
     # plot the best fold for each
     out_names = []
-    for i,(x,name,true,pred) in enumerate(best_fold):
+    for i,(x,name,true,pred,best_param_idx) in enumerate(best_fold):
+        # XXX move to checkpointing?
+        valid_scores = trials[i]._scores_by_params(train=False)
+        distance_scores = Learning.event_distance_f_score(valid_scores)
+        best_param_score = distance_scores[best_param_idx]
+        # plot everything 
+        out_learner_base = "{:s}{:s}".format(out_base,name)
+        fig = PlotUtilities.figure(figsize=(8,6))
+        Plotting.distance_f_score_plot(best_param_score)
+        PlotUtilities.savefig(fig,out_learner_base + "_f.png")
         use_legend = (i == 0)
         fig = PlotUtilities.figure(figsize=(8,6))
         Plotting.rupture_plot(true,pred,use_legend=use_legend,
                               lim_plot_load=lim_load_max,
                               lim_plot_force=lim_force_max,
                               count_limit=[0.5,count_max*2])
-        out_path = "{:s}{:s}.svg".format(out_base,name)
-        PlotUtilities.savefig(fig,out_path)
-        out_names.append(out_path)
+        final_out_path = out_learner_base + ".svg"
+        PlotUtilities.savefig(fig,final_out_path)
+        out_names.append(final_out_path)
     data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
     sc.Figure("30cm", "37cm", 
               *(data_panels)).\

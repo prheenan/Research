@@ -457,17 +457,65 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     plt.gca().set_yscale('log')
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
                             "Event distributions for {:s}".format(name))
-    
+
+def distance_f_score_plot(distance_scores,bins=None,xlim_plot=None):
+    """
+    plots the distnce f scores 
+
+    Args: 
+        distance_scores: to plot 
+        bins: how to bin the data. default to a huge logspace bining
+    Returnss:
+        noting
+    """
+    xlim = [np.min(distance_scores),np.max(distance_scores)]
+    if (xlim_plot is None):
+        xlim_plot = xlim
+    if (bins is None):
+        xlim_log = np.log10(xlim)
+        bins = np.logspace(*xlim_log,num=10)
+    plt.hist(distance_scores,bins=bins,log=True)
+    plt.xscale('log')
+    plt.xlim(xlim)
+    PlotUtilities.lazyLabel("Count","Distance F-score","")
+
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
+    """
+    plots a generic rupture (or not, if there's no data)"
+
+    Args:
+        to_bin: what to histogram
+        others: see plt.hist
+    Returns: 
+        nothing
+    """
     if len(to_bin) == 0:
         return
     plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
+    """
+    plots a rupture force histogram
+
+    Args:
+        obj: list of rupture objects
+        others: see _gen_rupture_hist
+    Returns: 
+        nothing
+    """
     ruptures,_ = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(ruptures,**kwargs)
 
 def loading_rate_histogram(objs,**kwargs):
+    """
+    plots a loaifng rate histogram
+
+    Args:
+        obj: list of rupture objects
+        others: see _gen_rupture_hist
+    Returns: 
+        nothing
+    """
     _,loading_rates = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(loading_rates,**kwargs)
 
