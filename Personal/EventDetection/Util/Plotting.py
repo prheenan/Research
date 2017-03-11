@@ -586,7 +586,6 @@ def rupture_distribution_plot(learner,out_file_stem):
         rupture_plot(true,pred)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
-        break
 
 
 def plot_individual_learner(cache_directory,learner):
