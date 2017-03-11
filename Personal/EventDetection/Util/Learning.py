@@ -171,6 +171,47 @@ def rupture_objects(scores,get_true):
                         func_param=np.concatenate,func_top=np.array)
 
 
+
+def limits_and_bins_force_and_load(ruptures_true,ruptures_pred,
+                                   loading_true,loading_pred,n=20):
+    """
+    Return a 4-tuple of limit,bins  for rupture force and loading rate
+
+    Args:
+        <x>_<true/pred> : llist of true/predicted x
+        n: number of bins
+    Returns:
+       limits force,bins force,limits loaidng,bins loading
+    """
+    double_f = lambda f,*args: f([f(x) for x in args if len(x) > 0])
+    # determine the limits on the rupture force
+    min_y = double_f(min,ruptures_pred,ruptures_true)
+    max_y = double_f(max,ruptures_pred,ruptures_true)
+    lim_force = [min_y,max_y]
+    # determine the limits on the loading rate
+    safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
+    min_x = double_f(min,safe(loading_pred),safe(loading_true))
+    max_x = double_f(max,safe(loading_pred),safe(loading_true))
+    lim_load = [min_x,max_x]
+    bins_rupture= np.linspace(*lim_force,num=n)
+    min_y = max(min(lim_load),1e-2)
+    logy = np.log10([min_y,max(lim_load)])
+    bins_load = np.logspace(*logy,num=n)
+    return lim_force,bins_rupture,lim_load,bins_load
+    
+
+def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
+    """
+    Args:
+        objs: see _plot_rupture_objecs
+    Returns:
+        tuple of <rupture force in pN, loading rate in pN>
+    """
+    to_pN = lambda x: x * 1e12
+    rupture_forces_pN = np.array([to_pN(obj.rupture_force) for obj in objs])
+    loading_rate_pN_per_s = np.array([to_pN(obj.loading_rate) for obj in objs])
+    return rupture_forces_pN,loading_rate_pN_per_s
+
 def get_true_and_predicted_ruptures_per_param(learner):
     """
     gets the truee and preicted rupture objects for the *validation* folds

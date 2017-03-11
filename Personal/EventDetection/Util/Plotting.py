@@ -265,19 +265,6 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
 
-        
-def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
-    """
-    Args:
-        objs: see _plot_rupture_objecs
-    Returns:
-        tuple of <rupture force in pN, loading rate in pN>
-    """
-    to_pN = lambda x: x * 1e12
-    rupture_forces_pN = np.array([to_pN(obj.rupture_force) for obj in objs])
-    loading_rate_pN_per_s = np.array([to_pN(obj.loading_rate) for obj in objs])
-    return rupture_forces_pN,loading_rate_pN_per_s
-
 def _plot_rupture_objects(to_plot,**kwargs):
     """
     given rupture objects, plots rupture force in pN (given N) vs
@@ -290,7 +277,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
          Nothing
     """
     rupture_forces_pN,loading_rate_pN_per_s = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
     # XXX debugging...
     """
@@ -318,6 +305,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
     """
 
 def plot_true_and_predicted_ruptures(true,predicted,title="",
+                                     use_legend=True,loc='upper left',
                                      style_predicted=None,style_true=None):
     """
     given rupture objects, plots the true and predicted values of rupture
@@ -345,7 +333,8 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
     PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
-                            frameon=True,legend_kwargs=dict(numpoints=1))
+                            frameon=True,legend_kwargs=dict(numpoints=1),
+                            useLegend=use_legend,loc=loc)
 
 
 
@@ -475,25 +464,24 @@ def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
-    ruptures,_ = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
+    ruptures,_ = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(ruptures,**kwargs)
 
 def loading_rate_histogram(objs,**kwargs):
-    _,loading_rates = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
+    _,loading_rates = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(loading_rates,**kwargs)
 
 def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
-                 style_true=None,
+                 style_true=None,use_legend=True,count_limit=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
-                 remove_ticks=True):
+                 remove_ticks=True,lim_plot_load=None,lim_plot_force=None):
     gs = gridspec.GridSpec(2, 2,
-                           width_ratios=[3,1],
-                           height_ratios=[3,1])
+                           width_ratios=[2,1],
+                           height_ratios=[2,1])
     ruptures_true,loading_true = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(true)
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(pred)
-    double_f = lambda f,*args: f([f(x) for x in args if len(x) > 0])
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)
     if (style_true is None):
         style_true = dict(color='k',alpha=0.5)
     if (style_pred is None):
@@ -502,26 +490,27 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
         scatter_kwargs = dict(style_true=dict(label="true",**style_true),
                               style_predicted=dict(label="predicted",
                                                    **style_pred))
+    _lim_force,_bins_rupture,_lim_load,_bins_load = \
+        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                loading_true,loading_pred)
     if (lim_force is None):
-        min_y = double_f(min,ruptures_pred,ruptures_true)
-        max_y = double_f(max,ruptures_pred,ruptures_true)
-        lim_force = [min_y*0.9,max_y*1.1]
+        lim_force = _lim_force
     if (lim_load is None):
-        safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
-        min_x = double_f(min,safe(loading_pred),safe(loading_true))
-        max_x = double_f(max,safe(loading_pred),safe(loading_true))
-        lim_load = [min_x*0.8,max_x*1.2]
+        bins_rupture = _bins_rupture
     if (bins_rupture is None):
-        bins_rupture= np.linspace(*lim_force,num=10)
+        bins_rupture = _bins_rupture
     if (bins_load is None):
-        min_y = max(min(lim_load),1e-2)
-        logy = np.log10([min_y,max(lim_load)])
-        bins_load = np.logspace(*logy,num=10)
+        bins_load = _bins_load
+    if (lim_plot_load is None):
+        lim_plot_load = lim_load
+    if (lim_plot_force is None):
+        lim_plot_force = lim_force
     ax0 = plt.subplot(gs[0])
-    plot_true_and_predicted_ruptures(true,pred,**scatter_kwargs)
+    plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
+                                     **scatter_kwargs)
     PlotUtilities.xlabel("")
-    plt.xlim(lim_load)
-    plt.ylim(lim_force)
+    plt.xlim(lim_plot_load)
+    plt.ylim(lim_plot_force)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 = plt.subplot(gs[1])
@@ -529,23 +518,28 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
     pred_style_histogam = dict(zorder=1,**style_pred)
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
-                            label="predicted",**pred_style_histogam)
+                            **pred_style_histogam)
     rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
-                            label="true",**true_style_histogram)
-    PlotUtilities.lazyLabel("Count","","",frameon=True,loc='upper right')
+                            **true_style_histogram)
+    PlotUtilities.lazyLabel("Count","","")
     if (remove_ticks):
         ax1.get_yaxis().set_ticklabels([])
-    plt.ylim(lim_force)
+    if (count_limit is not None):
+        plt.xlim(count_limit)
+    plt.ylim(lim_plot_force)
     plt.xscale('log')
     ax4 = plt.subplot(gs[2])
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                           **pred_style_histogam)
+                          label="predicted", **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
-                           **true_style_histogram)
-    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","")
+                           label="true",**true_style_histogram)
+    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","",frameon=True,
+                            loc='upper left',useLegend=use_legend)
     plt.xscale('log')
     plt.yscale('log')
-    plt.xlim(lim_load)
+    plt.xlim(lim_plot_load)
+    if (count_limit is not None):
+        plt.ylim(count_limit)
     ax3 = plt.subplot(gs[3])
     if (len(loading_pred) > 0):
         coeffs = Analysis.\
