@@ -105,7 +105,9 @@ class score:
              kwargs: passed to minimum_distance_distribution
         """
         return len(self.true_x),len(self.pred_x)
-    def minimum_distance_distribution(self,to_true=True):
+    def max_x(self):
+        return abs(self.max_x-self.min_x)
+    def minimum_distance_distribution(self,to_true=True,floor_is_max=False):
         """
         returns the median of the smallest distance from <predicted/true>
         to <true/predicted> if to_true is <true,false>
@@ -113,6 +115,12 @@ class score:
         if no predicted events, this value is none
 
         Args:
+             to_true: if the distance should be from predicted *to* the true
+             events (otherwise vice versa)
+            
+             floor_is_max: if the baseline (e.g. predicted) is empty, 
+             should we return max_x for each of search.
+
              kwargs: passed to minimum_distance_distribution
         """
         if (to_true):
@@ -121,9 +129,13 @@ class score:
         else:
             baseline = self.pred_x
             search = self.true_x
-        if (len(baseline) == 0 or len(search) == 0):
-            # no point in looking through it; return an empty list
-            return []
+        if (len(baseline) == 0):
+            if (floor_is_max):
+                max_x = self.max_x
+                return [max_x for x in search]
+            else:
+                return []
+        # POST: something in baseline
         closest_true = lambda x: baseline[np.argmin(np.abs(baseline-x))]
         min_distance_distribution = [np.abs(x-closest_true(x)) for x in search]
         return min_distance_distribution

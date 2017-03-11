@@ -467,7 +467,7 @@ def _no_event_probability(x,interp,y,n_points,slice_fit=None):
     # get the interpolated function
     interpolated_y = interp(x)
     # get a model for the local standard deviaiton
-    diff = y-interpolated_y
+    diff = np.abs(y-interpolated_y)
     stdevs = local_stdev(diff,n_points)
     # get the cwt of the wavelet; see pp219 of Mallat, Wavelet Tour (XXX TODO)
     median_local_stdev = np.median(stdevs)

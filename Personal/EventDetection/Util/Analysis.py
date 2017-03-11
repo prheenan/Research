@@ -228,7 +228,7 @@ def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
     """
     return bhattacharyya_probability_coefficient_dd(v1,v2,[bins])
 
-def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
+def bhattacharyya_probability_coefficient_dd(v1,v2,bins,normed=False):
     """
     # return the bhattacharyya distance between arbitrary-dimensional
     #probabilities, see  bhattacharyya_probability_coefficient
@@ -239,12 +239,26 @@ def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
     Returns:
         bhattacharyya distance, see bhattacharyya_probability_coefficient
     """
-    histogram_kwargs = dict(bins=bins,weights=None,normed=False)
+    histogram_kwargs = dict(bins=bins,weights=None,normed=normed)
     v1_hist,v1_edges = np.histogramdd(sample=v1,**histogram_kwargs)
     v2_hist,v2_edges = np.histogramdd(sample=v2,**histogram_kwargs)
     return bhattacharyya_probability_coefficient(v1_hist,v2_hist)
 
-def bhattacharyya_probability_coefficient(v1_hist,v2_hist,use_min=True):
+def div0(a,b,replace_div_0=0):
+    """
+    divide a by b, replacing any diviede by zero with repalace_div_0
+
+    Args:
+        a: numerator 
+        b: denom
+        replace_div_0: what to replace the value with if we divide by zero
+    """
+    with np.errstate(divide='ignore', invalid='ignore'):
+        c = np.true_divide( a, b )
+        c[~np.isfinite( c )] = replace_div_0  # -inf inf NaN
+    return c
+
+def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
     """
     # return the bhattacharyya distance between the probabilities, see:
     # https://en.wikipedia.org/wiki/Bhattacharyya_distance
@@ -256,12 +270,10 @@ def bhattacharyya_probability_coefficient(v1_hist,v2_hist,use_min=True):
     """
     v1_hist = v1_hist.flatten()
     v2_hist = v2_hist.flatten()
-    p1 = v1_hist/np.sum(v1_hist)
-    p2 = v2_hist/np.sum(v2_hist)
-    if (use_min):
-        prod = np.minimum(p1,p2)**2
-    else:    
-        prod = p1*p2
+    # if we divide by zero, then one of the probabilities was all zero -- ignore
+    p1 = v1_hist/sum(v1_hist)
+    p2 = v2_hist/sum(v2_hist)
+    prod = p1 * p2
     return sum(np.sqrt(prod))
     
 

@@ -245,6 +245,33 @@ def event_distance_distribution(scores,**kwargs):
     return _walk_scores(scores,func_fold = func_fold,
                         func_param=np.concatenate,func_top=np.array)
 
+def f_score_dist(v):
+    kw = dict(floor_is_max)
+    dist_to_true = v.minimum_distance_distribution(to_true=True,**kw)
+    dist_to_pred = v.minimum_distance_distribution(to_true=True,**kw)
+    x_max = v.max_x
+    # get the averages ? XXX
+    average_to_true = np.median(dist_to_true)
+    average_to_pred = np.median(dist_to_pred)
+    # defining precision and recall in a distance-analogy sense
+    precision_dist = averge_to_true
+    recall_dist = average_to_pred
+    f_score = \
+      1-(2/x_max) * (precision_dist * recall_dist)/(precision_dist*recall_dist)
+    return f_sore
+
+def event_distance_f_score(scores):
+    """
+    returns the *distance* f score for each curve
+
+    Args:
+        scores: see fold_number_events_off
+    """
+    func_fold = lambda x: np.concatenate([f_score_dist(v) for v in x])
+    return _walk_scores(scores,func_fold = func_fold,
+                        func_param=np.concatenate,func_top=np.array)
+    
+
 def fold_number_events_off(scores):
     """
     see number_events_off_per_param

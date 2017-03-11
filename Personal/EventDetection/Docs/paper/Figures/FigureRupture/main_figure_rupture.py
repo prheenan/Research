@@ -29,6 +29,19 @@ def before_and_after(x,y,before_slice,after_slice,style,label=None):
         plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,
                  **style_tmp)
 
+def highlight_box(force,xlim,ylim):
+    # add a rectangle and its border
+    min_f = min(force)
+    max_f = max(force)
+    plt.ylim([min_f,max_f])
+    norm = lambda x: (x-min_f)/(max_f-min_f)
+    ymin_box = norm(min(ylim))
+    ymax_box = norm(max(ylim))
+    y_args = dict(ymin=ymin_box,ymax=ymax_box)
+    plt.axvspan(*xlim, fill=False,linestyle='dashdot',edgecolor='k',
+                linewidth=3,**y_args)
+    plt.axvspan(*xlim, fill=True,color='k',alpha=0.15,
+                **y_args)
 
 def run(base="./"):
     """
@@ -43,7 +56,9 @@ def run(base="./"):
     events = example.Events
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
     event_idx_retract = fec_split.get_retract_event_centers()
-    points_around = 2000
+    event_idx = event_idx_retract[0]
+    zoom_factor = 20
+    points_around = int(np.ceil(event_idx/zoom_factor))
     retract = fec_split.retract
     retract.Force -= np.median(retract.Force)
     retract_filtered = FEC_Util.GetFilteredForce(retract,n_filter)
@@ -54,7 +69,6 @@ def run(base="./"):
     force = y_plot(retract.Force)
     x_filtered = x_plot(retract_filtered.Time)
     force_filtered = y_plot(retract_filtered.Force)
-    event_idx = event_idx_retract[0]
     zoom_start_idx = event_idx-points_around
     zoom_end_idx = event_idx+points_around
     slice_event_subplot = slice(zoom_start_idx,zoom_end_idx,1)
@@ -74,46 +88,58 @@ def run(base="./"):
     slice_after_event = slice(index_absolute,None,1)
     x_zoom = x[slice_event_subplot]
     f_zoom = force[slice_event_subplot]
-    xlim = [min(x_zoom),max(x_zoom)]
-    ylim = [min(f_zoom),max(f_zoom)]
+    xlim_zoom = [min(x_zoom),max(x_zoom)]
+    ylim_zoom = [min(f_zoom),max(f_zoom)]
+    # get the second zoom
+    second_zoom = int(points_around/zoom_factor)
+    zoom_second_before = slice(index_absolute-second_zoom,index_absolute)
+    zoom_second_after  = slice(index_absolute,index_absolute+second_zoom)
+    slice_second_zoom = slice(zoom_second_before.start,
+                              zoom_second_after.stop)
+    x_second_zoom = x[slice_second_zoom]
+    force_second_zoom = force[slice_second_zoom]
+    xlim_second_zoom = [min(x_second_zoom),max(x_second_zoom)]
+    ylim_second_zoom = [min(force_second_zoom),max(force_second_zoom)]
+    # plot everything
+    n_plots = 3
     fig = PlotUtilities.figure((16,8))
-    plt.subplot(1,2,1)
+    plt.subplot(1,n_plots,1)
     ax = plt.gca()
     fmt(ax)
     style_data = dict(alpha=0.3,linewidth=1)
     style_filtered = dict(alpha=1,linewidth=2)
     # plot the force etc
     before_and_after(x,force,slice_before_event,slice_after_event,style_data,
-                     label="Raw Data (25kHz)")
+                     label="Raw data (25kHz)")
     before_and_after(x,force_filtered,slice_before_event,slice_after_event,
-                     style_filtered,label="Filtered Data (25Hz)")
-    # add a rectangle and its border
-    min_f = min(force)
-    max_f = max(force)
-    plt.ylim([min_f,max_f])
-    norm = lambda x: (x-min_f)/(max_f-min_f)
-    ymin_box = norm(min(ylim))
-    ymax_box = norm(max(ylim))
-    y_args = dict(ymin=ymin_box,ymax=ymax_box)
-    plt.axvspan(*xlim, fill=False,linestyle='dashdot',edgecolor='k',
-                linewidth=3,**y_args)
-    plt.axvspan(*xlim, fill=True,color='k',alpha=0.15,
-                **y_args)
+                     style_filtered,label="Filtered data (25Hz)")
+    highlight_box(force,xlim_zoom,ylim_zoom)
     PlotUtilities.lazyLabel("Time [s]","Force (pN)","",loc="lower right",
                             frameon=True)
     # plot the rupture
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
-    plt.subplot(1,2,2)
+    plt.subplot(1,n_plots,2)
     before_and_after(x,force,slice_before_zoom,slice_after_zoom,style_data)
     plt.plot(x_event,predicted,color='k',linestyle='--',linewidth=3,
-             label="Loading rate line")
-    plt.plot(x[index_absolute],predicted[index],'go',markersize=10,linewidth=0,
-             alpha=0.3,label="Rupture Event")
-    plt.xlim(xlim)
-    plt.ylim(ylim)
+             label="Linear fit")
+    plot_rupture = lambda l: plt.plot(x[index_absolute],predicted[index],'go',
+                                      markersize=10,linewidth=0,alpha=0.3,
+                                      label=l)
+    plot_rupture('Rupture')
+    PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper left',
+                            legend_kwargs=dict(numpoints=1))
+    highlight_box(f_zoom,xlim_second_zoom,ylim_second_zoom)
+    plt.xlim(xlim_zoom)
+    plt.ylim(ylim_zoom)
+    plt.subplot(1,n_plots,3)
+    before_and_after(x,force,zoom_second_before,zoom_second_after,style_data)
+    plt.xlim(xlim_second_zoom)
+    plt.ylim(ylim_second_zoom)
+    plot_rupture("")
     PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
                             legend_kwargs=dict(numpoints=1))
+
     PlotUtilities.savefig(fig,out_fig)
     
 
