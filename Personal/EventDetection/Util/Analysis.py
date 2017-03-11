@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,warnings
 from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
@@ -18,16 +18,50 @@ class split_force_extension:
         self.dwell = dwell
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
-    def retract_spline_interpolator(self,**kwargs):
+        self.retract_knots = None
+    def set_retract_knots(self,interpolator):
+        """
+        sets the retract knots; useful for gridding data
+        """
+        self.retract_knots = interpolator.get_knots()
+    def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau
         for the retract force versus time curbe
 
         Args:
+            slice_to_fit: which part of the retract to fit
+            knots: where to put the spline knots. if none, defaults to
+            self.retract_knots (which could also be none; then just uniform)
+            
             kwargs: passed to spline_interpolator
         """
-        x,f = self.retract.Time,self.retract.Force
-        return spline_interpolator(self.tau,x,f,**kwargs)
+        if knots is None:
+            knots = self.retract_knots
+        if (knots is not None):
+            # POST: actually have some knots; find the ones we can use
+            x = self.retract.Time
+            start = slice_to_fit.start
+            stop = slice_to_fit.stop
+            if stop is None:
+                stop = -1
+            condition = ((knots >= x[start]) & (knots <= x[stop]))
+            good_idx = np.where(condition)[0]
+            if (good_idx.size  == 0):
+                err_str = "No valid knots! Analysis.retract_spline_interpolator"
+                warnings.warn(err_str, DeprecationWarning)
+                # give up on whatever we were trying to do 
+                knots = None
+            else:
+                knots = knots[good_idx]
+        return spline_fit_fec(self.tau,self.retract,slice_to_fit=slice_to_fit,
+                              knots=knots,**kwargs)
+    def approach_spline_interpolator(self,slice_to_fit=None,**kwargs):
+        """
+        See retract_spline_interpolator, but for the approach
+        """
+        return spline_fit_fec(self.tau,self.approach,
+                              slice_to_fit=slice_to_fit,**kwargs)        
     def retract_separation_interpolator(self,**kwargs):
         """
         returns an interpolator for separation based on the stored time
@@ -96,17 +130,105 @@ class split_force_extension:
         """
         get_mean = lambda ev: int(np.round(np.mean([ev.start,ev.stop]) ))
         return [ get_mean(ev) for ev in  self.get_retract_event_idx()]
+    def surface_distance_from_trigger(self):
+        """
+        returns the distance in separtion units from the trigger point
+        """
+        return abs(min(self.approach.Separation))
+    def get_predicted_approach_surface_index(self):
+        """
+        returns the predicted place the surface is on the approach
+        """    
+        return np.where(self.approach.Force >0)[0][-1]
     def get_predicted_retract_surface_index(self):
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        sep_diff = np.median(np.diff(self.retract.Separation))
-        offset_needed = abs(min(self.approach.Separation))
-        n_points = int(np.ceil(offset_needed/sep_diff))
+        n_points = _index_surface_relative(self.retract.Separation,
+                                           self.surface_distance_from_trigger())
         return n_points
 
+def _index_surface_relative(x,offset_needed):
+    """
+     returns a crude estimate for  the predicted index offset for the surface
+        
+    Args:
+        x: the time series of separation
+        offset_needed: the x offset 
+    Returns: 
+        number of points for x to displace by offset_needed
+    """    
+    sep_diff = np.median(np.abs(np.diff(x)))
+    n_points = int(np.ceil(offset_needed/sep_diff))
+    return n_points
+        
+def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
+    """
+    returns an interpolator object on the given TimeSepForce object
+     
+    Args:
+        tau: see spline_interpolator
+        time_sep_force: get t he time and force from this as x,y to 
+        spline_interpolator
+        
+        slice_to_fit: part of x,f to fit
+        **kwargs: passed to spline_interpolator
+    returns:
+        see spline_interpolator
+    """    
+    x,f = time_sep_force.Time,time_sep_force.Force
+    if (slice_to_fit is None):
+        slice_to_fit = slice(0,None,1)
+    return spline_interpolator(tau,x[slice_to_fit],f[slice_to_fit],
+                               **kwargs)        
+        
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
+
+def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
+    """
+    # return the bhattacharyya distance between two 1-d arras
+
+    Args:
+        v<1/2>: see  bhattacharyya_probability_coefficient_dd, except 1-D      
+        bins: how to bin them, see 
+    Returns:
+        bhattacharyya distance, see bhattacharyya_probability_coefficient
+    """
+    return bhattacharyya_probability_coefficient_dd(v1,v2,[bins])
+
+def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
+    """
+    # return the bhattacharyya distance between arbitrary-dimensional
+    #probabilities, see  bhattacharyya_probability_coefficient
+
+    Args:
+        v<1/2>: two arbitrary-dimensional lists to compare
+        bins: how to bin them
+    Returns:
+        bhattacharyya distance, see bhattacharyya_probability_coefficient
+    """
+    histogram_kwargs = dict(bins=bins,weights=None,normed=False)
+    v1_hist,v1_edges = np.histogramdd(sample=v1,**histogram_kwargs)
+    v2_hist,v2_edges = np.histogramdd(sample=v2,**histogram_kwargs)
+    return bhattacharyya_probability_coefficient(v1_hist,v2_hist)
+
+def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
+    """
+    # return the bhattacharyya distance between the probabilities, see:
+    # https://en.wikipedia.org/wiki/Bhattacharyya_distance
+
+    Args:
+        v<1/2>_hist: values of two ditributions in each bins
+    Returns:
+        bhattacharyya distance
+    """
+    v1_hist = v1_hist.flatten()
+    v2_hist = v2_hist.flatten()
+    p1 = v1_hist/np.sum(v1_hist)
+    p2 = v2_hist/np.sum(v2_hist)
+    return sum(np.sqrt(p1*p2))
+    
 
 def _surface_index(filtered_y,y,last_less_than=True):
     """
@@ -256,7 +378,7 @@ def spline_interpolated_by_index(f,nSmooth,**kwargs):
     x = np.arange(start=0,stop=f.size,step=1)
     return spline_interpolator(nSmooth,x,f,**kwargs)(x)
 
-def spline_interpolator(tau_x,x,f,deg=2):
+def spline_interpolator(tau_x,x,f,knots=None,deg=2):
     """
     returns a spline interpolator with knots uniformly spaced at tau_x over x
     
@@ -264,14 +386,18 @@ def spline_interpolator(tau_x,x,f,deg=2):
         tau_x: the step size in whatever units of c
         x: the unit of 'time'
         f: the function we want the autocorrelation of
+        knots: the locations of the knots (default to uniform in x)
         deg: the degree of the spline interpolator to use. continuous to 
         deg-1 derivative
     Returns:
         scipy.interpolate.LSQUnivariateSpline object, interpolating f on x
     """
-    # note: stop is *not* included in the iterval, so we add add an extra strep
-    step_knots = tau_x/2
-    knots = np.arange(start=min(x),stop=max(x)+step_knots,step=step_knots)
+    # note: stop is *not* included in the iterval, so we add an extra step 
+    # to make it included
+    if (knots is None):
+        step_knots = tau_x/2
+        knots = np.arange(start=min(x),stop=max(x)+step_knots,
+                          step=step_knots)
     # get the spline of the data
     spline_args = \
         dict(
@@ -355,10 +481,29 @@ def zero_and_split_force_extension_curve(example):
     retract = example_split.retract 
     f = approach.Force
     x = approach.Time
-    num_points = int(np.ceil(f.size * 0.025))
+    # *last* time we are under; note that this is at the end of the approach
+    last_idx_under_median = (f.size - np.where(f < np.median(f))[0][-1])
+    num_points = 2 * last_idx_under_median
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split
+
+def _loading_rate_helper(x,y):
+    if (x.size < 2):
+        raise IndexError("Can't fit a line to something with <2 points")
+    coeffs = np.polyfit(y=y,x=x,deg=1)
+    predicted = np.polyval(coeffs,x=x)
+    loading_rate, _ = coeffs
+    # determine the last time the *data* is above the prediction
+    where_above = np.where(y > predicted)[0]
+    if (where_above.size == 0):
+        # unlikely but worth checking
+        last_idx_above = np.argmax(y)
+    else:
+        last_idx_above = where_above[-1]
+    # determine what we *predict* to be the value at that point
+    rupture_force = predicted[last_idx_above]
+    return coeffs,predicted,loading_rate,rupture_force,last_idx_above
 
 def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
     """
@@ -375,20 +520,8 @@ def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
     x = time[slice_to_fit]
     y = force[slice_to_fit]
     # XXX can fit a line, throw an error?
-    if (x.size < 2):
-        raise IndexError("Can't fit a line to something with <2 points")
-    coeffs = np.polyfit(y=y,x=x,deg=1)
-    predicted = np.polyval(coeffs,x=x)
-    loading_rate, _ = coeffs
-    # determine the last time the *data* is above the prediction
-    where_above = np.where(y > predicted)[0]
-    if (where_above.size == 0):
-        # unlikely but worth checking
-        last_idx_above = np.argmax(y)
-    else:
-        last_idx_above = where_above[-1]
-    # determine what we *predict* to be the value at that point
-    rupture_force = predicted[last_idx_above]
+    _,_,loading_rate,rupture_force,last_idx_above = \
+        _loading_rate_helper(x,y)
     return loading_rate,rupture_force,last_idx_above
     
     

@@ -8,59 +8,10 @@ import sys
 sys.path.append("../../../../../../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
+from Research.Perkins.AnalysisUtil.Images import ImageUtil
 
 import matplotlib.gridspec as gridspec
 from scipy.stats import norm
-
-class SurfaceImage:
-    """
-    Class for encapsulating (XXX just the height) of an image
-    """
-    def __init__(self,Example,height):
-        """
-        Args:
-
-            Example: a single ProcessSingleWave.XX object
-            height: the heights extracted from example (Example is pretty much 
-            exclusively used for meta information)
-        """
-        self.height = height
-        self.pixel_size_meters = Example.ImagePixelSize()
-        self.NumRows = height.shape[0]
-        self.range_meters = self.pixel_size_meters * self.NumRows
-    def height_nm(self):
-        """
-        Returns the height as a 2-D array in nm
-        """
-        return self.height * 1e9
-    def height_nm_rel(self):
-        """
-        returns the height, relative to the 'surface' (see args) in nm
-
-        Args:
-             pct_considered_surface: the lowest pct heights are consiered to be
-             the absolute surface. between 0 and 100
-        Returns:
-             height_nm_rel, offset to the pct
-        """
-        height_nm = self.height_nm()
-        MinV = np.median(height_nm)
-        height_nm_rel = height_nm - MinV
-        return height_nm_rel
-
-def ReadImage(InFile):
-    """
-    Reads a *single* image from the given pxp file
-
-    Args:
-         InFile: path
-    Returns:
-         List of tuple of <Full Wave Object, height array>
-    """
-    Waves = PxpLoader.LoadAllWavesFromPxp(InFile,
-                                          ValidFunc=PxpLoader.IsValidImage)
-    # get all the images
-    return [ (Example,Example.DataY[:,:,0]) for Example in Waves]
 
 def ReadImageAsObject(file_name):
     """
@@ -71,69 +22,8 @@ def ReadImageAsObject(file_name):
     Returns:
         List of SurfaceImage objects present in the file
     """
-    Tuples = ReadImage(file_name)
-    return [SurfaceImage(ex,height) for ex,height in Tuples]
-
-def PlotImage(Image,**kwargs):
-    """
-    Plots SurfaceImage as a greyscale map
-    
-    Args:
-         Image:  output of ReadImageAsObject
-         label: what to label (title) this with
-         **kwargs: passed to imshow
-    """
-    height_nm_relative = Image.height_nm_rel()
-    range_microns = Image.range_meters * 1e6
-    plt.imshow( height_nm_relative,extent=[0,range_microns,0,range_microns],
-                cmap=plt.cm.Greys,aspect='auto',**kwargs)
-    # remove the ticks
-    plt.tick_params(axis='both', which='both', bottom='off', top='off',
-                    right='off', left='off')
-
-def PlotImageDistribution(Image,pct=95,bins=100,PlotLines=True,AddSigmas=True,
-                          **kwargs):
-    """
-    Plots the distribution of image heights, relative to the surface
-
-    Args:
-        Image: output of ReadImageAsObject
-        label: see PlotImage
-        pct: where we want to draw the line on the distribution, after the
-        cummulative probability is over this number [0,100]
-        
-        bins: number of bins for the histogram
-        kwargs: passed to hist
-    Returns:
-        tuple of <n,bins,patches>, se matplotlib.pyplot.hist
-    """
-    height_nm_relative = Image.height_nm_rel()
-    n,bins,patches = plt.hist(height_nm_relative.ravel(),bins=bins,linewidth=0,
-                              edgecolor="none",alpha=0.3,
-                              normed=False,**kwargs)
-    bin_width = np.median(np.diff(bins))
-    height_nm_rel_encompassing_pct = np.percentile(height_nm_relative,pct)
-    if (PlotLines):
-        min_height = np.min(height_nm_relative.ravel())
-        max_height = np.max(height_nm_relative.ravel())
-        limits = np.linspace(start=min_height,stop=max_height,num=bins.size)
-        # fit symmetrically to between pct_min% and (100-pct_min)%
-        pct_min = 5
-        pct_max = 80
-        q_min,q_max = np.percentile(height_nm_relative,[pct_min,pct_max])
-        fit_idx = np.where( (height_nm_relative > q_min) &
-                            (height_nm_relative < q_max))
-        height_fit = height_nm_relative[fit_idx]
-        mu,std = norm.fit( height_fit)
-        n_points = height_fit.size
-        denormalize = n_points * bin_width
-        pdf = norm.pdf(limits,loc=mu,scale=std) * denormalize
-        plt.plot(limits,pdf,label=("Gaussian, stdev={:.2f}".format(std)))
-    plt.yscale('log')
-    n_limits = n[np.where(n>=1)]
-    plt.ylim([min(n_limits)/2,max(n_limits)*2])
-    return n,bins,patches
-
+    images = PxpLoader.ReadImage(file_name)
+    return [PxpLoader.SurfaceImage(ex) for ex in images]
 def MakePlot(SurfaceImage,label,OutPath,**kwargs):
     """
     Makes a simple plot of the desired distribution
@@ -141,11 +31,11 @@ def MakePlot(SurfaceImage,label,OutPath,**kwargs):
     # make plots
     fig = PlotUtilities.figure(figsize=(10/1.5,16/1.5))
     ax = plt.subplot(2,1,1)
-    PlotImage(SurfaceImage,**kwargs)
+    ImageUtil.PlotImage(SurfaceImage,**kwargs)
     PlotUtilities.lazyLabel(r"Microns",r"Microns",label)
     PlotUtilities.colorbar("Height (nm)")
     ax = plt.subplot(2,1,2)
-    bins_tmp = PlotImageDistribution(SurfaceImage)
+    bins_tmp = ImageUtil.PlotImageDistribution(SurfaceImage)
     PlotUtilities.lazyLabel("Height above surface(nm)",
                             "Count","Distribution of Heights")
     PlotUtilities.savefig(fig,OutPath)
@@ -193,7 +83,7 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
         label,kwargs = ImageInfo[i][1:]
         # plot these next to each other
         ax = plt.subplot(gs[0,i])
-        PlotImage(im,**kwargs)
+        ImageUtil.PlotImage(im,**kwargs)
         if (i ==0 ):
             PlotUtilities.lazyLabel(r"Microns",r"Microns",label)
             PlotUtilities.colorbar("Height (nm)")
@@ -201,7 +91,7 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
             PlotUtilities.lazyLabel(r"","",label)
             PlotUtilities.colorbar("")
         ax = plt.subplot(gs[1,i])
-        bins_tmp = PlotImageDistribution(im,color=colors[color_idx])
+        bins_tmp = ImageUtil.PlotImageDistribution(im,color=colors[color_idx])
         plt.xlim(Limits)
         # set common y limits
         plt.ylim(0.5,2*max_n)
@@ -217,8 +107,9 @@ def MakeGridPlot(ImageInfo,Limits,Base,Name,figsize,Force=False,
     labels = [i[1] for i in ImageInfo]
     for i,im in enumerate(Images):
         color_idx = i % len(colors)
-        PlotImageDistribution(im,label=labels[i],color=colors[color_idx],
-                              PlotLines=False,**hist_kwargs)
+        ImageUtil.PlotImageDistribution(im,label=labels[i],
+                                        color=colors[color_idx],
+                                        PlotLines=False,**hist_kwargs)
         plt.xlim(Limits)
         PlotUtilities.lazyLabel("Height above surface(nm)",
                                 "Count","Distribution of Heights")

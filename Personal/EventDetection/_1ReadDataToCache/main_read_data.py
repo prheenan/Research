@@ -29,9 +29,10 @@ def run():
     limit = 100
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
+    debugging = False
     force_read = False
     force_relearn = False
-    force_learn = False
+    force_learn = False or force_relearn
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
     GenUtilities.ensureDirExists(debug_directory)
@@ -54,22 +55,22 @@ def run():
     for l in learners:
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
-        Plotting.plot_individual_learner(cache_directory,l)
-    num_to_plot = 10
+        Plotting.plot_individual_learner(debug_directory,l)
+    num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
     x_tmp,score_tmp,error_tmp = Learning.median_dist_metric(x_values,
                                                             valid_scores)
-    # get the lowest median distance ('best case')
+    # get all the scores in the distance ('best case')
     best_x = x_tmp[np.argmin(score_tmp)]
     # find what that means in the real values, if something was invalid
     # (assumes no duplicated params...)
     best_param_idx = np.argmin(np.abs(best_x-x_values))
-    # get the corresponding validation folds
+    # get the lowest mediancorresponding validation folds
     folds = [f for f in learner.validation_folds[best_param_idx]]
-    # get all the scores in the folds for the best parameters
+    # get the  folds for the best parameters
     scores = [score for f in folds for score in f.scores]
     # get all the distances
     true_pred = [s.n_true_and_predicted_events() for s in scores]
@@ -82,14 +83,15 @@ def run():
     sort_idx = sorted(sort_idx,reverse=True,
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
-    file_names = [scores[i].source_file + "_" + scores[i].name 
+    # csv file names are formatted differently 
+    debugging_str = "_" if not debugging else ""
+    file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
     load_paths = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    load_paths = [ l for l in load_paths]
     print("loading: {:s}".format(load_paths))
     for p in load_paths:
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)

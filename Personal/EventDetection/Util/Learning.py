@@ -151,6 +151,25 @@ def stdev_dist_per_param(scores,**kwargs):
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
+def rupture_objects(scores,get_true):
+    """
+    get the rupture objects associated with the scores
+
+    Args: 
+         scores: see event_distance_distribution
+         get_true: if true, gets the *true* rupture objects associated with the
+    Returns: 
+         array of rupture objects, one per parameter
+    """
+    if (get_true):
+        func_tmp = lambda x: [v.ruptures_true for v in x]
+    else: 
+        func_tmp = lambda x: [v.ruptures_predicted for v in x]
+    # need to concatenate everything
+    func_fold = lambda *args,**kwargs: np.concatenate(func_tmp(*args,**kwargs))
+    return _walk_scores(scores,func_fold=func_fold,
+                        func_param=np.concatenate,func_top=np.array)
+
 def event_distance_distribution(scores,**kwargs):
     """
     gets the distribution of distances at each paramter value
@@ -413,7 +432,7 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-3,np.log10(0.5),    
+    no_event_tuple = [Detector.predict,np.logspace(-2,np.log10(0.9),
                                                    endpoint=True,
                                                    base=10,
                                                    num=n_points_no_event)]

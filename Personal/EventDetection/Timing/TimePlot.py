@@ -74,23 +74,6 @@ def get_linear_runtime(x,times,fudge=1):
     return params,params_std,x_pred_plot,y_pred_plot
 
 
-def autolabel(rects,label_func=lambda i,r: str(r.get_height()),**kwargs):
-    """
-    Attach a text label above each bar displaying its height
-
-    Args:
-        rects: return from ax.bar
-        label_func: takes a rect and its index, returs the label
-    Returns:
-        nothing, but sets text labels
-    """
-    ax = plt.gca()
-    for i,rect in enumerate(rects):
-        height = rect.get_height()
-        text = label_func(i,rect)
-        ax.text(rect.get_x() + rect.get_width()/2., 1.2*height,
-                text,ha='center', va='bottom',**kwargs)
-
 def plot_learner_prediction_time_comparison(learners,color='b'):
     """
     plots the asympotic slope of the learners
@@ -132,7 +115,7 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
     # add labels with the errors for each
     label_func = lambda i,r : formatted_with_errors[i]
     kwargs = dict(fontsize=PlotUtilities.g_font_legend)
-    autolabel(rects,label_func,fontdict=kwargs)
+    PlotUtilities.autolabel(rects,label_func,fontdict=kwargs)
     PlotUtilities.lazyLabel("Event finding method",
                             "Points classified per second","")
     
