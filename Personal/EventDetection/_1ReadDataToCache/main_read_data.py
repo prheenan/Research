@@ -53,7 +53,6 @@ def run():
                              n_folds,pool_size=pool_size,
                              learners=learners)
     for l in learners:
-        break
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(debug_directory,l)

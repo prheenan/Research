@@ -174,9 +174,9 @@ def derivative_mask_function(split_fec,slice_to_use,
     retract = split_fec.retract
     time = retract.Time
     force = retract.Force
-    x =  time[slice_to_use]
+    x_sliced =  time[slice_to_use]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
-    interp_deriv = interp.derivative()(x) 
+    interp_deriv = interp.derivative()(x_sliced) 
     # POST: start looking at other points
     median = np.median(interp_deriv)
     # get rid of final outlying derivative points 
@@ -193,11 +193,12 @@ def derivative_mask_function(split_fec,slice_to_use,
     approach = split_fec.approach
     approach_time_fit = approach.Time[slice_fit_approach]
     deriv_approach = spline_fit_approach.derivative()(approach_time_fit)
-    prob_kwargs = dict(loc=np.median(deriv_approach),
-                       scale=np.std(deriv_approach))
+    median_deriv_approach = np.median(deriv_approach)
+    stdev_deriv_approach = np.std(deriv_approach) 
+    prob_kwargs = dict(loc=median_deriv_approach,scale=stdev_deriv_approach)
     # XXX could use **prob_kwargs, debugging...
     spline_probability_in_slice=\
-        _spline_derivative_probability_generic(x,interp)
+        _spline_derivative_probability_generic(x_sliced,interp)
     # determine where the derivative is possibly outlying; that is a necessary
     # but not sufficient condition for an event
     tol = 1e-9
@@ -238,6 +239,14 @@ def derivative_mask_function(split_fec,slice_to_use,
     if (where_deriv_ge_zero.size > 0):
         boolean_ret[where_deriv_ge_zero] = 0
         probability_updated[where_deriv_ge_zero] = 1        
+    # anywhere the derivative is less than 1stdev from the approach is also
+    # a probability 1, by chebyshev
+    condition_insignificant = \
+        (np.abs(interp_deriv - median_deriv_approach) < stdev_deriv_approach)
+    where_deriv_insignificant = offset + np.where(condition_insignificant)[0]
+    if (where_deriv_insignificant.size > 0):
+        boolean_ret[where_deriv_insignificant] = 0
+        probability_updated[where_deriv_insignificant] = 1  
     return slice_updated,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
@@ -280,7 +289,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                             slice_fit=slice_update)
         probability_updated[slice_update] = np.minimum(1,prob_tmp)
     else:
-        slice_update = slice(0,None,1)
+        slice_update = slice(0,None,1)        
     return slice_update,boolean_array,probability
 
 def _min_points_between(autocorrelation_tau_num_points):
@@ -321,6 +330,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
     # we only *consider* points that are above some marker (e.g. surface_index)
     slice_idx = np.arange(0,time.size)
     time_to_fit = time[slice_to_fit]
+    force_to_fit = retract.Force[slice_to_fit]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_fit)
     force_fit = interp(time_to_fit)
     deriv = interp.derivative()(time_to_fit)
@@ -376,7 +386,15 @@ def adhesion_mask(surface_index,n_points,split_fec,
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)    
-    to_ret[:min_idx] = 0                                        
+    to_ret[:min_idx] = 0              
+    # finally, make sure we are at least at the N-th percentile
+    N = 75
+    pct_threshold = np.percentile(force_to_fit[min_idx:],N)
+    where_below = np.where((force_to_fit < pct_threshold) & \
+                           (slice_idx > min_idx))[0]
+    if (where_below.size > 0):
+        min_idx = where_below[0]
+    to_ret[:min_idx] = 0                  
     return to_ret                     
                      
 

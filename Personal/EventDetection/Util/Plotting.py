@@ -138,7 +138,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     masked_cdf *= boolean_mask
     n_rows = 3
     n_cols = 1
-    lazy_kwargs = dict(frameon=True,loc="best")
+    lazy_kwargs = dict(frameon=True,loc="upper right")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
@@ -150,9 +150,9 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    styles = [dict(color='k',linestyle='-',alpha=0.3),
+    styles = [dict(color='r',linestyle=':'),
+              dict(color='k',linestyle='-',alpha=0.3),
               dict(color='g',linestyle='-.',alpha=0.7),
-              dict(color='r',linestyle=':'),
               dict(color='m',linestyle='--')]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
@@ -259,8 +259,8 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
     PlotUtilities.lazyLabel("","Force","",loc="upper right",
                             frameon=True)     
     plt.subplot(2,1,2)
-    plt.plot(time,derivative_gt_zero)
-    plt.plot(time,derivative_le_zero)
+    plt.plot(time,derivative_gt_zero,label="ge")
+    plt.plot(time,derivative_le_zero,label="le")
     plt.plot(time,to_ret,color='k',linestyle='--')
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
@@ -415,7 +415,7 @@ def cross_validation_distance_metric(x_values,train_scores,valid_scores,
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
                             frameon=True)
     
-def plot_num_events_off(x_values,train_scores,valid_scores):
+def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     """
     Plots the number of 
 
@@ -438,6 +438,9 @@ def plot_num_events_off(x_values,train_scores,valid_scores):
     PlotUtilities.lazyLabel("Tuning parameter",
                             "Relative number of missing or incorrect events",
                             "")
+    if ylim is None:
+        ylim = [1e-2,1]
+    plt.ylim(ylim)
     plt.xscale('log')    
     plt.yscale('log')    
 
