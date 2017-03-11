@@ -253,7 +253,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          *args,**kwargs):
     """
-    returns the funciton adhesion_mask, with surface_index set to whatever
+   returns the funciton adhesion_mask, with surface_index set to whatever
     the surface index of split_fec is predicted to be by the approach
     
     Args:

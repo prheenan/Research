@@ -555,7 +555,6 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
             bhattacharyya_probability_coefficient_dd(tuple_true,tuple_pred,
                                                      tuple_bins)
     coeffs = [coeff_load,coeff_force,coeff_2d]
-    print(coeffs)
     labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
