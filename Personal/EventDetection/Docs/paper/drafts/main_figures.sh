@@ -54,6 +54,7 @@ make_and_copy_figure $out_path $timing_dir
 make_and_copy_figure $out_path $cartoon_dir
 make_and_copy_figure $out_path $prep_dir
 make_and_copy_figure $out_path $rupture_dir
+make_and_copy_figure $out_path "${base_dir_rel}FigurePerformance_CS/"
 
 
 
