@@ -166,10 +166,12 @@ def derivative_mask_function(split_fec,slice_to_use,
     tau_x = split_fec.tau
     df_interp_sliced = interp_deriv_sliced * tau_x
     ratio = df_interp_sliced/epsilon
-    where_not_possible = np.where(ratio > -1)
+    where_not_possible = np.where(ratio > -3)[0]
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
     # remove the bad points
-    boolean_ret[slice_to_use][where_not_possible] = 0
+    if (where_not_possible.size > 0):
+        boolean_ret[slice_to_use][where_not_possible] = 0
+        probability_updated[slice_to_use][where_not_possible] = 1
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
     # anywhere  the derivative is >= 0 isn't an event
@@ -177,8 +179,6 @@ def derivative_mask_function(split_fec,slice_to_use,
     if (where_deriv_ge_zero.size > 0):
         boolean_ret[where_deriv_ge_zero] = 0
         probability_updated[where_deriv_ge_zero] = 1        
-    # completely new boolean array
-    boolean_ret *= (probability_updated < threshold)
     return slice_updated,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
@@ -202,6 +202,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                   probability_distribution=probability,
                                   threshold=threshold,*args,**kwargs)
     where_not_adhesion = np.where(bool_adhesion)[0]
+    probability_updated= probability.copy()
     if (where_not_adhesion.size > 1):
         adhesions_removed = boolean_array.copy()
         start = where_not_adhesion[0]
@@ -218,13 +219,13 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
             retract_spline_interpolator(slice_to_fit=slice_update)
         probability_updated = np.ones( boolean_array.size)
         epsilon,sigma = split_fec.get_epsilon_and_sigma()
-        kwargs = dict()
+        kwargs = dict(sigma=sigma)
         prob_tmp, _ = _no_event_probability(time,interp,force,n_points,
                                             slice_fit=slice_update,**kwargs)
-        probability_updated[slice_update] = np.minimum(1,prob_tmp)
+        probability_updated = prob_tmp
     else:
         slice_update = slice(0,None,1)        
-    return slice_update,boolean_array,probability
+    return slice_update,boolean_array,probability_updated
 
 def _min_points_between(autocorrelation_tau_num_points):
     """
@@ -398,6 +399,7 @@ def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
     """
     if (slice_fit is None):
         slice_fit = slice(0,None,1)
+    n_original = x.size
     x = x[slice_fit]
     y = y[slice_fit]
     # get the interpolated function
@@ -405,7 +407,7 @@ def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
     # get a model for the local standard deviaiton
     diff = np.abs(y-interpolated_y)
     stdevs = Analysis.local_stdev(diff,n_points)
-    stdev_masked = stdevs[slice_fit]
+    stdev_masked = stdevs
     if sigma is None:
         qlow,qhigh = np.percentile(stdev_masked,[0,75])
         iqr = qlow-qhigh
@@ -426,7 +428,7 @@ def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
     # actually calculate the upper bound for the probability
     chebyshev[cheby_idx] = (1/k_chebyshev[cheby_idx])**2
     # for the edge cases, assume the probability is one                         
-    probability_distribution = np.ones(y.size)      
+    probability_distribution = np.ones(n_original)
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
     return probability_distribution,stdevs
@@ -452,11 +454,9 @@ def _event_probabilities(x,y,interp,n_points,threshold,**kwargs):
     """
     min_points_between = _min_points_between(n_points)
     slice_fit = slice(min_points_between,-min_points_between,1)
-    probability_distribution_in_slice,stdevs = \
+    probability_distribution,stdevs = \
         _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit,
                               **kwargs)
-    probability_distribution = np.ones_like(x)
-    probability_distribution[slice_fit] =  probability_distribution_in_slice
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
@@ -643,13 +643,14 @@ def _predict_helper(split_fec,threshold,**kwargs):
     epsilon,sigma = split_fec.\
         calculate_epsilon_and_sigma(min_points_between=min_points_between)
     split_fec.set_espilon_and_sigma(epsilon,sigma)
+    final_kwargs = dict(sigma=sigma,**kwargs)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
                       interp=interp,
                       threshold=threshold,
                       local_event_idx_function=event_by_loading_rate,
-                      **kwargs)
+                      **final_kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface
     return to_ret

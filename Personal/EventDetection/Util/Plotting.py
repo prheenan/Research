@@ -685,18 +685,45 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
                  label="prob orig")
     PlotUtilities.lazyLabel("Time","Prob/Mask","",loc='upper right')
 
-def debug_plot_derivative_ratio(x_sliced,ratio,interp_sliced,force_sliced,
-                                interp_deriv_sliced,local_std):        
-    where_possible = np.where(ratio < -1)
+def debug_plot_derivative_ratio(time,slice_to_use,
+                                ratio,interp_sliced,force_sliced,
+                                interp_deriv_sliced,local_std,
+                                where_not_possible,boolean_ret,
+                                probability_updated,absolute_min_idx):
+    x_sliced = time[slice_to_use]
+    xlim = [min(x_sliced),max(x_sliced)]
     plot_interp_deriv = interp_deriv_sliced/max(interp_deriv_sliced)
-    plt.subplot(2,1,1)
+    plt.subplot(3,1,1)
     plt.plot(x_sliced,interp_sliced*1e12,linewidth=3,label="interp")
     plt.plot(x_sliced,force_sliced*1e12,color='k',alpha=0.3,label="force")
     PlotUtilities.lazyLabel("","Force","")
-    plt.subplot(2,1,2)
+    plt.xlim(xlim)
+    plt.subplot(3,1,2)
     plt.plot(x_sliced,ratio,color='k',alpha=0.3,label="ratio")
-    plt.plot(x_sliced[where_possible],ratio[where_possible],label="<=-1")
-    PlotUtilities.lazyLabel("time","ratio df/epsilon","")
+    plt.plot(x_sliced[where_not_possible],ratio[where_not_possible],label=">=T")
+    PlotUtilities.lazyLabel("","ratio df/epsilon","")
+    plt.axvline(time[absolute_min_idx])
+    plt.xlim(xlim)
+    plt.subplot(3,1,3)
+    plt.plot(time,probability_updated,label="prob")
+    plt.plot(time,boolean_ret + min(probability_updated),label="mask")
+    plt.yscale('log')
+    plt.xlim(xlim)
+    PlotUtilities.lazyLabel("time","prob,mask","")
+
+def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
+                  sigma,epsilon):
+    plt.subplot(3,1,1)
+    plt.plot(x,y)
+    plt.plot(x,interp(x))
+    plt.subplot(3,1,2)
+    plt.plot(x,stdev_masked)
+    plt.axhline(epsilon+sigma,color='b')
+    plt.axhline(epsilon,color='r')
+    plt.axhline(epsilon-sigma,color='b')
+    plt.subplot(3,1,3)
+    plt.plot(x,probability_distribution[slice_fit])
+    plt.yscale('log')
     
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           boolean_ret,spline_probability_in_slice,
