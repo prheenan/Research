@@ -714,19 +714,51 @@ def debug_plot_derivative_ratio(time,slice_to_use,
 def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
                   sigma,epsilon):
     plt.subplot(3,1,1)
-    plt.plot(x,y)
-    plt.plot(x,interp(x))
+    plt.plot(x,y * 1e12)
+    plt.plot(x,interp(x) * 1e12)
+    PlotUtilities.lazyLabel("","force","")
     plt.subplot(3,1,2)
-    plt.plot(x,stdev_masked)
+    plt.plot(x,stdev_masked,label="masked stdev")
     plt.axhline(epsilon+sigma,color='b')
-    plt.axhline(epsilon,color='r')
+    plt.axhline(epsilon,color='r',label="epsilon")
     plt.axhline(epsilon-sigma,color='b')
+    PlotUtilities.lazyLabel("","stdev","")
     plt.subplot(3,1,3)
-    plt.plot(x,probability_distribution[slice_fit])
+    plt.plot(x,probability_distribution)
+    PlotUtilities.lazyLabel("Time","Probability","")
     plt.yscale('log')
+
+def debug_plot_derivs(approach_time,approach_force,
+                      approach_interp_sliced,x_sliced,
+                      force_sliced,interp_sliced,
+                      approach_interp_deriv,interp_slice_deriv,
+                      min_deriv):
+    ylim = [min(force_sliced),max(force_sliced)]
+    min_v = min([min(approach_interp_deriv),min(interp_slice_deriv)])
+    max_v = max([max(approach_interp_deriv),max(interp_slice_deriv)])
+    ylim_deriv = [min_v,max_v]
+    plt.subplot(2,2,1)
+    plt.plot(approach_time,approach_force,alpha=0.3)
+    plt.plot(approach_time,approach_interp_sliced)
+    plt.ylim(ylim)
+    PlotUtilities.lazyLabel("time","Force","")
+    plt.subplot(2,2,3)
+    plt.plot(x_sliced,force_sliced,alpha=0.3)
+    plt.plot(x_sliced,interp_sliced)
+    plt.ylim(ylim)
+    PlotUtilities.lazyLabel("time","Force","")
+    plt.subplot(2,2,2)
+    plt.plot(approach_time,approach_interp_deriv)
+    plt.ylim(ylim_deriv)
+    PlotUtilities.lazyLabel("time","Deriv","")
+    plt.subplot(2,2,4)
+    plt.plot(x_sliced, interp_slice_deriv)
+    plt.axhline(min_deriv,label="Minimum of approach")
+    plt.ylim(ylim_deriv)
+    PlotUtilities.lazyLabel("time","Deriv","")
     
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
-                          boolean_ret,spline_probability_in_slice,
+                          boolean_ret,probability_original,
                           slice_updated,threshold,interp):
     """
     For debugging at the end of Detector.derivative_mask_function
@@ -749,10 +781,10 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.subplot(2,1,2)
     plt.plot(time,probability_updated,label="prob (updated)",
              linestyle='--')
-    plt.plot(x,spline_probability_in_slice,color='k',alpha=0.3,
+    plt.plot(time,probability_original,color='k',alpha=0.3,
              label="prob (original)")
     plt.xlim(time_lim)
-    plt.plot(time,boolean_ret+min(probability_updated),linewidth=1,alpha=0.3,
+    plt.plot(time,boolean_ret+min(probability_original),linewidth=1,alpha=0.3,
              label="mask")
     plt.axhline(threshold,label="t={:.3g}".format(threshold))
     mask_ends = np.zeros(time.size)
