@@ -115,6 +115,50 @@ def force_value_mask_function(split_fec,slice_to_use,
     slice_updated = slice(slice_start,slice_end,1)
     return slice_to_use,boolean_updated,probability_updated
 
+def safe_reslice(original_boolean,original_probability,condition,
+                 min_points_between,get_best_slice_func):
+    new_boolean = original_boolean.copy()
+    new_probability = original_probability.copy()
+    where_condition = np.where(condition)[0]
+    if (where_condition.size > 0):
+        new_boolean[where_condition] = 0 
+        new_probability[where_condition] = 1
+        # get the original and new slices
+        mask_original = np.where(original_boolean)[0]
+        mask_new = np.where(new_boolean)[0]
+        if (mask_new.size == 0 or mask_original.size == 0):
+            return new_boolean,new_probability
+        # POST: have something to do
+        original_events = _event_slices_from_mask(mask_original,
+                                                  min_points_between)
+        new_events = _event_slices_from_mask(mask_new,min_points_between)
+        remove,keep = [],[]
+        for e in original_events:
+            start,stop = e.start,e.stop
+            # determine which new events are within the old events
+            candidates = [tmp for tmp in new_events 
+                          if (tmp.start >= start) and (tmp.stop <= stop)
+                          and (tmp.start < tmp.stop)]
+            if (len(candidates) == 0):
+                continue
+            # determine the best new event within the old event, in the subslice
+            # indices
+            idx_best = get_best_slice_func(candidates)
+            # get the best
+            keep.append(candidates[idx_best])
+            # remove the events
+            remove.extend(candidates[i] for i in range(len(candidates))
+                          if i != idx_best)
+        # anything left over should also be deleted
+        remove.extend(new_events)
+        # POST: know what to remove and what to keep
+        new_boolean = np.zeros(new_boolean.size)
+        new_probability = np.zeros(new_probability.size)
+        for keep_idx in keep:
+            new_boolean[keep_idx] = 1
+            new_probability[keep_idx] = original_probability[keep_idx]
+        # pick out the minimum derivative slice within each previous slice
+    return new_boolean,new_probability
 
 def derivative_mask_function(split_fec,slice_to_use,
                              boolean_array,probability,threshold,
@@ -158,7 +202,9 @@ def derivative_mask_function(split_fec,slice_to_use,
     # remove the bad points
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
-    slice_updated = slice(absolute_min_idx,absolute_max_index,1)
+    slice_to_use = slice(absolute_min_idx,absolute_max_index,1)
+    x_sliced =  time[slice_to_use]
+    offset = slice_to_use.start    
     force_sliced = force[slice_to_use]
     interp_sliced = interp(x_sliced)
     interp_slice_deriv = interp(x_sliced,1)
@@ -176,17 +222,36 @@ def derivative_mask_function(split_fec,slice_to_use,
     approach_interp_sliced = approach_interp(approach_time)
     approach_interp_deriv = approach_interp(approach_time,1)
     min_deriv = np.min(approach_interp_deriv)
-    kwargs = dict(scale=np.std(approach_interp_deriv),
-                  loc=np.median(approach_interp_deriv))
-    deriv_in_slice = interp(x_sliced,1)
-    deriv_probability_in_slice = \
-        _spline_derivative_probability_generic(x_sliced,interp,**kwargs)
-    where_lt_in_slice = np.where(deriv_in_slice < min_deriv)[0]
-    probability_updated[slice_to_use] *= deriv_probability_in_slice
-    boolean_ret[slice_to_use] = probability_updated[slice_to_use] < threshold
     # find where the derivative is definitely not an event
-    slice_updated = slice(absolute_min_idx,absolute_max_index,1)
-    return slice_updated,boolean_ret,probability_updated
+    gt_condition = np.ones(boolean_ret.size)
+    gt_condition[slice_to_use] = (interp_slice_deriv > 0) | \
+                                 (interp_slice_deriv > min_deriv)
+    slice_func = lambda slices: \
+        np.argmax([max(interp_sliced[e.start-offset:e.stop-offset])
+                   for e in slices])
+    boolean_ret,probability_updated = \
+            safe_reslice(original_boolean=boolean_ret,
+                         original_probability=probability_updated,
+                         condition=gt_condition,
+                         min_points_between=min_points_between,
+                         get_best_slice_func=slice_func)
+    """
+    XXX debugging...
+    xlim = [min(time),max(time)]
+    plt.subplot(3,1,1)
+    plt.plot(x_sliced,force_sliced)
+    plt.xlim(xlim)
+    plt.subplot(3,1,2)
+    plt.plot(time,boolean_ret)
+    plt.xlim(xlim)
+    plt.subplot(3,1,3)
+    plt.semilogy(time,probability_updated)
+    plt.plot(time,boolean_array + 1.1)
+    plt.plot(time,boolean_ret + 1.1)
+    plt.xlim(xlim)
+    plt.show()
+    """
+    return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
@@ -531,7 +596,7 @@ def _loading_rate_helper(x,y,slice_event):
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
     return fit_x,fit_y,pred,idx_above_predicted,local_max_idx
     
-def event_by_loading_rate(*args,**kwargs):
+def event_by_loading_rate(x,y,slice_event):
     """
     see _loading_rate_helper 
 
@@ -539,9 +604,11 @@ def event_by_loading_rate(*args,**kwargs):
         see _loading_rate_helper
     Returns:
         predicted index (absolute) in x,y where we think the event is happening
-    """
+    """    
     fit_x,fit_y,pred,idx_above_predicted,local_max_idx = \
-            _loading_rate_helper(*args,**kwargs)
+            _loading_rate_helper(x,y,slice_event)
+    x_event = x[slice_event]
+    y_event = y[slice_event]
     # POST: have a proper max, return the last time we are above
     # the linear prediction
     if (len(idx_above_predicted) == 0):
@@ -599,11 +666,12 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         event_slices = []
     # XXX reject events with a very small time?
     event_duration = [ (e.stop-e.start) for e in event_slices]
+    delta_split_rem = [ int(np.ceil(min_points_between-(delta))/2)
+                        for delta in event_duration]
     # determine where the events are happening locally (guarentee at least
     # a search window of min_points)
-    remainder_split = [ int(np.ceil((min_points_between-(e.stop-e.start))))
-                        for e in event_slices]
-    event_slices = [slice(event.start-remainder,event.stop,1) 
+    remainder_split = [max(0,d) for d in delta_split_rem ]
+    event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
     # POST: slices are of length min points, determine which events overlap, 
     # combine them if they do.
@@ -682,8 +750,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,\
-              force_value_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)
