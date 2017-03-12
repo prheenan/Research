@@ -182,11 +182,9 @@ def derivative_mask_function(split_fec,slice_to_use,
     deriv_probability_in_slice = \
         _spline_derivative_probability_generic(x_sliced,interp,**kwargs)
     where_lt_in_slice = np.where(deriv_in_slice < min_deriv)[0]
-    if (where_lt_in_slice.size > 0):
-        probability_updated[slice_to_use][where_lt_in_slice] *= \
-            deriv_probability_in_slice[where_lt_in_slice]
-        boolean_ret[slice_to_use][where_lt_in_slice] = \
-            (probability_updated[slice_to_use][where_lt_in_slice] < threshold)
+    probability_updated[slice_to_use] *= deriv_probability_in_slice
+    boolean_ret[slice_to_use] = probability_updated[slice_to_use] < threshold
+    # find where the derivative is definitely not an event
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
     return slice_updated,boolean_ret,probability_updated
 
