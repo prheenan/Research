@@ -76,6 +76,11 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     probability = np.minimum(probability,1)
     return probability 
 
+def get_slice_by_max_value(interp_sliced,offset,slice_list):
+    value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
+                 for e in slice_list]
+    return np.argmax(value_max)
+
 def force_value_mask_function(split_fec,slice_to_use,
                               boolean_array,probability,threshold,
                               *args,**kwargs):
@@ -90,33 +95,46 @@ def force_value_mask_function(split_fec,slice_to_use,
     """
     retract = split_fec.retract
     n_points = split_fec.tau_num_points
+    min_points_between = _min_points_between(n_points)
     f = retract.Force[slice_to_use]
     x = retract.Time[slice_to_use]
     interp_f = split_fec.retract_spline_interpolator(slice_to_use)(x)
     diff = f-interp_f
     stdev = Analysis.local_stdev(diff,n_points)
     med = np.median(interp_f)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
     # essentially: when is the interpolated value 
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
-    bool_interp = (interp_f - stdev > med)
-    where_no_event_possible = np.where(~bool_interp)[0]
-    where_event_possible = np.where(bool_interp)[0]
-    boolean_updated = boolean_array.copy()
-    probability_updated = probability.copy()
-    slice_start = slice_to_use.start
-    slice_end = slice_to_use.stop
-    if (where_no_event_possible.size > 0):
-        boolean_updated[slice_to_use][where_no_event_possible] = 0
-        probability_updated[slice_to_use][where_no_event_possible] =1
-    if (where_event_possible.size > 0):
-        slice_start = max(slice_start,where_event_possible[0])
-        slice_end = max(slice_end,where_event_possible[-1])
-    slice_updated = slice(slice_start,slice_end,1)
+    bool_interp = (interp_f - epsilon < stdev)
+    no_event_possible = np.ones(boolean_array.size)
+    no_event_possible[slice_to_use] = bool_interp
+    get_best_slice_func = lambda slice_list: \
+        get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
+    ret = safe_reslice(boolean_array,probability,condition=bool_interp,
+                       min_points_between=min_points_between,
+                       get_best_slice_func=get_best_slice_func)
+    boolean_updated,probability_updated = ret
     return slice_to_use,boolean_updated,probability_updated
 
 def safe_reslice(original_boolean,original_probability,condition,
                  min_points_between,get_best_slice_func):
+    """
+    applies the boolean <condition> array without creating new events; if 
+    more than one event exists where a previous one existed, picks by 
+    get_best_slice_func
+
+    Args;
+        original_boolean: boolean array, size N
+        original_probability: probability array, size N
+        condition: array to apply to above, size N
+        min_points_between: see _event_slices_from_mask
+        get_best_slice_func: given a list of slices in the *original* data
+        (ie: size N), this function should return the index of the single
+        slice to keep
+    Returns:
+        tuple of <updated boolean, updated probability>
+    """
     new_boolean = original_boolean.copy()
     new_probability = original_probability.copy()
     where_condition = np.where(condition)[0]
@@ -153,11 +171,25 @@ def safe_reslice(original_boolean,original_probability,condition,
         remove.extend(new_events)
         # POST: know what to remove and what to keep
         new_boolean = np.zeros(new_boolean.size)
-        new_probability = np.zeros(new_probability.size)
+        new_probability = np.ones(new_probability.size)
         for keep_idx in keep:
             new_boolean[keep_idx] = 1
             new_probability[keep_idx] = original_probability[keep_idx]
         # pick out the minimum derivative slice within each previous slice
+    """
+    XXX debugging
+    plt.subplot(2,1,1)
+    plt.plot(new_boolean+1.1,label="new")
+    plt.plot(new_probability)
+    PlotUtilities.lazyLabel("index","","")
+    plt.yscale("log")
+    plt.subplot(2,1,2)
+    plt.plot(original_boolean+1.1,label="original")
+    plt.plot(original_probability)
+    plt.yscale("log")
+    PlotUtilities.lazyLabel("index","","")
+    plt.show()
+    """
     return new_boolean,new_probability
 
 def derivative_mask_function(split_fec,slice_to_use,
@@ -208,6 +240,11 @@ def derivative_mask_function(split_fec,slice_to_use,
     force_sliced = force[slice_to_use]
     interp_sliced = interp(x_sliced)
     interp_slice_deriv = interp(x_sliced,1)
+    diff_sliced = interp_sliced - force_sliced
+    local_stdev = Analysis.local_stdev(diff_sliced,n_points)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    ratio = (interp_slice_deriv*split_fec.tau)/epsilon
+    ratio_min_threshold = -1
     # XXX debuugging...
     idx_offset_approach = split_fec.get_predicted_approach_surface_index()
     n_approach = split_fec.approach.Force.size
@@ -224,31 +261,36 @@ def derivative_mask_function(split_fec,slice_to_use,
     min_deriv = np.min(approach_interp_deriv)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    gt_condition[slice_to_use] = (interp_slice_deriv > 0) | \
-                                 (interp_slice_deriv > min_deriv)
-    slice_func = lambda slices: \
-        np.argmax([max(interp_sliced[e.start-offset:e.stop-offset])
-                   for e in slices])
+    gt_condition[slice_to_use] = ((interp_slice_deriv > 0) | \
+                                  (ratio > ratio_min_threshold))
+    get_best_slice_func = lambda slice_list: \
+        get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
                          condition=gt_condition,
                          min_points_between=min_points_between,
-                         get_best_slice_func=slice_func)
+                         get_best_slice_func=get_best_slice_func)
     """
-    XXX debugging...
+    XXX debugging
+    Plotting.debug_plot_derivative_ratio(time,slice_to_use,
+                                         ratio,interp_sliced,force_sliced,
+                                         interp_slice_deriv,
+                                         boolean_ret,probability_updated,
+                                         absolute_min_idx,ratio_min_threshold)
+    plt.show()
+    #XXX debugging...
     xlim = [min(time),max(time)]
-    plt.subplot(3,1,1)
-    plt.plot(x_sliced,force_sliced)
+    plt.subplot(2,1,1)
+    plt.plot(x_sliced,force_sliced*1e12)
     plt.xlim(xlim)
-    plt.subplot(3,1,2)
-    plt.plot(time,boolean_ret)
-    plt.xlim(xlim)
-    plt.subplot(3,1,3)
+    PlotUtilities.lazyLabel("","Force","")
+    plt.subplot(2,1,2)
     plt.semilogy(time,probability_updated)
-    plt.plot(time,boolean_array + 1.1)
-    plt.plot(time,boolean_ret + 1.1)
+    plt.plot(time,boolean_array + 1.1,label="original")
+    plt.plot(time,boolean_ret + 1.1,label="updated")
     plt.xlim(xlim)
+    PlotUtilities.lazyLabel("Time","masks","")
     plt.show()
     """
     return slice_to_use,boolean_ret,probability_updated
