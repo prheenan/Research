@@ -8,7 +8,7 @@ from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from Research.Personal.EventDetection.Util import Learning
+from Research.Personal.EventDetection.Util import Learning,Learners
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -45,7 +45,7 @@ def run():
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
     n_learners = 1
-    learners = Learning.get_learners(**learners_kwargs)[:n_learners]
+    learners = Learners.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
