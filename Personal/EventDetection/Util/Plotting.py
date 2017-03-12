@@ -724,7 +724,7 @@ def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
     plt.axhline(epsilon-sigma,color='b')
     PlotUtilities.lazyLabel("","stdev","")
     plt.subplot(3,1,3)
-    plt.plot(x,probability_distribution[slice_fit])
+    plt.plot(x,probability_distribution)
     PlotUtilities.lazyLabel("Time","Probability","")
     plt.yscale('log')
     

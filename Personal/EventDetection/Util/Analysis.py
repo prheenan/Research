@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys,warnings
 from scipy import interpolate
+from GeneralUtil.python import PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
 from scipy.ndimage.filters import uniform_filter1d
@@ -639,3 +640,18 @@ def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
     return loading_rate,rupture_force,last_idx_above
     
     
+
+
+def debug_plot_approach_no_event(approach_force_sliced,
+                                 approach_force_interp_sliced,epsilon,sigma,
+                                 stdevs):
+    plt.subplot(2,1,1)
+    plt.plot(approach_force_sliced * 1e12,color='k',alpha=0.3)
+    plt.plot(approach_force_interp_sliced * 1e12)
+    PlotUtilities.lazyLabel("","force [pN]","")
+    plt.subplot(2,1,2)
+    plt.plot(stdevs*1e12,color='k',alpha=0.3)
+    plt.axhline(epsilon*1e12)
+    plt.axhline((epsilon-sigma)*1e12)
+    plt.axhline((epsilon+sigma)*1e12)
+    PlotUtilities.lazyLabel("idx","Residual [pN]","")
