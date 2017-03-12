@@ -7,6 +7,8 @@ import sys,warnings
 from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
+from scipy.ndimage.filters import uniform_filter1d
+
 
 class split_force_extension:
     """
@@ -19,11 +21,39 @@ class split_force_extension:
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
         self.retract_knots = None
+        self.epsilon = None
+        self.sigma = None
     def set_retract_knots(self,interpolator):
         """
         sets the retract knots; useful for gridding data
         """
         self.retract_knots = interpolator.get_knots()
+    def get_epsilon_and_sigma(self):
+        return self.epsilon,self.sigma
+    def set_espilon_and_sigma(self,epsilon,sigma):
+        self.epsilon =epsilon
+        self.sigma = sigma
+    def calculate_epsilon_and_sigma(self,min_points_between=None,
+                                    slice_fit_approach=None):
+        if (slice_fit_approach is None):
+            approach_surface_idx = self.get_predicted_approach_surface_index()
+            slice_fit_approach= slice(0,approach_surface_idx,1)
+        spline_fit_approach = \
+            self.approach_spline_interpolator(slice_to_fit=slice_fit_approach)
+        approach = self.approach
+        approach_time_fit = approach.Time[slice_fit_approach]
+        approach_force_sliced = approach.Force[slice_fit_approach]
+        approach_force_interp_sliced = spline_fit_approach(approach_time_fit)
+        approach_diff_force = \
+                approach_force_sliced - approach_force_interp_sliced
+        local_approach_stdev = local_stdev(approach_diff_force,
+                                           min_points_between)
+        # get the residual properties of the approach
+        approach_residual_epsilon = np.mean(local_approach_stdev)
+        approach_residual_sigma = np.std(local_approach_stdev)
+        return approach_residual_epsilon,approach_residual_sigma
+
+
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau
@@ -182,6 +212,33 @@ def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
     return spline_interpolator(tau,x[slice_to_fit],f[slice_to_fit],
                                **kwargs)        
         
+def local_stdev(f,n):
+    """
+    Gets the local standard deviaiton (+/- n), except at boundaries 
+    where it is just in the direction with data
+
+    Args:
+        f: what we want the stdev of
+        n: window size (in either direction)
+    Returns:
+        array, same size as f, with the dat we want
+    """
+    max_n = f.size
+    # go from (i-n to i+n)
+    """
+    for linear stdev, see: 
+    stackoverflow.com/questions/18419871/
+    improving-code-efficiency-standard-deviation-on-sliding-windows
+    """
+    mode = 'reflect'
+    c1 = uniform_filter1d(f, size=n*2, mode=mode, origin=-n)
+    c2 = uniform_filter1d(f*f, size=n*2, mode=mode, origin=-n)
+    # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
+    safe_variance = np.maximum(0,c2 - c1*c1)
+    stdev = (safe_variance**.5)
+    return stdev
+
+
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
 
