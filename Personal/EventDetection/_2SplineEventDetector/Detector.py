@@ -155,18 +155,59 @@ def derivative_mask_function(split_fec,slice_to_use,
     last_index = offset + min(where_above[-1],where_below[-1])
     absolute_min_idx = offset
     absolute_max_index = min(slice_to_use.stop,last_index)
-    # determine the approach derivative distribution, used to compute the 
-    # probabilities for the retract 
-    force_sliced = force[slice_to_use]
-    diff = force_sliced - interp(x_sliced)
-    local_std = Analysis.local_stdev(diff,min_points_between)
-    interp_sliced = interp(x_sliced)
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    df_interp_sliced = interp.derivative()(x_sliced) * split_fec.tau
-    boolean_ret[slice_to_use] *= (df_interp_sliced < sigma-epsilon)
     # remove the bad points
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
+    slice_updated = slice(absolute_min_idx,absolute_max_index,1)
+    force_sliced = force[slice_to_use]
+    interp_sliced = interp(x_sliced)
+    interp_slice_deriv = interp(x_sliced,1)
+    # XXX debuugging...
+    idx_offset_approach = split_fec.get_predicted_approach_surface_index()
+    n_approach = split_fec.approach.Force.size
+    offset_approach = max([offset,n_approach - idx_offset_approach,
+                           n_approach-absolute_max_index])
+    slice_approach = slice(offset_approach,-offset_approach,1)
+    approach_interp = split_fec.\
+        approach_spline_interpolator(slice_to_fit=slice_approach)
+    approach = split_fec.approach
+    approach_force = approach.Force[slice_approach]
+    approach_time = approach.Time[slice_approach]
+    approach_interp_sliced = approach_interp(approach_time)
+    approach_interp_deriv = approach_interp(approach_time,1)
+    min_deriv = np.min(approach_interp_deriv)
+    """
+    plt.subplot(2,2,1)
+    plt.plot(approach_time,approach_force,alpha=0.3)
+    plt.plot(approach_time,approach_interp_sliced)
+    plt.subplot(2,2,3)
+    plt.plot(x_sliced,force_sliced,alpha=0.3)
+    plt.plot(x_sliced,interp_sliced)
+    plt.subplot(2,2,2)
+    plt.plot(approach_time,approach_interp_deriv)
+    plt.subplot(2,2,4)
+    plt.plot(x_sliced, interp_slice_deriv)
+    plt.axhline(min_deriv)
+    plt.show()
+    """
+    kwargs = dict(scale=np.std(approach_interp_deriv),
+                  loc=np.median(approach_interp_deriv))
+    deriv_in_slice = interp(x_sliced,1)
+    deriv_probability_in_slice = \
+        _spline_derivative_probability_generic(x_sliced,interp,**kwargs)
+    where_lt_in_slice = np.where(deriv_in_slice < min_deriv)[0]
+    if (where_lt_in_slice.size > 0):
+        probability_updated[slice_to_use][where_lt_in_slice] *= \
+            deriv_probability_in_slice[where_lt_in_slice]
+        boolean_ret[slice_to_use][where_lt_in_slice] = \
+            (probability_updated[slice_to_use][where_lt_in_slice] < threshold)
+    # determine the approach derivative distribution, used to compute the 
+    # probabilities for the retract 
+    diff = force_sliced - interp_sliced
+    local_std = Analysis.local_stdev(diff,min_points_between)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    df_interp_sliced = interp.derivative()(x_sliced) * split_fec.tau
+    boolean_ret[slice_to_use] *= (df_interp_sliced < sigma-epsilon)
     # anywhere  the derivative is >= 0 isn't an event
     where_deriv_ge_zero = offset + np.where(interp_deriv >= 0)[0]
     if (where_deriv_ge_zero.size > 0):
@@ -321,10 +362,6 @@ def adhesion_mask(surface_index,n_points,split_fec,
     if (where_below.size > 0):
         min_idx = where_below[0]
     to_ret[:min_idx] = 0                  
-    Plotting.debug_plot_adhesion_info(time,force,force_fit,min_idx,
-                                      derivative_gt_zero,derivative_le_zero,
-                                      to_ret)
-    plt.show()
     return to_ret                     
                      
 
