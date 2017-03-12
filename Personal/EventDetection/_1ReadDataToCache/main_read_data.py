@@ -25,7 +25,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 200
+    limit = 50
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True
@@ -101,6 +101,7 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x
+    # XXX debugging.
     #example_numbers = [8]
     #examples_filtered = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
