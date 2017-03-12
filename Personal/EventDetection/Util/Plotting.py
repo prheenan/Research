@@ -238,9 +238,9 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     plt.plot(x_plot(x_event),y_plot(y_event),color='r',alpha=0.3,label="event")
     plt.plot(x_plot(x_event),y_plot(pred),label="prediction")
     if (len(idx_above_predicted) > 0):
-        plt.axvline(x_plot(x[idx_above_predicted[-1]]),label="surface pred")
+        plt.axvline(x_plot(x[idx_above_predicted[-1]]))
     PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
-                            loc="upper right")
+                            loc="upper left")
 
 def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
                              derivative_le_zero,to_ret):
