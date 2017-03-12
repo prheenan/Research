@@ -26,7 +26,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 200
+    limit = 50
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
@@ -97,7 +97,7 @@ def run():
         assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 0.1
+    threshold = best_x
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
