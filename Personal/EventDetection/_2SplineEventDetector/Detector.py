@@ -176,20 +176,6 @@ def derivative_mask_function(split_fec,slice_to_use,
     approach_interp_sliced = approach_interp(approach_time)
     approach_interp_deriv = approach_interp(approach_time,1)
     min_deriv = np.min(approach_interp_deriv)
-    """
-    plt.subplot(2,2,1)
-    plt.plot(approach_time,approach_force,alpha=0.3)
-    plt.plot(approach_time,approach_interp_sliced)
-    plt.subplot(2,2,3)
-    plt.plot(x_sliced,force_sliced,alpha=0.3)
-    plt.plot(x_sliced,interp_sliced)
-    plt.subplot(2,2,2)
-    plt.plot(approach_time,approach_interp_deriv)
-    plt.subplot(2,2,4)
-    plt.plot(x_sliced, interp_slice_deriv)
-    plt.axhline(min_deriv)
-    plt.show()
-    """
     kwargs = dict(scale=np.std(approach_interp_deriv),
                   loc=np.median(approach_interp_deriv))
     deriv_in_slice = interp(x_sliced,1)
@@ -201,13 +187,6 @@ def derivative_mask_function(split_fec,slice_to_use,
             deriv_probability_in_slice[where_lt_in_slice]
         boolean_ret[slice_to_use][where_lt_in_slice] = \
             (probability_updated[slice_to_use][where_lt_in_slice] < threshold)
-    # determine the approach derivative distribution, used to compute the 
-    # probabilities for the retract 
-    diff = force_sliced - interp_sliced
-    local_std = Analysis.local_stdev(diff,min_points_between)
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    df_interp_sliced = interp.derivative()(x_sliced) * split_fec.tau
-    boolean_ret[slice_to_use] *= (df_interp_sliced < sigma-epsilon)
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
     return slice_updated,boolean_ret,probability_updated
 
@@ -616,8 +595,6 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     # edges (ie: from index 0 and N-1)
     mask = np.where(bool_array)[0]
     n = mask.size
-    mask = mask[np.where( (mask >= min_points_between ) | 
-                          (mask <= n-min_points_between ) )]
     if (mask.size > 0):
         event_slices = _event_slices_from_mask(mask,min_points_between)
     else:

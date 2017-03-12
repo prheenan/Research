@@ -727,6 +727,35 @@ def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
     plt.plot(x,probability_distribution)
     PlotUtilities.lazyLabel("Time","Probability","")
     plt.yscale('log')
+
+def debug_plot_derivs(approach_time,approach_force,
+                      approach_interp_sliced,x_sliced,
+                      force_sliced,interp_sliced,
+                      approach_interp_deriv,interp_slice_deriv,
+                      min_deriv):
+    ylim = [min(force_sliced),max(force_sliced)]
+    min_v = min([min(approach_interp_deriv),min(interp_slice_deriv)])
+    max_v = max([max(approach_interp_deriv),max(interp_slice_deriv)])
+    ylim_deriv = [min_v,max_v]
+    plt.subplot(2,2,1)
+    plt.plot(approach_time,approach_force,alpha=0.3)
+    plt.plot(approach_time,approach_interp_sliced)
+    plt.ylim(ylim)
+    PlotUtilities.lazyLabel("time","Force","")
+    plt.subplot(2,2,3)
+    plt.plot(x_sliced,force_sliced,alpha=0.3)
+    plt.plot(x_sliced,interp_sliced)
+    plt.ylim(ylim)
+    PlotUtilities.lazyLabel("time","Force","")
+    plt.subplot(2,2,2)
+    plt.plot(approach_time,approach_interp_deriv)
+    plt.ylim(ylim_deriv)
+    PlotUtilities.lazyLabel("time","Deriv","")
+    plt.subplot(2,2,4)
+    plt.plot(x_sliced, interp_slice_deriv)
+    plt.axhline(min_deriv,label="Minimum of approach")
+    plt.ylim(ylim_deriv)
+    PlotUtilities.lazyLabel("time","Deriv","")
     
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           boolean_ret,probability_original,
