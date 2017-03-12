@@ -10,7 +10,7 @@ from GeneralUtil.python import PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util.InputOutput import \
     read_and_cache_file
-from Research.Personal.EventDetection.Util import Analysis 
+from Research.Personal.EventDetection.Util import Analysis,Plotting
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 

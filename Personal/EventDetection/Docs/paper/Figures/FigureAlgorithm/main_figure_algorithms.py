@@ -23,7 +23,7 @@ def run(base="./"):
     
     """
     data_base = base + "data/"
-    out_fig = "cartoon.png"
+    out_fig = "cartoon.svg"
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
