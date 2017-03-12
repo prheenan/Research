@@ -33,7 +33,7 @@ class split_force_extension:
     def set_espilon_and_sigma(self,epsilon,sigma):
         self.epsilon =epsilon
         self.sigma = sigma
-    def calculate_epsilon_and_sigma(self,min_points_between=None,
+    def calculate_epsilon_and_sigma(self,n_points=None,
                                     slice_fit_approach=None):
         if (slice_fit_approach is None):
             approach_surface_idx = self.get_predicted_approach_surface_index()
@@ -44,14 +44,11 @@ class split_force_extension:
         approach_time_fit = approach.Time[slice_fit_approach]
         approach_force_sliced = approach.Force[slice_fit_approach]
         approach_force_interp_sliced = spline_fit_approach(approach_time_fit)
-        approach_diff_force = \
-                approach_force_sliced - approach_force_interp_sliced
-        local_approach_stdev = local_stdev(approach_diff_force,
-                                           min_points_between)
         # get the residual properties of the approach
-        approach_residual_epsilon = np.mean(local_approach_stdev)
-        approach_residual_sigma = np.std(local_approach_stdev)
-        return approach_residual_epsilon,approach_residual_sigma
+        stdevs,epsilon,sigma = \
+            stdevs_epsilon_sigma(approach_force_sliced,
+                                 approach_force_interp_sliced,n_points)
+        return epsilon,sigma
 
 
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
@@ -333,6 +330,13 @@ def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
     prod = p1 * p2
     return sum(np.sqrt(prod))
     
+def stdevs_epsilon_sigma(y,interpolated_y,n_points):
+    # get a model for the local standard deviaiton
+    diff = y-interpolated_y
+    stdevs = local_stdev(diff,n_points)
+    sigma = np.std(stdevs)
+    epsilon = np.median(stdevs)
+    return stdevs,epsilon,sigma
 
 def _surface_index(filtered_y,y,last_less_than=True):
     """
