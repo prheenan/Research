@@ -19,15 +19,6 @@ def fmt(ax):
     ax.set_ylim([-50,40])
 
 
-def before_and_after(x,y,before_slice,after_slice,style,label=None):
-    color_before = 'b'
-    color_after = 'r'
-    tuples = [ [x,y,before_slice,color_before,style,label],
-               [x,y,after_slice,color_after,style,None]]
-    for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:
-        x_sliced = x_tmp[slice_v]
-        plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,
-                 **style_tmp)
 
 def highlight_box(force,xlim,ylim):
     # add a rectangle and its border
@@ -109,10 +100,11 @@ def run(base="./"):
     style_data = dict(alpha=0.3,linewidth=1)
     style_filtered = dict(alpha=1,linewidth=2)
     # plot the force etc
-    before_and_after(x,force,slice_before_event,slice_after_event,style_data,
-                     label="Raw data (25kHz)")
-    before_and_after(x,force_filtered,slice_before_event,slice_after_event,
-                     style_filtered,label="Filtered data (25Hz)")
+    Plotting.before_and_after(x,force,slice_before_event,slice_after_event,
+                              style_data,label="Raw data (25kHz)")
+    Plotting.before_and_after(x,force_filtered,slice_before_event,
+                              slice_after_event,style_filtered,
+                              label="Filtered data (25Hz)")
     highlight_box(force,xlim_zoom,ylim_zoom)
     PlotUtilities.lazyLabel("Time [s]","Force (pN)","",loc="lower right",
                             frameon=True)
@@ -120,7 +112,8 @@ def run(base="./"):
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
     plt.subplot(1,n_plots,2)
-    before_and_after(x,force,slice_before_zoom,slice_after_zoom,style_data)
+    Plotting.before_and_after(x,force,slice_before_zoom,slice_after_zoom,
+                              style_data)
     plt.plot(x_event,predicted,color='k',linestyle='--',linewidth=3,
              label="Linear fit")
     plot_rupture = lambda l: plt.plot(x[index_absolute],predicted[index],'go',
@@ -133,7 +126,8 @@ def run(base="./"):
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
     plt.subplot(1,n_plots,3)
-    before_and_after(x,force,zoom_second_before,zoom_second_after,style_data)
+    Plotting.before_and_after(x,force,zoom_second_before,zoom_second_after,
+                              style_data)
     plt.xlim(xlim_second_zoom)
     plt.ylim(ylim_second_zoom)
     plot_rupture("")

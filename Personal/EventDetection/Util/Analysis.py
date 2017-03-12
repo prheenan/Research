@@ -639,8 +639,15 @@ def loading_rate_rupture_force_and_index(time,force,slice_to_fit):
         _loading_rate_helper(x,y)
     return loading_rate,rupture_force,last_idx_above
     
-    
-
+def get_before_and_after_and_zoom_of_slice(split_fec):
+    event_idx_retract = split_fec.get_retract_event_centers()
+    index_before = [0] + [e for e in event_idx_retract]
+    index_after = [e for e in event_idx_retract] + [None]
+    slices_before = [slice(i,f,1) 
+                     for i,f in zip(index_before[:-1],index_after[:-1])]
+    slices_after = [slice(i,f,1) 
+                     for i,f in zip(index_before[1:],index_after[1:])]
+    return slices_before,slices_after
 
 def debug_plot_approach_no_event(approach_force_sliced,
                                  approach_force_interp_sliced,epsilon,sigma,

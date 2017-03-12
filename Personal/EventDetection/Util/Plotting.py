@@ -757,6 +757,27 @@ def debug_plot_derivs(approach_time,approach_force,
     plt.ylim(ylim_deriv)
     PlotUtilities.lazyLabel("time","Deriv","")
     
+
+def before_and_after(x,y,before_slice,after_slice,style,label=None):
+    """
+    plots x and y two before and after slices
+
+    Args:
+        x,y: the x and y to plot
+        before_slice: what slice to plot before
+        after_slice: what slice to plot after
+        style; for each of them
+        label: for one of them
+    """
+    color_before = 'b'
+    color_after = 'r'
+    tuples = [ [x,y,before_slice,color_before,style,label],
+               [x,y,after_slice,color_after,style,None]]
+    for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:
+        x_sliced = x_tmp[slice_v]
+        plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,
+                 **style_tmp)
+
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           boolean_ret,probability_original,
                           slice_updated,threshold,interp):
