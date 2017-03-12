@@ -192,6 +192,14 @@ def derivative_mask_function(split_fec,slice_to_use,
         split_fec.approach_spline_interpolator(slice_to_fit=slice_fit_approach)
     approach = split_fec.approach
     approach_time_fit = approach.Time[slice_fit_approach]
+    approach_force_sliced = approach.Force[slice_fit_approach]
+    approach_force_interp_sliced = spline_fit_approach(approach_time_fit)
+    approach_diff_force = approach_force_sliced - approach_force_interp_sliced
+    local_approach_stdev = local_stdev(approach_diff_force,min_points_between)
+    # get the residual properties of the approach
+    approach_residual_epsilon = np.mean(local_approach_stdev)
+    approach_residual_sigma = np.std(local_approach_stdev)
+    # get the derivative propertues of the approach
     deriv_approach = spline_fit_approach.derivative()(approach_time_fit)
     median_deriv_approach = np.median(deriv_approach)
     stdev_deriv_approach = np.std(deriv_approach) 
@@ -199,6 +207,18 @@ def derivative_mask_function(split_fec,slice_to_use,
     # XXX could use **prob_kwargs, debugging...
     spline_probability_in_slice=\
         _spline_derivative_probability_generic(x_sliced,interp)
+    force_sliced = force[slice_to_use]
+    diff = force_sliced - interp(x_sliced)
+    local_std = local_stdev(diff,min_points_between)
+    interp_sliced = interp(x_sliced)
+    interp_deriv_sliced = interp.derivative()(x_sliced)
+    tau_x = split_fec.tau
+    df_interp_sliced = interp_deriv_sliced * tau_x
+    ratio = df_interp_sliced/approach_residual_epsilon
+    where_not_possible = np.where(ratio > -1)
+    # zero out everything where it is improssible 
+    boolean_ret[slice_to_use][where_not_possible] = 0 
+    probability_updated[slice_to_use][where_not_possible] = 1
     # determine where the derivative is possibly outlying; that is a necessary
     # but not sufficient condition for an event
     tol = 1e-9
@@ -208,16 +228,7 @@ def derivative_mask_function(split_fec,slice_to_use,
         return slice_to_use,boolean_ret,probability_updated
     # POST: have at least one possible spline event
     # only consider events which start after the offset, to avoid edge effects
-    absolute_min_idx = offset + min_points_between          
-    event_boundaries = _event_slices_from_mask(event_slice_mask,
-                                               min_points_between)    
-    events_starting_before_min_idx = [e for e in event_boundaries 
-                                      if e.start < min_points_between]
-    # determing where we first cross the median on the backwards array
-    if (len(events_starting_before_min_idx) > 0):
-        event_end_in_slice = events_starting_before_min_idx[0].stop
-        # XXX Wtf?
-        absolute_min_idx = max(absolute_min_idx,event_end_in_slice+offset)
+    absolute_min_idx = offset
     # POST: absolute_min_idx is the index *in the original array* where we 
     # should start looking for events. 
     # determine where the probability is
@@ -445,7 +456,8 @@ def _event_mask(probability,threshold):
     boolean_thresh = (probability <= threshold)
     return np.where(boolean_thresh)[0]
 
-def _no_event_probability(x,interp,y,n_points,slice_fit=None):
+def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
+                          slice_fit=None):
     """
     returns the no-event probability at each point in y
 
@@ -455,7 +467,8 @@ def _no_event_probability(x,interp,y,n_points,slice_fit=None):
         interp: see _event_probabilities
         n_points: number of points to use in estimating r(q)=g-g* by the 
         local standard deviaiton of y-interp(x)
-    
+        epsilon: the mean error parameter
+        sigma: the stdev of the error parameter
         slice_fit: an optional slice to use to compute the probabilities
     Returns:
         tuple of <probability, local stdevs>
@@ -469,18 +482,20 @@ def _no_event_probability(x,interp,y,n_points,slice_fit=None):
     # get a model for the local standard deviaiton
     diff = np.abs(y-interpolated_y)
     stdevs = local_stdev(diff,n_points)
-    # get the cwt of the wavelet; see pp219 of Mallat, Wavelet Tour (XXX TODO)
-    median_local_stdev = np.median(stdevs)
     stdev_masked = stdevs[slice_fit]
-    qlow,qhigh = np.percentile(stdev_masked,[0,75])
-    iqr = qlow-qhigh
-    scale_idx = np.where( (stdev_masked >= qlow) & (stdev_masked <= qhigh))
-    scale = np.std(stdev_masked[scale_idx])
+    if sigma is None:
+        qlow,qhigh = np.percentile(stdev_masked,[0,75])
+        iqr = qlow-qhigh
+        scale_idx = np.where( (stdev_masked >= qlow) & (stdev_masked <= qhigh))
+        scale = np.std(stdev_masked[scale_idx])
+        sigma = scale
+    if epsilon is None:
+        epsilon = np.median(stdev_masked)
     # note: chebyshev is like
     # P(|X - mu| >=  k * sigma) <= 1/k^2
     # we write k = (s(q) - epsilon)/scale
-    denom = (stdev_masked-median_local_stdev)
-    k_chebyshev = denom/scale
+    denom = (stdev_masked-epsilon)
+    k_chebyshev = denom/sigma
     # determine where the chebyshev is 'safe', otherwise we are at or above
     # the mean estimate and hence not a useful metric
     cheby_idx = np.where(k_chebyshev >= 1)

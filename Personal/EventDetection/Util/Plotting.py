@@ -685,7 +685,19 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
                  label="prob orig")
     PlotUtilities.lazyLabel("Time","Prob/Mask","",loc='upper right')
 
-
+def debug_plot_derivative_ratio(x_sliced,ratio,interp_sliced,force_sliced,
+                                interp_deriv_sliced,local_std):        
+    where_possible = np.where(ratio < -1)
+    plot_interp_deriv = interp_deriv_sliced/max(interp_deriv_sliced)
+    plt.subplot(2,1,1)
+    plt.plot(x_sliced,interp_sliced*1e12,linewidth=3,label="interp")
+    plt.plot(x_sliced,force_sliced*1e12,color='k',alpha=0.3,label="force")
+    PlotUtilities.lazyLabel("","Force","")
+    plt.subplot(2,1,2)
+    plt.plot(x_sliced,ratio,color='k',alpha=0.3,label="ratio")
+    plt.plot(x_sliced[where_possible],ratio[where_possible],label="<=-1")
+    PlotUtilities.lazyLabel("time","ratio df/epsilon","")
+    
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
                           boolean_ret,spline_probability_in_slice,
                           slice_updated,threshold,interp):
