@@ -208,11 +208,6 @@ def derivative_mask_function(split_fec,slice_to_use,
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     df_interp_sliced = interp.derivative()(x_sliced) * split_fec.tau
     boolean_ret[slice_to_use] *= (df_interp_sliced < sigma-epsilon)
-    # anywhere  the derivative is >= 0 isn't an event
-    where_deriv_ge_zero = offset + np.where(interp_deriv >= 0)[0]
-    if (where_deriv_ge_zero.size > 0):
-        boolean_ret[where_deriv_ge_zero] = 0
-        probability_updated[where_deriv_ge_zero] = 1      
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
     return slice_updated,boolean_ret,probability_updated
 
