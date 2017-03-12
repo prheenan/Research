@@ -111,10 +111,17 @@ def force_value_mask_function(split_fec,slice_to_use,
     no_event_possible[slice_to_use] = bool_interp
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
-    ret = safe_reslice(boolean_array,probability,condition=bool_interp,
+    ret = safe_reslice(boolean_array,probability,condition=no_event_possible,
                        min_points_between=min_points_between,
                        get_best_slice_func=get_best_slice_func)
     boolean_updated,probability_updated = ret
+    """
+    XXX debugging...
+    Plotting.debug_plot_force_value(x,f,interp_f,probability,
+                                    probability_updated,
+                                    slice_to_use,bool_interp)
+    plt.show()
+    """
     return slice_to_use,boolean_updated,probability_updated
 
 def safe_reslice(original_boolean,original_probability,condition,
@@ -127,7 +134,9 @@ def safe_reslice(original_boolean,original_probability,condition,
     Args;
         original_boolean: boolean array, size N
         original_probability: probability array, size N
-        condition: array to apply to above, size N
+        condition: array to apply to above, size N. where condition is 1,
+        the boolean array becomes *zero* 
+
         min_points_between: see _event_slices_from_mask
         get_best_slice_func: given a list of slices in the *original* data
         (ie: size N), this function should return the index of the single
@@ -177,16 +186,27 @@ def safe_reslice(original_boolean,original_probability,condition,
             new_probability[keep_idx] = original_probability[keep_idx]
         # pick out the minimum derivative slice within each previous slice
     """
-    XXX debugging
-    plt.subplot(2,1,1)
+    # XXX debugging
+    ylim = [min(original_probability)/2,2]
+    plt.subplot(3,1,1)
+    plt.plot(condition,label="condition")
+    idx = np.arange(condition.size)
+    colors = ['r','g']
+    for i,e in enumerate(new_events):
+        plt.plot(idx[e],condition[e],color=colors[i % 2],linewidth=3)
+    plt.ylim([-0.2,1.1])
+    PlotUtilities.lazyLabel("","","")
+    plt.subplot(3,1,2)
     plt.plot(new_boolean+1.1,label="new")
     plt.plot(new_probability)
+    plt.ylim(ylim)
     PlotUtilities.lazyLabel("index","","")
     plt.yscale("log")
-    plt.subplot(2,1,2)
+    plt.subplot(3,1,3)
     plt.plot(original_boolean+1.1,label="original")
     plt.plot(original_probability)
     plt.yscale("log")
+    plt.ylim(ylim)
     PlotUtilities.lazyLabel("index","","")
     plt.show()
     """
@@ -792,7 +812,8 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,
+              force_value_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)
