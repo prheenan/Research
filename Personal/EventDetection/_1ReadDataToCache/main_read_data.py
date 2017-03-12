@@ -55,6 +55,7 @@ def run():
     for l in learners:
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
+        break
         Plotting.plot_individual_learner(debug_directory,l)
     num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
@@ -90,18 +91,23 @@ def run():
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
-    load_paths = [cache_directory + f for f in load_files]
+    load_paths_tmp = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    print("loading: {:s}".format(load_paths))
-    for p in load_paths:
-        assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
+    print("loading: {:s}".format(load_paths_tmp))
+    load_paths = []
+    for p in load_paths_tmp:
+        if (not os.path.isfile(p)):
+            print("Couldn't find [{:s}]".format(p))
+        else:
+            load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
-        copyfile(load_paths[i],debugging_file_path)
+        if (debugging):
+            copyfile(load_paths[i],debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)

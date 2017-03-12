@@ -7,6 +7,8 @@ import sys,warnings
 from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
+from scipy.ndimage.filters import uniform_filter1d
+
 
 class split_force_extension:
     """
@@ -19,11 +21,39 @@ class split_force_extension:
         self.retract = retract
         self.set_tau_num_points(tau_num_points)
         self.retract_knots = None
+        self.epsilon = None
+        self.sigma = None
     def set_retract_knots(self,interpolator):
         """
         sets the retract knots; useful for gridding data
         """
         self.retract_knots = interpolator.get_knots()
+    def get_epsilon_and_sigma(self):
+        return self.epsilon,self.sigma
+    def set_espilon_and_sigma(self,epsilon,sigma):
+        self.epsilon =epsilon
+        self.sigma = sigma
+    def calculate_epsilon_and_sigma(self,min_points_between=None,
+                                    slice_fit_approach=None):
+        if (slice_fit_approach is None):
+            approach_surface_idx = self.get_predicted_approach_surface_index()
+            slice_fit_approach= slice(0,approach_surface_idx,1)
+        spline_fit_approach = \
+            self.approach_spline_interpolator(slice_to_fit=slice_fit_approach)
+        approach = self.approach
+        approach_time_fit = approach.Time[slice_fit_approach]
+        approach_force_sliced = approach.Force[slice_fit_approach]
+        approach_force_interp_sliced = spline_fit_approach(approach_time_fit)
+        approach_diff_force = \
+                approach_force_sliced - approach_force_interp_sliced
+        local_approach_stdev = local_stdev(approach_diff_force,
+                                           min_points_between)
+        # get the residual properties of the approach
+        approach_residual_epsilon = np.mean(local_approach_stdev)
+        approach_residual_sigma = np.std(local_approach_stdev)
+        return approach_residual_epsilon,approach_residual_sigma
+
+
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau
@@ -182,8 +212,66 @@ def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
     return spline_interpolator(tau,x[slice_to_fit],f[slice_to_fit],
                                **kwargs)        
         
+def local_stdev(f,n):
+    """
+    Gets the local standard deviaiton (+/- n), except at boundaries 
+    where it is just in the direction with data
+
+    Args:
+        f: what we want the stdev of
+        n: window size (in either direction)
+    Returns:
+        array, same size as f, with the dat we want
+    """
+    max_n = f.size
+    # go from (i-n to i+n)
+    """
+    for linear stdev, see: 
+    stackoverflow.com/questions/18419871/
+    improving-code-efficiency-standard-deviation-on-sliding-windows
+    """
+    mode = 'reflect'
+    c1 = uniform_filter1d(f, size=n*2, mode=mode, origin=-n)
+    c2 = uniform_filter1d(f*f, size=n*2, mode=mode, origin=-n)
+    # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
+    safe_variance = np.maximum(0,c2 - c1*c1)
+    stdev = (safe_variance**.5)
+    return stdev
+
+
 def filter_fec(obj,n_points):
     return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
+
+
+def bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
+                            ruptures_true,ruptures_pred,bins_rupture):
+    """
+    returns the bhattacharya coefficients for the distriutions of the loading
+    rate, rupture force, and 2-d version
+
+    Args:
+        <x>_<true/pred>: the list of <x> values that are ground truth or 
+        predicted
+
+        bins<x>: for histogramming
+    Return:
+        three-tuple of BC coefficient (between 0 and 1)for the distributions of
+        loading rate, rupture force, and their 2-tuple 
+    """
+    coeff_load = bhattacharyya_probability_coefficient_1d(loading_true,
+                                                          loading_pred,
+                                                          bins_load)
+    coeff_force = bhattacharyya_probability_coefficient_1d(ruptures_true,
+                                                           ruptures_pred,
+                                                           bins_rupture)
+    # do a 2-d coefficient
+    tuple_true = [loading_true,ruptures_true]
+    tuple_pred = [loading_pred,ruptures_pred]
+    tuple_bins = [bins_load,bins_rupture]
+    coeff_2d = bhattacharyya_probability_coefficient_dd(tuple_true,tuple_pred,
+                                                        tuple_bins)
+    coeffs = [coeff_load,coeff_force,coeff_2d]
+    return coeffs
 
 def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
     """
@@ -197,7 +285,7 @@ def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
     """
     return bhattacharyya_probability_coefficient_dd(v1,v2,[bins])
 
-def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
+def bhattacharyya_probability_coefficient_dd(v1,v2,bins,normed=False):
     """
     # return the bhattacharyya distance between arbitrary-dimensional
     #probabilities, see  bhattacharyya_probability_coefficient
@@ -208,10 +296,24 @@ def bhattacharyya_probability_coefficient_dd(v1,v2,bins):
     Returns:
         bhattacharyya distance, see bhattacharyya_probability_coefficient
     """
-    histogram_kwargs = dict(bins=bins,weights=None,normed=False)
+    histogram_kwargs = dict(bins=bins,weights=None,normed=normed)
     v1_hist,v1_edges = np.histogramdd(sample=v1,**histogram_kwargs)
     v2_hist,v2_edges = np.histogramdd(sample=v2,**histogram_kwargs)
     return bhattacharyya_probability_coefficient(v1_hist,v2_hist)
+
+def div0(a,b,replace_div_0=0):
+    """
+    divide a by b, replacing any diviede by zero with repalace_div_0
+
+    Args:
+        a: numerator 
+        b: denom
+        replace_div_0: what to replace the value with if we divide by zero
+    """
+    with np.errstate(divide='ignore', invalid='ignore'):
+        c = np.true_divide( a, b )
+        c[~np.isfinite( c )] = replace_div_0  # -inf inf NaN
+    return c
 
 def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
     """
@@ -225,9 +327,11 @@ def bhattacharyya_probability_coefficient(v1_hist,v2_hist):
     """
     v1_hist = v1_hist.flatten()
     v2_hist = v2_hist.flatten()
-    p1 = v1_hist/np.sum(v1_hist)
-    p2 = v2_hist/np.sum(v2_hist)
-    return sum(np.sqrt(p1*p2))
+    # if we divide by zero, then one of the probabilities was all zero -- ignore
+    p1 = v1_hist/sum(v1_hist)
+    p2 = v2_hist/sum(v2_hist)
+    prod = p1 * p2
+    return sum(np.sqrt(prod))
     
 
 def _surface_index(filtered_y,y,last_less_than=True):
@@ -482,8 +586,14 @@ def zero_and_split_force_extension_curve(example):
     f = approach.Force
     x = approach.Time
     # *last* time we are under; note that this is at the end of the approach
-    last_idx_under_median = (f.size - np.where(f < np.median(f))[0][-1])
+    get_last_under_median = \
+        lambda y: (y.size - np.where(y < np.median(f))[0][-1])
+    last_idx_under_median = get_last_under_median(f)
     num_points = 2 * last_idx_under_median
+    x_tmp = np.arange(0,f.size,1)
+    interp = spline_interpolator(tau_x=num_points,x=x_tmp,f=f)
+    interp_approach = interp(x_tmp)
+    last_idx_under_median = 2 * get_last_under_median(interp_approach)
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split

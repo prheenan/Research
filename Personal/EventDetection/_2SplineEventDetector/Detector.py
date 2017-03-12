@@ -8,11 +8,6 @@ from scipy import signal,stats
 
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 from GeneralUtil.python import PlotUtilities,GenUtilities
-
-from scipy.ndimage.filters import uniform_filter1d
-
-
-
 from itertools import chain
 
 def join_contiguous_slices(slices, offset=0):
@@ -34,31 +29,6 @@ def join_contiguous_slices(slices, offset=0):
         if c == 0:
             yield slice(x, value - offset,1)
 
-def local_stdev(f,n):
-    """
-    Gets the local standard deviaiton (+/- n), except at boundaries 
-    where it is just in the direction with data
-
-    Args:
-        f: what we want the stdev of
-        n: window size (in either direction)
-    Returns:
-        array, same size as f, with the dat we want
-    """
-    max_n = f.size
-    # go from (i-n to i+n)
-    """
-    for linear stdev, see: 
-    stackoverflow.com/questions/18419871/
-    improving-code-efficiency-standard-deviation-on-sliding-windows
-    """
-    mode = 'reflect'
-    c1 = uniform_filter1d(f, size=n*2, mode=mode, origin=-n)
-    c2 = uniform_filter1d(f*f, size=n*2, mode=mode, origin=-n)
-    # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
-    safe_variance = np.maximum(0,c2 - c1*c1)
-    stdev = (safe_variance**.5)
-    return stdev
 
 def spline_derivative_probability(split_fec):
     """
@@ -124,7 +94,7 @@ def force_value_mask_function(split_fec,slice_to_use,
     x = retract.Time[slice_to_use]
     interp_f = split_fec.retract_spline_interpolator(slice_to_use)(x)
     diff = f-interp_f
-    stdev = local_stdev(diff,n_points)
+    stdev = Analysis.local_stdev(diff,n_points)
     med = np.median(interp_f)
     # essentially: when is the interpolated value 
     # at least one (local) standard deviation above the median
@@ -183,55 +153,25 @@ def derivative_mask_function(split_fec,slice_to_use,
     where_above = np.where(interp_deriv < median)[0]
     where_below = np.where(interp_deriv > median)[0]
     last_index = offset + min(where_above[-1],where_below[-1])
+    absolute_min_idx = offset
     absolute_max_index = min(slice_to_use.stop,last_index)
     # determine the approach derivative distribution, used to compute the 
     # probabilities for the retract 
-    approach_surface_idx = split_fec.get_predicted_approach_surface_index()
-    slice_fit_approach= slice(0,approach_surface_idx,1)
-    spline_fit_approach = \
-        split_fec.approach_spline_interpolator(slice_to_fit=slice_fit_approach)
-    approach = split_fec.approach
-    approach_time_fit = approach.Time[slice_fit_approach]
-    deriv_approach = spline_fit_approach.derivative()(approach_time_fit)
-    median_deriv_approach = np.median(deriv_approach)
-    stdev_deriv_approach = np.std(deriv_approach) 
-    prob_kwargs = dict(loc=median_deriv_approach,scale=stdev_deriv_approach)
-    # XXX could use **prob_kwargs, debugging...
-    spline_probability_in_slice=\
-        _spline_derivative_probability_generic(x_sliced,interp)
-    # determine where the derivative is possibly outlying; that is a necessary
-    # but not sufficient condition for an event
-    tol = 1e-9
-    possible_event =  (1 - spline_probability_in_slice) > tol
-    event_slice_mask = np.where(possible_event)[0]
-    if (event_slice_mask.size == 0):
-        return slice_to_use,boolean_ret,probability_updated
-    # POST: have at least one possible spline event
-    # only consider events which start after the offset, to avoid edge effects
-    absolute_min_idx = offset + min_points_between          
-    event_boundaries = _event_slices_from_mask(event_slice_mask,
-                                               min_points_between)    
-    events_starting_before_min_idx = [e for e in event_boundaries 
-                                      if e.start < min_points_between]
-    # determing where we first cross the median on the backwards array
-    if (len(events_starting_before_min_idx) > 0):
-        event_end_in_slice = events_starting_before_min_idx[0].stop
-        # XXX Wtf?
-        absolute_min_idx = max(absolute_min_idx,event_end_in_slice+offset)
-    # POST: absolute_min_idx is the index *in the original array* where we 
-    # should start looking for events. 
-    # determine where the probability is
-    where_no_event = np.where(~possible_event)
-    probability_updated[slice_to_use] *= spline_probability_in_slice
-    probability_updated[slice_to_use][where_no_event] = 1
-    # mask everything until the minimum index; probability is set to one,
-    # boolean mask is set to zero
-    probability_updated[:absolute_min_idx] = 1
-    probability_updated[absolute_max_index:] = 1
+    force_sliced = force[slice_to_use]
+    diff = force_sliced - interp(x_sliced)
+    local_std = Analysis.local_stdev(diff,min_points_between)
+    interp_sliced = interp(x_sliced)
+    interp_deriv_sliced = interp.derivative()(x_sliced)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    tau_x = split_fec.tau
+    df_interp_sliced = interp_deriv_sliced * tau_x
+    ratio = df_interp_sliced/epsilon
+    where_not_possible = np.where(ratio > -3)[0]
     slice_updated = slice(absolute_min_idx,absolute_max_index,1)
-    # completely new boolean array
-    boolean_ret = (probability_updated < threshold)
     # remove the bad points
+    if (where_not_possible.size > 0):
+        boolean_ret[slice_to_use][where_not_possible] = 0
+        probability_updated[slice_to_use][where_not_possible] = 1
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
     # anywhere  the derivative is >= 0 isn't an event
@@ -239,21 +179,13 @@ def derivative_mask_function(split_fec,slice_to_use,
     if (where_deriv_ge_zero.size > 0):
         boolean_ret[where_deriv_ge_zero] = 0
         probability_updated[where_deriv_ge_zero] = 1        
-    # anywhere the derivative is less than 1stdev from the approach is also
-    # a probability 1, by chebyshev
-    condition_insignificant = \
-        (np.abs(interp_deriv - median_deriv_approach) < stdev_deriv_approach)
-    where_deriv_insignificant = offset + np.where(condition_insignificant)[0]
-    if (where_deriv_insignificant.size > 0):
-        boolean_ret[where_deriv_insignificant] = 0
-        probability_updated[where_deriv_insignificant] = 1  
     return slice_updated,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          *args,**kwargs):
     """
-    returns the funciton adhesion_mask, with surface_index set to whatever
+   returns the funciton adhesion_mask, with surface_index set to whatever
     the surface index of split_fec is predicted to be by the approach
     
     Args:
@@ -270,6 +202,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                   probability_distribution=probability,
                                   threshold=threshold,*args,**kwargs)
     where_not_adhesion = np.where(bool_adhesion)[0]
+    probability_updated= probability.copy()
     if (where_not_adhesion.size > 1):
         adhesions_removed = boolean_array.copy()
         start = where_not_adhesion[0]
@@ -285,12 +218,14 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
         interp = split_fec.\
             retract_spline_interpolator(slice_to_fit=slice_update)
         probability_updated = np.ones( boolean_array.size)
+        epsilon,sigma = split_fec.get_epsilon_and_sigma()
+        kwargs = dict(sigma=sigma)
         prob_tmp, _ = _no_event_probability(time,interp,force,n_points,
-                                            slice_fit=slice_update)
-        probability_updated[slice_update] = np.minimum(1,prob_tmp)
+                                            slice_fit=slice_update,**kwargs)
+        probability_updated = prob_tmp
     else:
         slice_update = slice(0,None,1)        
-    return slice_update,boolean_array,probability
+    return slice_update,boolean_array,probability_updated
 
 def _min_points_between(autocorrelation_tau_num_points):
     """
@@ -346,12 +281,6 @@ def adhesion_mask(surface_index,n_points,split_fec,
     where_derivative_le_zero_absolute = where_deriv_le_zero
     min_idx = where_derivative_le_zero_absolute[0]
     to_ret[:min_idx] = 0
-    where_gt_zero_absolute = \
-        np.where(derivative_gt_zero & (slice_idx > min_idx))[0]
-    if (where_gt_zero_absolute.size == 0):
-        return to_ret 
-    min_idx = where_gt_zero_absolute[0]
-    to_ret[:min_idx] = 0 
     # POST: we found a peak (or a flat point) followed by some kind of increase
     # this means we should have passed (at least one) adhesion peak.
     # however, if there is an event happening here, we need to continue
@@ -451,7 +380,8 @@ def _event_mask(probability,threshold):
     boolean_thresh = (probability <= threshold)
     return np.where(boolean_thresh)[0]
 
-def _no_event_probability(x,interp,y,n_points,slice_fit=None):
+def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
+                          slice_fit=None):
     """
     returns the no-event probability at each point in y
 
@@ -461,32 +391,36 @@ def _no_event_probability(x,interp,y,n_points,slice_fit=None):
         interp: see _event_probabilities
         n_points: number of points to use in estimating r(q)=g-g* by the 
         local standard deviaiton of y-interp(x)
-    
+        epsilon: the mean error parameter
+        sigma: the stdev of the error parameter
         slice_fit: an optional slice to use to compute the probabilities
     Returns:
         tuple of <probability, local stdevs>
     """
     if (slice_fit is None):
         slice_fit = slice(0,None,1)
+    n_original = x.size
     x = x[slice_fit]
     y = y[slice_fit]
     # get the interpolated function
     interpolated_y = interp(x)
     # get a model for the local standard deviaiton
-    diff = y-interpolated_y
-    stdevs = local_stdev(diff,n_points)
-    # get the cwt of the wavelet; see pp219 of Mallat, Wavelet Tour (XXX TODO)
-    median_local_stdev = np.median(stdevs)
-    stdev_masked = stdevs[slice_fit]
-    qlow,qhigh = np.percentile(stdev_masked,[0,75])
-    iqr = qlow-qhigh
-    scale_idx = np.where( (stdev_masked >= qlow) & (stdev_masked <= qhigh))
-    scale = np.std(stdev_masked[scale_idx])
+    diff = np.abs(y-interpolated_y)
+    stdevs = Analysis.local_stdev(diff,n_points)
+    stdev_masked = stdevs
+    if sigma is None:
+        qlow,qhigh = np.percentile(stdev_masked,[0,75])
+        iqr = qlow-qhigh
+        scale_idx = np.where( (stdev_masked >= qlow) & (stdev_masked <= qhigh))
+        scale = np.std(stdev_masked[scale_idx])
+        sigma = scale
+    if epsilon is None:
+        epsilon = np.median(stdev_masked)
     # note: chebyshev is like
     # P(|X - mu| >=  k * sigma) <= 1/k^2
     # we write k = (s(q) - epsilon)/scale
-    denom = (stdev_masked-median_local_stdev)
-    k_chebyshev = denom/scale
+    denom = (stdev_masked-epsilon)
+    k_chebyshev = denom/sigma
     # determine where the chebyshev is 'safe', otherwise we are at or above
     # the mean estimate and hence not a useful metric
     cheby_idx = np.where(k_chebyshev >= 1)
@@ -494,12 +428,12 @@ def _no_event_probability(x,interp,y,n_points,slice_fit=None):
     # actually calculate the upper bound for the probability
     chebyshev[cheby_idx] = (1/k_chebyshev[cheby_idx])**2
     # for the edge cases, assume the probability is one                         
-    probability_distribution = np.ones(y.size)      
+    probability_distribution = np.ones(n_original)
     # get the probability for all the non edge cases
     probability_distribution[slice_fit] = chebyshev
     return probability_distribution,stdevs
         
-def _event_probabilities(x,y,interp,n_points,threshold):
+def _event_probabilities(x,y,interp,n_points,threshold,**kwargs):
     """
     determines the mask (and associated event detection information)
     
@@ -510,6 +444,8 @@ def _event_probabilities(x,y,interp,n_points,threshold):
 
         threshold: maximum probability that a given datapoint fits the 
         model
+    
+        **kwargs; passed to no_event_probability
     Returns:
         tuple of :
             probability_distribution : no-event probability for each point in y
@@ -518,10 +454,9 @@ def _event_probabilities(x,y,interp,n_points,threshold):
     """
     min_points_between = _min_points_between(n_points)
     slice_fit = slice(min_points_between,-min_points_between,1)
-    probability_distribution_in_slice,stdevs = \
-        _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit)
-    probability_distribution = np.ones_like(x)
-    probability_distribution[slice_fit] =  probability_distribution_in_slice
+    probability_distribution,stdevs = \
+        _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit,
+                              **kwargs)
     return probability_distribution,slice_fit,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
@@ -605,7 +540,7 @@ def event_by_loading_rate(*args,**kwargs):
 
 
 def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
-             remasking_functions=None):
+             remasking_functions=None,**kwargs):
     """
     general method to predict the event boundaries and centers
     
@@ -618,14 +553,18 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         local_event_idx_function: a function which takes a slice of x,y,slice
         as its  only argument and returns the most likely index of an event. 
         the slice passsed should have only one event
-        
-        remasking_functions: XXX
+    
+        remasking_functions: funcitons that take in the slice, boolean array, 
+        probability, and threshold and return update values for all except
+        threshold
+    
+        kwargs: passed to _event_probabilities
     Returns:
         list of event slices
     """
     min_points_between = _min_points_between(n_points)
     probability_distribution,slice_fit,stdevs = \
-        _event_probabilities(x,y,interp,n_points,threshold)
+        _event_probabilities(x,y,interp,n_points,threshold,**kwargs)
     bool_array = probability_distribution < threshold
     masks = [np.where(bool_array)[0]]
     probabilities = [probability_distribution.copy()]
@@ -699,13 +638,19 @@ def _predict_helper(split_fec,threshold,**kwargs):
     # set the knots based on the initial interpolator, so that
     # any time we make a new splining object, we use the same knots
     split_fec.set_retract_knots(interp)
+    # set the epsilon and tau by the approach
+    min_points_between = _min_points_between(n_points)    
+    epsilon,sigma = split_fec.\
+        calculate_epsilon_and_sigma(min_points_between=min_points_between)
+    split_fec.set_espilon_and_sigma(epsilon,sigma)
+    final_kwargs = dict(sigma=sigma,**kwargs)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
                       interp=interp,
                       threshold=threshold,
                       local_event_idx_function=event_by_loading_rate,
-                      **kwargs)
+                      **final_kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface
     return to_ret

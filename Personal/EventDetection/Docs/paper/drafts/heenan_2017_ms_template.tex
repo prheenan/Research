@@ -24,6 +24,7 @@
   amsthm,
  amsmath,amssymb
 ]{article}
+\usepackage{braket}
 % use utf-8 for  the input encoding (so the bibliography isnt terrible)
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -299,6 +300,12 @@ This paper describes a new method based on machine learning for detecting events
 
 
 
+\begin{figure}
+\centering
+\includegraphics[width=6in]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
+\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\end{figure}
+
 
 \section{\sLabel{Materials}Materials and Methods}
 
@@ -341,6 +348,38 @@ def event_indices(force,threshhold):
 \pcaption{\noindent\fLabel{Code}\pStartF XXX code  \pEndF }
 \end{figure}
 
+\subsubsection{\sLabel{Metrics}Performance Metrics}
+
+XXX metrics were used for comparing the event-finding performance of the algorithm with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j` represent either true (t) or predicted (p):
+
+\eqs{ 
+x_k &\equiv \text{the total displacement of the force extension curve} \\
+d_{i\rightarrow j,k} &\equiv \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\
+F_{1,k} &\equiv 
+1-\frac{2}{x_k} \times \frac{d_{t\rightarrow p,k} d_{p\rightarrow t,k}}{d_{t\rightarrow p,k}+d_{p\rightarrow t,k}}  \\ 
+\nu_i &\equiv \text{ distribution of `i' loading rates over all k} \\
+F_i &\equiv \text{ distribution of `i' rupture forces over all k} \\
+d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\
+ }
+
+For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. Note that $F_{1,k}$ is the distance analogue to an $F_1$ score (XXX cite). The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data.
+
+\begin{table}
+\begin{tabularx}{\textwidth}{ l | l | l | l | l }
+\hline \hline
+Shorthand & Description & Notation  & Range & \text{Optimum} \e 
+F$_{1,d}$ & Normalized F$_1$-Score Distribution  & $\{\frac{\mathrm{F}_{1,k}}{x_k}\} \forall k\in \{1,\cdots,K\}$  & $\{[0,1]\}$ & $\{1\}$ \e
+BC$_{\nu,F}$ & Bhattacharyya Coefficient & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
+\end{tabularx}
+\pcaption{\tLabel{metrics}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl separated from the sequence by triethyleneglycol spacer.}
+\end{table}
+
+The metrics are constructed such that $F_{1,d}$ is a distribution of ones if and only if the true and predicted event locations are always equal and $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal.
+
+\begin{enumerate}
+\item The harmonic mean of the distance from 
+\end{enumerate}
+
 \subsection{\sLabel{Compare}Choice of competing methods}
 
 XXX inttro
@@ -358,6 +397,14 @@ XXX inttro
 \end{figure}
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
+
+\begin{figure}
+\centering
+\includegraphics[width=7in]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
+\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\end{figure}
+
+
 
 \section{\sLabel{Discussion}Discussion}
 
@@ -433,35 +480,43 @@ This section detailis the mathematics and choices behind the event-detection alg
 
 \subsubsection{Defining the no-event hypothesis}
 
-\firstp During an event, a force-extension curve exhibits a discontinuity in its first derivative in the absence of noise (XXX figure). The algorithm models the data assuming no event is occuring at a given extension 'q' and finds where the probability of a measurent is low. Hereafter, the assumption of no event at a given extension will be called \emph{no-event hypothesis}. 
+\firstp During an event, a force-extension curve exhibits a discontinuity in its first derivative in the absence of noise (XXX figure). The algorithm models the data assuming no event is occuring at a given time 't' and finds where the probability of a measurent is low. Hereafter, the assumption of no event at a given time will be called \emph{no-event hypothesis}. 
 
 \subsubsection{Mathematical background for testing the no-event hypothesis}
 
-\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a single force-extension curve is given (XXX Figure) by the following:
+\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at points t is given (XXX Figure) by the following:
 
-\eqs{ F(q) = g(q) + X(0,\sigma^2) }
+\eqs{ F_t = g_t + X(0,\sigma^2) }
 
-where `g(q)' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}(q)$' is a function with a continuous first derivative approximately equal to $g(q)$ such that $\forall q, E(q)\equiv|g^{*}(q)-g(q)| \le \epsilon$ for some real $\epsilon$, then we define an error distribution R(q) such that: \pl
+where `g$_t$' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then we define an error distribution $R_t$ such that: \pl
 
-\eqs{ R(q) \equiv F(q) - g^{*}(q) \le \pm\epsilon + X(0,\sigma^2) 
-  \le \epsilon + X(0,\sigma^2) }
+\eqs{ R_t \equiv F_t - g^{*}_t }
 
-For the rest of the paper, we assume the inequality is tight enough to be treated as an equality, justified by the experimental results. Under this assumption, the expectation value of R(q) is $\epsilon$, and the variance of R(q) is $\sigma^2$. The probability `P' of measuring r(q) is bounded by Chebyshev's inequality is:
+where
 
-\eqs{ P( |R(q)-\epsilon| \ge r(q)-\epsilon ) \le
- (\frac{\sigma}{r(q)-\epsilon})^2 }
+\eqs{ E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2 }
 
-For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}(q)$ (which in turn yields the estimator error $\epsilon$ and the noise $\sigma$ by XXX). A low probability at a given extension implies the measurement is unlikely under the no-event hypothesis.
+and 
+
+\eqs{ |E[R_t]| = \epsilon_t \le E[|R_t|] }
+
+In practice (see XXX), we approximate $\epsilon_t$ by the averaging over all time points $\epsilon_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |E[R_t]|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality is:
+
+\eqs{ P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
+ (\frac{\sigma}{r_t-\epsilon_t})^2 }
+
+
+For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\epsilon$ and the noise $\sigma$ by XXX). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. \pl
 
 \subsubsection{Accurate estimators for hypothesis testing}
 
 XXX autocorrelation time motivation \pl 
 
-The approximation to the noiseless force $g^{*}(q)$ is obtained by fitting a least-squares second-order basis spline (b-spline, XXX) to the force versus extension curve. The spline is second-order to ensure a continuous first derivative (see XXX), and the spline knots are spaced uniformly at intervals of $\tau$. Figure XXX is a representative demonstration of the spline fitting. Determining  $g^{*}(q)$ immediately gives r(q) by eq XX.  \pl
+The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline (b-spline, XXX) to the force versus time curve. The spline is second-order to ensure a continuous first derivative (see XXX), and the spline knots are spaced uniformly at intervals of $\tau$. Figure XXX is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $r_t$ by eq XX.  \pl
 
-Using r(q) as shown in eq XXX does not provide a strong signal in the presence of an event(see supplemental Figure XXX). In order to improve the method, the distribution of windowed standard deviations `s(q)' centered at q with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of r(q) in the algorithm. Using s(q) instead of r(q) provides a much stronger signal (see Figure XXX).  \pl
-.
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations s(q). From this distribution, $\sigma$ is set to the standard deviation of s(q) within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to remove the influence of possible events. The removal of possible events is necessary to ensure accurate estimations of $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
+Using $r_t$ as shown in eq XXX does not provide a strong signal in the presence of an event(see supplemental Figure XXX). In order to improve the method, the distribution of windowed standard deviations `$s_t$' of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of $r_t$. Using $s_t$ instead of $r_t$ provides a much stronger signal (see Figure XXX).  \pl
+
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$. From this distribution, $\sigma$ is set to the standard deviation of $s_t$ within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to remove the influence of possible events. The removal of possible events is necessary to ensure accurate estimations of $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
 
 XXX table?
 
