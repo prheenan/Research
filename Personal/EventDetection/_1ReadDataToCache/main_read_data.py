@@ -26,10 +26,10 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 50
+    limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = False
+    debugging = True
     force_read = False
     force_relearn = False
     force_learn = False or force_relearn
@@ -84,7 +84,7 @@ def run():
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
-    debugging_str = "_" if not debugging else ""
+    debugging_str = "_" if debugging else ""
     file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
@@ -102,8 +102,8 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x
-    example_numbers = [8]
-    examples_filtered = [examples[i] for i in example_numbers]
+    #example_numbers = [8]
+    #examples_filtered = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
