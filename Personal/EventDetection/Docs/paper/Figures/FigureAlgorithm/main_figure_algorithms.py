@@ -23,7 +23,7 @@ def run(base="./"):
     
     """
     data_base = base + "data/"
-    out_fig = "cartoon.svg"
+    out_fig = "cartoon.png"
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
@@ -57,6 +57,16 @@ def run(base="./"):
                                            y=force,
                                            n_points=n_points,epsilon=epsilon,
                                            sigma=sigma)
+    # get the prediction info
+    threshold = 0.1
+    _,predict_info = Detector._predict_full(example,threshold=threshold)
+    # get the final masks
+    mask_final = predict_info.condition_results[-1]
+    bool_final = np.zeros(time.size)
+    bool_final[mask_final] = 1
+    prob_final = predict_info.probabilities[-1]
+    # plot everything
+    lazy_kwargs = dict(loc='lower right',frameon=True)
     x_plot = x_plot_f(time)
     force_plot = y_plot_f(force)
     force_filtered_plot = y_plot_f(force_filtered)
@@ -74,7 +84,7 @@ def run(base="./"):
     Plotting.before_and_after(x_plot,force_filtered_plot,
                               slice_before,slice_after,style_filtered,
                               label="Spline ($g^{*}_t$)))")
-    PlotUtilities.lazyLabel("","Force [pN]","",frameon=True)
+    PlotUtilities.lazyLabel("","Force [pN]","",**lazy_kwargs)
     plt.subplot(n_plots,1,2)
     plt.plot(x_plot,stdev_plot)
     plt.axhline(epsilon_plot,label="$\epsilon$")
@@ -83,9 +93,12 @@ def run(base="./"):
     plt.axhline(epsilon_plot-sigma_plot,linestyle='--')
     PlotUtilities.lazyLabel("","R$_\mathrm{t}$","",frameon=True)
     plt.subplot(n_plots,1,3)
-    plt.plot(x_plot,prob)
+    plt.plot(x_plot,prob,alpha=0.3,color='k',label="No-event")
+    plt.axhline(threshold,linewidth=2,color='b',linestyle='--',
+                label="threshold")
+    plt.plot(x_plot,prob_final,label="Masked no-event")
     plt.yscale('log')
-    PlotUtilities.lazyLabel("Time","Probability","")
+    PlotUtilities.lazyLabel("Time","Probability","",**lazy_kwargs)
     PlotUtilities.savefig(fig,out_fig)
     
 

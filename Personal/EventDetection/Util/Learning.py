@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 import sys,traceback
 
 from Research.Personal.EventDetection.Util import Analysis,InputOutput,Scoring
+from Research.Personal.EventDetection._2SplineEventDetector import Detector
+from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
+    fovea
+from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
+    wavelet_predictor
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.model_selection import StratifiedKFold
 import multiprocessing
@@ -513,6 +518,7 @@ def _get_single_curve(name,tuple_v,func):
         learning_curve object
     """
     return learning_curve(name,tuple_v[0],func(tuple_v[1]))
+    
 
 def get_single_learner_folds(cache_directory,force,l,data,fold_idx,pool_size):
     """
@@ -569,6 +575,8 @@ def get_cached_folds(categories,force_read,force_learn,
     # .split returns a generator by default; convert to a list to avoid
     # making it only used for the first fold 
     fold_idx = list(fold_obj.split(X=np.zeros(len(labels)),y=labels))
+    if (learners is None):
+        learners = get_learners()
     # POST: all data read in. get all the scores for all the learners.
     for l in learners:
         cache_file = cache_directory + "folds_" + l.description + ".pkl"

@@ -5,12 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+from Learning import _get_single_curve
+
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
     fovea
 from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
     wavelet_predictor
     
+
 def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     Returns a list of learning_curve objects
