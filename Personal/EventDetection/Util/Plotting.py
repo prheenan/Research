@@ -151,8 +151,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
     styles = [dict(color='r',linestyle=':'),
-              dict(color='k',linestyle='-',alpha=0.3),
-              dict(color='g',linestyle='-.',alpha=0.7),
+              dict(color='k',linestyle='-.',alpha=0.3),
+              dict(color='g',linestyle='-',alpha=0.7),
               dict(color='m',linestyle='--')]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
@@ -686,21 +686,22 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
     PlotUtilities.lazyLabel("Time","Prob/Mask","",loc='upper right')
 
 def debug_plot_derivative_ratio(time,slice_to_use,
-                                ratio,interp_sliced,force_sliced,
-                                interp_deriv_sliced,local_std,
-                                where_not_possible,boolean_ret,
-                                probability_updated,absolute_min_idx):
+                                 ratio,interp_sliced,force_sliced,
+                                 interp_slice_deriv,
+                                 boolean_ret,probability_updated,
+                                 absolute_min_idx,ratio_min_threshold):
     x_sliced = time[slice_to_use]
     xlim = [min(x_sliced),max(x_sliced)]
-    plot_interp_deriv = interp_deriv_sliced/max(interp_deriv_sliced)
+    where_possible = np.where(ratio < ratio_min_threshold)
+    plot_interp_deriv = interp_slice_deriv/max(interp_slice_deriv)
     plt.subplot(3,1,1)
     plt.plot(x_sliced,interp_sliced*1e12,linewidth=3,label="interp")
     plt.plot(x_sliced,force_sliced*1e12,color='k',alpha=0.3,label="force")
     PlotUtilities.lazyLabel("","Force","")
     plt.xlim(xlim)
     plt.subplot(3,1,2)
-    plt.plot(x_sliced,ratio,color='k',alpha=0.3,label="ratio")
-    plt.plot(x_sliced[where_not_possible],ratio[where_not_possible],label=">=T")
+    plt.plot(x_sliced,ratio,color='k',alpha=0.3,label="ratio") 
+    plt.plot(x_sliced[where_possible],ratio[where_possible],color='b')
     PlotUtilities.lazyLabel("","ratio df/epsilon","")
     plt.axvline(time[absolute_min_idx])
     plt.xlim(xlim)

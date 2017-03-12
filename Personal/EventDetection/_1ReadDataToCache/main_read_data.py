@@ -104,7 +104,7 @@ def run():
     # XXX debugging.
     example_numbers = [8]
     examples_filtered = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples):
+    for i,example in enumerate(examples_filtered):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
         if (debugging):
