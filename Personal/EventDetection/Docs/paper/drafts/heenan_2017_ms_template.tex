@@ -271,19 +271,11 @@ Text
 
 \section{\sLabel{Intro}Introduction}
 
-outline:\\
-Cool examples \\
-how it works  (XXX why surface bound is good?)\\
-especially talk about dynamic force spectroscopy \\
-why data processing is difficult \\
-XXX anatomy of FEC
-previous techniques\\
-
 \firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and XXX. The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
 
-During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample(XXX figure). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
+During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample(\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
 
-In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip interacts with a molecule and stretches it to measure the relationship between force and extension over time. This experiment records the force-extension curve of the molecule (see figure XXX). Force-extension curves yield information such as kinetic rates of processive enzymes \citePRH{comstock_direct_2015}, protein-ligand bond strength \citePRH{yuan_energy_2000}, and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. \pl
+In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip interacts with a molecule and stretches it to measure the relationship between force and extension over time. This experiment records the force-extension curve of the molecule (\fRef{Cartoon}). Force-extension curves yield information such as kinetic rates of processive enzymes \citePRH{comstock_direct_2015}, protein-ligand bond strength \citePRH{yuan_energy_2000}, and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. \pl
 
 \begin{figure}
 \centering
@@ -296,14 +288,14 @@ The analysis and interpretability of \singlemol{} experiments is limited by the 
 
 Methods have been proposed to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
 
-This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (XXX figure). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple loading rates, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance (XXX timing?) to previously proposed methods. \pl
+This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple loading rates, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance (XXX timing?) to previously proposed methods. \pl
 
 
 
 \begin{figure}
 \centering
 \includegraphics[width=6in]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\pcaption{\noindent\fLabel{Rupture} Defining a rupture force and loading rate. }  
 \end{figure}
 
 
@@ -311,7 +303,7 @@ This paper describes a new method based on machine learning for detecting events
 
 \subsection{Sample Preparation}
 
-Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparaton has been described elsewhere (CITE XXX Rob) and in the appendix (XXX). Through polymerase chain reaction, double-stranded DNA is functionalized with DBCO at one end to ensure a covalent bond with an azide-functionalized surface, and the polymer is functionalized with biotin at the opposite end to ensure a specific but reversible bond with the streptavidin-coated tip. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination.
+Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparaton has been described elsewhere (CITE XXX Rob) and in \sRef{SampleDetails}. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with DBCO at one end to ensure a covalent bond with an azide-functionalized surface. The polymer isalso functionalized with biotin at the opposite end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination.
 
 \subsection{\sLabel{Surface}Atomic force microscopy}
 
@@ -350,7 +342,7 @@ def event_indices(force,threshhold):
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
-XXX metrics were used for comparing the event-finding performance of the algorithm with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j` represent either true (t) or predicted (p):
+XXXNumer metrics were used for comparing the event-finding performance of the algorithm with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j` represent either true (t) or predicted (p):
 
 \eqs{ 
 x_k &\equiv \text{the total displacement of the force extension curve} \\
@@ -365,7 +357,7 @@ d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$
 For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. Note that $F_{1,k}$ is the distance analogue to an $F_1$ score (XXX cite). The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data.
 
 \begin{table}
-\begin{tabularx}{\textwidth}{ l | l | l | l | l }
+\begin{tabularx}{\textwidth}{ |l | l | l | l | l| }
 \hline \hline
 Shorthand & Description & Notation  & Range & \text{Optimum} \e 
 F$_{1,d}$ & Normalized F$_1$-Score Distribution  & $\{\frac{\mathrm{F}_{1,k}}{x_k}\} \forall k\in \{1,\cdots,K\}$  & $\{[0,1]\}$ & $\{1\}$ \e
@@ -375,6 +367,19 @@ BC$_{\nu,F}$ & Bhattacharyya Coefficient & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|
 \end{table}
 
 The metrics are constructed such that $F_{1,d}$ is a distribution of ones if and only if the true and predicted event locations are always equal and $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal.
+
+
+\begin{table}
+\begin{tabularx}{\textwidth}{ |l || l | l | l | l | l |}
+\hline \hline
+ & bc2 & medtrue & medpred & qtrue & qpred \e \hline
+no event & 0.966 & 4e-09 & 4.44e-09 & 1.45e-08 & 1.45e-08\e
+open fovea & nan & -1 & -1 & -1 & -1\e
+wavelet transform & 0.607 & 1.91e-07 & 2.05e-08 & 5.9e-08 & 5.9e-08\e
+\end{tabularx}
+\pcaption{\tLabel{AppliedMetrics} Performance metrics} 
+\end{table}
+
 
 \begin{enumerate}
 \item The harmonic mean of the distance from 
@@ -388,20 +393,20 @@ XXX inttro
 
 \subsection{\sLabel{Timing}Algorithmic time complexity}
 
-
+\fRef{Timing} and \fRef{Timing_Details} give the ...
 
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\pcaption{\noindent\fLabel{Timing}\pStartF  Big-O runtime of this algorithm compared to the baseline algorithms.\pEndF}
 \end{figure}
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
 
 \begin{figure}
 \centering
-\includegraphics[width=7in]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\includegraphics[width=6.5in]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
+\pcaption{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms  \pEndF }
 \end{figure}
 
 
@@ -410,11 +415,6 @@ XXX inttro
 
 
 \firstp Since the discovery of x-rays in 1895 by Wilhelm Conrad R{\"o}ntgen, researchers leveraging x-rays have dramatically improved our understanding of the world, receiving multiple Nobel prizes along the way.\cite{santra_concepts_2009} Fundamental scientific discoveries in early x-ray studies include: illuminating crystal structure by Bragg's x-ray diffraction experiments in 1913,\cite{bragg_reflection_1913} revealing electron orbital state through inelastic x-ray scattering by Compton in 1923,\cite{compton_spectrum_1923} and Klein's generalizations of Compton scattering to higher-energy photons using quantum electrodynamics in 1928.\cite{klein_scattering_1928} In addition to serving as a probe for fundamental investigations of matter, x-rays also find applications in quantifying and identifying industrial pollutants;\cite{luo_determination_2012} imaging oncological and vascular tissues;\cite{butler_bio-medical_2008} and recovering, restoring, or establishing the provenance of works of artistic \cite{janssens_photon-based_2010} or historical \cite{bergmann_archimedes_2007} importance. All these applications are made possible by determining the elemental makeup of the object of interest. \pl
-
-%\begin{figure}
-%\includegraphics[width=3in]{../../Figures/Figure0.pdf}% Here is how to import EPS art
-%\pcaption{\noindent\fLabel{Motivation}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
-%\end{figure}
 
 \subsubsection{\sLabel{Beer}XRF depends on wavelength and element}
 
@@ -439,7 +439,16 @@ Bibliography
 
 \section{Appendix}
 
-\subsection{Sample and Cantilever Preparation}
+%restarct numbering for appendix
+\renewcommand{\thepage}{S\arabic{page}} 
+\renewcommand{\thesection}{S\arabic{section}}  
+\renewcommand{\thetable}{S\arabic{table}}  
+\renewcommand{\thefigure}{S\arabic{figure}} 
+\setcounter{figure}{0}
+\setcounter{table}{0}
+
+
+\subsection{\sLabel{SampleDetails}Sample and Cantilever Preparation}
 
 
 \begin{table}
@@ -528,14 +537,14 @@ XXX figure out how to determine where the adhesion ends, how to improve SNR by d
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/out.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\pcaption{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. \pEndF }
 \end{figure}
 
 
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\pcaption{\noindent\fLabel{Timing_Details}\pStartF Details of timing experiments\pEndF }
 \end{figure}
 
 

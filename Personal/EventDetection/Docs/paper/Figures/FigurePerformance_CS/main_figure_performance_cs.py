@@ -18,6 +18,18 @@ from Research.Personal.EventDetection.Util.Plotting \
     import algorithm_colors,algorithm_markers,algorithm_linestyles
 
 
+class coeffs:
+    def __init__(self,bc_loading,bc_rupture,bc_2d,median_true,median_pred,
+                 q_true,q_pred,name):
+        self.name = name
+        self.bc_loading = bc_loading
+        self.bc_rupture = bc_rupture
+        self.bc_2d = bc_2d
+        self.median_true=median_true
+        self.median_pred=median_pred
+        self.q_true=q_true
+        self.q_pred=q_pred
+
 class plotting_metrics:
     def __init__(self,l,ret):
         ruptures_valid_true,ruptures_valid_pred = \
@@ -34,7 +46,7 @@ class plotting_metrics:
                                ruptures_valid_pred[self.best_param_idx]
         self.valid_scores = \
             l._scores_by_params(train=False)[self.best_param_idx]
-    def true_and_pred_distances(self,floor_is_max=True):
+    def to_true_and_pred_distances(self,floor_is_max=True):
         kwargs = dict(floor_is_max = floor_is_max)
         to_true = Learning.\
                   event_distance_distribution([self.valid_scores],
@@ -44,13 +56,36 @@ class plotting_metrics:
                                               to_true=False,**kwargs)[0]
         return to_true,to_pred
     def distance_limit(self,**kwargs):
-        true,pred = self.true_and_pred_distances(**kwargs)
+        true,pred = self.to_true_and_pred_distances(**kwargs)
         safe_max = lambda x: max(x) if len(x) > 0 else 0
         safe_min = lambda x: min(x) if len(x) > 0 else np.inf
         max_dist = max([safe_max(true),safe_max(pred)])
         min_dist = min([safe_min(true),safe_min(pred)])
         tmp_limits = [min_dist,max_dist]
         return tmp_limits
+    def coefficients(self):
+        ruptures_true,loading_true = \
+            Learning.get_rupture_in_pN_and_loading_in_pN_per_s(self.true)
+        ruptures_pred,loading_pred = \
+            Learning.get_rupture_in_pN_and_loading_in_pN_per_s(self.pred)
+        lim_force,bins_rupture,lim_load,bins_load = \
+            Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                    loading_true,loading_pred)
+        tmp = Analysis.bc_coeffs_load_force_2d(loading_true,loading_pred,
+                                               bins_load,ruptures_true,
+                                               ruptures_pred,bins_rupture)
+        to_true,to_pred = self.to_true_and_pred_distances()
+        q = 75
+        if (len(to_true) > 0):
+            median_true = np.median(to_true)
+            median_pred  = np.median(to_pred)
+            q_true  = np.percentile(to_true,q)
+            q_pred = np.percentile(to_pred,q)
+        else: 
+            median_true,median_pred  = -1,-1
+            q_true,q_pred  = -1,-1
+        return coeffs(*tmp,median_true=median_true,median_pred=median_pred,
+                      q_true=q_pred,q_pred=q_pred,name=self.name)
 
 def metrics(true,pred):
     """
@@ -107,6 +142,31 @@ def get_metric_list(data_file):
         metric_list.append(tmp)
     return metric_list    
 
+def write_coeffs_file(out_file,coeffs):
+    opt_low = lambda x: np.argsort(x)
+    opt_high = lambda x: opt_low(x)[::-1]
+    funcs_names_values = []
+    for c in coeffs:
+        tmp =[ [opt_high,"bc2",c.bc_2d],
+               [opt_low,"medtrue",c.median_true],
+               [opt_low,"medpred",c.median_pred],
+               [opt_low,"qtrue",c.q_true],
+               [opt_low,"qpred",c.q_pred]]
+        funcs_names_values.append(tmp)
+    # only get the funcs nad names from the first (redudant to avoid typos
+    funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
+    coeff_names = [coeff_tmp[1] for coeff_tmp in funcs_names_values[0] ]
+    method_names = [c.name for c in coeffs]
+    # get the list of coefficients
+    coeffs = [[f[2] for f in coeff_tmp] for coeff_tmp in funcs_names_values ]
+    join_str = " & "
+    str_v = join_str + join_str.join(coeff_names) + "\e\\hline \n"
+    for name,c in zip(method_names,coeffs): 
+        str_v += "{:s}{:s}".format(name,join_str)
+        str_v += join_str.join(["{:.3g}".format(c_tmp) for c_tmp in c])
+        str_v += "\\e\n"
+    with open(out_file,'w') as f:
+        f.write(str_v)
 
 def run(base="./"):
     """
@@ -123,6 +183,7 @@ def run(base="./"):
     distance_limits = [0,0]
     count_max = 0
     distance_mins = np.inf
+    coeffs_compare = []
     # get the plotting limits
     for m in metric_list:
         lim_force_max = update_limits(m.lim_force,lim_force_max)
@@ -130,6 +191,8 @@ def run(base="./"):
         count_max = max(m.counts,count_max)
         distance_limits = update_limits(m.distance_limit(),distance_limits)
         distance_mins = min(distance_mins,min(m.distance_limit()))
+        coeffs_compare.append(m.coefficients())
+    write_coeffs_file(out_base + "coeffs.txt",coeffs_compare)
     distance_limits = [distance_mins,max(distance_limits)]
     # POST: have limits...
     # plot the best fold for each
@@ -142,7 +205,7 @@ def run(base="./"):
         out_learner_base = "{:s}{:s}".format(out_base,name)
         color_pred =  colors_pred[i]
         # get the distance information we'll need
-        to_true,to_pred = m.true_and_pred_distances()
+        to_true,to_pred = m.to_true_and_pred_distances()
         limit = m.distance_limit()
         log_limit = np.log10(limit)
         bins = np.logspace(*log_limit,num=n_bins)
@@ -175,7 +238,7 @@ def run(base="./"):
         PlotUtilities.savefig(fig,final_out_path)
         out_names.append(final_out_path)
     data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
-    sc.Figure("32cm", "41cm", 
+    sc.Figure("33cm", "41cm", 
               *(data_panels)).\
         tile(1,len(data_panels)).save(out_base + "landscape.svg")
     for f in out_names:
