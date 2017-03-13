@@ -8,7 +8,8 @@ from scipy import interpolate
 from GeneralUtil.python import PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
-from scipy.ndimage.filters import uniform_filter1d
+from scipy.ndimage.filters import uniform_filter1d,generic_filter1d
+from scipy.integrate import cumtrapz
 
 
 class split_force_extension:
@@ -210,6 +211,26 @@ def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
     return spline_interpolator(tau,x[slice_to_fit],f[slice_to_fit],
                                **kwargs)        
         
+def local_integral(y,n,mode='reflect'):
+    """
+    gets the integral of y_i from -n/2 to n/2 (total of n points)
+
+    Args:
+        y: to integrate
+        n: window wize
+        mode: see cumtrapz
+    Returns:
+        array, same size as y, of the centered integral (edges are 
+        clamped in integral centering)
+    """
+    cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
+    size = y.size
+    # get the centered integral difference. 
+    diff = [cumulative_integral[min(size-1,i+n/2)]-\
+            cumulative_integral[max(0,i-n/2)]
+            for i in range(size)]
+    return diff
+
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 
