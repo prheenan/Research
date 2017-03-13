@@ -156,24 +156,26 @@ def run(base="./"):
                           **common_style_hist)
         style_pred = dict(color=color_pred,label=label_pred_dist_hist,
                           **common_style_hist)
-        Plotting.histogram_event_distribution(to_true,to_pred,distance_limits,
-                                              bins=bins,style_true=style_true,
-                                              style_pred=style_pred)
-        PlotUtilities.lazyLabel("Distance [nm]","Count","")
+        distance_histogram = dict(to_true=to_true,to_pred=to_pred,
+                                  distance_limits=distance_limits,
+                                  bins=bins,style_true=style_true,
+                                  style_pred=style_pred)
+        Plotting.histogram_event_distribution(**distance_histogram)
         PlotUtilities.savefig(fig,out_learner_base + "dist.png")
         # plot the metric plot
         use_legend = (i == 0)
-        fig = PlotUtilities.figure(figsize=(8,6))
+        fig = PlotUtilities.figure(figsize=(16,8))
         Plotting.rupture_plot(true,pred,use_legend=use_legend,
                               lim_plot_load=lim_load_max,
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,
-                              count_limit=[0.5,count_max*2])
+                              count_limit=[0.5,count_max*2],
+                              distance_histogram=distance_histogram)
         final_out_path = out_learner_base + ".svg"
         PlotUtilities.savefig(fig,final_out_path)
         out_names.append(final_out_path)
     data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
-    sc.Figure("30cm", "37cm", 
+    sc.Figure("32cm", "41cm", 
               *(data_panels)).\
         tile(1,len(data_panels)).save(out_base + "landscape.svg")
     for f in out_names:

@@ -472,13 +472,14 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred):
-    # plot the distance scores
+    # plot the distance scores; color by i in 'i->j' (ie: true->predicted
+    # is colored by true
+    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
     if (to_true.size > 0):
-        plt.hist(to_true,log=True,bins=bins,**style_true)
-    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_pred)
+        plt.hist(to_true,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
-
+    PlotUtilities.lazyLabel("Distance [nm]","Count","")
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -525,10 +526,10 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
                  color_pred=None,color_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
-                 title=""):
-    gs = gridspec.GridSpec(2, 2,
-                           width_ratios=[2,1],
-                           height_ratios=[2,1])
+                 title="",distance_histogram=None):
+    gs = gridspec.GridSpec(2,3,
+                           width_ratios=[2,2,1],
+                           height_ratios=[2,2,1])
     ruptures_true,loading_true = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
@@ -560,7 +561,10 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
         lim_plot_load = lim_load
     if (lim_plot_force is None):
         lim_plot_force = lim_force
-    ax0 = plt.subplot(gs[0])
+    if (distance_histogram is not None):
+        ax_hist = plt.subplot(gs[:,0])
+        histogram_event_distribution(**distance_histogram)
+    ax0 = plt.subplot(gs[0,1])
     plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
                                      **scatter_kwargs)
     PlotUtilities.xlabel("")
@@ -569,7 +573,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     PlotUtilities.title(title)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
-    ax1 = plt.subplot(gs[1])
+    ax1 = plt.subplot(gs[0,2])
     hatch_true = true_hatch()
     true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
     pred_style_histogam = dict(zorder=1,**style_pred)
@@ -584,7 +588,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
         plt.xlim(count_limit)
     plt.ylim(lim_plot_force)
     plt.xscale('log')
-    ax4 = plt.subplot(gs[2])
+    ax4 = plt.subplot(gs[1,1])
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
                           label="predicted", **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
@@ -596,7 +600,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     plt.xlim(lim_plot_load)
     if (count_limit is not None):
         plt.ylim(count_limit)
-    ax3 = plt.subplot(gs[3])
+    ax3 = plt.subplot(gs[1,2])
     if (len(loading_pred) > 0):
         coeffs = Analysis.\
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
