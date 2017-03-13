@@ -117,15 +117,15 @@ def force_value_mask_function(split_fec,slice_to_use,
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
     thresh = sigma
-    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
+    integral_window = min_points_between
+    local_integral = Analysis.local_integral(stdev-epsilon,integral_window)
     # the threshold is the noise sigma times  the number of points 
     # (2*num_between)
-    thresh_integral = 2 * sigma * min_points_between
+    thresh_integral =  sigma * integral_window
     probability_updated[slice_to_use] *= \
             _no_event_chebyshev(local_integral,0,thresh_integral)
-    print(probability_updated[slice_to_use].size,boolean_ret[slice_to_use].size,
-          threshold)
     boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
+    """
     #XXX debugging
     plt.subplot(3,1,1)
     plt.plot(f,alpha=0.3,color='k')
@@ -140,6 +140,7 @@ def force_value_mask_function(split_fec,slice_to_use,
     plt.semilogy(probability,color='r',label='old')
     plt.legend()
     plt.show()
+    """
     median = np.median(interp_f)
     bool_interp = ( (interp_f - stdev < median) |
                     (stdev - epsilon < sigma) )
@@ -585,7 +586,6 @@ def _event_mask(probability,threshold):
     return np.where(boolean_thresh)[0]
 
 def _no_event_chebyshev(g,epsilon,sigma):
-    print(g)
     denom = (g-epsilon)
     k_chebyshev = denom/sigma
     # determine where the chebyshev is 'safe', otherwise we are at or above

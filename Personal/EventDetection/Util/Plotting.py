@@ -14,7 +14,19 @@ import matplotlib.gridspec as gridspec
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
 
-                            
+
+def algorithm_colors():
+    return ['b','k','y']
+
+def algorithm_markers():
+    return ['s','o','v']
+
+def algorithm_linestyles():
+    return ['--','-.','-']    
+
+def true_hatch():
+    return "//"
+
 def plot_autocorrelation_log(x,*args):
     """
     plots the autocorrelation function and fit
@@ -150,7 +162,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    styles = [dict(color='r',linestyle=':'),
+    styles = [dict(color='k',linestyle=':',alpha=0.3),
               dict(color='k',linestyle='-.',alpha=0.3),
               dict(color='g',linestyle='-',alpha=0.7),
               dict(color='m',linestyle='--')]
@@ -158,11 +170,11 @@ def plot_prediction_info(ex,info,xlabel="Time",
         sty = styles[i % len(styles)]
         plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
     min_cdf = min([min(c) for c in info.probabilities])
-    plt.semilogy(x,masked_cdf,color='b',linewidth=1,label="masked cdf")
-    plt.axhline(thresh,color='k',linestyle='--',label="threshold")
+    plt.axhline(thresh,color='k',linestyle='--',label="tsh")
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
-    PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
+    PlotUtilities.lazyLabel("","No-Event CDF ","",loc='upper right',
+                            frameon=True)
     plt.xlim(x_limits)
     plt.ylim([min_cdf/2,3])
     mask_styles = styles
@@ -458,26 +470,15 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
                             "Event distributions for {:s}".format(name))
 
-def distance_f_score_plot(distance_scores,bins=None,xlim_plot=None):
-    """
-    plots the distnce f scores 
-
-    Args: 
-        distance_scores: to plot 
-        bins: how to bin the data. default to a huge logspace bining
-    Returnss:
-        noting
-    """
-    xlim = [np.min(distance_scores),np.max(distance_scores)]
-    if (xlim_plot is None):
-        xlim_plot = xlim
-    if (bins is None):
-        xlim_log = np.log10(xlim)
-        bins = np.logspace(*xlim_log,num=10)
-    plt.hist(distance_scores,bins=bins,log=True)
+def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
+                                 style_true,style_pred):
+    # plot the distance scores
+    if (to_true.size > 0):
+        plt.hist(to_true,log=True,bins=bins,**style_true)
+    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_pred)
     plt.xscale('log')
-    plt.xlim(xlim)
-    PlotUtilities.lazyLabel("Count","Distance F-score","")
+    plt.xlim(distance_limits)
+
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -521,8 +522,10 @@ def loading_rate_histogram(objs,**kwargs):
 
 def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
                  style_true=None,use_legend=True,count_limit=None,
+                 color_pred=None,color_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
-                 remove_ticks=True,lim_plot_load=None,lim_plot_force=None):
+                 remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
+                 title=""):
     gs = gridspec.GridSpec(2, 2,
                            width_ratios=[2,1],
                            height_ratios=[2,1])
@@ -530,10 +533,14 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)
+    if (color_pred is None):
+        color_pred = 'k'
+    if (color_true is None):
+        color_true = 'g'
     if (style_true is None):
-        style_true = dict(color='k',alpha=0.5)
+        style_true = dict(color=color_true,alpha=0.5)
     if (style_pred is None):
-        style_pred = dict(color='g',alpha=0.3)
+        style_pred = dict(color=color_pred,alpha=0.3)
     if (scatter_kwargs is None):
         scatter_kwargs = dict(style_true=dict(label="true",**style_true),
                               style_predicted=dict(label="predicted",
@@ -559,10 +566,11 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     PlotUtilities.xlabel("")
     plt.xlim(lim_plot_load)
     plt.ylim(lim_plot_force)
+    PlotUtilities.title(title)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 = plt.subplot(gs[1])
-    hatch_true = "//"
+    hatch_true = true_hatch()
     true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
     pred_style_histogam = dict(zorder=1,**style_pred)
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
@@ -598,7 +606,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
-    rects1 = plt.bar(index, coeffs,alpha=0.3,color='b')
+    rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
     label_func = lambda i,r: "{:.2f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
     PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func)

@@ -105,8 +105,9 @@ class score:
              kwargs: passed to minimum_distance_distribution
         """
         return len(self.true_x),len(self.pred_x)
-    def max_x(self):
-        return abs(self.max_x-self.min_x)
+    def max_displacement(self):
+        to_ret = abs(self.max_x-self.min_x)
+        return to_ret
     def minimum_distance_distribution(self,to_true=True,floor_is_max=False):
         """
         returns the median of the smallest distance from <predicted/true>
@@ -131,7 +132,7 @@ class score:
             search = self.true_x
         if (len(baseline) == 0):
             if (floor_is_max):
-                max_x = self.max_x
+                max_x = self.max_displacement()
                 return [max_x for x in search]
             else:
                 return []

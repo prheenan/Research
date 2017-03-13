@@ -225,9 +225,10 @@ def local_integral(y,n,mode='reflect'):
     """
     cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
     size = y.size
+    window_delta = n
     # get the centered integral difference. 
-    diff = np.array([cumulative_integral[min(size-1,i+n/2)]-\
-                     cumulative_integral[max(0,i-n/2)]
+    diff = np.array([cumulative_integral[min(size-1,window_delta)]-\
+                     cumulative_integral[max(0,i-window_delta)]
                      for i in range(size)])
     return diff
 
