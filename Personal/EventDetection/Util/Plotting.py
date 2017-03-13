@@ -138,7 +138,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     masked_cdf *= boolean_mask
     n_rows = 3
     n_cols = 1
-    lazy_kwargs = dict(frameon=True,loc="upper right")
+    lazy_kwargs = dict(frameon=True,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")

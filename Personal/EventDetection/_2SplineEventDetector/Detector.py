@@ -98,7 +98,8 @@ def force_value_mask_function(split_fec,slice_to_use,
     min_points_between = _min_points_between(n_points)
     f = retract.Force[slice_to_use]
     x = retract.Time[slice_to_use]
-    interp_f = split_fec.retract_spline_interpolator(slice_to_use)(x)
+    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
+    interp_f = interpolator(x)
     diff = f-interp_f
     stdev = Analysis.local_stdev(diff,n_points)
     med = np.median(interp_f)
@@ -106,8 +107,24 @@ def force_value_mask_function(split_fec,slice_to_use,
     # essentially: when is the interpolated value 
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
-    bool_interp = (interp_f - epsilon < stdev)
+    thresh = sigma
+    bool_interp = ((stdev - epsilon < thresh) |
+                   (interp_f -stdev  < med))
+    where_not_bool_in_slice = np.where(~bool_interp)[0]
     no_event_possible = np.ones(boolean_array.size)
+    """
+    # XXX debugging
+    plt.subplot(2,1,1)
+    plt.plot(f,color='k',alpha=0.3)
+    plt.plot(x,interp_f)
+    plt.plot(x[where_not_bool_in_slice],interp_f[where_not_bool_in_slice],
+             color='r')
+    plt.subplot(2,1,2)
+    plt.plot(stdev-epsilon)
+    plt.axhline(thresh,linestyle='--')
+    plt.axhline(-thresh,linestyle='--')
+    plt.show()
+    """
     no_event_possible[slice_to_use] = bool_interp
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
@@ -116,7 +133,7 @@ def force_value_mask_function(split_fec,slice_to_use,
                        get_best_slice_func=get_best_slice_func)
     boolean_updated,probability_updated = ret
     """
-    XXX debugging...
+    # XXX debugging...
     Plotting.debug_plot_force_value(x,f,interp_f,probability,
                                     probability_updated,
                                     slice_to_use,bool_interp)
@@ -249,7 +266,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     where_above = np.where(interp_deriv < median)[0]
     where_below = np.where(interp_deriv > median)[0]
     last_index = offset + min(where_above[-1],where_below[-1])
-    absolute_min_idx = offset
+    absolute_min_idx = offset +min_points_between
     absolute_max_index = min(slice_to_use.stop,last_index)
     # remove the bad points
     boolean_ret[:absolute_min_idx] = 0
@@ -263,7 +280,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     diff_sliced = interp_sliced - force_sliced
     local_stdev = Analysis.local_stdev(diff_sliced,n_points)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    ratio = (interp_slice_deriv*split_fec.tau)/epsilon
+    ratio = (interp_slice_deriv*split_fec.tau)/local_stdev
     ratio_min_threshold = -1
     # XXX debuugging...
     idx_offset_approach = split_fec.get_predicted_approach_surface_index()
@@ -279,6 +296,22 @@ def derivative_mask_function(split_fec,slice_to_use,
     approach_interp_sliced = approach_interp(approach_time)
     approach_interp_deriv = approach_interp(approach_time,1)
     min_deriv = np.min(approach_interp_deriv)
+    kwargs_approach_deriv = dict(loc=np.median(approach_interp_deriv),
+                                 scale=np.std(approach_interp_deriv))
+    # modulate the probabilities by the approach
+    prob_mod = _spline_derivative_probability_generic(x_sliced,interp,
+                                                      **kwargs_approach_deriv)
+    probability_updated[slice_to_use] *= prob_mod
+    """
+    plt.subplot(2,1,1)
+    plt.plot(x_sliced,interp(x_sliced))
+    plt.subplot(2,1,2)
+    plt.plot(time,probability_updated)
+    plt.yscale("log")
+    plt.show()
+    XXX debugging
+    """
+    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((interp_slice_deriv > 0) | \
@@ -292,7 +325,7 @@ def derivative_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     """
-    XXX debugging
+    #XXX debugging
     Plotting.debug_plot_derivative_ratio(time,slice_to_use,
                                          ratio,interp_sliced,force_sliced,
                                          interp_slice_deriv,
