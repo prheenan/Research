@@ -678,7 +678,7 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
     plt.plot(x, force_plot(interp_f),color='b',label="interpolated")
     PlotUtilities.lazyLabel("","Force","",loc='upper right')
     plt.subplot(2,1,2)
-    plt.semilogy(x,bool_interp + 1e-2)
+    plt.semilogy(x,bool_interp + 1e-2,label="mask")
     plt.semilogy(x,probability_updated[slice_to_use],color='r',linestyle='--',
                  label="prob new")
     plt.semilogy(x,probability[slice_to_use],color='k',alpha=0.3,
