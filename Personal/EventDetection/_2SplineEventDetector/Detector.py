@@ -108,8 +108,25 @@ def force_value_mask_function(split_fec,slice_to_use,
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
     thresh = sigma
-    bool_interp = ((stdev - epsilon < thresh) |
-                   (interp_f -stdev  < med))
+    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
+    # the threshold is the noise sigma times  the number of points 
+    # (2*num_between)
+    thresh_integral = 2 * sigma * min_points_between
+    """
+    XXX debugging
+    plt.subplot(2,1,1)
+    plt.plot(f,alpha=0.3,color='k')
+    plt.plot(interp_f)
+    plt.subplot(2,1,2)
+    print(-sigma*n_points)
+    plt.plot(local_integral)
+    plt.axhline(sigma * n_points)
+    plt.show()
+    """
+    thresh_integral = sigma * n_points
+    bool_interp = ( (interp_f - stdev < med) |
+                    (stdev - epsilon < sigma) | 
+                    (local_integral < thresh_integral)) 
     where_not_bool_in_slice = np.where(~bool_interp)[0]
     no_event_possible = np.ones(boolean_array.size)
     """
