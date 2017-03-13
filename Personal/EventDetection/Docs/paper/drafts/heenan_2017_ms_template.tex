@@ -245,13 +245,22 @@ Acknowledgements
 
 Contents
 
+\tableofcontents
+
 \clearpage
 
 List of Tables 
 
+\listoftables
+
+
 \clearpage
 
 List of Figures 
+
+ 
+\listoffigures
+ 
 
 \clearpage
 
@@ -288,7 +297,7 @@ The analysis and interpretability of \singlemol{} experiments is limited by the 
 
 Methods have been proposed to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
 
-This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple loading rates, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance (XXX timing?) to previously proposed methods. \pl
+This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance (XXX timing?) to previously proposed methods. \pl
 
 
 
@@ -307,11 +316,11 @@ Site-specific chemistry is used to improve the acquisition rate and quality of d
 
 \subsection{\sLabel{Surface}Atomic force microscopy}
 
-All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2s pause at the surface (see XXX) at the loading rates noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid. 
+All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2s pause at the surface (see XXX) at the pulling velocities noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid. 
 
 \subsection{\sLabel{Annotation}Data annotation}
 
-Two hundred force-extension curves with events were obtained at three different loading rates (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are avaiable (XXX). XXX table on data infomation
+Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are avaiable (XXX). XXX table on data infomation
 
 \subsection{\sLabel{Algorithm}Algorithm Design}
 
