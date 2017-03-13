@@ -48,6 +48,13 @@ def spline_derivative_probability(split_fec):
     interpolator = split_fec.retract_spline_interpolator()
     return _spline_derivative_probability_generic(time,interpolator)
 
+def safe_cheby_probability(y,loc,scale):
+    to_ret = np.ones(y)
+    k = (possible_deriv-loc)/scale
+    possible_idx = np.where(k > 1)
+    to_ret[possible_idx] = 1/k[possible_idx]**2
+    return to_ret
+
 def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     """
     see  spline_derivative_probability, except a genertic method
@@ -72,8 +79,7 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     # other things might be
     possible_idx = np.where(~conditions_no_event)
     possible_deriv = derivative_force[possible_idx]
-    k = (possible_deriv-loc)/scale
-    probability[possible_idx]  = 1/k**2
+    probability[possible_idx]  = _no_event_chebyshev(possible_deriv,loc,scale)
     probability = np.minimum(probability,1)
     return probability 
 
@@ -115,22 +121,26 @@ def force_value_mask_function(split_fec,slice_to_use,
     # the threshold is the noise sigma times  the number of points 
     # (2*num_between)
     thresh_integral = 2 * sigma * min_points_between
-    """
+    probability_updated[slice_to_use] *= \
+            _no_event_chebyshev(local_integral,0,thresh_integral)
+    print(probability_updated[slice_to_use].size,boolean_ret[slice_to_use].size,
+          threshold)
+    boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
     #XXX debugging
-    plt.subplot(2,1,1)
+    plt.subplot(3,1,1)
     plt.plot(f,alpha=0.3,color='k')
     plt.plot(interp_f)
-    plt.subplot(2,1,2)
+    plt.subplot(3,1,2)
     plt.plot(local_integral)
     plt.axhline(sigma+epsilon,color='r',linestyle='--')
     plt.axhline(thresh_integral)
     plt.ylim([-2*thresh_integral,2*thresh_integral])
+    plt.subplot(3,1,3)
+    plt.semilogy(probability_updated,color='g',label='updated')
+    plt.semilogy(probability,color='r',label='old')
+    plt.legend()
     plt.show()
-    """
-    n_filter_points =n_points+1 if (n_points % 2 == 0) else n_points
-    median = medfilt(interp_f, n_filter_points)
-    boolean_ret[slice_to_use] *= (local_integral  > thresh_integral)
-    thresh_integral = sigma * n_points
+    median = np.median(interp_f)
     bool_interp = ( (interp_f - stdev < median) |
                     (stdev - epsilon < sigma) )
     where_not_bool_in_slice = np.where(~bool_interp)[0]
@@ -575,6 +585,7 @@ def _event_mask(probability,threshold):
     return np.where(boolean_thresh)[0]
 
 def _no_event_chebyshev(g,epsilon,sigma):
+    print(g)
     denom = (g-epsilon)
     k_chebyshev = denom/sigma
     # determine where the chebyshev is 'safe', otherwise we are at or above
