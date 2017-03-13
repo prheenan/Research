@@ -9,6 +9,7 @@ from scipy import signal,stats
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 from GeneralUtil.python import PlotUtilities,GenUtilities
 from itertools import chain
+from scipy.signal import medfilt
 
 def join_contiguous_slices(slices, offset=0):
     """
@@ -98,6 +99,8 @@ def force_value_mask_function(split_fec,slice_to_use,
     min_points_between = _min_points_between(n_points)
     f = retract.Force[slice_to_use]
     x = retract.Time[slice_to_use]
+    boolean_ret = boolean_array.copy()
+    probability_updated = probability.copy()
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x)
     diff = f-interp_f
@@ -113,20 +116,23 @@ def force_value_mask_function(split_fec,slice_to_use,
     # (2*num_between)
     thresh_integral = 2 * sigma * min_points_between
     """
-    XXX debugging
+    #XXX debugging
     plt.subplot(2,1,1)
     plt.plot(f,alpha=0.3,color='k')
     plt.plot(interp_f)
     plt.subplot(2,1,2)
-    print(-sigma*n_points)
     plt.plot(local_integral)
-    plt.axhline(sigma * n_points)
+    plt.axhline(sigma+epsilon,color='r',linestyle='--')
+    plt.axhline(thresh_integral)
+    plt.ylim([-2*thresh_integral,2*thresh_integral])
     plt.show()
     """
+    n_filter_points =n_points+1 if (n_points % 2 == 0) else n_points
+    median = medfilt(interp_f, n_filter_points)
+    boolean_ret[slice_to_use] *= (local_integral  > thresh_integral)
     thresh_integral = sigma * n_points
-    bool_interp = ( (interp_f - stdev < med) |
-                    (stdev - epsilon < sigma) | 
-                    (local_integral < thresh_integral)) 
+    bool_interp = ( (interp_f - stdev < median) |
+                    (stdev - epsilon < sigma) )
     where_not_bool_in_slice = np.where(~bool_interp)[0]
     no_event_possible = np.ones(boolean_array.size)
     """
@@ -145,7 +151,8 @@ def force_value_mask_function(split_fec,slice_to_use,
     no_event_possible[slice_to_use] = bool_interp
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
-    ret = safe_reslice(boolean_array,probability,condition=no_event_possible,
+    ret = safe_reslice(boolean_ret,probability_updated,
+                       condition=no_event_possible,
                        min_points_between=min_points_between,
                        get_best_slice_func=get_best_slice_func)
     boolean_updated,probability_updated = ret
