@@ -295,9 +295,9 @@ In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip i
 
 The analysis and interpretability of \singlemol{} experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, attachment rates between commercially-available AFM tips and most molecules are much less than 0.1\% (XXX cite, see Figure XXX, good example bad example). Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite XXX), but the majority of the data taken is still uninterpretable and must be filtered out. Filtering data without events is a major challenge in AFM data management and analysis.\pl
 
-Methods have been proposed to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
+Methods exist to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will therefore have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
 
-This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance (XXX timing?) to previously proposed methods. \pl
+This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance and timing relative to two other methods. \pl
 
 
 
@@ -351,13 +351,12 @@ def event_indices(force,threshhold):
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
-XXXNumer metrics were used for comparing the event-finding performance of the algorithm with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j` represent either true (t) or predicted (p):
+XXXNumber metrics were used for comparing the event-finding performance of the algorithm with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j` represent either true (t) or predicted (p):
 
 \eqs{ 
 x_k &\equiv \text{the total displacement of the force extension curve} \\
 d_{i\rightarrow j,k} &\equiv \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\
-F_{1,k} &\equiv 
-1-\frac{2}{x_k} \times \frac{d_{t\rightarrow p,k} d_{p\rightarrow t,k}}{d_{t\rightarrow p,k}+d_{p\rightarrow t,k}}  \\ 
+q_{\text{pct},i\rightarrow j} &\equiv \text{ the `pct` percentile of } d_{i\rightarrow j} \text{ over all k } \\
 \nu_i &\equiv \text{ distribution of `i' loading rates over all k} \\
 F_i &\equiv \text{ distribution of `i' rupture forces over all k} \\
 d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\
@@ -366,20 +365,20 @@ d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$
 For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. Note that $F_{1,k}$ is the distance analogue to an $F_1$ score (XXX cite). The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data.
 
 \begin{table}
-\begin{tabularx}{\textwidth}{ |l | l | l | l | l| }
+\begin{tabularx}{\textwidth}{ l | l | l | l | l }
 \hline \hline
-Shorthand & Description & Notation  & Range & \text{Optimum} \e 
-F$_{1,d}$ & Normalized F$_1$-Score Distribution  & $\{\frac{\mathrm{F}_{1,k}}{x_k}\} \forall k\in \{1,\cdots,K\}$  & $\{[0,1]\}$ & $\{1\}$ \e
+Shorthand & Description & Equation  & Range & \text{Optimum} \e 
+Recall &  ?? &  &    & \e
 BC$_{\nu,F}$ & Bhattacharyya Coefficient & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
 \end{tabularx}
 \pcaption{\tLabel{metrics}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl separated from the sequence by triethyleneglycol spacer.}
 \end{table}
 
-The metrics are constructed such that $F_{1,d}$ is a distribution of ones if and only if the true and predicted event locations are always equal and $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal.
+The metrics are constructed such $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal.
 
 
 \begin{table}
-\begin{tabularx}{\textwidth}{ |l || l | l | l | l | l |}
+\begin{tabularx}{\textwidth}{ l || l | l | l | l | l }
 \hline \hline
  & bc2 & medtrue & medpred & qtrue & qpred \e \hline
 no event & 0.966 & 4e-09 & 4.44e-09 & 1.45e-08 & 1.45e-08\e

@@ -12,6 +12,7 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import \
     Learning,InputOutput,Plotting,Analysis
 from Research.Personal.EventDetection.Util.Learning import  learning_curve
+import matplotlib.gridspec as gridspec
 
 
 from Research.Personal.EventDetection.Util.Plotting \
@@ -199,6 +200,9 @@ def run(base="./"):
     out_names = []
     colors_pred =  algorithm_colors()
     n_bins = 50
+    # make a giant figure, 3 rows (one per algorithm)
+    fig = PlotUtilities.figure(figsize=(16,22))
+    entire_figure = gridspec.GridSpec(3,1)
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
         best_param_idx = m.best_param_idx
@@ -209,7 +213,6 @@ def run(base="./"):
         limit = m.distance_limit()
         log_limit = np.log10(limit)
         bins = np.logspace(*log_limit,num=n_bins)
-        fig = PlotUtilities.figure(figsize=(8,8))
         # define the styles for the histograms
         common_style_hist = dict(alpha=0.3,linewidth=0)
         label_true_dist_hist = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
@@ -223,26 +226,22 @@ def run(base="./"):
                                   distance_limits=distance_limits,
                                   bins=bins,style_true=style_true,
                                   style_pred=style_pred)
-        Plotting.histogram_event_distribution(**distance_histogram)
-        PlotUtilities.savefig(fig,out_learner_base + "dist.png")
+        gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
+                                              height_ratios=[2,2,1],
+                                              subplot_spec=entire_figure[i],
+                                              wspace=0.25,hspace=0.2)
         # plot the metric plot
         use_legend = (i == 0)
-        fig = PlotUtilities.figure(figsize=(16,8))
         Plotting.rupture_plot(true,pred,use_legend=use_legend,
                               lim_plot_load=lim_load_max,
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,
                               count_limit=[0.5,count_max*2],
-                              distance_histogram=distance_histogram)
-        final_out_path = out_learner_base + ".svg"
-        PlotUtilities.savefig(fig,final_out_path)
-        out_names.append(final_out_path)
-    data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
-    sc.Figure("33cm", "41cm", 
-              *(data_panels)).\
-        tile(1,len(data_panels)).save(out_base + "landscape.svg")
-    for f in out_names:
-        os.remove(f) 
+                              distance_histogram=distance_histogram,gs=gs,
+                              fig=fig)
+    final_out_path = out_base + "landscape.svg"
+    PlotUtilities.savefig(fig,final_out_path)
+
 
 
 

@@ -468,7 +468,8 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     plt.boxplot(x=valid_plot,**box_kwargs)
     plt.gca().set_yscale('log')
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
-                            "Event distributions for {:s}".format(name))
+                            "Event distributions for {:s}".format(name),
+                            frameon=True)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred):
@@ -479,7 +480,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         plt.hist(to_true,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
-    PlotUtilities.lazyLabel("Distance [nm]","Count","")
+    PlotUtilities.lazyLabel("Distance [nm]","Count","",frameon=True)
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -521,15 +522,17 @@ def loading_rate_histogram(objs,**kwargs):
     _,loading_rates = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(loading_rates,**kwargs)
 
-def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
+def rupture_plot(true,pred,fig,count_ticks=3,
+                 scatter_kwargs=None,style_pred=None,
                  style_true=None,use_legend=True,count_limit=None,
                  color_pred=None,color_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
-                 title="",distance_histogram=None):
-    gs = gridspec.GridSpec(2,3,
-                           width_ratios=[2,2,1],
-                           height_ratios=[2,2,1])
+                 title="",distance_histogram=None,gs=None):
+    if (gs is None):
+        gs = gridspec.GridSpec(2,3,width_ratios=[2,2,1],
+                               height_ratios=[2,2,1])
+    subplot_f = lambda x: plt.subplot(x)
     ruptures_true,loading_true = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
@@ -564,7 +567,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     if (distance_histogram is not None):
         ax_hist = plt.subplot(gs[:,0])
         histogram_event_distribution(**distance_histogram)
-    ax0 = plt.subplot(gs[0,1])
+    ax0 = subplot_f(gs[0,1])
     plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
                                      **scatter_kwargs)
     PlotUtilities.xlabel("")
@@ -573,7 +576,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     PlotUtilities.title(title)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
-    ax1 = plt.subplot(gs[0,2])
+    ax1 =subplot_f(gs[0,2])
     hatch_true = true_hatch()
     true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
     pred_style_histogam = dict(zorder=1,**style_pred)
@@ -588,7 +591,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
         plt.xlim(count_limit)
     plt.ylim(lim_plot_force)
     plt.xscale('log')
-    ax4 = plt.subplot(gs[1,1])
+    ax4 = subplot_f(gs[1,1])
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
                           label="predicted", **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
@@ -600,7 +603,7 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     plt.xlim(lim_plot_load)
     if (count_limit is not None):
         plt.ylim(count_limit)
-    ax3 = plt.subplot(gs[1,2])
+    ax3 = subplot_f(gs[1,2])
     if (len(loading_pred) > 0):
         coeffs = Analysis.\
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
@@ -613,9 +616,11 @@ def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
     label_func = lambda i,r: "{:.2f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
-    PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func)
+    PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func,
+                            fontsize=PlotUtilities.g_font_legend,
+                            fontweight='bold')
     plt.xticks(index + bar_width / 2, labels_coeffs,
-               rotation=30,fontsize=PlotUtilities.g_font_legend)
+               rotation=30,fontsize=PlotUtilities.g_font_label)
     PlotUtilities.ylabel("BC value")
     plt.ylim([0,1])
     # just empty :-(
