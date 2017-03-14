@@ -9,6 +9,7 @@ from scipy import signal,stats
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 from GeneralUtil.python import PlotUtilities,GenUtilities
 from itertools import chain
+from scipy.signal import medfilt
 
 def join_contiguous_slices(slices, offset=0):
     """
@@ -47,6 +48,13 @@ def spline_derivative_probability(split_fec):
     interpolator = split_fec.retract_spline_interpolator()
     return _spline_derivative_probability_generic(time,interpolator)
 
+def safe_cheby_probability(y,loc,scale):
+    to_ret = np.ones(y)
+    k = (possible_deriv-loc)/scale
+    possible_idx = np.where(k > 1)
+    to_ret[possible_idx] = 1/k[possible_idx]**2
+    return to_ret
+
 def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     """
     see  spline_derivative_probability, except a genertic method
@@ -71,8 +79,7 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     # other things might be
     possible_idx = np.where(~conditions_no_event)
     possible_deriv = derivative_force[possible_idx]
-    k = (possible_deriv-loc)/scale
-    probability[possible_idx]  = 1/k**2
+    probability[possible_idx]  = _no_event_chebyshev(possible_deriv,loc,scale)
     probability = np.minimum(probability,1)
     return probability 
 
@@ -98,6 +105,8 @@ def force_value_mask_function(split_fec,slice_to_use,
     min_points_between = _min_points_between(n_points)
     f = retract.Force[slice_to_use]
     x = retract.Time[slice_to_use]
+    boolean_ret = boolean_array.copy()
+    probability_updated = probability.copy()
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x)
     diff = f-interp_f
@@ -112,21 +121,25 @@ def force_value_mask_function(split_fec,slice_to_use,
     # the threshold is the noise sigma times  the number of points 
     # (2*num_between)
     thresh_integral = 2 * sigma * min_points_between
-    """
-    XXX debugging
-    plt.subplot(2,1,1)
+    probability_updated[slice_to_use] *= \
+            _no_event_chebyshev(local_integral,0,thresh_integral)
+    boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
+    #XXX debugging
+    plt.subplot(3,1,1)
     plt.plot(f,alpha=0.3,color='k')
     plt.plot(interp_f)
-    plt.subplot(2,1,2)
-    print(-sigma*n_points)
+    plt.subplot(3,1,2)
     plt.plot(local_integral)
-    plt.axhline(sigma * n_points)
+    plt.axhline(sigma+epsilon,color='r',linestyle='--')
+    plt.axhline(thresh_integral)
+    plt.subplot(3,1,3)
+    plt.semilogy(probability_updated,color='g',label='updated')
+    plt.semilogy(probability,color='r',label='old')
+    plt.legend()
     plt.show()
-    """
-    thresh_integral = sigma * n_points
-    bool_interp = ( (interp_f - stdev < med) |
-                    (stdev - epsilon < sigma) | 
-                    (local_integral < thresh_integral)) 
+    median = np.median(interp_f)
+    bool_interp = ( (interp_f - stdev < median) |
+                    (stdev - epsilon < sigma) )
     where_not_bool_in_slice = np.where(~bool_interp)[0]
     no_event_possible = np.ones(boolean_array.size)
     """
@@ -145,7 +158,8 @@ def force_value_mask_function(split_fec,slice_to_use,
     no_event_possible[slice_to_use] = bool_interp
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
-    ret = safe_reslice(boolean_array,probability,condition=no_event_possible,
+    ret = safe_reslice(boolean_ret,probability_updated,
+                       condition=no_event_possible,
                        min_points_between=min_points_between,
                        get_best_slice_func=get_best_slice_func)
     boolean_updated,probability_updated = ret
@@ -319,20 +333,43 @@ def derivative_mask_function(split_fec,slice_to_use,
     prob_mod = _spline_derivative_probability_generic(x_sliced,interp,
                                                       **kwargs_approach_deriv)
     probability_updated[slice_to_use] *= prob_mod
+    # modify again, based on the integal noise
+    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
+    interp_f = interpolator(x_sliced)
+    diff = force_sliced-interp_f
+    stdev = Analysis.local_stdev(diff,n_points)
+    med = np.median(interp_f)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    # essentially: when is the interpolated value 
+    # at least one (local) standard deviation above the median
+    # we admit an event might be possible
+    thresh = sigma
+    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
+    # the threshold is the noise sigma times  the number of points 
+    # (2*num_between)
+    thresh_integral = 2 * sigma * min_points_between
+    probability_updated[slice_to_use] *= \
+            _no_event_chebyshev(local_integral,0,thresh_integral)
+    boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
     """
+    # XXX debugging
+    xlim = [min(time),max(time)]
     plt.subplot(2,1,1)
     plt.plot(x_sliced,interp(x_sliced))
+    plt.xlim(xlim)
     plt.subplot(2,1,2)
     plt.plot(time,probability_updated)
+    plt.xlim(xlim)
     plt.yscale("log")
     plt.show()
-    XXX debugging
     """
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((interp_slice_deriv > 0) | \
-                                  (ratio > ratio_min_threshold))
+                                  (ratio > ratio_min_threshold) |
+                                  (interp_sliced - stdev < median) |
+                                  (stdev - epsilon < sigma))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
@@ -862,8 +899,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,
-              force_value_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

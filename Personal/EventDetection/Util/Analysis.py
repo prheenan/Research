@@ -226,9 +226,9 @@ def local_integral(y,n,mode='reflect'):
     cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
     size = y.size
     # get the centered integral difference. 
-    diff = [cumulative_integral[min(size-1,i+n/2)]-\
-            cumulative_integral[max(0,i-n/2)]
-            for i in range(size)]
+    diff = np.array([cumulative_integral[min(size-1,i+n/2)]-\
+                     cumulative_integral[max(0,i-n/2)]
+                     for i in range(size)])
     return diff
 
 def local_stdev(f,n):
@@ -611,16 +611,17 @@ def zero_and_split_force_extension_curve(example):
     retract = example_split.retract 
     f = approach.Force
     x = approach.Time
+    n = f.size
     # *last* time we are under; note that this is at the end of the approach
     get_last_under_median = \
         lambda y: (y.size - np.where(y < np.median(f))[0][-1])
     last_idx_under_median = get_last_under_median(f)
     num_points = last_idx_under_median
-    x_tmp = np.arange(0,f.size,1)
+    x_tmp = np.arange(0,n,1)
     interp = spline_interpolator(tau_x=num_points,x=x_tmp,f=f)
     interp_approach = interp(x_tmp)
     last_idx_under_median = get_last_under_median(interp_approach)
-    num_points = int(np.ceil(0.02 * retract.Force.size))
+    num_points = int(np.ceil(n * 0.01))
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split

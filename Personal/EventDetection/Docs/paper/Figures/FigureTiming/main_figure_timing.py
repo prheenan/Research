@@ -8,19 +8,13 @@ import sys,pickle
 sys.path.append("../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
-from Research.Personal.EventDetection.Util import Learning,InputOutput
+from Research.Personal.EventDetection.Util import Learning,InputOutput,Plotting
 from Research.Personal.EventDetection.Timing import TimePlot
 from Research.Personal.EventDetection.Timing.Timer import \
     time_trials_by_loading_rate,time_trials
 
-def algorithm_colors():
-    return ['b','k','y']
-
-def algorithm_markers():
-    return ['s','o','v']
-
-def algorithm_linestyles():
-    return ['--','-.','-']
+from Research.Personal.EventDetection.Util.Plotting \
+    import algorithm_colors,algorithm_markers,algorithm_linestyles
 
 
 def get_supplemental_figure(output_path,trials):
