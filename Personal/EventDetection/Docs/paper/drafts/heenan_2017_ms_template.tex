@@ -143,7 +143,6 @@
 \newcommand{\tLabel}[1]{\label{table:#1}}
 \newcommand{\sLabel}[1]{\label{section:#1}}
 % command for my captionc
-\newcommand{\pcaption}[1]{\caption{\noindent#1}}
 % command for first paragraph
 \newcommand{\firstp}[0]{}
 % command for ending a paragraph
@@ -169,6 +168,7 @@
 \end{adjustwidth}
 }
 
+\newcommand{\name}[0]{Feather}
 % supply: for 'citing' where we got a reagent or thing
 %    Args:
 %        #1: name of company we got the thing from
@@ -289,7 +289,7 @@ In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip i
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/final.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
 \end{figure}
 
 
@@ -297,14 +297,14 @@ The analysis and interpretability of \singlemol{} experiments is limited by the 
 
 Methods exist to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will therefore have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
 
-This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the algorithm for automatically identifying events in force-extension curves and highlight its improved performance and timing relative to two other methods. \pl
+This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name (Force Extension Automated Testable Hypothesis Event Recognition), recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the details of \name, an algorithm for automatically identifying events in force-extension curves and highlight its improved performance and timing relative to two other methods. \pl
 
 
 
 \begin{figure}
 \centering
 \includegraphics[width=6in]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Rupture} Defining a rupture force and loading rate. }  
+\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining a rupture force and loading rate. }
 \end{figure}
 
 
@@ -312,15 +312,15 @@ This paper describes a new method based on machine learning for detecting events
 
 \subsection{Sample Preparation}
 
-Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparaton has been described elsewhere (CITE XXX Rob) and in \sRef{SampleDetails}. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with DBCO at one end to ensure a covalent bond with an azide-functionalized surface. The polymer isalso functionalized with biotin at the opposite end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination.
+\firstp Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparaton has been described elsewhere (CITE XXX Rob) and in \sRef{SampleDetails}. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with DBCO at one end to ensure a covalent bond with an azide-functionalized surface. The polymer isalso functionalized with biotin at the opposite end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-polymer bond is broken before the surface-polymer bond, preventing tip contamination. \pl
 
 \subsection{\sLabel{Surface}Atomic force microscopy}
 
-All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2s pause at the surface (see XXX) at the pulling velocities noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid. 
+\firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2 second pause at the surface (see XXX) at the pulling velocities noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid.  \pl
 
 \subsection{\sLabel{Annotation}Data annotation}
 
-Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are avaiable (XXX). XXX table on data infomation
+\firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are avaiable (XXX). XXX table on data infomation \pl
 
 \subsection{\sLabel{Algorithm}Algorithm Design}
 
@@ -346,23 +346,23 @@ def event_indices(force,threshhold):
    # XXX: add in derivative filtering
    return possible_events
 \end{lstlisting}
-\pcaption{\noindent\fLabel{Code}\pStartF XXX code  \pEndF }
+\caption[\name{} Psuedocode]{\noindent\fLabel{Code}\pStartF XXX code  \pEndF }
 \end{figure}
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
-XXXNumber metrics were used for comparing the event-finding performance of the algorithm with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j` represent either true (t) or predicted (p):
+\firstp XXXNumber metrics were used for comparing the event-finding performance of \name with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j' represent either true (t) or predicted (p): \pl
 
 \eqs{ 
 x_k &\equiv \text{the total displacement of the force extension curve} \\
 d_{i\rightarrow j,k} &\equiv \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\
-q_{\text{pct},i\rightarrow j} &\equiv \text{ the `pct` percentile of } d_{i\rightarrow j} \text{ over all k } \\
+q_{\text{x},i\rightarrow j} &\equiv \text{ the `x` percentile of } d_{i\rightarrow j} \text{ over all k } \\
 \nu_i &\equiv \text{ distribution of `i' loading rates over all k} \\
 F_i &\equiv \text{ distribution of `i' rupture forces over all k} \\
 d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\
  }
 
-For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. Note that $F_{1,k}$ is the distance analogue to an $F_1$ score (XXX cite). The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data.
+For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. Note that $F_{1,k}$ is the distance analogue to an $F_1$ score (XXX cite). The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data. \pl
 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l | l | l | l | l }
@@ -371,10 +371,10 @@ Shorthand & Description & Equation  & Range & \text{Optimum} \e
 Recall &  ?? &  &    & \e
 BC$_{\nu,F}$ & Bhattacharyya Coefficient & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
 \end{tabularx}
-\pcaption{\tLabel{metrics}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl separated from the sequence by triethyleneglycol spacer.}
+\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} }
 \end{table}
 
-The metrics are constructed such $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal.
+The metrics are constructed such $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal. \pl
 
 
 \begin{table}
@@ -385,28 +385,34 @@ no event & 0.966 & 4e-09 & 4.44e-09 & 1.45e-08 & 1.45e-08\e
 open fovea & nan & -1 & -1 & -1 & -1\e
 wavelet transform & 0.607 & 1.91e-07 & 2.05e-08 & 5.9e-08 & 5.9e-08\e
 \end{tabularx}
-\pcaption{\tLabel{AppliedMetrics} Performance metrics} 
+\caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics} 
 \end{table}
 
-
-\begin{enumerate}
-\item The harmonic mean of the distance from 
-\end{enumerate}
 
 \subsection{\sLabel{Compare}Choice of competing methods}
 
 XXX inttro
 
+\firstp The following two algorithms were chosen for comparison: \pl
+
+\begin{enumerate}
+\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package (XXX cite)
+\item The general-purpose `find\_peaks\_cwt' method from the Numerical Python package.
+\end{enumerate}
+
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (XXX figure) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (XXX table). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Numerical Python method is wavelet-based algorithm. \pl
+
+
 \section{\sLabel{Results}Results}
 
 \subsection{\sLabel{Timing}Algorithmic time complexity}
 
-\fRef{Timing} and \fRef{Timing_Details} give the ...
+\firstp \fRef{Timing} compares the runtimes, T(n), of FEATHER and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name having XXX  runtime coefficients.  \pl
 
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Timing}\pStartF  Big-O runtime of this algorithm compared to the baseline algorithms.\pEndF}
+\caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of this algorithm compared to the baseline algorithms.\pEndF}
 \end{figure}
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
@@ -414,7 +420,7 @@ XXX inttro
 \begin{figure}
 \centering
 \includegraphics[width=6.5in]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms  \pEndF }
+\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms  \pEndF }
 \end{figure}
 
 
@@ -422,11 +428,11 @@ XXX inttro
 \section{\sLabel{Discussion}Discussion}
 
 
-\firstp Since the discovery of x-rays in 1895 by Wilhelm Conrad R{\"o}ntgen, researchers leveraging x-rays have dramatically improved our understanding of the world, receiving multiple Nobel prizes along the way.\cite{santra_concepts_2009} Fundamental scientific discoveries in early x-ray studies include: illuminating crystal structure by Bragg's x-ray diffraction experiments in 1913,\cite{bragg_reflection_1913} revealing electron orbital state through inelastic x-ray scattering by Compton in 1923,\cite{compton_spectrum_1923} and Klein's generalizations of Compton scattering to higher-energy photons using quantum electrodynamics in 1928.\cite{klein_scattering_1928} In addition to serving as a probe for fundamental investigations of matter, x-rays also find applications in quantifying and identifying industrial pollutants;\cite{luo_determination_2012} imaging oncological and vascular tissues;\cite{butler_bio-medical_2008} and recovering, restoring, or establishing the provenance of works of artistic \cite{janssens_photon-based_2010} or historical \cite{bergmann_archimedes_2007} importance. All these applications are made possible by determining the elemental makeup of the object of interest. \pl
+\firstp \pl
 
 \subsubsection{\sLabel{Beer}XRF depends on wavelength and element}
 
-\firstp XRF is characterized by absorption of a photon by an electron bound to an atom, followed by `relaxation' of the excited atom by emission of an x-ray photon.\cite{jitschin_progress_1990} Relaxation occurs by XRF when the excited electron is ejected and a higher-shell electron `decays' to fill the vacancy, emitting radiation as a result of the decay (\fRef{Basics}). The relaxation process can consist of a complicated series of excitations and decays,\cite{santra_concepts_2009} but the highest-energy and most-radiative initial excitation and decay is the primary focus of XRF experiments and this paper. Photon absorption and electron ejection happen at well-defined incident photon energies, called the \emph{edge energies}, which are a function of the atomic number of the absorbing atom and the ejected electron's shell.\cite{ueda_high-resolution_2003,de_groot_high-resolution_2001} \fRef{Basics} shows the edge energies and naming conventions associated with the highest-energy and most-dominant\cite{chantler_detailed_2000} absorption levels for the first 90 elements. The tightest-bound, 1s$_{\frac{1}{2}}$ electrons, known as the K-shell electrons, are the dominant contributors to XRF by absorption of the incident photons.\cite{chantler_detailed_2000}
+\firstp \pl
 
 \clearpage
 
@@ -465,7 +471,7 @@ Bibliography
 Forward primer & Dagttgttcctttctattctcactccgc \\ \e 
 Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e 
 \end{tabularx}
-\pcaption{\tLabel{Sequences}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl separated from the sequence by triethyleneglycol spacer.}
+\caption[DNA primer sequences]{\tLabel{Sequences}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl separated from the sequence by triethyleneglycol spacer.}
 \end{table}
 
 
@@ -545,14 +551,14 @@ XXX figure out how to determine where the adhesion ends, how to improve SNR by d
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/out.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. \pEndF }
+\caption[Verification of sample purity]{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. \pEndF }
 \end{figure}
 
 
 \begin{figure}
 \centering
 \includegraphics[width=7in]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
-\pcaption{\noindent\fLabel{Timing_Details}\pStartF Details of timing experiments\pEndF }
+\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details}\pStartF Details of timing experiments\pEndF }
 \end{figure}
 
 
