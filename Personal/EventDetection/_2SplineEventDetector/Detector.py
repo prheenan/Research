@@ -333,21 +333,43 @@ def derivative_mask_function(split_fec,slice_to_use,
     prob_mod = _spline_derivative_probability_generic(x_sliced,interp,
                                                       **kwargs_approach_deriv)
     probability_updated[slice_to_use] *= prob_mod
+    # modify again, based on the integal noise
+    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
+    interp_f = interpolator(x_sliced)
+    diff = force_sliced-interp_f
+    stdev = Analysis.local_stdev(diff,n_points)
+    med = np.median(interp_f)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    # essentially: when is the interpolated value 
+    # at least one (local) standard deviation above the median
+    # we admit an event might be possible
+    thresh = sigma
+    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
+    # the threshold is the noise sigma times  the number of points 
+    # (2*num_between)
+    thresh_integral = 2 * sigma * min_points_between
+    probability_updated[slice_to_use] *= \
+            _no_event_chebyshev(local_integral,0,thresh_integral)
+    boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
+    """
     # XXX debugging
+    xlim = [min(time),max(time)]
     plt.subplot(2,1,1)
     plt.plot(x_sliced,interp(x_sliced))
+    plt.xlim(xlim)
     plt.subplot(2,1,2)
     plt.plot(time,probability_updated)
+    plt.xlim(xlim)
     plt.yscale("log")
     plt.show()
-    """
-    XXX debugging
     """
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((interp_slice_deriv > 0) | \
-                                  (ratio > ratio_min_threshold))
+                                  (ratio > ratio_min_threshold) |
+                                  (interp_sliced - stdev < median) |
+                                  (stdev - epsilon < sigma))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
@@ -877,8 +899,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,
-              force_value_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

@@ -621,7 +621,7 @@ def zero_and_split_force_extension_curve(example):
     interp = spline_interpolator(tau_x=num_points,x=x_tmp,f=f)
     interp_approach = interp(x_tmp)
     last_idx_under_median = get_last_under_median(interp_approach)
-    num_points = int(np.ceil(n * 0.005))
+    num_points = int(np.ceil(n * 0.01))
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split
