@@ -71,16 +71,7 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     if (scale is None):
         std_iqr = np.std(derivative_force)
         scale = std_iqr
-    probability = np.zeros(derivative_force.size)
-    # anything at or above the median, or  (>= zero) isnt interesting
-    conditions_no_event = ((derivative_force >= loc - scale) | \
-                           (derivative_force >= 0))
-    probability[np.where(conditions_no_event)]  = 1
-    # other things might be
-    possible_idx = np.where(~conditions_no_event)
-    possible_deriv = derivative_force[possible_idx]
-    probability[possible_idx]  = _no_event_chebyshev(possible_deriv,loc,scale)
-    probability = np.minimum(probability,1)
+    probability  = _no_event_chebyshev(derivative_force,loc,scale)
     return probability 
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
@@ -124,19 +115,6 @@ def force_value_mask_function(split_fec,slice_to_use,
     probability_updated[slice_to_use] *= \
             _no_event_chebyshev(local_integral,0,thresh_integral)
     boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
-    #XXX debugging
-    plt.subplot(3,1,1)
-    plt.plot(f,alpha=0.3,color='k')
-    plt.plot(interp_f)
-    plt.subplot(3,1,2)
-    plt.plot(local_integral)
-    plt.axhline(sigma+epsilon,color='r',linestyle='--')
-    plt.axhline(thresh_integral)
-    plt.subplot(3,1,3)
-    plt.semilogy(probability_updated,color='g',label='updated')
-    plt.semilogy(probability,color='r',label='old')
-    plt.legend()
-    plt.show()
     median = np.median(interp_f)
     bool_interp = ( (interp_f - stdev < median) |
                     (stdev - epsilon < sigma) )
@@ -327,9 +305,20 @@ def derivative_mask_function(split_fec,slice_to_use,
     approach_interp_sliced = approach_interp(approach_time)
     approach_interp_deriv = approach_interp(approach_time,1)
     min_deriv = np.min(approach_interp_deriv)
-    kwargs_approach_deriv = dict(loc=np.median(approach_interp_deriv),
-                                 scale=np.std(approach_interp_deriv))
+    med_deriv_appr = np.median(approach_interp_deriv)
+    std_deriv_appr = np.std(approach_interp_deriv)
+    kwargs_approach_deriv = dict(loc=med_deriv_appr,
+                                 scale=std_deriv_appr)
     # modulate the probabilities by the approach
+    """
+    #XXX debugging
+    Plotting.debug_plot_derivs(approach_time,approach_force,
+                      approach_interp_sliced,x_sliced,
+                      force_sliced,interp_sliced,
+                      approach_interp_deriv,interp_slice_deriv,
+                      min_deriv)
+    plt.show()
+    """
     prob_mod = _spline_derivative_probability_generic(x_sliced,interp,
                                                       **kwargs_approach_deriv)
     probability_updated[slice_to_use] *= prob_mod
@@ -352,6 +341,31 @@ def derivative_mask_function(split_fec,slice_to_use,
             _no_event_chebyshev(local_integral,0,thresh_integral)
     boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
     """
+    #XXX debugging
+    xlim = [min(time),max(time)]
+    plt.subplot(4,1,1)
+    plt.plot(x_sliced,force_sliced,alpha=0.3,color='k')
+    plt.plot(x_sliced,interp_f)
+    plt.xlim(xlim)
+    plt.subplot(4,1,2)
+    plt.semilogy(x_sliced,prob_mod,label='new',linestyle='--')
+    plt.semilogy(x_sliced,probability[slice_to_use]*prob_mod,color='r',
+                label='old')
+    plt.xlim(xlim)  
+    plt.legend()    
+    plt.subplot(4,1,3)
+    plt.plot(x_sliced,local_integral)
+    plt.axhline(sigma+epsilon,color='r',linestyle='--')
+    plt.axhline(thresh_integral)
+    plt.xlim(xlim)  
+  
+    plt.subplot(4,1,4)
+    plt.semilogy(time,probability_updated,color='g',label='updated',
+                 linestyle='--')
+    plt.semilogy(time,probability,color='r',label='old')
+    plt.xlim(xlim)
+    plt.legend()
+    plt.show()
     # XXX debugging
     xlim = [min(time),max(time)]
     plt.subplot(2,1,1)
@@ -366,10 +380,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    gt_condition[slice_to_use] = ((interp_slice_deriv > 0) | \
-                                  (ratio > ratio_min_threshold) |
-                                  (interp_sliced - stdev < median) |
-                                  (stdev - epsilon < sigma))
+    gt_condition[slice_to_use] = (interp_slice_deriv > 0)
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
