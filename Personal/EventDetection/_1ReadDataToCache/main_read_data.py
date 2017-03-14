@@ -102,7 +102,7 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 0.5
     example_numbers = [2,3,5,12]
     examples_filtered = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):

@@ -380,10 +380,19 @@ def derivative_mask_function(split_fec,slice_to_use,
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
+    """
+    # XXX debugging filtering
+    median_filter_points = min_points_between
+    if (median_filter_points % 2 == 0):
+        median_filter_points += 1
+    median_filtered = medfilt(interp_sliced,median_filter_points)
+    plt.plot(interp_sliced-median_filtered)
+    plt.axhline(sigma)
+    plt.show()
+    """
     gt_condition[slice_to_use] = ( (interp_slice_deriv > 0) |
                                    (interp_sliced - stdev < median) |
-                                   (stdev - epsilon < sigma))
-
+                                   (ratio > ratio_min_threshold))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
@@ -400,7 +409,6 @@ def derivative_mask_function(split_fec,slice_to_use,
                                          boolean_ret,probability_updated,
                                          absolute_min_idx,ratio_min_threshold)
     plt.show()
-    """
     #XXX debugging...
     xlim = [min(time),max(time)]
     plt.subplot(2,1,1)
@@ -414,6 +422,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     plt.xlim(xlim)
     PlotUtilities.lazyLabel("Time","masks","")
     plt.show()
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
