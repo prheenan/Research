@@ -117,15 +117,13 @@ def force_value_mask_function(split_fec,slice_to_use,
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
     thresh = sigma
-    integral_window = min_points_between
-    local_integral = Analysis.local_integral(stdev-epsilon,integral_window)
+    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
     # the threshold is the noise sigma times  the number of points 
     # (2*num_between)
-    thresh_integral =  sigma * integral_window
+    thresh_integral = 2 * sigma * min_points_between
     probability_updated[slice_to_use] *= \
             _no_event_chebyshev(local_integral,0,thresh_integral)
     boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
-    """
     #XXX debugging
     plt.subplot(3,1,1)
     plt.plot(f,alpha=0.3,color='k')
@@ -134,13 +132,11 @@ def force_value_mask_function(split_fec,slice_to_use,
     plt.plot(local_integral)
     plt.axhline(sigma+epsilon,color='r',linestyle='--')
     plt.axhline(thresh_integral)
-    plt.ylim([-2*thresh_integral,2*thresh_integral])
     plt.subplot(3,1,3)
     plt.semilogy(probability_updated,color='g',label='updated')
     plt.semilogy(probability,color='r',label='old')
     plt.legend()
     plt.show()
-    """
     median = np.median(interp_f)
     bool_interp = ( (interp_f - stdev < median) |
                     (stdev - epsilon < sigma) )
@@ -337,13 +333,14 @@ def derivative_mask_function(split_fec,slice_to_use,
     prob_mod = _spline_derivative_probability_generic(x_sliced,interp,
                                                       **kwargs_approach_deriv)
     probability_updated[slice_to_use] *= prob_mod
-    """
+    # XXX debugging
     plt.subplot(2,1,1)
     plt.plot(x_sliced,interp(x_sliced))
     plt.subplot(2,1,2)
     plt.plot(time,probability_updated)
     plt.yscale("log")
     plt.show()
+    """
     XXX debugging
     """
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
