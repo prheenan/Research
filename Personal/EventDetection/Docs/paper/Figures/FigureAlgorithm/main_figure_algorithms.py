@@ -23,7 +23,7 @@ def run(base="./"):
     
     """
     data_base = base + "data/"
-    out_fig = "cartoon.png"
+    out_fig = "algorithm.svg"
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
@@ -74,7 +74,7 @@ def run(base="./"):
     stdev_plot = y_plot_f(stdev)
     before,after = Analysis.get_before_and_after_and_zoom_of_slice(fec_split)
     slice_before,slice_after = before[0],after[0]
-    fig = PlotUtilities.figure((6,10))
+    fig = PlotUtilities.figure((16,8))
     n_plots = 3
     plt.subplot(n_plots,1,1)
     style_raw = dict(alpha=0.3)
@@ -91,7 +91,7 @@ def run(base="./"):
     plt.axhline(epsilon_plot+sigma_plot,linestyle='--',
                 label="$\epsilon \pm \sigma$")
     plt.axhline(epsilon_plot-sigma_plot,linestyle='--')
-    PlotUtilities.lazyLabel("","R$_\mathrm{t}$","",frameon=True)
+    PlotUtilities.lazyLabel("","R$_\mathrm{t}$ [pN]","",frameon=True)
     plt.subplot(n_plots,1,3)
     plt.plot(x_plot,prob,alpha=0.3,color='k',label="No-event")
     plt.axhline(threshold,linewidth=2,color='b',linestyle='--',
@@ -99,6 +99,7 @@ def run(base="./"):
     plt.plot(x_plot,prob_final,label="Masked no-event")
     plt.yscale('log')
     PlotUtilities.lazyLabel("Time","Probability","",**lazy_kwargs)
+    PlotUtilities.label_tom(fig,loc=(-1.13,1.05))
     PlotUtilities.savefig(fig,out_fig)
     
 

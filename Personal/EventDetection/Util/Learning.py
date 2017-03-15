@@ -6,11 +6,6 @@ import matplotlib.pyplot as plt
 import sys,traceback
 
 from Research.Personal.EventDetection.Util import Analysis,InputOutput,Scoring
-from Research.Personal.EventDetection._2SplineEventDetector import Detector
-from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
-    fovea
-from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
-    wavelet_predictor
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.model_selection import StratifiedKFold
 import multiprocessing

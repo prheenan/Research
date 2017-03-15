@@ -93,7 +93,7 @@ def run(base="./"):
     ylim_second_zoom = [min(force_second_zoom),max(force_second_zoom)]
     # plot everything
     n_plots = 3
-    fig = PlotUtilities.figure((16,8))
+    fig = PlotUtilities.figure((16,4))
     plt.subplot(1,n_plots,1)
     ax = plt.gca()
     fmt(ax)
@@ -112,28 +112,35 @@ def run(base="./"):
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
     plt.subplot(1,n_plots,2)
+    style_data_post_zoom = dict(style_data)
+    post_alpha = 0.3
+    style_data_post_zoom['alpha']=post_alpha
+    style_filtered_post_zoom = dict(style_filtered)
+    style_filtered_post_zoom['alpha']=1
     Plotting.before_and_after(x,force,slice_before_zoom,slice_after_zoom,
-                              style_data)
-    plt.plot(x_event,predicted,color='k',linestyle='--',linewidth=3,
-             label="Linear fit")
+                              style_data_post_zoom)
     plot_rupture = lambda l: plt.plot(x[index_absolute],predicted[index],'go',
-                                      markersize=10,linewidth=0,alpha=0.3,
+                                      markersize=7,linewidth=0,alpha=0.7,
                                       label=l)
+    plot_line = lambda l :  plt.plot(x_event,predicted,color='k',
+                                   linestyle='--',linewidth=3,label=l)
     plot_rupture('Rupture')
-    PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper left',
+    plot_line("Load\nline")
+    PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
                             legend_kwargs=dict(numpoints=1))
     highlight_box(f_zoom,xlim_second_zoom,ylim_second_zoom)
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
     plt.subplot(1,n_plots,3)
     Plotting.before_and_after(x,force,zoom_second_before,zoom_second_after,
-                              style_data)
+                              style_data_post_zoom)
     plt.xlim(xlim_second_zoom)
     plt.ylim(ylim_second_zoom)
     plot_rupture("")
+    plot_line("")
     PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
                             legend_kwargs=dict(numpoints=1))
-
+    PlotUtilities.label_tom(fig,loc=(-1.12,0.97))
     PlotUtilities.savefig(fig,out_fig)
     
 

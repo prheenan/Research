@@ -37,9 +37,9 @@ def get_supplemental_figure(output_path,trials):
     n_cols = 2
     style_data,style_pred = style_data_and_pred()
     x_label = "C (number of curves)"
-    y_label = "Runtime for C curves of length N"
+    y_label = "Runtime (s)"
     x_label_big_o = "N (points per curve)"
-    y_label_big_o = "Runtime per curve"
+    y_label_big_o = "Runtime per curve (s) "
     ylim_big_o = [1e-3,1e3]
     for i,learner_trials in enumerate(trials):
         description = learner_trials.learner.description.lower()
@@ -77,6 +77,7 @@ def get_supplemental_figure(output_path,trials):
             PlotUtilities.xlabel("")
         PlotUtilities.ylabel(y_label_big_o)
         plt.ylim(ylim_big_o)
+    PlotUtilities.label_tom(fig,loc=(-1.12,1.05))
     PlotUtilities.savefig(fig, output_path)
 
 
@@ -107,7 +108,7 @@ def make_main_figure(output_path,trials):
     style_data,style_pred = style_data_and_pred()
     colors = algorithm_colors()
     # picturing 3x2, where we show the 'in the weeds' plots...
-    fig = PlotUtilities.figure(figsize=(16,8))
+    fig = PlotUtilities.figure(figsize=(16,6))
     plt.subplot(1,2,1)
     for i,learner_trials in enumerate(trials):
         TimePlot.\
@@ -119,8 +120,12 @@ def make_main_figure(output_path,trials):
     plt.ylim(ylim)
     plt.subplot(1,2,2)
     TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
+    ylim = plt.ylim()
+    ylim = [min(ylim),max(ylim)*2]
+    plt.ylim(ylim)
     PlotUtilities.legend(loc="lower right",frameon=True)
     PlotUtilities.title(r"No event asymptotic T(N) is $\geq$10x faster")
+    PlotUtilities.label_tom(fig)
     PlotUtilities.savefig(fig,output_path)
 
 

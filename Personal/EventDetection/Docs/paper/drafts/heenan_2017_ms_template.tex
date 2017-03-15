@@ -169,6 +169,7 @@
 }
 
 \newcommand{\name}[0]{Feather}
+\newcommand{\figwidth}[0]{\linewidth}
 % supply: for 'citing' where we got a reagent or thing
 %    Args:
 %        #1: name of company we got the thing from
@@ -211,7 +212,7 @@
 % see: http://tex.stackexchange.com/questions/7355/how-to-suppress-page-number
 \pagenumbering{roman}
 
-\title{An Algorithm for Molecular Unfolding Event Detection by Bayesian Hypothesis Testing}
+\title{A Bayesian Algorithm for Detecting Molecular Unbinding Events in Force Spectroscopy Time Series Data}
 \date{\today}
 \author{Patrick Heenan XXX The title page contains the thesis title; candidate's name; candidate's degrees, granting institutions, and dates received; statement shown on sample page ("A thesis submitted to ..."); name of department or school granting degree; and year the thesis is submitted (see sample title page).
  \\  University of Colorado at Boulder }
@@ -288,8 +289,8 @@ In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip i
 
 \begin{figure}
 \centering
-\includegraphics[width=7in]{../Figures/Finals/final.pdf}% Here is how to import EPS art
-\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF An example subsurface reconstruction of a self-portrait, 200mm$\times$300mm, of Australian painter Sir Arthur Streeton (1867-1943) from \citet{howard_high-definition_2012} [a] The visible image of the painting is obscured by primer. [b] A log-scaled intensity image of the obscured painting's zinc content. \pEndF }
+\includegraphics[width=\figwidth]{../Figures/Finals/cartoon.pdf}% Here is how to import EPS art
+\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. (a1,a2) A diagram and force-extension curve corresponding to no attachments. (b1,b2) As previous, except illustrating a single attachment. (c1,c2) As previous, except illustrating multiple attachments. \pEndF }
 \end{figure}
 
 
@@ -297,14 +298,14 @@ The analysis and interpretability of \singlemol{} experiments is limited by the 
 
 Methods exist to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algoriths bias results towards the dominant features and necessarily recquire a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or the short-lived or rare behavior of a biomolecule, alignment algorithms will therefore have limited use.  On the other hand, thresholding and classification-based algorithms generally recquire optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (XXX).\pl
 
-This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name (Force Extension Automated Testable Hypothesis Event Recognition), recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the details of \name, an algorithm for automatically identifying events in force-extension curves and highlight its improved performance and timing relative to two other methods. \pl
+This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (Force Extension Automated Testable Hypothesis Event Recognition), recquires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges.  In the first part of the paper, we describe the sample preparation, data acquistition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the details of \name, an algorithm for automatically identifying events in force-extension curves and highlight its improved performance and timing relative to two other methods. \pl
 
 
 
 \begin{figure}
 \centering
-\includegraphics[width=6in]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
-\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining a rupture force and loading rate. }
+\includegraphics[width=\figwidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
+\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} (a) A orce extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force are defined as the last datapoint above the linear fit in the fitting region. The loading rate is defined by the slope of the linear fit. }
 \end{figure}
 
 
@@ -400,26 +401,26 @@ XXX inttro
 \item The general-purpose `find\_peaks\_cwt' method from the Numerical Python package.
 \end{enumerate}
 
- These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (XXX figure) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (XXX table). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Numerical Python method is wavelet-based algorithm. \pl
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (XXX table). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Numerical Python method is wavelet-based algorithm. \pl
 
 
 \section{\sLabel{Results}Results}
 
 \subsection{\sLabel{Timing}Algorithmic time complexity}
 
-\firstp \fRef{Timing} compares the runtimes, T(n), of FEATHER and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name having XXX  runtime coefficients.  \pl
+\firstp \fRef{Timing} compares the runtimes, T(n), of FEATHER and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name{} having XXX  runtime coefficients.  \pl
 
 \begin{figure}
 \centering
-\includegraphics[width=7in]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
-\caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of this algorithm compared to the baseline algorithms.\pEndF}
+\includegraphics[width=\figwidth]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
+\caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of each algorithm is approximately linear. (a) The runtime per curve versus number of points in the curve, T(N), for each algorithm is plotted as points. Linees around the data show the best-fit upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n. (b) The linear constants $a_1$, representing the asymptotic runtime per data point, for each algorithm from (a) are plotted. \pEndF}
 \end{figure}
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
 
 \begin{figure}
 \centering
-\includegraphics[width=6.5in]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
+\includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
 \caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms  \pEndF }
 \end{figure}
 
@@ -477,19 +478,21 @@ Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e
 
 \subsubsection{\sLabel{Surface}Azide-functionalied surfaces}
 
-\firstp Glass surfaces were smoothed using 3M Potassium Hydroxide etching as follows. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, sonicated  for 5 minutes in 250mL of ACS grade acetone \supply{Fisher}{A18-4}, and transferred to a 3M solution of Potassium Hydroxide \supply{Fisher}{P250-500} dissolved in 95\% ethanol for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water \supply{Barnstead}{GenPure Pro}. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature. \pl
+\firstp Glass surfaces were smoothed using Potassium Hydroxide etching as follows. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, sonicated  for 5 minutes in 250mL of ACS grade acetone \supply{Fisher}{A18-4}, and transferred to a solution of 80g of Potassium Hydroxide \supply{Fisher}{P250-500} dissolved in  170mL of 65\% ethanol and 80mL of deionized water \supply{Barnstead}{GenPure Pro} for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature in a dust-proof box. \pl
 
-To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then rinsed serially in 250mL of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with Nitrogen gas and stored in a dust-proof container at 4\degreeC{}. \pl 
+To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then mounted in a custom-made teflon-holder and rinsed serially in 250mL of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with Nitrogen gas and stored in a dust-proof container at 4\degreeC{}. \pl 
 
 \subsubsection{\sLabel{Sample}DNA Samples}
 
-\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include four biotinylated thyimine bases, and the forward-sense primer was modified to include a 5-prime DBCO after a PEG-spacer. After the desired PCR product was purified \supply{Qiagen}{28106} and the appropriate band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \pl 
+\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include three biotinylated thyimine bases and a 5-prime biotin after a PEG spacer, and the forward-sense primer was modified to include a 5-prime DBCO after a PEG-spacer (see \tRef{Sequences}). After the PCR product was purified \supply{Qiagen}{28106} and the 1.9kbp band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \\
 
-For DNA deposition, 20uL of the desired concentration of DNA (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see section XXX) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
+The purity of the DNA was verified by depositing 20pmol of DNA in imaging buffer (3mM Nickel (XXX), 10mM Hepes (XXX) at pH 7) onto freshly-cleaved mica for 30 minutes, rinsing serially 5 times with 1mL of deionized water and 5 times with imaging buffer (XXX) and imaging (XXX figure)\pl 
+
+For DNA deposition, 20uL of the desired concentration of DNA (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see \sRef{Surfaces}) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
 
 \subsubsection{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
 
-\firstp Functionalized cantilevers with nominal spring constants of 4 $\frac{\text{pN}}{nm}$  were used for all experiments. Functionalization etches away gold to improve force stability (XXX cite) and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying (XXX -- solvent rinses?), the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin, the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4 and submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loading into the atomic force microscope. \pl
+\firstp Functionalized cantilevers with nominal spring constants of 4 $\frac{\text{pN}}{nm}$  were used for all experiments. Functionalization etches away gold to improve force stability (XXX cite) and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying, the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin, the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4 and submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loading into the atomic force microscope. \pl
 
 
 \subsection{Algorithm Design}
@@ -507,13 +510,13 @@ This section detailis the mathematics and choices behind the event-detection alg
 
 \subsubsection{Mathematical background for testing the no-event hypothesis}
 
-\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at points t is given (XXX Figure) by the following:
+\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at points t can be well-approximated by the sum of a smooth signal and an noise distribution as follows (XXX Figure):
 
 \eqs{ F_t = g_t + X(0,\sigma^2) }
 
-where `g$_t$' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the noiseless force and the noise distribution are unknown and can vary from one force extension curve to the next. If `$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then we define an error distribution $R_t$ such that: \pl
+where `g$_t$' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the smooth signal and the noise distribution are assumed unknown and can vary from one force extension curve to the next. If `$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then we define an error distribution $R_t$ such that: \pl
 
-\eqs{ R_t \equiv F_t - g^{*}_t }
+\eqs{ R_t \equiv F_t - g^{*}_t = \epsilon_t + X(0,\sigma) }
 
 where
 
@@ -523,7 +526,7 @@ and
 
 \eqs{ |E[R_t]| = \epsilon_t \le E[|R_t|] }
 
-In practice (see XXX), we approximate $\epsilon_t$ by the averaging over all time points $\epsilon_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |E[R_t]|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality is:
+In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by (XXX) the averaging over all time points $\epsilon_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |E[R_t]|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality is:
 
 \eqs{ P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
  (\frac{\sigma}{r_t-\epsilon_t})^2 }
@@ -541,6 +544,14 @@ Using $r_t$ as shown in eq XXX does not provide a strong signal in the presence 
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$. From this distribution, $\sigma$ is set to the standard deviation of $s_t$ within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to remove the influence of possible events. The removal of possible events is necessary to ensure accurate estimations of $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
 
+
+\begin{figure}
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
+\caption[\name example]{\noindent\fLabel{FeatherExample}\pStartF Algorithm experiment \pEndF }
+\end{figure}
+
+
 XXX table?
 
 \subsubsection{Improvements}
@@ -550,14 +561,14 @@ XXX figure out how to determine where the adhesion ends, how to improve SNR by d
 
 \begin{figure}
 \centering
-\includegraphics[width=7in]{../Figures/Finals/out.pdf}% Here is how to import EPS art
+\includegraphics[width=\figwidth]{../Figures/Finals/out.pdf}% Here is how to import EPS art
 \caption[Verification of sample purity]{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. \pEndF }
 \end{figure}
 
 
 \begin{figure}
 \centering
-\includegraphics[width=7in]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
+\includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
 \caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details}\pStartF Details of timing experiments\pEndF }
 \end{figure}
 

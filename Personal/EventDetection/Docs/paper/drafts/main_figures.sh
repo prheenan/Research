@@ -50,6 +50,7 @@ cartoon_dir="${base_dir_rel}FigureCartoon/"
 timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
+make_and_copy_figure $out_path "${base_dir_rel}/FigureAlgorithm/"
 make_and_copy_figure $out_path $timing_dir
 make_and_copy_figure $out_path $cartoon_dir
 make_and_copy_figure $out_path $prep_dir

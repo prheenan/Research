@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,pickle,os
+import sys,pickle,os,string
 
 import svgutils.compose as sc
 sys.path.append("../../../../../../../")
@@ -239,6 +239,14 @@ def run(base="./"):
                               count_limit=[0.5,count_max*2],
                               distance_histogram=distance_histogram,gs=gs,
                               fig=fig)
+    # individual plot labels
+    n_subplots = 5
+    n_categories = len(metric_list)
+    letters =  string.lowercase[:n_categories]
+    letters = [ ["({:s}{:d})".format(s,n+1) for n in range(n_subplots)]
+                 for s in letters]
+    flat_letters = [v for list_of_v in letters for v in list_of_v]
+    PlotUtilities.label_tom(fig,flat_letters,loc=(-1.1,1.1))
     final_out_path = out_base + "landscape.svg"
     PlotUtilities.savefig(fig,final_out_path)
 
