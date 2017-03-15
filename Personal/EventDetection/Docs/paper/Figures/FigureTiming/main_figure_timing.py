@@ -138,8 +138,8 @@ def run(base="./"):
         trials = pickle.load(f)
     out_base = base 
     GenUtilities.ensureDirExists(out_base)
-    make_main_figure(output_path=out_base+"timing.svg",trials=trials)
-    get_supplemental_figure(output_path=out_base+"supplemental.svg",
+    make_main_figure(output_path=out_base+"timing.pdf",trials=trials)
+    get_supplemental_figure(output_path=out_base+"supplemental.pdf",
                             trials=trials)
 
 if __name__ == "__main__":

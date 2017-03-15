@@ -95,7 +95,7 @@ def run(base="./"):
     loc = [top for i in range(n_categories)] +  \
           [bottom for i in range(n_categories)] 
     PlotUtilities.label_tom(fig,flat_letters,loc=loc)
-    PlotUtilities.savefig(fig,"cartoon.svg",
+    PlotUtilities.savefig(fig,"cartoon.pdf",
                           subplots_adjust=dict(left=0.1,wspace=0.4,hspace=0.1))
 
 if __name__ == "__main__":

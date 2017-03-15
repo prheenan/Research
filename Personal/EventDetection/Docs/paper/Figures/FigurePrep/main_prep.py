@@ -62,7 +62,7 @@ def run():
     PlotUtilities.colorbar("Height (nm)")
     axis_func = lambda x: x[:-1]
     PlotUtilities.label_tom(fig,loc=(-1.1,1.0),axis_func=axis_func)
-    PlotUtilities.savefig(fig,"./out.svg",subplots_adjust=dict(left=0.07))
+    PlotUtilities.savefig(fig,"./prep.pdf",subplots_adjust=dict(left=0.07))
 
 
 if __name__ == "__main__":
