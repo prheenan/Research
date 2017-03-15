@@ -36,6 +36,7 @@ def run(base="./"):
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
+    markevery = 1000
     kw = dict(cache_directory=data_base,force=False)
     events = example.Events
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
@@ -109,27 +110,32 @@ def run(base="./"):
     tick_function = lambda: PlotUtilities.tick_axis_number(**tick_kwargs)
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
-    style_approach = dict(color='k')
-    plt.plot(time_approach,force_approach,label="Raw Force (approach)",
+    common = dict(markevery=markevery,rasterized=True)
+    style_approach = dict(color='k', **common)
+    style_raw = dict(alpha=0.3,**common)
+    style_filtered = dict(linewidth=3,**common)
+    retract_style = dict(color='g',**common)
+    style_retract_error_dist = dict(linewidth=2,**common)
+    plt.plot(time_approach,force_approach,label="Raw (approach)",
              alpha=0.3,**style_approach)
     plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
              **style_approach)
-    PlotUtilities.lazyLabel("","Force [pN]","",frameon=True)
+    PlotUtilities.lazyLabel("","Force [pN]",
+                            "$\epsilon$,$\sigma$ estimated from the approach",
+                            frameon=True)
     plt.xlim(xlim_approach)
     tick_function()
     PlotUtilities.no_x_ticks()
     plt.subplot(gs[0,1])
-    style_raw = dict(alpha=0.3)
-    style_filtered = dict(linewidth=3)
     Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
-                              style_raw,label="Raw Force (retract)")
+                              style_raw,label="Raw (retract)")
     Plotting.before_and_after(x_plot,force_filtered_plot,
                               slice_before,slice_after,style_filtered,
                               label="Spline ($g^{*}_t$)))")
-    PlotUtilities.lazyLabel("","","",**lazy_kwargs)
+    title = "Calculating the retract's no-event probability"
+    PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
     tick_function()
     PlotUtilities.no_x_ticks()
-    retract_style = dict(color='g')
     # plot the 'raw' error distribution for the approach
     plt.subplot(gs[1,0])
     plt.plot(time_approach_plot,approach_diff[slice_fit_approach],alpha=0.3,
@@ -157,11 +163,10 @@ def run(base="./"):
     plt.xlim(xlim_approach)
     plt.ylim(*ylim_diff_filtered)
     tick_function()
-    PlotUtilities.lazyLabel("Time (s)","R$_{\mathrm{t}}$ [pN]","",
+    PlotUtilities.lazyLabel("Time (s)","R$_{\mathrm{t}}$$^{*}$ [pN]","",
                             frameon=True,loc='upper right')
     # filtered error distribution for the retract
     plt.subplot(gs[2,1])
-    style_retract_error_dist = dict(linewidth=2)
     Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
                               style_retract_error_dist)
     plot_epsilon(epsilon_plot,sigma_plot)
