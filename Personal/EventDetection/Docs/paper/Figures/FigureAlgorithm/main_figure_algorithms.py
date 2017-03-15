@@ -142,8 +142,10 @@ def run(base="./"):
     plt.ylim(*ylim_diff)
     # plot the 'raw error distribution for the retract
     plt.subplot(gs[1,1])
-    plt.plot(x_plot,diff_pN,alpha=0.3,**retract_style)
-    plt.plot(x_plot,stdev_plot,**retract_style)
+    Plotting.before_and_after(x_plot,diff_pN,slice_before,slice_after,
+                              style_raw)
+    Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
+                              style_filtered)
     PlotUtilities.lazyLabel("","","")
     PlotUtilities.no_x_ticks()
     plt.ylim(*ylim_diff)
@@ -159,7 +161,9 @@ def run(base="./"):
                             frameon=True,loc='upper right')
     # filtered error distribution for the retract
     plt.subplot(gs[2,1])
-    plt.plot(x_plot,stdev_plot,**retract_style)
+    style_retract_error_dist = dict(linewidth=2)
+    Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
+                              style_retract_error_dist)
     plot_epsilon(epsilon_plot,sigma_plot)
     PlotUtilities.lazyLabel("","","",frameon=True,
                             loc="upper right")
@@ -169,13 +173,13 @@ def run(base="./"):
     # probability distribution for the retract
     plt.subplot(gs[3,1])
     plt.yscale('log')
-    plt.plot(x_plot,prob,alpha=0.3,label="No-event",**retract_style)
     plt.axhline(threshold,linewidth=3,linestyle='--',
                 label="threshold",color='k')
-    plt.plot(x_plot,prob_final,label="Masked no-event",**retract_style)
+    Plotting.before_and_after(x_plot,prob_final,slice_before,slice_after,
+                              style_retract_error_dist,label="masked no-event")
     PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
     tick_function()
-    PlotUtilities.label_tom(fig,loc=(-1.10,1.0))
+    PlotUtilities.label_tom(fig,loc=(-1.1,1.0))
     PlotUtilities.savefig(fig,out_fig,
                           subplots_adjust=dict(hspace=0.2,wspace=0.2))
     
