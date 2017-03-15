@@ -36,8 +36,15 @@ class plotting_metrics:
         ruptures_valid_true,ruptures_valid_pred = \
                 Learning.get_true_and_predicted_ruptures_per_param(l)
         coeffs = [r[0][-1] for r in ret]
+        coeffs_safe_idx = np.where(np.isfinite(coeffs))[0]
+        n = len(coeffs)
+        idx_arr = np.arange(0,n,step=1)
+        coeffs_safe = [coeffs[i] for i in coeffs_safe_idx]
+        idx_arr_safe = idx_arr[coeffs_safe_idx]
+        best_idx_rel = int(np.round(np.argmax(coeffs_safe)))
+        best_idx = idx_arr_safe[best_idx_rel]
         # get the best coefficient
-        self.best_param_idx = np.argmax(coeffs)
+        self.best_param_idx = best_idx
         self.lim_force = ret[self.best_param_idx][1]
         self.lim_load = ret[self.best_param_idx][2]
         self.counts = ret[self.best_param_idx][3]
@@ -194,7 +201,7 @@ def run(base="./"):
     """
     out_base = base
     data_file = base + "data/Scores.pkl"
-    force=False
+    force=True
     metric_list = CheckpointUtilities.getCheckpoint(base + "cache.pkl",
                                                     get_metric_list,force,
                                                     data_file)
@@ -290,7 +297,7 @@ def run(base="./"):
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
     PlotUtilities.label_tom(fig,flat_letters,loc=(-1.1,1.1))
-    final_out_path = out_base + "landscape.svg"
+    final_out_path = out_base + "landscape.pdf"
     PlotUtilities.savefig(fig,final_out_path)
 
 

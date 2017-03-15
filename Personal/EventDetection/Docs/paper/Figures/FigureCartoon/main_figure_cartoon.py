@@ -63,7 +63,7 @@ def run(base="./"):
     for i in range(3):
         plt.subplot(gs[0, i])
         image = plt.imread(im_path.format(i+1))
-        plt.imshow(image,interpolation="nearest",aspect='auto',extent=None)
+        plt.imshow(image,interpolation="nearest",aspect='equal',extent=None)
         ax = plt.gca()
         ax.axis('off')
     for i,c in enumerate(cases):
@@ -73,8 +73,8 @@ def run(base="./"):
         not_first_plot = i != 0
         fmt(remove_y_labels=False,remove_x_labels=False)
         if (i == 0):
-            y_label = "Force (pN)"
-            x_label = "Separation (nm)"
+            y_label = r"Force [pN]"
+            x_label = "Separation [nm]"
         else:
             y_label = ""
             x_label = ""
@@ -87,12 +87,16 @@ def run(base="./"):
     n_subplots = 2
     n_categories = len(file_names)
     letters =  string.lowercase[:n_categories]
-    letters = [ ["({:s}{:d})".format(s,n+1) for s in letters]
-                 for n in range(n_categories)]
+    letters = [ [r"({:s}{:d})".format(s,n+1) for s in letters]
+                for n in range(n_categories)]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
-    PlotUtilities.label_tom(fig,flat_letters,loc=(-1.19,1))
+    bottom = (-1.2,1)
+    top = (-1.56,1)
+    loc = [top for i in range(n_categories)] +  \
+          [bottom for i in range(n_categories)] 
+    PlotUtilities.label_tom(fig,flat_letters,loc=loc)
     PlotUtilities.savefig(fig,"cartoon.svg",
-                          subplots_adjust=dict(wspace=0.4,hspace=0.1))
+                          subplots_adjust=dict(left=0.1,wspace=0.4,hspace=0.1))
 
 if __name__ == "__main__":
     run()
