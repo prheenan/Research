@@ -611,17 +611,18 @@ def zero_and_split_force_extension_curve(example):
     retract = example_split.retract 
     f = approach.Force
     x = approach.Time
-    n = f.size
+    n_approach = f.size
     # *last* time we are under; note that this is at the end of the approach
     get_last_under_median = \
         lambda y: (y.size - np.where(y < np.median(f))[0][-1])
     last_idx_under_median = get_last_under_median(f)
     num_points = last_idx_under_median
-    x_tmp = np.arange(0,n,1)
+    x_tmp = np.arange(0,n_approach,1)
     interp = spline_interpolator(tau_x=num_points,x=x_tmp,f=f)
     interp_approach = interp(x_tmp)
     last_idx_under_median = get_last_under_median(interp_approach)
-    num_points = int(np.ceil(n * 0.01))
+    n_retract = retract.Force.size
+    num_points = int(np.ceil(n_retract * 0.02))
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points)
     return example_split

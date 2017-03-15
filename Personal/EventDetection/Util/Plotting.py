@@ -531,7 +531,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  title="",distance_histogram=None,gs=None):
     if (gs is None):
         gs = gridspec.GridSpec(2,3,width_ratios=[2,2,1],
-                               height_ratios=[2,2,1])
+                               height_ratios=[2,2])
     subplot_f = lambda x: plt.subplot(x)
     ruptures_true,loading_true = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
@@ -643,7 +643,7 @@ def rupture_distribution_plot(learner,out_file_stem):
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure(figsize=(12,12))
-        rupture_plot(true,pred)
+        rupture_plot(true,pred,fig)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 

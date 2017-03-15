@@ -25,10 +25,10 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 50
+    limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = False
+    debugging = True
     force_read = False
     force_relearn = False
     force_learn = False or force_relearn
@@ -52,9 +52,10 @@ def run():
                              n_folds,pool_size=pool_size,
                              learners=learners)
     for l in learners:
+        if (debugging):
+            break
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
-        break
         Plotting.plot_individual_learner(debug_directory,l)
     num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
@@ -84,7 +85,7 @@ def run():
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
-    debugging_str = "_" if not debugging else ""
+    debugging_str = "_" if debugging else ""
     file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
@@ -101,7 +102,7 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 0.2
+    threshold = 0.5
     example_numbers = [2,3,5,12]
     examples_filtered = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):

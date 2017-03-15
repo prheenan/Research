@@ -134,3 +134,37 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
     cbar = plt.colorbar()
     label = '# of points in (Force,Separation) Bin'
     cbar.set_label(label,labelpad=10,rotation=270) 
+
+def _n_rows_and_cols(processed,n_cols=3):
+    n_rows = int(np.ceil(len(processed)/n_cols))    
+    return n_rows,n_cols
+
+def gallery_fec(processed,xlim_nm,ylim_pN,NFilterPoints=100,n_cols=3,
+                x_label="Separation (nm)",y_label="Force (pN)",
+                approach_label="Approach",
+                retract_label="Retract"):
+    n_rows,n_cols = _n_rows_and_cols(processed,n_cols)  
+    for i,r in enumerate(processed):
+        plt.subplot(n_rows,n_cols,(i+1))
+        appr,retr = r
+        is_labelled = i == 0
+        is_first = (i % n_cols == 0)
+        is_bottom = ((i + (n_cols)) >= len(processed))
+        XLabel = x_label if is_bottom else ""
+        YLabel = y_label      if is_first else ""
+        ApproachLabel = approach_label if is_labelled else ""
+        RetractLabel =  retract_label  if is_labelled else ""
+        PlotLabelOpts = dict(ApproachLabel=ApproachLabel,
+                             RetractLabel=RetractLabel)
+        LegendOpts = dict(loc='upper left',frameon=True)
+        FEC_AlreadySplit(appr,retr,XLabel=XLabel,YLabel=YLabel,
+                         LegendOpts=LegendOpts,
+                         PlotLabelOpts=PlotLabelOpts,
+                         NFilterPoints=NFilterPoints)
+        plt.xlim(xlim_nm)
+        plt.ylim(ylim_pN)
+        ax = plt.gca()
+        if (not is_bottom):
+            ax.tick_params(labelbottom='off')
+        if (not is_first):
+            ax.tick_params(labelleft='off')   
