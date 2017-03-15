@@ -3,9 +3,8 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,os
+import sys,os,string
 
-import svgutils.compose as sc
 sys.path.append("../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
@@ -13,7 +12,7 @@ from Research.Personal.EventDetection.Util.InputOutput import \
     read_and_cache_file
 from Research.Personal.EventDetection.Util import Analysis 
 # /!\ note the 'SVG' function also in svgutils.compose
-from IPython.display import SVG 
+import matplotlib.gridspec as gridspec
 
 def plot_fec(example,color='r',n_filter=1000):
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
@@ -56,9 +55,19 @@ def run(base="./"):
     styles = [dict(color='k'),
               dict(color='g'),
               dict(color='r')]
-    fig = PlotUtilities.figure((12,4))
+    fig_x_in = 16
+    fig_y_in = 8
+    im_path = base + "/cartoon/SurfaceChemistry Dig10p3_pmod-0{:d}.png"
+    fig = PlotUtilities.figure((fig_x_in,fig_y_in))
+    gs= gridspec.GridSpec(2,3)
+    for i in range(3):
+        plt.subplot(gs[0, i])
+        image = plt.imread(im_path.format(i+1))
+        plt.imshow(image,interpolation="nearest",aspect='auto',extent=None)
+        ax = plt.gca()
+        ax.axis('off')
     for i,c in enumerate(cases):
-        plt.subplot(1,len(cases),(i+1))
+        plt.subplot(gs[1, i])
         style = styles[i]
         plot_fec(c,**style)
         not_first_plot = i != 0
@@ -74,29 +83,16 @@ def run(base="./"):
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
         plt.xlim([-30,650])
-        PlotUtilities.tick_axis_number(num_x_major=5,num_y_major=3)
-    out_tmp = "FigureCartoon{:d}.svg".format(i)
-    out_names.append(out_tmp)
-    w_space = 0.5
-    PlotUtilities.savefig(fig,out_tmp,
-                          subplots_adjust=dict(wspace=w_space,hspace=0))
-    """
-    see: 
-    stackoverflow.com/questions/31452451/importing-an-svg-file-a-matplotlib-figure
-    """
-    tip_base = base  + "cartoon/2017-2-event-detection/" + \
-               "SurfaceChemistry Dig10p3_combined_no_extra.svg"
-    cartoon_files = [tip_base]
-    tip_panels = [sc.Panel(sc.SVG(file_path)).scale(2.2)
-                  for i,file_path in enumerate(cartoon_files)]
-    data_panels = [sc.Panel(sc.SVG(f)) for f in out_names]
-    all_panels = tip_panels + data_panels
-    sc.Figure("41cm", "20cm", 
-              *(tip_panels + data_panels)
-    ).tile(1,2).save("final.svg")
-    # remove all the intermediate svg files
-    for f in out_names:
-        os.remove(f) 
+        PlotUtilities.tick_axis_number(num_x_major=4)
+    n_subplots = 2
+    n_categories = len(file_names)
+    letters =  string.lowercase[:n_categories]
+    letters = [ ["({:s}{:d})".format(s,n+1) for s in letters]
+                 for n in range(n_categories)]
+    flat_letters = [v for list_of_v in letters for v in list_of_v]
+    PlotUtilities.label_tom(fig,flat_letters,loc=(-1.19,1))
+    PlotUtilities.savefig(fig,"cartoon.svg",
+                          subplots_adjust=dict(wspace=0.4,hspace=0.1))
 
 if __name__ == "__main__":
     run()

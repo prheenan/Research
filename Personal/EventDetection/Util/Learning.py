@@ -6,11 +6,6 @@ import matplotlib.pyplot as plt
 import sys,traceback
 
 from Research.Personal.EventDetection.Util import Analysis,InputOutput,Scoring
-from Research.Personal.EventDetection._2SplineEventDetector import Detector
-from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
-    fovea
-from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
-    wavelet_predictor
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from sklearn.model_selection import StratifiedKFold
 import multiprocessing
@@ -170,6 +165,66 @@ def rupture_objects(scores,get_true):
     return _walk_scores(scores,func_fold=func_fold,
                         func_param=np.concatenate,func_top=np.array)
 
+
+
+def limits_and_bins_force_and_load(ruptures_true,ruptures_pred,
+                                   loading_true,loading_pred,n=20):
+    """
+    Return a 4-tuple of limit,bins  for rupture force and loading rate
+
+    Args:
+        <x>_<true/pred> : llist of true/predicted x
+        n: number of bins
+    Returns:
+       limits force,bins force,limits loaidng,bins loading
+    """
+    double_f = lambda f,*args: f([f(x) for x in args if len(x) > 0])
+    # determine the limits on the rupture force
+    min_y = double_f(min,ruptures_pred,ruptures_true)
+    max_y = double_f(max,ruptures_pred,ruptures_true)
+    lim_force = [min_y,max_y]
+    # determine the limits on the loading rate
+    safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
+    min_x = double_f(min,safe(loading_pred),safe(loading_true))
+    max_x = double_f(max,safe(loading_pred),safe(loading_true))
+    lim_load = [min_x,max_x]
+    bins_rupture= np.linspace(*lim_force,num=n)
+    min_y = max(min(lim_load),1e-2)
+    logy = np.log10([min_y,max(lim_load)])
+    bins_load = np.logspace(*logy,num=n)
+    return lim_force,bins_rupture,lim_load,bins_load
+    
+
+def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
+    """
+    Args:
+        objs: see _plot_rupture_objecs
+    Returns:
+        tuple of <rupture force in pN, loading rate in pN>
+    """
+    to_pN = lambda x: x * 1e12
+    rupture_forces_pN = np.array([to_pN(obj.rupture_force) for obj in objs])
+    loading_rate_pN_per_s = np.array([to_pN(obj.loading_rate) for obj in objs])
+    return rupture_forces_pN,loading_rate_pN_per_s
+
+def get_true_and_predicted_ruptures_per_param(learner):
+    """
+    gets the truee and preicted rupture objects for the *validation* folds
+    of each learner object 
+
+    Args:
+         learner: the learner_curve obect to use
+    Returns:
+         tuple of validation true, predicted ruptures
+    """
+    train_scores = learner._scores_by_params(train=True)
+    valid_scores = learner._scores_by_params(train=False)
+    # get the validation ruptures (both truee and predicted)
+    ruptures_valid_true = rupture_objects(valid_scores,get_true=True)
+    ruptures_valid_pred = rupture_objects(valid_scores,get_true=False)
+    return ruptures_valid_true,ruptures_valid_pred
+
+
 def event_distance_distribution(scores,**kwargs):
     """
     gets the distribution of distances at each paramter value
@@ -184,6 +239,47 @@ def event_distance_distribution(scores,**kwargs):
         np.concatenate([v.minimum_distance_distribution(**kwargs) for v in x])
     return _walk_scores(scores,func_fold = func_fold,
                         func_param=np.concatenate,func_top=np.array)
+
+def f_score_dist(v):
+    """
+    returns the distance f score for the given score object v
+
+    Args:
+        v: to scoore
+    Returns;
+        f score, 0 to 1, higher is better. 
+    """
+    kw = dict(floor_is_max=True)
+    dist_to_true = v.minimum_distance_distribution(to_true=True,**kw)
+    dist_to_pred = v.minimum_distance_distribution(to_true=False,**kw)
+    max_x = v.max_x
+    # get the averages ? XXX
+    if (len(dist_to_true) != 0):
+        average_to_true = np.median(dist_to_true)
+    else:
+        average_to_true = 0
+    if (len(dist_to_pred) != 0):
+        average_to_pred = np.median(dist_to_pred)
+    else:
+        average_to_pred = 0
+    # defining precision and recall in a distance-analogy sense
+    precision_dist = average_to_true
+    recall_dist = average_to_pred
+    f_score = \
+      1-(2/max_x) * (precision_dist * recall_dist)/(precision_dist+recall_dist)
+    return f_score
+
+def event_distance_f_score(scores):
+    """
+    returns the *distance* f score for each curve
+
+    Args:
+        scores: see fold_number_events_off
+    """
+    func_fold = lambda x: [f_score_dist(v) for v in x]
+    return _walk_scores(scores,func_fold = func_fold,
+                        func_param=np.concatenate,func_top=np.array)
+    
 
 def fold_number_events_off(scores):
     """
@@ -418,38 +514,6 @@ def _get_single_curve(name,tuple_v,func):
     """
     return learning_curve(name,tuple_v[0],func(tuple_v[1]))
     
-def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
-    """
-    Returns a list of learning_curve objects
-
-    Args:
-        n_points_no_event: number of points for varying the no event portion of 
-        things
-            
-        n_points_fovea: number of points to use on fovea
-    Returns:
-        list of learning curves
-    """
-    # make the no event example
-    no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-2,np.log10(0.9),
-                                                   endpoint=True,
-                                                   base=10,
-                                                   num=n_points_no_event)]
-    no_event_curve = _get_single_curve("No Event",no_event_tuple,no_event_func)  
-    # make the fovea example
-    fovea_func = lambda arg_list: [dict(weight=w) for w in arg_list]
-    fovea_tuple = [fovea.predict,np.logspace(np.log10(0.001),np.log10(0.5),
-                                            endpoint=True,
-                                             num=n_points_fovea)]
-    fovea_curve = _get_single_curve("Open Fovea",fovea_tuple,fovea_func)                                   
-    # make the CWT example
-    cwt_func = lambda arg_list: [dict(min_snr=w) for w in arg_list]
-    cwt_tuple = [wavelet_predictor.predict,
-                 np.logspace(start=np.log10(10),stop=np.log10(500),endpoint=True,
-                    num=n_points_wavelet)]
-    wavelet_curve = _get_single_curve("Wavelet transform",cwt_tuple,cwt_func)   
-    return [no_event_curve,fovea_curve,wavelet_curve]
 
 def get_single_learner_folds(cache_directory,force,l,data,fold_idx,pool_size):
     """

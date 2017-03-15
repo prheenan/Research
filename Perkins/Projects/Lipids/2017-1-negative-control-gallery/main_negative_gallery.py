@@ -24,37 +24,18 @@ def run():
     network = FEC_Util.default_data_root()
     base = network + "4Patrick/CuratedData/Lipids/DOPC/"+\
             "NegativeControls/Representative_Gallery/"
-    _,raw_data = FEC_Util.read_and_cache_pxp(base)
+    _,raw_data = FEC_Util.read_and_cache_pxp(base,force=False)
     processed = [FEC_Util.SplitAndProcess(r) for r in raw_data]
-    n_cols = 3
-    n_rows = int(np.ceil(len(processed)/n_cols))
     inches_per_plot = 4.5
+    n_rows,n_cols = FEC_Plot._n_rows_and_cols(processed)
     fig_size = (n_cols*inches_per_plot,n_rows*inches_per_plot)
     fig = PlotUtilities.figure(figsize=(fig_size))
-    ylim_pN = [-20,30]
-    xlim_nm = [0,100]
-    for i,r in enumerate(processed):
-        plt.subplot(n_rows,n_cols,(i+1))
-        appr,retr = r
-        is_labelled = (i == 0)
-        XLabel = "Stage Position (nm)" if is_labelled else ""
-        YLabel = "Force (pN)"      if is_labelled else ""
-        ApproachLabel = "Approach" if is_labelled else ""
-        RetractLabel =  "Retract"  if is_labelled else ""
-        PlotLabelOpts = dict(ApproachLabel=ApproachLabel,
-                             RetractLabel=RetractLabel,
-                             x_func = lambda x: x.ZSnsr)
-        LegendOpts = dict(loc='upper left',frameon=True)
-        FEC_Plot.FEC_AlreadySplit(appr,retr,XLabel=XLabel,YLabel=YLabel,
-                                  LegendOpts=LegendOpts,
-                                  PlotLabelOpts=PlotLabelOpts,NFilterPoints=100)
-        plt.xlim(xlim_nm)
-        plt.ylim(ylim_pN)
-        ax = plt.gca()
-        if (not is_labelled):
-            ax.tick_params(labelbottom='off',labelleft='off')   
-    plt.suptitle("Negative control image examples",y=1,fontsize=25)
-    PlotUtilities.savefig(fig,base + "out.png")
+    ylim_pN = [-20,75]
+    xlim_nm = [-10,50]
+    FEC_Plot.gallery_fec(processed,xlim_nm,ylim_pN)
+    plt.suptitle("Negative Control Gallery",y=1.2,fontsize=25)
+    PlotUtilities.savefig(fig,base + "out.png",close=False)
+    PlotUtilities.savefig(fig,"./out.png")
 
     # # plot each of the force extension curves in a separate subplot
 

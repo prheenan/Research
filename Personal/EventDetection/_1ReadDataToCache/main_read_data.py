@@ -8,11 +8,10 @@ from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from Research.Personal.EventDetection.Util import Learning
+from Research.Personal.EventDetection.Util import Learning,Learners
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
-
 
 def run():
     """
@@ -29,7 +28,7 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = False
+    debugging = True
     force_read = False
     force_relearn = False
     force_learn = False or force_relearn
@@ -53,6 +52,8 @@ def run():
                              n_folds,pool_size=pool_size,
                              learners=learners)
     for l in learners:
+        if (debugging):
+            break
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(debug_directory,l)
@@ -84,24 +85,31 @@ def run():
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
-    debugging_str = "_" if not debugging else ""
+    debugging_str = "_" if debugging else ""
     file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
-    load_paths = [cache_directory + f for f in load_files]
+    load_paths_tmp = [cache_directory + f for f in load_files]
     # replace the final underscore...
-    print("loading: {:s}".format(load_paths))
-    for p in load_paths:
-        assert os.path.isfile(p) , "Couldn't find [{:s}]".format(p)
+    print("loading: {:s}".format(load_paths_tmp))
+    load_paths = []
+    for p in load_paths_tmp:
+        if (not os.path.isfile(p)):
+            print("Couldn't find [{:s}]".format(p))
+        else:
+            load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 1e-3
+    example_numbers = []
+    examples_filtered = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
-        copyfile(load_paths[i],debugging_file_path)
+        if (debugging):
+            copyfile(load_paths[i],debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)

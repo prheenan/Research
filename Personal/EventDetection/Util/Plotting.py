@@ -14,7 +14,19 @@ import matplotlib.gridspec as gridspec
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
 
-                            
+
+def algorithm_colors():
+    return ['b','k','y']
+
+def algorithm_markers():
+    return ['s','o','v']
+
+def algorithm_linestyles():
+    return ['--','-.','-']    
+
+def true_hatch():
+    return "//"
+
 def plot_autocorrelation_log(x,*args):
     """
     plots the autocorrelation function and fit
@@ -138,7 +150,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     masked_cdf *= boolean_mask
     n_rows = 3
     n_cols = 1
-    lazy_kwargs = dict(frameon=True,loc="upper right")
+    lazy_kwargs = dict(frameon=True,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
@@ -150,19 +162,19 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    styles = [dict(color='r',linestyle=':'),
-              dict(color='k',linestyle='-',alpha=0.3),
-              dict(color='g',linestyle='-.',alpha=0.7),
+    styles = [dict(color='k',linestyle=':',alpha=0.3),
+              dict(color='k',linestyle='-.',alpha=0.3),
+              dict(color='g',linestyle='-',alpha=0.7),
               dict(color='m',linestyle='--')]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
         plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
     min_cdf = min([min(c) for c in info.probabilities])
-    plt.semilogy(x,masked_cdf,color='b',linewidth=1,label="masked cdf")
-    plt.axhline(thresh,color='k',linestyle='--',label="threshold")
+    plt.axhline(thresh,color='k',linestyle='--',label="tsh")
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
-    PlotUtilities.lazyLabel("","No-Event CDF ","",**lazy_kwargs)
+    PlotUtilities.lazyLabel("","No-Event CDF ","",loc='upper right',
+                            frameon=True)
     plt.xlim(x_limits)
     plt.ylim([min_cdf/2,3])
     mask_styles = styles
@@ -238,9 +250,9 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     plt.plot(x_plot(x_event),y_plot(y_event),color='r',alpha=0.3,label="event")
     plt.plot(x_plot(x_event),y_plot(pred),label="prediction")
     if (len(idx_above_predicted) > 0):
-        plt.axvline(x_plot(x[idx_above_predicted[-1]]),label="surface pred")
+        plt.axvline(x_plot(x[idx_above_predicted[-1]]))
     PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
-                            loc="upper right")
+                            loc="upper left")
 
 def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
                              derivative_le_zero,to_ret):
@@ -265,19 +277,6 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
 
-        
-def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
-    """
-    Args:
-        objs: see _plot_rupture_objecs
-    Returns:
-        tuple of <rupture force in pN, loading rate in pN>
-    """
-    to_pN = lambda x: x * 1e12
-    rupture_forces_pN = np.array([to_pN(obj.rupture_force) for obj in objs])
-    loading_rate_pN_per_s = np.array([to_pN(obj.loading_rate) for obj in objs])
-    return rupture_forces_pN,loading_rate_pN_per_s
-
 def _plot_rupture_objects(to_plot,**kwargs):
     """
     given rupture objects, plots rupture force in pN (given N) vs
@@ -290,7 +289,7 @@ def _plot_rupture_objects(to_plot,**kwargs):
          Nothing
     """
     rupture_forces_pN,loading_rate_pN_per_s = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
     # XXX debugging...
     """
@@ -317,7 +316,8 @@ def _plot_rupture_objects(to_plot,**kwargs):
     exit(1)
     """
 
-def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
+def plot_true_and_predicted_ruptures(true,predicted,title="",
+                                     use_legend=True,loc='upper left',
                                      style_predicted=None,style_true=None):
     """
     given rupture objects, plots the true and predicted values of rupture
@@ -339,14 +339,14 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",label_true="true",
         style_predicted = dict(color='k',label="predicted",
                                 linewidth=2,**line_style)
     if (style_true is None):
-        style_true = dict(color='g',label=label_true,alpha=0.5,**line_style)
-    
+        style_true = dict(color='g',label="true",alpha=0.5,**line_style)
     _plot_rupture_objects(true,marker='o',linewidth=0,linestyle="None",
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
     PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
-                            frameon=True,legend_kwargs=dict(numpoints=1))
+                            frameon=True,legend_kwargs=dict(numpoints=1),
+                            useLegend=use_legend,loc=loc)
 
 
 
@@ -468,104 +468,161 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     plt.boxplot(x=valid_plot,**box_kwargs)
     plt.gca().set_yscale('log')
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
-                            "Event distributions for {:s}".format(name))
-    
+                            "Event distributions for {:s}".format(name),
+                            frameon=True)
+
+def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
+                                 style_true,style_pred):
+    # plot the distance scores; color by i in 'i->j' (ie: true->predicted
+    # is colored by true
+    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
+    if (to_true.size > 0):
+        plt.hist(to_true,log=True,bins=bins,**style_pred)
+    plt.xscale('log')
+    plt.xlim(distance_limits)
+    PlotUtilities.lazyLabel("Distance [nm]","Count","",frameon=True)
+
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
+    """
+    plots a generic rupture (or not, if there's no data)"
+
+    Args:
+        to_bin: what to histogram
+        others: see plt.hist
+    Returns: 
+        nothing
+    """
+    if len(to_bin) == 0:
+        return
     plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
-    ruptures,_ = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
+    """
+    plots a rupture force histogram
+
+    Args:
+        obj: list of rupture objects
+        others: see _gen_rupture_hist
+    Returns: 
+        nothing
+    """
+    ruptures,_ = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(ruptures,**kwargs)
 
 def loading_rate_histogram(objs,**kwargs):
-    _,loading_rates = get_rupture_in_pN_and_loading_in_pN_per_s(objs)
+    """
+    plots a loaifng rate histogram
+
+    Args:
+        obj: list of rupture objects
+        others: see _gen_rupture_hist
+    Returns: 
+        nothing
+    """
+    _,loading_rates = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
     _gen_rupture_hist(loading_rates,**kwargs)
 
-def rupture_plot(true,pred,count_ticks=3,scatter_kwargs=None,style_pred=None,
-                 style_true=None,
+def rupture_plot(true,pred,fig,count_ticks=3,
+                 scatter_kwargs=None,style_pred=None,
+                 style_true=None,use_legend=True,count_limit=None,
+                 color_pred=None,color_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
-                 remove_ticks=True):
-    gs = gridspec.GridSpec(2, 2,
-                           width_ratios=[4,1],
-                           height_ratios=[4,1])
+                 remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
+                 title="",distance_histogram=None,gs=None):
+    if (gs is None):
+        gs = gridspec.GridSpec(2,3,width_ratios=[2,2,1],
+                               height_ratios=[2,2])
+    subplot_f = lambda x: plt.subplot(x)
     ruptures_true,loading_true = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(true)
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
-        get_rupture_in_pN_and_loading_in_pN_per_s(pred)
-    double_f = lambda f,*args: f([f(x) for x in args])
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)
+    if (color_pred is None):
+        color_pred = 'k'
+    if (color_true is None):
+        color_true = 'g'
     if (style_true is None):
-        style_true = dict(color='k',alpha=0.2)
+        style_true = dict(color=color_true,alpha=0.5)
     if (style_pred is None):
-        style_pred = dict(color='g',alpha=0.7)
+        style_pred = dict(color=color_pred,alpha=0.3)
     if (scatter_kwargs is None):
-        scatter_kwargs = dict(style_true=style_true,style_predicted=style_pred)
+        scatter_kwargs = dict(style_true=dict(label="true",**style_true),
+                              style_predicted=dict(label="predicted",
+                                                   **style_pred))
+    _lim_force,_bins_rupture,_lim_load,_bins_load = \
+        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                loading_true,loading_pred)
     if (lim_force is None):
-        min_y = double_f(min,ruptures_pred,ruptures_true)
-        max_y = double_f(max,ruptures_pred,ruptures_true)
-        lim_force = [min_y/2,max_y*2]
+        lim_force = _lim_force
     if (lim_load is None):
-        safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
-        min_x = double_f(min,safe(loading_pred),safe(loading_true))
-        max_x = double_f(max,safe(loading_pred),safe(loading_true))
-        lim_load = [min_x*0.8,max_x*1.2]
+        bins_rupture = _bins_rupture
     if (bins_rupture is None):
-        bins_rupture= np.linspace(*lim_force,num=10)
+        bins_rupture = _bins_rupture
     if (bins_load is None):
-        min_y = max(min(lim_load),1e-2)
-        logy = np.log10([min_y,max(lim_load)])
-        bins_load = np.logspace(*logy,num=10)
-    ax0 = plt.subplot(gs[0])
-    plot_true_and_predicted_ruptures(true,pred,**scatter_kwargs)
+        bins_load = _bins_load
+    if (lim_plot_load is None):
+        lim_plot_load = lim_load
+    if (lim_plot_force is None):
+        lim_plot_force = lim_force
+    if (distance_histogram is not None):
+        ax_hist = plt.subplot(gs[:,0])
+        histogram_event_distribution(**distance_histogram)
+    ax0 = subplot_f(gs[0,1])
+    plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
+                                     **scatter_kwargs)
     PlotUtilities.xlabel("")
-    plt.xlim(lim_load)
-    plt.ylim(lim_force)
+    plt.xlim(lim_plot_load)
+    plt.ylim(lim_plot_force)
+    PlotUtilities.title(title)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
-    ax1 = plt.subplot(gs[1])
-    rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
-                            **style_true)
+    ax1 =subplot_f(gs[0,2])
+    hatch_true = true_hatch()
+    true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
+    pred_style_histogam = dict(zorder=1,**style_pred)
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
-                            **style_pred)
+                            **pred_style_histogam)
+    rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
+                            **true_style_histogram)
     PlotUtilities.lazyLabel("Count","","")
     if (remove_ticks):
         ax1.get_yaxis().set_ticklabels([])
-    plt.ylim(lim_force)
-    ax4 = plt.subplot(gs[2])
-    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
-                           **style_true)
-    loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                           **style_pred)
-    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","")
+    if (count_limit is not None):
+        plt.xlim(count_limit)
+    plt.ylim(lim_plot_force)
     plt.xscale('log')
-    plt.xlim(lim_load)
-    ax3 = plt.subplot(gs[3])
-    coeff_load = Analysis.\
-                 bhattacharyya_probability_coefficient_1d(loading_true,
-                                                         loading_pred,
-                                                         bins_load)
-    coeff_force = Analysis.\
-                  bhattacharyya_probability_coefficient_1d(ruptures_true,
-                                                          ruptures_pred,
-                                                          bins_rupture)
-    # do a 2-d coefficient
-    tuple_true = [loading_true,ruptures_true]
-    tuple_pred = [loading_pred,ruptures_pred]
-    tuple_bins = [bins_load,bins_rupture]
-    coeff_2d = Analysis.\
-            bhattacharyya_probability_coefficient_dd(tuple_true,tuple_pred,
-                                                     tuple_bins)
-    coeffs = [coeff_load,coeff_force,coeff_2d]
-    print(coeffs)
+    ax4 = subplot_f(gs[1,1])
+    loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
+                          label="predicted", **pred_style_histogam)
+    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
+                           label="true",**true_style_histogram)
+    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","",frameon=True,
+                            loc='upper left',useLegend=use_legend)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.xlim(lim_plot_load)
+    if (count_limit is not None):
+        plt.ylim(count_limit)
+    ax3 = subplot_f(gs[1,2])
+    if (len(loading_pred) > 0):
+        coeffs = Analysis.\
+            bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
+                                    ruptures_true,ruptures_pred,bins_rupture)
+    else:
+        coeffs = [0,0,0]
     labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
-    rects1 = plt.bar(index, coeffs,alpha=0.3,color='b')
+    rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
     label_func = lambda i,r: "{:.2f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
-    PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func)
+    PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func,
+                            fontsize=PlotUtilities.g_font_legend,
+                            fontweight='bold')
     plt.xticks(index + bar_width / 2, labels_coeffs,
-               rotation=30,fontsize=PlotUtilities.g_font_legend)
+               rotation=30,fontsize=PlotUtilities.g_font_label)
     PlotUtilities.ylabel("BC value")
+    plt.ylim([0,1])
     # just empty :-(
 
 def rupture_distribution_plot(learner,out_file_stem):
@@ -579,17 +636,14 @@ def rupture_distribution_plot(learner,out_file_stem):
     Returns:
         nothingS
     """
-    train_scores = learner._scores_by_params(train=True)
-    valid_scores = learner._scores_by_params(train=False)
-    # get the validation ruptures (both truee and predicted)
-    ruptures_valid_true = Learning.rupture_objects(valid_scores,get_true=True)
-    ruptures_valid_pred = Learning.rupture_objects(valid_scores,get_true=False)
     name = learner.description.lower()
     x_values = learner.param_values()
+    ruptures_valid_true,ruptures_valid_pred = \
+        Learning.get_true_and_predicted_ruptures_per_param(learner)
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
-        fig = PlotUtilities.figure()
-        rupture_plot(true,pred)
+        fig = PlotUtilities.figure(figsize=(12,12))
+        rupture_plot(true,pred,fig)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
@@ -641,16 +695,109 @@ def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
     plt.plot(x, force_plot(interp_f),color='b',label="interpolated")
     PlotUtilities.lazyLabel("","Force","",loc='upper right')
     plt.subplot(2,1,2)
-    plt.semilogy(x,bool_interp + 1e-2)
+    plt.semilogy(x,bool_interp + 1e-2,label="mask")
     plt.semilogy(x,probability_updated[slice_to_use],color='r',linestyle='--',
                  label="prob new")
     plt.semilogy(x,probability[slice_to_use],color='k',alpha=0.3,
                  label="prob orig")
     PlotUtilities.lazyLabel("Time","Prob/Mask","",loc='upper right')
 
+def debug_plot_derivative_ratio(time,slice_to_use,
+                                 ratio,interp_sliced,force_sliced,
+                                 interp_slice_deriv,
+                                 boolean_ret,probability_updated,
+                                 absolute_min_idx,ratio_min_threshold):
+    x_sliced = time[slice_to_use]
+    xlim = [min(x_sliced),max(x_sliced)]
+    where_possible = np.where(ratio < ratio_min_threshold)
+    plot_interp_deriv = interp_slice_deriv/max(interp_slice_deriv)
+    plt.subplot(3,1,1)
+    plt.plot(x_sliced,interp_sliced*1e12,linewidth=3,label="interp")
+    plt.plot(x_sliced,force_sliced*1e12,color='k',alpha=0.3,label="force")
+    PlotUtilities.lazyLabel("","Force","")
+    plt.xlim(xlim)
+    plt.subplot(3,1,2)
+    plt.plot(x_sliced,ratio,color='k',alpha=0.3,label="ratio") 
+    plt.plot(x_sliced[where_possible],ratio[where_possible],color='b')
+    PlotUtilities.lazyLabel("","ratio df/epsilon","")
+    plt.axvline(time[absolute_min_idx])
+    plt.xlim(xlim)
+    plt.subplot(3,1,3)
+    plt.plot(time,probability_updated,label="prob")
+    plt.plot(time,boolean_ret + min(probability_updated),label="mask")
+    plt.yscale('log')
+    plt.xlim(xlim)
+    PlotUtilities.lazyLabel("time","prob,mask","")
+
+def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
+                  sigma,epsilon):
+    plt.subplot(3,1,1)
+    plt.plot(x,y * 1e12)
+    plt.plot(x,interp(x) * 1e12)
+    PlotUtilities.lazyLabel("","force","")
+    plt.subplot(3,1,2)
+    plt.plot(x,stdev_masked,label="masked stdev")
+    plt.axhline(epsilon+sigma,color='b')
+    plt.axhline(epsilon,color='r',label="epsilon")
+    plt.axhline(epsilon-sigma,color='b')
+    PlotUtilities.lazyLabel("","stdev","")
+    plt.subplot(3,1,3)
+    plt.plot(x,probability_distribution)
+    PlotUtilities.lazyLabel("Time","Probability","")
+    plt.yscale('log')
+
+def debug_plot_derivs(approach_time,approach_force,
+                      approach_interp_sliced,x_sliced,
+                      force_sliced,interp_sliced,
+                      approach_interp_deriv,interp_slice_deriv,
+                      min_deriv):
+    ylim = [min(force_sliced),max(force_sliced)]
+    min_v = min([min(approach_interp_deriv),min(interp_slice_deriv)])
+    max_v = max([max(approach_interp_deriv),max(interp_slice_deriv)])
+    ylim_deriv = [min_v,max_v]
+    plt.subplot(2,2,1)
+    plt.plot(approach_time,approach_force,alpha=0.3)
+    plt.plot(approach_time,approach_interp_sliced)
+    plt.ylim(ylim)
+    PlotUtilities.lazyLabel("time","Force","")
+    plt.subplot(2,2,3)
+    plt.plot(x_sliced,force_sliced,alpha=0.3)
+    plt.plot(x_sliced,interp_sliced)
+    plt.ylim(ylim)
+    PlotUtilities.lazyLabel("time","Force","")
+    plt.subplot(2,2,2)
+    plt.plot(approach_time,approach_interp_deriv)
+    plt.ylim(ylim_deriv)
+    PlotUtilities.lazyLabel("time","Deriv","")
+    plt.subplot(2,2,4)
+    plt.plot(x_sliced, interp_slice_deriv)
+    plt.axhline(min_deriv,label="Minimum of approach")
+    plt.ylim(ylim_deriv)
+    PlotUtilities.lazyLabel("time","Deriv","")
+    
+
+def before_and_after(x,y,before_slice,after_slice,style,label=None):
+    """
+    plots x and y two before and after slices
+
+    Args:
+        x,y: the x and y to plot
+        before_slice: what slice to plot before
+        after_slice: what slice to plot after
+        style; for each of them
+        label: for one of them
+    """
+    color_before = 'b'
+    color_after = 'r'
+    tuples = [ [x,y,before_slice,color_before,style,label],
+               [x,y,after_slice,color_after,style,None]]
+    for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:
+        x_sliced = x_tmp[slice_v]
+        plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,
+                 **style_tmp)
 
 def debug_plot_derivative(retract,slice_to_use,probability_updated,
-                          boolean_ret,spline_probability_in_slice,
+                          boolean_ret,probability_original,
                           slice_updated,threshold,interp):
     """
     For debugging at the end of Detector.derivative_mask_function
@@ -673,10 +820,10 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.subplot(2,1,2)
     plt.plot(time,probability_updated,label="prob (updated)",
              linestyle='--')
-    plt.plot(x,spline_probability_in_slice,color='k',alpha=0.3,
+    plt.plot(time,probability_original,color='k',alpha=0.3,
              label="prob (original)")
     plt.xlim(time_lim)
-    plt.plot(time,boolean_ret+min(probability_updated),linewidth=1,alpha=0.3,
+    plt.plot(time,boolean_ret+min(probability_original),linewidth=1,alpha=0.3,
              label="mask")
     plt.axhline(threshold,label="t={:.3g}".format(threshold))
     mask_ends = np.zeros(time.size)
