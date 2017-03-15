@@ -289,7 +289,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     diff_sliced = interp_sliced - force_sliced
     local_stdev = Analysis.local_stdev(diff_sliced,n_points)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    ratio = (interp_slice_deriv*split_fec.tau)/local_stdev
+    df_true = (interp_slice_deriv*split_fec.tau)
     ratio_min_threshold = -1
     # XXX debuugging...
     idx_offset_approach = split_fec.get_predicted_approach_surface_index()
@@ -339,7 +339,19 @@ def derivative_mask_function(split_fec,slice_to_use,
     thresh_integral = 2 * sigma * min_points_between
     probability_updated[slice_to_use] *= \
             _no_event_chebyshev(local_integral,0,thresh_integral)
-    boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
+    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
+    # finally, modulate by the ratio 
+    ratio_df= (epsilon-df_true)
+    ratio_probability= _no_event_chebyshev(ratio_df,0,sigma)    
+    probability_updated[slice_to_use] *= ratio_probability
+    """
+    plt.subplot(2,1,1)
+    plt.plot(interp_f)
+    plt.subplot(2,1,2)
+    plt.semilogy(ratio_probability)
+    plt.show()    
+    """
+    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)    
     """
     #XXX debugging
     xlim = [min(time),max(time)]
@@ -377,22 +389,10 @@ def derivative_mask_function(split_fec,slice_to_use,
     plt.yscale("log")
     plt.show()
     """
-    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    """
-    # XXX debugging filtering
-    median_filter_points = min_points_between
-    if (median_filter_points % 2 == 0):
-        median_filter_points += 1
-    median_filtered = medfilt(interp_sliced,median_filter_points)
-    plt.plot(interp_sliced-median_filtered)
-    plt.axhline(sigma)
-    plt.show()
-    """
     gt_condition[slice_to_use] = ( (interp_slice_deriv > 0) |
-                                   (interp_sliced - stdev < median) |
-                                   (ratio > ratio_min_threshold))
+                                   (interp_sliced - stdev < median) )
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
@@ -401,8 +401,8 @@ def derivative_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    """
     #XXX debugging
+    """
     Plotting.debug_plot_derivative_ratio(time,slice_to_use,
                                          ratio,interp_sliced,force_sliced,
                                          interp_slice_deriv,
