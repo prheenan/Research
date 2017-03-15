@@ -84,8 +84,8 @@ class plotting_metrics:
         return precision
     def distance_limit(self,**kwargs):
         true,pred = self.to_true_and_pred_distances(**kwargs)
-        safe_max = lambda x: max(x) if len(x) > 0 else 0
-        safe_min = lambda x: min(x) if len(x) > 0 else np.inf
+        safe_max = lambda x: max(x[np.where(x>0)]) if len(x) > 0 else -1
+        safe_min = lambda x: min(x[np.where(x>0)]) if len(x) > 0 else np.inf
         max_dist = max([safe_max(true),safe_max(pred)])
         min_dist = min([safe_min(true),safe_min(pred)])
         tmp_limits = [min_dist,max_dist]
@@ -201,7 +201,7 @@ def run(base="./"):
     """
     out_base = base
     data_file = base + "data/Scores.pkl"
-    force=True
+    force=False
     metric_list = CheckpointUtilities.getCheckpoint(base + "cache.pkl",
                                                     get_metric_list,force,
                                                     data_file)
@@ -248,8 +248,7 @@ def run(base="./"):
                                 frameon=True)
         plt.xlim([-0.1,1+2*width])
         plt.ylim([0,1])
-        plt.show()
-    exit(1)
+        #XXX todo
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,22))
     entire_figure = gridspec.GridSpec(3,1)

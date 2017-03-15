@@ -475,7 +475,8 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred):
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
-    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
+    if (to_pred.size > 0):
+        plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
     if (to_true.size > 0):
         plt.hist(to_true,log=True,bins=bins,**style_pred)
     plt.xscale('log')
