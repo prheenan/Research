@@ -56,6 +56,25 @@ class plotting_metrics:
                   event_distance_distribution([self.valid_scores],
                                               to_true=False,**kwargs)[0]
         return to_true,to_pred
+    def n_true(self):
+        f_true = lambda x: x.n_true()
+        n_true = Learning.lambda_distribution([self.valid_scores],f_true)[0]
+        return n_true
+    def n_pred(self):
+        f_pred = lambda x: x.n_pred()
+        n_pred = Learning.lambda_distribution([self.valid_scores],f_pred)[0]
+        return n_pred
+    def recall(self):
+        true = self.n_true()
+        pred = self.n_pred()
+        true_pos = np.minimum(pred,true)
+        return sum(true_pos)/sum(true)
+    def precision(self):
+        true = self.n_true()
+        pred = self.n_pred()
+        true_pos = np.minimum(pred,true)
+        precision = sum(true_pos)/sum(pred)
+        return precision
     def distance_limit(self,**kwargs):
         true,pred = self.to_true_and_pred_distances(**kwargs)
         safe_max = lambda x: max(x) if len(x) > 0 else 0
@@ -200,6 +219,30 @@ def run(base="./"):
     out_names = []
     colors_pred =  algorithm_colors()
     n_bins = 50
+    for m in metric_list:
+        precision = m.precision()
+        recall = m.recall()
+        data = [precision,recall]
+        bins = np.linspace(0,1)
+        colors = ['g','r']
+        labels = ["Precision","Recall"]
+        ind = np.arange(len(data)) 
+        style_precision = dict(color='g',alpha=0.3,hatch="//",label="Precision")
+        style_recall = dict(color='r',alpha=0.3,label="Recall")
+        width = 0.5
+        rects = plt.bar(ind,data,color=colors,width=width)
+        ax = plt.gca()
+        ax.set_xticks(ind + width / 2)
+        ax.set_xticklabels(labels)
+        y_func=lambda i,r: "{:.3f}".format(r.get_height()/2)
+        PlotUtilities.autolabel(rects,y_func=y_func)
+        PlotUtilities.lazyLabel("Metric Value",
+                                "Number of Force-Extension Curves","",
+                                frameon=True)
+        plt.xlim([-0.1,1+2*width])
+        plt.ylim([0,1])
+        plt.show()
+    exit(1)
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,22))
     entire_figure = gridspec.GridSpec(3,1)
