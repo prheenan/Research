@@ -231,6 +231,13 @@ def local_integral(y,n,mode='reflect'):
                      for i in range(size)])
     return diff
 
+def local_centered_diff(f,n):
+    n_pts = f.size
+    diff =  np.array([f[min(n_pts-1,i+n)]-f[max(0,i-n)]
+                      for i in range(n_pts)])
+    return diff
+
+
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 

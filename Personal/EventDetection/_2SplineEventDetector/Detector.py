@@ -71,7 +71,7 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     if (scale is None):
         std_iqr = np.std(derivative_force)
         scale = std_iqr
-    probability  = _no_event_chebyshev(derivative_force,loc,scale)
+    probability = _no_event_chebyshev(derivative_force,loc,scale)
     return probability 
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
@@ -289,7 +289,8 @@ def derivative_mask_function(split_fec,slice_to_use,
     diff_sliced = interp_sliced - force_sliced
     local_stdev = Analysis.local_stdev(diff_sliced,n_points)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    df_true = (interp_slice_deriv*split_fec.tau)
+    df_true = Analysis.local_centered_diff(interp_sliced,n=min_points_between)
+    df_relative = df_true-(-epsilon)
     ratio_min_threshold = -1
     # XXX debuugging...
     idx_offset_approach = split_fec.get_predicted_approach_surface_index()
@@ -341,17 +342,15 @@ def derivative_mask_function(split_fec,slice_to_use,
             _no_event_chebyshev(local_integral,0,thresh_integral)
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # finally, modulate by the ratio 
-    ratio_df= (epsilon-df_true)
-    ratio_probability= _no_event_chebyshev(ratio_df,0,sigma)    
+    k_cheby_ratio = np.minimum(df_relative/sigma,1)
+    ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     probability_updated[slice_to_use] *= ratio_probability
-    """
     plt.subplot(2,1,1)
     plt.plot(interp_f)
     plt.subplot(2,1,2)
     plt.semilogy(ratio_probability)
     plt.show()    
-    """
-    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)    
+    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold) 
     """
     #XXX debugging
     xlim = [min(time),max(time)]
@@ -627,16 +626,21 @@ def _event_mask(probability,threshold):
     boolean_thresh = (probability <= threshold)
     return np.where(boolean_thresh)[0]
 
-def _no_event_chebyshev(g,epsilon,sigma):
-    denom = (g-epsilon)
-    k_chebyshev = denom/sigma
+def _probability_by_cheby_k(k):
     # determine where the chebyshev is 'safe', otherwise we are at or above
     # the mean estimate and hence not a useful metric
-    cheby_idx = np.where(k_chebyshev >= 1)
-    chebyshev = np.ones(k_chebyshev.size)
+    cheby_idx = np.where(np.abs(k) >= 1)
+    chebyshev = np.ones(k.size)
     # actually calculate the upper bound for the probability
-    chebyshev[cheby_idx] = (1/k_chebyshev[cheby_idx])**2
+    chebyshev[cheby_idx] = (1/k[cheby_idx])**2
     return chebyshev
+
+
+def _no_event_chebyshev(g,epsilon,sigma):
+    denom = (g-epsilon)
+    k = denom/sigma
+    return _probability_by_cheby_k(k)
+
 
 def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
                           slice_fit=None):
