@@ -55,13 +55,15 @@ def safe_cheby_probability(y,loc,scale):
     to_ret[possible_idx] = 1/k[possible_idx]**2
     return to_ret
 
-def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
+def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None,
+                                           negative_only=False):
     """
     see  spline_derivative_probability, except a genertic method
     
     Args:
         x: x values
         interpolator: to interpolate along
+        negative_only: if true, everything above loc-scale gets a 1
     Returns:
         see spline_derivative_probability
     """ 
@@ -71,7 +73,10 @@ def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None):
     if (scale is None):
         std_iqr = np.std(derivative_force)
         scale = std_iqr
-    probability = _no_event_chebyshev(derivative_force,loc,scale)
+    k_cheby = (derivative_force-loc)/scale
+    if (negative_only):
+        k_cheby = np.minimum(1,k_cheby)
+    probability = _probability_by_cheby_k(k_cheby)
     return probability 
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
@@ -120,19 +125,6 @@ def force_value_mask_function(split_fec,slice_to_use,
                     (stdev - epsilon < sigma) )
     where_not_bool_in_slice = np.where(~bool_interp)[0]
     no_event_possible = np.ones(boolean_array.size)
-    """
-    # XXX debugging
-    plt.subplot(2,1,1)
-    plt.plot(f,color='k',alpha=0.3)
-    plt.plot(x,interp_f)
-    plt.plot(x[where_not_bool_in_slice],interp_f[where_not_bool_in_slice],
-             color='r')
-    plt.subplot(2,1,2)
-    plt.plot(stdev-epsilon)
-    plt.axhline(thresh,linestyle='--')
-    plt.axhline(-thresh,linestyle='--')
-    plt.show()
-    """
     no_event_possible[slice_to_use] = bool_interp
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
@@ -141,13 +133,6 @@ def force_value_mask_function(split_fec,slice_to_use,
                        min_points_between=min_points_between,
                        get_best_slice_func=get_best_slice_func)
     boolean_updated,probability_updated = ret
-    """
-    # XXX debugging...
-    Plotting.debug_plot_force_value(x,f,interp_f,probability,
-                                    probability_updated,
-                                    slice_to_use,bool_interp)
-    plt.show()
-    """
     return slice_to_use,boolean_updated,probability_updated
 
 def safe_reslice(original_boolean,original_probability,condition,
@@ -211,31 +196,6 @@ def safe_reslice(original_boolean,original_probability,condition,
             new_boolean[keep_idx] = 1
             new_probability[keep_idx] = original_probability[keep_idx]
         # pick out the minimum derivative slice within each previous slice
-    """
-    # XXX debugging
-    ylim = [min(original_probability)/2,2]
-    plt.subplot(3,1,1)
-    plt.plot(condition,label="condition")
-    idx = np.arange(condition.size)
-    colors = ['r','g']
-    for i,e in enumerate(new_events):
-        plt.plot(idx[e],condition[e],color=colors[i % 2],linewidth=3)
-    plt.ylim([-0.2,1.1])
-    PlotUtilities.lazyLabel("","","")
-    plt.subplot(3,1,2)
-    plt.plot(new_boolean+1.1,label="new")
-    plt.plot(new_probability)
-    plt.ylim(ylim)
-    PlotUtilities.lazyLabel("index","","")
-    plt.yscale("log")
-    plt.subplot(3,1,3)
-    plt.plot(original_boolean+1.1,label="original")
-    plt.plot(original_probability)
-    plt.yscale("log")
-    plt.ylim(ylim)
-    PlotUtilities.lazyLabel("index","","")
-    plt.show()
-    """
     return new_boolean,new_probability
 
 def derivative_mask_function(split_fec,slice_to_use,
@@ -289,9 +249,6 @@ def derivative_mask_function(split_fec,slice_to_use,
     diff_sliced = interp_sliced - force_sliced
     local_stdev = Analysis.local_stdev(diff_sliced,n_points)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    df_true = Analysis.local_centered_diff(interp_sliced,n=min_points_between)
-    df_relative = df_true-(-epsilon)
-    ratio_min_threshold = -1
     # XXX debuugging...
     idx_offset_approach = split_fec.get_predicted_approach_surface_index()
     n_approach = split_fec.approach.Force.size
@@ -309,26 +266,32 @@ def derivative_mask_function(split_fec,slice_to_use,
     med_deriv_appr = np.median(approach_interp_deriv)
     std_deriv_appr = np.std(approach_interp_deriv)
     kwargs_approach_deriv = dict(loc=med_deriv_appr,
-                                 scale=std_deriv_appr)
+                                 scale=std_deriv_appr,
+                                 negative_only=True)
     # modulate the probabilities by the approach
-    """
-    #XXX debugging
-    Plotting.debug_plot_derivs(approach_time,approach_force,
-                      approach_interp_sliced,x_sliced,
-                      force_sliced,interp_sliced,
-                      approach_interp_deriv,interp_slice_deriv,
-                      min_deriv)
-    plt.show()
-    """
-    prob_mod = _spline_derivative_probability_generic(x_sliced,interp,
-                                                      **kwargs_approach_deriv)
-    probability_updated[slice_to_use] *= prob_mod
+    probability_deriv = \
+            _spline_derivative_probability_generic(x_sliced,interp,
+                                                   **kwargs_approach_deriv)
+    probability_updated[slice_to_use] *= probability_deriv
+    boolean_ret[slice_to_use] = probability_updated[slice_to_use] < threshold
+    return slice_to_use,boolean_ret,probability
+
+
+def integral_mask_function(split_fec,slice_to_use,
+                           boolean_array,probability,threshold,
+                           *args,**kwargs):
     # modify again, based on the integal noise
+    x = split_fec.retract.Time
+    x_sliced = x[slice_to_use]
+    n_points = split_fec.tau_num_points
+    min_points_between = _min_points_between(n_points)
+    force_sliced = split_fec.retract.Force[slice_to_use]
+    boolean_ret = boolean_array.copy()
+    probability_updated = probability.copy()
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
     diff = force_sliced-interp_f
     stdev = Analysis.local_stdev(diff,n_points)
-    med = np.median(interp_f)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     # essentially: when is the interpolated value 
     # at least one (local) standard deviation above the median
@@ -338,56 +301,33 @@ def derivative_mask_function(split_fec,slice_to_use,
     # the threshold is the noise sigma times  the number of points 
     # (2*num_between)
     thresh_integral = 2 * sigma * min_points_between
-    probability_updated[slice_to_use] *= \
-            _no_event_chebyshev(local_integral,0,thresh_integral)
+    probability_integral = _no_event_chebyshev(local_integral,0,thresh_integral)
+    probability_updated[slice_to_use] *= probability_integral
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
+    return slice_to_use,boolean_ret,probability_updated
+
+def delta_mask_function(split_fec,slice_to_use,
+                        boolean_array,probability,threshold,
+                        *args,**kwargs):
+    x = split_fec.retract.Time
+    x_sliced = x[slice_to_use]
+    n_points = split_fec.tau_num_points
+    min_points_between = _min_points_between(n_points)
+    force_sliced = split_fec.retract.Force
+    boolean_ret = boolean_array.copy()
+    probability_updated = probability.copy()
+    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
+    interp_f = interpolator(x_sliced)
+    df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    df_relative = df_true-(-epsilon)
     # finally, modulate by the ratio 
     k_cheby_ratio = np.minimum(df_relative/sigma,1)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     probability_updated[slice_to_use] *= ratio_probability
-    plt.subplot(2,1,1)
-    plt.plot(interp_f)
-    plt.subplot(2,1,2)
-    plt.semilogy(ratio_probability)
-    plt.show()    
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold) 
     """
-    #XXX debugging
-    xlim = [min(time),max(time)]
-    plt.subplot(4,1,1)
-    plt.plot(x_sliced,force_sliced,alpha=0.3,color='k')
-    plt.plot(x_sliced,interp_f)
-    plt.xlim(xlim)
-    plt.subplot(4,1,2)
-    plt.semilogy(x_sliced,prob_mod,label='new',linestyle='--')
-    plt.semilogy(x_sliced,probability[slice_to_use]*prob_mod,color='r',
-                label='old')
-    plt.xlim(xlim)  
-    plt.legend()    
-    plt.subplot(4,1,3)
-    plt.plot(x_sliced,local_integral)
-    plt.axhline(sigma+epsilon,color='r',linestyle='--')
-    plt.axhline(thresh_integral)
-    plt.xlim(xlim)  
-  
-    plt.subplot(4,1,4)
-    plt.semilogy(time,probability_updated,color='g',label='updated',
-                 linestyle='--')
-    plt.semilogy(time,probability,color='r',label='old')
-    plt.xlim(xlim)
-    plt.legend()
-    plt.show()
-    # XXX debugging
-    xlim = [min(time),max(time)]
-    plt.subplot(2,1,1)
-    plt.plot(x_sliced,interp(x_sliced))
-    plt.xlim(xlim)
-    plt.subplot(2,1,2)
-    plt.plot(time,probability_updated)
-    plt.xlim(xlim)
-    plt.yscale("log")
-    plt.show()
-    """
+    XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ( (interp_slice_deriv > 0) |
@@ -400,27 +340,6 @@ def derivative_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    #XXX debugging
-    """
-    Plotting.debug_plot_derivative_ratio(time,slice_to_use,
-                                         ratio,interp_sliced,force_sliced,
-                                         interp_slice_deriv,
-                                         boolean_ret,probability_updated,
-                                         absolute_min_idx,ratio_min_threshold)
-    plt.show()
-    #XXX debugging...
-    xlim = [min(time),max(time)]
-    plt.subplot(2,1,1)
-    plt.plot(x_sliced,force_sliced*1e12)
-    plt.xlim(xlim)
-    PlotUtilities.lazyLabel("","Force","")
-    plt.subplot(2,1,2)
-    plt.semilogy(time,probability_updated)
-    plt.plot(time,boolean_array + 1.1,label="original")
-    plt.plot(time,boolean_ret + 1.1,label="updated")
-    plt.xlim(xlim)
-    PlotUtilities.lazyLabel("Time","masks","")
-    plt.show()
     """
     return slice_to_use,boolean_ret,probability_updated
 
@@ -926,7 +845,8 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,
+              integral_mask_function,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)
