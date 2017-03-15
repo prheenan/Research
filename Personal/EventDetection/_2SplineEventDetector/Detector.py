@@ -247,7 +247,6 @@ def derivative_mask_function(split_fec,slice_to_use,
     interp_sliced = interp(x_sliced)
     interp_slice_deriv = interp(x_sliced,1)
     diff_sliced = interp_sliced - force_sliced
-    local_stdev = Analysis.local_stdev(diff_sliced,n_points)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     # XXX debuugging...
     idx_offset_approach = split_fec.get_predicted_approach_surface_index()
@@ -311,13 +310,15 @@ def delta_mask_function(split_fec,slice_to_use,
                         *args,**kwargs):
     x = split_fec.retract.Time
     x_sliced = x[slice_to_use]
+    force_sliced = split_fec.retract.Force[slice_to_use]
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)
-    force_sliced = split_fec.retract.Force
     boolean_ret = boolean_array.copy()
     probability_updated = probability.copy()
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
+    median = np.median(interp_f)
+    stdev = Analysis.local_stdev(force_sliced-interp_f,n_points)
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     df_relative = df_true-(-epsilon)
@@ -325,22 +326,23 @@ def delta_mask_function(split_fec,slice_to_use,
     k_cheby_ratio = np.minimum(df_relative/sigma,1)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     probability_updated[slice_to_use] *= ratio_probability
+    tol = 1e-9
+    where_no_event = np.where(1-ratio_probability<tol)[0]
+    if (where_no_event.size > 0):
+        probability_updated[slice_to_use][where_no_event] = 1
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold) 
-    """
-    XXX debugging without this...
+    #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    gt_condition[slice_to_use] = ( (interp_slice_deriv > 0) |
-                                   (interp_sliced - stdev < median) )
+    gt_condition[slice_to_use] = (interp_f - stdev < median)
     get_best_slice_func = lambda slice_list: \
-        get_slice_by_max_value(interp_sliced,slice_to_use.start,slice_list)
+        get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    """
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
@@ -397,7 +399,7 @@ def _min_points_between(autocorrelation_tau_num_points):
     Args:
         autocorrelation_tau_num_points: number of filtering points
     """
-    return int(np.ceil(autocorrelation_tau_num_points/2))
+    return int(np.ceil(autocorrelation_tau_num_points/4))
     
 def adhesion_mask(surface_index,n_points,split_fec,
                   probability_distribution,threshold):
@@ -845,8 +847,8 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,derivative_mask_function,
-              integral_mask_function,delta_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function,
+              derivative_mask_function,integral_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

@@ -57,7 +57,7 @@ def run():
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         Plotting.plot_individual_learner(debug_directory,l)
-    num_to_plot = 5
+    num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -102,7 +102,7 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 1e-2
+    threshold = 1e-3
     example_numbers = []
     examples_filtered = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
