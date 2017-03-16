@@ -33,11 +33,12 @@ def run(base="./"):
     """
     data_base = base + "data/"
     out_fig = "algorithm.pdf"
+    force = Flase
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
-                                  force=False,cache_directory=data_base)
+                                  force=force,cache_directory=data_base)
     n_filter = 1000
     markevery = 1000
-    kw = dict(cache_directory=data_base,force=False)
+    kw = dict(cache_directory=data_base,force=force)
     events = example.Events
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
     event_idx_retract = fec_split.get_retract_event_centers()
@@ -184,7 +185,7 @@ def run(base="./"):
                               style_retract_error_dist,label="masked no-event")
     PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
     tick_function()
-    PlotUtilities.label_tom(fig,loc=(-1.1,1.0))
+    PlotUtilities.label_tom(fig,loc=(0,0))
     PlotUtilities.savefig(fig,out_fig,
                           subplots_adjust=dict(hspace=0.2,wspace=0.2))
     
