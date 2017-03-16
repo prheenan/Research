@@ -3,7 +3,7 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,string
 
 sys.path.append("../../../../../../../")
 from GeneralUtil.python import PlotUtilities
@@ -121,7 +121,7 @@ def run(base="./"):
     plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
              **style_approach)
     PlotUtilities.lazyLabel("","Force [pN]",
-                            "$\epsilon$,$\sigma$ estimated from the approach",
+                            "Estimating $\epsilon$ and $\sigma$",
                             frameon=True)
     plt.xlim(xlim_approach)
     tick_function()
@@ -132,7 +132,7 @@ def run(base="./"):
     Plotting.before_and_after(x_plot,force_filtered_plot,
                               slice_before,slice_after,style_filtered,
                               label="Spline ($g^{*}_t$)))")
-    title = "Calculating the retract's no-event probability"
+    title = "Calculating the no-event probability"
     PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
     tick_function()
     PlotUtilities.no_x_ticks()
