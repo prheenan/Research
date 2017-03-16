@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 from Research.Personal.EventDetection.Util.Learning import  learning_curve
-
+from GeneralUtil.python import CheckpointUtilities,GenUtilities
 from Research.Personal.EventDetection.Util import \
     Learning,InputOutput,Analysis
 
@@ -44,6 +44,8 @@ class plotting_metrics:
                                ruptures_valid_pred[self.best_param_idx]
         self.valid_scores = \
             l._scores_by_params(train=False)[self.best_param_idx]
+        self.train_scores = \
+            l._scores_by_params(train=True)[self.best_param_idx]
     def to_true_and_pred_distances(self,floor_is_max=True):
         kwargs = dict(floor_is_max = floor_is_max)
         to_true = Learning.\

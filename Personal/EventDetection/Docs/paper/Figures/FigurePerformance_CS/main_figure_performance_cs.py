@@ -5,7 +5,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys,pickle,os,string
 
-import svgutils.compose as sc
 sys.path.append("../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
