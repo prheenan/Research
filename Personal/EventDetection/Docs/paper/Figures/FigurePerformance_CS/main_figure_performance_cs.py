@@ -29,7 +29,10 @@ def write_coeffs_file(out_file,coeffs):
     for c in coeffs:
         tmp =[ [opt_high,r"bc2 ($\uparrow$)",c.bc_2d],
                [opt_low,r"median ($\downarrow$)",c.cat_median],
-               [opt_low,r"q ($\downarrow$)",c.cat_q]]
+               [opt_low,r"q ($\downarrow$)",c.cat_q],
+               [opt_low,r"relative median ($\downarrow$)",
+                c.cat_relative_median],
+               [opt_low,r"relative q ($\downarrow$)",c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
@@ -133,9 +136,9 @@ def run(base="./"):
                                   style_pred=style_pred,
                                   xlabel=xlabel_histogram)
         gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
-                                              height_ratios=[2,2,1],
+                                              height_ratios=[2,1],
                                               subplot_spec=entire_figure[i],
-                                              wspace=0.4,hspace=0.4)
+                                              wspace=0.4,hspace=0.5)
         # plot the metric plot
         Plotting.rupture_plot(true,pred,use_legend=use_legend,
                               lim_plot_load=lim_load_max,
@@ -151,9 +154,11 @@ def run(base="./"):
     letters = [ ["({:s}{:d})".format(s,n+1) for n in range(n_subplots)]
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
-    PlotUtilities.label_tom(fig,flat_letters,loc=(-1.1,1.1),fontsize=15)
+    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.1),fontsize=18)
     final_out_path = out_base + "landscape.pdf"
-    PlotUtilities.savefig(fig,final_out_path,hspace=0.2,wspace=0.3)
+    PlotUtilities.savefig(fig,final_out_path,
+                          subplots_adjust=dict(left=0.10,
+                                               hspace=0.2,wspace=0.2,top=0.95))
 
 
 

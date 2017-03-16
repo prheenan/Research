@@ -140,7 +140,7 @@ def run(base="./"):
     plot_line("")
     PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
                             legend_kwargs=dict(numpoints=1))
-    PlotUtilities.label_tom(fig,loc=(-1.12,0.97))
+    PlotUtilities.label_tom(fig,loc=(-0.12,0.97))
     PlotUtilities.savefig(fig,out_fig)
     
 

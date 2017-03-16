@@ -316,7 +316,7 @@ def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
     """
     return bhattacharyya_probability_coefficient_dd(v1,v2,[bins])
 
-def bhattacharyya_probability_coefficient_dd(v1,v2,bins,normed=True):
+def bhattacharyya_probability_coefficient_dd(v1,v2,bins,normed=False):
     """
     # return the bhattacharyya distance between arbitrary-dimensional
     #probabilities, see  bhattacharyya_probability_coefficient

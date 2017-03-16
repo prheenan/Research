@@ -224,49 +224,40 @@
 
 \clearpage
 
-Signature Page
+\section{Signature Page}
 
 \clearpage
 
-Abstract
+\section{Abstract}
 
 \begin{abstract}
 
-\firstp Single Molecule Force Spectroscopy (\singlemol{}) is a technique which applies mechanical forces to individual biomolecules via a force probe such as an optical trap or an atomic force microscope (AFM). In \singlemol{} unfolding experiments, the molecule of interest is pulled apart and the force at each molecalr extension is measured. Although these unfolding experiments are capable of measuring a wide class of molecular phenomena, interpreting \singlemol{} data is hindered by identifying where unfolding events occur. This paper introduces a new algorithm, \name{} (\acronym), for identifying the locations of molecular unfolding events. Relative to two other event-detection algorithms, \name{} features a 100-fold improvement in event localization and an increase of 0.2 in the Bhattacharyya coefficient of the joint probability distribution of event loading rates and rupture forces. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.
+\firstp Single Molecule Force Spectroscopy (\singlemol{}) is a technique which applies mechanical forces to individual biomolecules via a force probe such as an optical trap or an atomic force microscope (AFM). In \singlemol{} unfolding experiments, the molecule of interest is pulled apart and the force at each molecalr extension is measured. Although these unfolding experiments are capable of measuring a wide class of molecular phenomena, interpreting \singlemol{} data is hindered by identifying where unfolding events occur. This paper introduces a new algorithm, \name{} (\acronym), for identifying the locations of molecular unfolding events. Relative to two other event-detection algorithms on an annotated data set, \name{} features a median event localization error of 4nm, a 100-fold improvement, and a Bhattacharyya coefficient of 0.96, an improvement of 0.4, for the joint probability distribution of event loading rates and rupture forces. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.
 \end{abstract}
 
 \clearpage
 
-Dedication
+\section{Dedication}
 
 \clearpage
 
-Acknowledgements
-
-\clearpage
-
-Contents
+\section{Table of Contents Page}
 
 \tableofcontents
 
 \clearpage
 
-List of Tables 
+\section{List of Tables Page}
 
 \listoftables
 
-
 \clearpage
 
-List of Figures 
+\section{List of Figures Page}
 
- 
 \listoffigures
  
-
 \clearpage
-
-Text
 
 % 'Items 1-8 in list are numbered with lower case Roman numerals.'
 % see: http://tex.stackexchange.com/questions/7355/how-to-suppress-page-number
@@ -301,7 +292,7 @@ Methods exist to automate manually sorting \singlemol{} data and detect tip-samp
 
 This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (\acronym{}), require no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges. \name{} is so-named since it is designed to make few assumptions about the data, operate over a wide range of AFM data, and require a small time and memory footprint compared to existing techniques.\pl
 
-  In the first part of the paper, we describe the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). We then discuss manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, we discuss the details of \name{} and highlight its improved performance and timing relative to two other methods. \pl
+ The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). After, this research details manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (XXX cite available online? cite table giving data information?). Finally, the details and improved performance of \name{} are described \pl
 
 \section{\sLabel{Materials}Materials and Methods}
 
@@ -322,8 +313,7 @@ This paper describes a new method based on machine learning for detecting events
 \caption[Definition of rupture force and loading rate]{\fLabel{Rupture} (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force are defined as the last data point above the linear fit in the fitting region. The loading rate is defined by the slope of the linear fit. }
 \end{figure}
 
-
-\firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are available at (XXX link). (XXX table on data information) \pl 
+\firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are available at (XXX link?). \pl
 
 The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in \fRef{Rupture}. The region leading up to the event start was fit by a line, with the region length set to 2\% of the number of points in the retract. The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line at the time value where the data was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in \fRef{Performance}. \pl
 
@@ -332,51 +322,30 @@ The expected rupture forces and loading rates were calculated from the annotated
 \subsection{\sLabel{Algorithm}Algorithm Design}
 
 
-\begin{figure}
-  \begin{lstlisting}[language=Python]
-def event_indices(force,threshhold):
-   autocorrelation = [0,1] normalized autocorrelation of force
-   med = median of autocorrelation
-   autocorrelation_small_t = autocorrelation until reaching med
-   $\tau$ = slope from line fit to log of autocorrelation_small_t
-   N = number of points in force
-   grid = array of points each spaced $\tau$ apart
-   g$^{*}$ = second-order spline fit to force using grid for knots
-   r = force - g$^{*}$
-   n = number of points in force
-   s[i] = standard deviation of r[max(0,i-$\tau$/2):min(i+$\tau$/2,n)]
-   $\epsilon$ = median of s
-   $\sigma$ = standard deviation of s within its interquartile region
-   k = (s-$\epsilon$)/$\sigma$
-   chebyshev = max(1,1/k$^2$)
-   possible_events = indices where chebyshev <= threshhold
-   # XXX: add in derivative filtering
-   return possible_events
-\end{lstlisting}
-\caption[\name{} Psuedocode]{\noindent\fLabel{Code}\pStartF XXX code  \pEndF }
-\end{figure}
-
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
-\firstp XXXNumber metrics were used for comparing the event-finding performance of \name with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j' represent either true (t) or predicted (p): \pl
+\firstp Three metrics were used for comparing the event-finding performance of \name with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j' represent either true (t) or predicted (p): \pl
 
 \eqs{ 
 x_k &\equiv \text{the total displacement of the force extension curve} \\
 d_{i\rightarrow j,k} &\equiv \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\
-q_{\text{x},i\rightarrow j} &\equiv \text{ the `x` percentile of } d_{i\rightarrow j} \text{ over all k } \\
+f_{\text{x}} &\equiv \text{ the `x'-th percentile of the concatenation of } \frac{1}{x_k}d_{t\rightarrow p,k} \text{ and } \frac{1}{x_k}d_{p\rightarrow t,k} \text{ over all k } \\
+z_{\text{x}} &\equiv \text{ as f$_{\text{x}}$, but without dividing by $x_k$}\\
 \nu_i &\equiv \text{ distribution of `i' loading rates over all k} \\
 F_i &\equiv \text{ distribution of `i' rupture forces over all k} \\
 d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\
  }
 
-For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. Note that $F_{1,k}$ is the distance analogue to an $F_1$ score (XXX cite). The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data. \pl
+\firstp For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data. \pl
 
 \begin{table}
-\begin{tabularx}{\textwidth}{ l | l | l | l | l }
+\begin{tabularx}{\textwidth}{ l | l | l | l  }
 \hline \hline
-Shorthand & Description & Equation  & Range & \text{Optimum} \e 
-Recall &  ?? &  &    & \e
-BC$_{\nu,F}$ & Bhattacharyya Coefficient & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
+Shorthand & Description  & Range & \text{Optimum} \e 
+[f$_{50}$,f$_{85}$] & 50th and 85th percentile relative distance &   [0,1] & 0 \e
+[z$_{50}$,z$_{85}$]& 50th and 85th percentile absolute distance & 
+[0,max(x$_k$)] &  0 \e
+BC$_{\nu,F}$ & Bhattacharyya Coefficient: $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
 \end{tabularx}
 \caption[Definition of algorithmic performance metrics]{\tLabel{metrics} }
 \end{table}
@@ -387,10 +356,10 @@ The metrics are constructed such $BC_{v,F}$ is one if and only if the joint dist
 \begin{table}
 \begin{tabularx}{\textwidth}{ l || l | l | l | l | l }
 \hline \hline
- & bc2 ($\uparrow$) & median ($\downarrow$) & q ($\downarrow$)\e\hline 
-no event & \textbf{0.731} & \textbf{4.45e-09} & \textbf{9.42e-09}\e
-open fovea & 0.0912 & 4.32e-07 & 9.51e-07\e
-wavelet transform & 0.512 & 5.25e-07 & 1.77e-06\e
+ & bc2 ($\uparrow$) & median ($\downarrow$) & q ($\downarrow$) & relative median ($\downarrow$) & relative q ($\downarrow$)\e\hline 
+no event & \textbf{0.96} & \textbf{4.45e-09} & \textbf{9.42e-09} & \textbf{0.00272} & \textbf{0.0054}\e
+open fovea & 0.354 & 4.32e-07 & 9.51e-07 & 0.261 & 0.57\e
+wavelet transform & 0.556 & 5.25e-07 & 1.77e-06 & 0.318 & 1\e
 \end{tabularx}
 \caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics across the three algorithms. The optimal algorithm row for each metric is highlighted in bold, depending on if the metric optimum is low (denoted by a $\downarrow$ next to the name) or high (denoted by a $\uparrow$ next to the name).} 
 \end{table}
@@ -496,11 +465,11 @@ To create azide-functionalized surfaces, etched glass was activated using 30 min
 
 \subsubsection{\sLabel{Sample}DNA Samples}
 
-\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include three biotinylated thyimine bases and a 5-prime biotin after a PEG spacer, and the forward-sense primer was modified to include a 5-prime DBCO after a PEG-spacer (see \tRef{Sequences}). After the PCR product was purified \supply{Qiagen}{28106} and the 1.9kbp band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \\
+\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include three biotinylated thyimine bases and a 5-prime biotin after a PEG spacer, and the forward-sense primer was modified to include a 5-prime DBCO after a PEG-spacer (see \tRef{Sequences}). After the PCR product was purified \supply{Qiagen}{28106} and the 1.9kbp band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \pl
 
-The purity of the DNA was verified by depositing 20pmol of DNA in imaging buffer (3mM Nickel (XXX), 10mM Hepes (XXX) at pH 7) onto freshly-cleaved mica for 30 minutes, rinsing serially 5 times with 1mL of deionized water and 5 times with imaging buffer (XXX) and imaging (XXX figure)\pl 
+The purity of the DNA was verified by depositing 20pmol of DNA in imaging buffer, 3mM Nickel \supply{Sigma}{654597}, 10mM Hepes \supply{Sigma}{H4034} at pH 7, onto freshly-cleaved, 10mm diameter, V1 mica \supply{Ted Pella}{50} for 10 minutes, rinsing serially 5 times with 1mL of deionized water and 5 times with imaging buffer. The sample was then imaged with Cypher using a cantilever with a spring constant of $\approx 300 \frac{\text{pN}}{\text{nm}}$ \supply{Bruker}{SNL-10} with a line scan rate of 1Hz and free amplitude of $\approx$1nm (\fRef{Prep}).\pl 
 
-For DNA deposition, 20uL of the desired concentration of DNA (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see \sRef{Surfaces}) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
+For DNA deposition onto azide surface, 20uL of the DNA at 40nM (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see \sRef{Surface}) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE at pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
 
 \subsubsection{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
 
@@ -562,6 +531,33 @@ The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution 
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
 \caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Algorithm experiment \pEndF }
+\end{figure}
+
+
+\subsubsection{Algorithm psuedocode}
+
+\begin{figure}
+  \begin{lstlisting}[language=Python]
+def event_indices(force,threshhold):
+   autocorrelation = [0,1] normalized autocorrelation of force
+   med = median of autocorrelation
+   autocorrelation_small_t = autocorrelation until reaching med
+   $\tau$ = slope from line fit to log of autocorrelation_small_t
+   N = number of points in force
+   grid = array of points each spaced $\tau$ apart
+   g$^{*}$ = second-order spline fit to force using grid for knots
+   r = force - g$^{*}$
+   n = number of points in force
+   s[i] = standard deviation of r[max(0,i-$\tau$/2):min(i+$\tau$/2,n)]
+   $\epsilon$ = median of s
+   $\sigma$ = standard deviation of s within its interquartile region
+   k = (s-$\epsilon$)/$\sigma$
+   chebyshev = max(1,1/k$^2$)
+   possible_events = indices where chebyshev <= threshhold
+   # XXX: add in derivative filtering
+   return possible_events
+\end{lstlisting}
+\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF XXX code  \pEndF }
 \end{figure}
 
 

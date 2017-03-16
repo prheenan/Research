@@ -185,8 +185,8 @@ def run(base="./"):
                               style_retract_error_dist,label="masked no-event")
     PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
     plt.ylim([min(plt.ylim()),1.5])
-    tick_function()
-    PlotUtilities.label_tom(fig,loc=(0,0))
+    #tick_function()
+    PlotUtilities.label_tom(fig,loc=(-0.15,1.0))
     PlotUtilities.savefig(fig,out_fig,
                           subplots_adjust=dict(hspace=0.2,wspace=0.2))
     

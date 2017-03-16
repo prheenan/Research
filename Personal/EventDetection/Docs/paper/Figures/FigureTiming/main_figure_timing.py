@@ -63,7 +63,7 @@ def get_supplemental_figure(output_path,trials):
         PlotUtilities.ylabel(y_label)
         if (last):
             PlotUtilities.xlabel(x_label)            
-        PlotUtilities.title("Runtime, C curves of length N ({:s})".\
+        PlotUtilities.title("Total runtime ({:s})".\
                             format(description))
         plt.subplot(n_rows,n_cols,plot_idx+1)
         style_dict = dict(style_data=style_data[i],style_pred=style_pred[i])
@@ -77,7 +77,7 @@ def get_supplemental_figure(output_path,trials):
             PlotUtilities.xlabel("")
         PlotUtilities.ylabel(y_label_big_o)
         plt.ylim(ylim_big_o)
-    PlotUtilities.label_tom(fig,loc=(-1.12,1.05))
+    PlotUtilities.label_tom(fig,loc=(-0.15,1.05))
     PlotUtilities.savefig(fig, output_path)
 
 
@@ -120,12 +120,10 @@ def make_main_figure(output_path,trials):
     plt.ylim(ylim)
     plt.subplot(1,2,2)
     TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
-    ylim = plt.ylim()
-    ylim = [min(ylim),max(ylim)*2]
-    plt.ylim(ylim)
+    plt.ylim([1e3,3e6])
     PlotUtilities.legend(loc="lower right",frameon=True)
     PlotUtilities.title(r"No event asymptotic T(N) is $\geq$10x faster")
-    PlotUtilities.label_tom(fig)
+    PlotUtilities.label_tom(fig,loc=(-0.15,1))
     PlotUtilities.savefig(fig,output_path)
 
 
