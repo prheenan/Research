@@ -16,16 +16,20 @@ import matplotlib.gridspec as gridspec
 from Research.Personal.EventDetection.Util.Plotting \
     import algorithm_colors,algorithm_markers,algorithm_linestyles
 
+def coeff_str(i,j,c,coeffs_array,func):
+    to_ret = "{:.3g}".format(c)
+    if (func(coeffs_array[:,j]) == i):
+        to_ret = r"\textbf{" + to_ret + "}"
+    return to_ret
+
 def write_coeffs_file(out_file,coeffs):
-    opt_low = lambda x: np.argsort(x)
-    opt_high = lambda x: opt_low(x)[::-1]
+    opt_low = lambda x: np.argmin(x)
+    opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
-        tmp =[ [opt_high,"bc2",c.bc_2d],
-               [opt_low,"medtrue",c.median_true],
-               [opt_low,"medpred",c.median_pred],
-               [opt_low,"qtrue",c.q_true],
-               [opt_low,"qpred",c.q_pred]]
+        tmp =[ [opt_high,r"bc2 ($\uparrow$)",c.bc_2d],
+               [opt_low,r"median ($\downarrow$)",c.cat_median],
+               [opt_low,r"q ($\downarrow$)",c.cat_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
@@ -33,11 +37,13 @@ def write_coeffs_file(out_file,coeffs):
     method_names = [c.name for c in coeffs]
     # get the list of coefficients
     coeffs = [[f[2] for f in coeff_tmp] for coeff_tmp in funcs_names_values ]
+    coeffs_array = np.array(coeffs)
     join_str = " & "
     str_v = join_str + join_str.join(coeff_names) + "\e\\hline \n"
-    for name,c in zip(method_names,coeffs): 
+    for i,(name,c) in enumerate(zip(method_names,coeffs)): 
         str_v += "{:s}{:s}".format(name,join_str)
-        str_v += join_str.join(["{:.3g}".format(c_tmp) for c_tmp in c])
+        str_v += join_str.join([coeff_str(i,j,c_tmp,coeffs_array,funcs[j]) 
+                                for j,c_tmp in enumerate(c)])
         str_v += "\\e\n"
     with open(out_file,'w') as f:
         f.write(str_v)

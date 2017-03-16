@@ -10,16 +10,13 @@ from Research.Personal.EventDetection.Util import \
     Learning,InputOutput,Analysis
 
 class coeffs:
-    def __init__(self,bc_loading,bc_rupture,bc_2d,median_true,median_pred,
-                 q_true,q_pred,name):
+    def __init__(self,bc_loading,bc_rupture,bc_2d,cat_median,cat_q,name):
         self.name = name
         self.bc_loading = bc_loading
         self.bc_rupture = bc_rupture
         self.bc_2d = bc_2d
-        self.median_true=median_true
-        self.median_pred=median_pred
-        self.q_true=q_true
-        self.q_pred=q_pred
+        self.cat_median = cat_median
+        self.cat_q = cat_q
 
 class plotting_metrics:
     def __init__(self,l,ret):
@@ -94,17 +91,14 @@ class plotting_metrics:
                                                bins_load,ruptures_true,
                                                ruptures_pred,bins_rupture)
         to_true,to_pred = self.to_true_and_pred_distances()
-        q = 75
+        q = 85
         if (len(to_true) > 0):
-            median_true = np.median(to_true)
-            median_pred  = np.median(to_pred)
-            q_true  = np.percentile(to_true,q)
-            q_pred = np.percentile(to_pred,q)
-        else: 
-            median_true,median_pred  = -1,-1
-            q_true,q_pred  = -1,-1
-        return coeffs(*tmp,median_true=median_true,median_pred=median_pred,
-                      q_true=q_pred,q_pred=q_pred,name=self.name)
+            cat = np.concatenate([to_true,to_pred])
+        else:
+            cat = to_true
+        cat_median = np.median(cat)
+        cat_q = np.percentile(cat,q)
+        return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name)
 
 def metrics(true,pred):
     """
