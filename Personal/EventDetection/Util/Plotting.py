@@ -344,8 +344,8 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
-    PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
-                            frameon=True,legend_kwargs=dict(numpoints=1),
+    PlotUtilities.lazyLabel("Loading Rate [pN/s]",r"F$_{\mathrm{rupt}}$[pN]",
+                            title,frameon=True,legend_kwargs=dict(numpoints=1),
                             useLegend=use_legend,loc=loc)
 
 
@@ -472,7 +472,7 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
                             frameon=True)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
-                                 style_true,style_pred):
+                                 style_true,style_pred,xlabel="Distance [m]"):
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
     if (to_pred.size > 0):
@@ -481,7 +481,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         plt.hist(to_true,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
-    PlotUtilities.lazyLabel("Distance [nm]","Count","",frameon=True)
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=True)
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """

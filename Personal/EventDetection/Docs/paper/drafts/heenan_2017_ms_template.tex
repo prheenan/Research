@@ -308,7 +308,7 @@ This paper describes a new method based on machine learning for detecting events
 
 \subsection{\sLabel{Surface}Atomic force microscopy}
 
-\firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2 second pause at the surface (see XXX) at the pulling velocities noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid.  \pl
+\firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method (cite XXX). All measurements were carried out with a 2 second pause at the surface at the pulling velocities noted in the text. To avoid possible non-uniform distributions of the sample in spaces, measurements were taken at points 1$\muup$m separated over a 30$\muup$m x 30$\muup$m grid.  \pl
 
 \subsection{\sLabel{Annotation}Data annotation}
 
@@ -400,18 +400,22 @@ XXX inttro
 \firstp The following two algorithms were chosen for comparison: \pl
 
 \begin{enumerate}
-\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package (XXX cite)
+\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\cite{roduit_openfovea:_2012}
 \item The general-purpose `find\_peaks\_cwt' method from the Numerical Python package.
 \end{enumerate}
 
  These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (XXX table). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Numerical Python method is wavelet-based algorithm. \pl
+
+\subsection{\sLabel{Tuning}Algorithm tuning }
+
+\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (figure XXX). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter.
 
 
 \section{\sLabel{Results}Results}
 
 \subsection{\sLabel{Timing}Algorithmic time complexity}
 
-\firstp \fRef{Timing} compares the runtimes, T(n), of FEATHER and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name{} having XXX  runtime coefficients.  \pl
+\firstp \fRef{Timing} compares the runtimes, T(n), of \name{} and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name{} having XXX  runtime coefficients.  \pl
 
 \begin{figure}
 \centering
@@ -421,10 +425,12 @@ XXX inttro
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
 
+
+
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms  \pEndF }
+\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}`s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined by (XXX). (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The Bhattacharya coefficiences for (XXX). (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for Numerical Python \pEndF }
 \end{figure}
 
 
