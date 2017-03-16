@@ -9,6 +9,11 @@ IFS=$'\n\t'
 # datestring, used in many different places...
 dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
+function copy_pdfs()
+{
+    cp ${1}*.pdf ${2}
+}
+
 function make_and_copy_figure()
 {
     out_path=$1
@@ -50,12 +55,13 @@ cartoon_dir="${base_dir_rel}FigureCartoon/"
 timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
-make_and_copy_figure $out_path "${base_dir_rel}/FigureAlgorithm/"
-make_and_copy_figure $out_path $timing_dir
-make_and_copy_figure $out_path $cartoon_dir
-make_and_copy_figure $out_path $prep_dir
-make_and_copy_figure $out_path $rupture_dir
-make_and_copy_figure $out_path "${base_dir_rel}FigurePerformance_CS/"
+copy_pdfs ${base_dir_rel}FigurePerformance_CS/ $out_path 
+copy_pdfs ${base_dir_rel}FigureAlgorithm/ $out_path 
+copy_pdfs ${base_dir_rel}FigureTuning/ $out_path 
+copy_pdfs ${timing_dir} $out_path 
+copy_pdfs ${cartoon_dir} $out_path 
+copy_pdfs ${prep_dir} $out_path 
+copy_pdfs ${rupture_dir} $out_path 
 
 
 

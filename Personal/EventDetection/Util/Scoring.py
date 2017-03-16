@@ -104,7 +104,11 @@ class score:
         Args:
              kwargs: passed to minimum_distance_distribution
         """
-        return len(self.true_x),len(self.pred_x)
+        return self.n_true(),self.n_pred()
+    def n_true(self):
+        return len(self.true_x)
+    def n_pred(self):
+        return len(self.pred_x)
     def max_displacement(self):
         to_ret = abs(self.max_x-self.min_x)
         return to_ret

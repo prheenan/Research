@@ -35,8 +35,10 @@ class split_force_extension:
     def set_espilon_and_sigma(self,epsilon,sigma):
         self.epsilon =epsilon
         self.sigma = sigma
-    def calculate_epsilon_and_sigma(self,n_points=None,
-                                    slice_fit_approach=None):
+    def _approach_stdevs_epsilon_and_sigma(self,n_points=None,
+                                           slice_fit_approach=None):
+        if (n_points is None):
+            n_points = self.tau_num_points
         if (slice_fit_approach is None):
             approach_surface_idx = self.get_predicted_approach_surface_index()
             slice_fit_approach= slice(0,approach_surface_idx,1)
@@ -50,8 +52,11 @@ class split_force_extension:
         stdevs,epsilon,sigma = \
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
+        return stdevs,epsilon,sigma
+    def calculate_epsilon_and_sigma(self,*args,**kwargs):
+        stdevs,epsilon,sigma = self._approach_stdevs_epsilon_and_sigma(*args,
+                                                                       **kwargs)
         return epsilon,sigma
-
 
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
@@ -226,8 +231,8 @@ def local_integral(y,n,mode='reflect'):
     cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
     size = y.size
     # get the centered integral difference. 
-    diff = np.array([cumulative_integral[min(size-1,i+n/2)]-\
-                     cumulative_integral[max(0,i-n/2)]
+    diff = np.array([cumulative_integral[min(size-1,i+n)]-\
+                     cumulative_integral[max(0,i-n)]
                      for i in range(size)])
     return diff
 
@@ -311,7 +316,7 @@ def bhattacharyya_probability_coefficient_1d(v1,v2,bins):
     """
     return bhattacharyya_probability_coefficient_dd(v1,v2,[bins])
 
-def bhattacharyya_probability_coefficient_dd(v1,v2,bins,normed=False):
+def bhattacharyya_probability_coefficient_dd(v1,v2,bins,normed=True):
     """
     # return the bhattacharyya distance between arbitrary-dimensional
     #probabilities, see  bhattacharyya_probability_coefficient

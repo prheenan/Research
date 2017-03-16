@@ -8,7 +8,7 @@ from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
-import Analysis,Learning
+from Research.Personal.EventDetection.Util import Analysis,Learning
 import matplotlib.gridspec as gridspec
 
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
@@ -344,8 +344,8 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
-    PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
-                            frameon=True,legend_kwargs=dict(numpoints=1),
+    PlotUtilities.lazyLabel("Loading Rate [pN/s]",r"F$_{\mathrm{rupt}}$[pN]",
+                            title,frameon=True,legend_kwargs=dict(numpoints=1),
                             useLegend=use_legend,loc=loc)
 
 
@@ -415,6 +415,13 @@ def cross_validation_distance_metric(x_values,train_scores,valid_scores,
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
                             frameon=True)
     
+def get_train_test_n_off_and_error(x_values,train_scores,valid_scores):
+    x_train,train_dist,train_dist_std = \
+        Learning.number_events_off_per_param(x_values,train_scores)
+    x_valid,valid_dist,valid_dist_std = \
+        Learning.number_events_off_per_param(x_values,valid_scores)
+    return x_train,train_dist,train_dist_std,x_valid,valid_dist,valid_dist_std
+
 def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     """
     Plots the number of 
@@ -425,22 +432,24 @@ def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     Returns:
         nothing
     """
-    x_train,train_dist,train_dist_std = \
-        Learning.number_events_off_per_param(x_values,train_scores)
-    x_valid,valid_dist,valid_dist_std = \
-        Learning.number_events_off_per_param(x_values,train_scores)
-    train_dist_plot,train_error_plot = train_dist,train_dist_std
-    valid_dist_plot,valid_error_plot = valid_dist,valid_dist_std
-    plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
-                 **style_train)
-    plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
-                 **style_valid)
-    PlotUtilities.lazyLabel("Tuning parameter",
-                            "Relative number of missing or incorrect events",
-                            "")
+    x_train,train_dist,train_dist_std,x_valid,valid_dist,valid_dist_std = \
+        get_train_test_n_off_and_error(x_values,train_scores,valid_scores)
+    _plot_num_events_off(x_train,train_dist,train_dist_std,
+                         x_valid,valid_dist,valid_error)
     if ylim is None:
-        ylim = [1e-2,1]
+        ylim = [1e-2,max(train_dist+train_error)]
     plt.ylim(ylim)
+
+def _plot_num_events_off(x_train,train_dist,train_error,
+                          x_valid,valid_dist,valid_error,ylim=None,
+                         xlabel=None,ylabel=None,lazy_kwargs=dict()):
+    if (xlabel is None):
+        xlabel = "Tuning parameter"
+    if (ylabel is None):
+        ylabel = "Relative number of missing or incorrect events"
+    plt.errorbar(x=x_train,y=train_dist,yerr=train_error,**style_train)
+    plt.errorbar(x=x_valid,y=valid_dist,yerr=valid_error,**style_valid)
+    PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.xscale('log')    
     plt.yscale('log')    
 
@@ -472,15 +481,16 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
                             frameon=True)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
-                                 style_true,style_pred):
+                                 style_true,style_pred,xlabel="Distance [m]"):
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
-    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
+    if (to_pred.size > 0):
+        plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
     if (to_true.size > 0):
         plt.hist(to_true,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
-    PlotUtilities.lazyLabel("Distance [nm]","Count","",frameon=True)
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=True)
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """

@@ -39,7 +39,7 @@ def run(base="./"):
     
     """
     data_base = base + "data/"
-    out_fig = "ruptures.svg"
+    out_fig = "ruptures.pdf"
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
@@ -125,7 +125,7 @@ def run(base="./"):
     plot_line = lambda l :  plt.plot(x_event,predicted,color='k',
                                    linestyle='--',linewidth=3,label=l)
     plot_rupture('Rupture')
-    plot_line("Load\nline")
+    plot_line("Linear\nfit")
     PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
                             legend_kwargs=dict(numpoints=1))
     highlight_box(f_zoom,xlim_second_zoom,ylim_second_zoom)
