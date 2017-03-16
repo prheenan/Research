@@ -33,7 +33,7 @@ def run(base="./"):
     """
     data_base = base + "data/"
     out_fig = "algorithm.pdf"
-    force = Flase
+    force = False
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=force,cache_directory=data_base)
     n_filter = 1000
@@ -184,6 +184,7 @@ def run(base="./"):
     Plotting.before_and_after(x_plot,prob_final,slice_before,slice_after,
                               style_retract_error_dist,label="masked no-event")
     PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
+    plt.ylim([min(plt.ylim()),1.5])
     tick_function()
     PlotUtilities.label_tom(fig,loc=(0,0))
     PlotUtilities.savefig(fig,out_fig,

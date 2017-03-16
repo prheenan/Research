@@ -281,7 +281,7 @@ Text
 
 \section{\sLabel{Intro}Introduction}
 
-\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and XXX. The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
+\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins (XXX Hao/Matt). The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
 
 During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample(\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
 
@@ -408,7 +408,7 @@ XXX inttro
 
 \subsection{\sLabel{Tuning}Algorithm tuning }
 
-\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (figure XXX). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter.
+\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter.
 
 
 \section{\sLabel{Results}Results}
@@ -510,54 +510,55 @@ This section details the mathematics and choices behind the event-detection algo
 
 \begin{enumerate}
  \item All variables with uppercase letters are random variables.
- \item All variables with lowercase letters are either instances of the corresponding uppercase random variables (i.e., measurements) or pure functions. 
+ \item All variables with lowercase letters are either instances of the corresponding uppercase random variables (i.e., measurements) or pure functions.
+ \item All variables with a hat (e.g. $\hat{\epsilon}_t$) are empirical measurements or estimated of an already-defined variable .
 \end{enumerate}
 
 \subsubsection{Defining the no-event hypothesis}
 
-\firstp During an event, a force-extension curve exhibits a discontinuity in its first derivative in the absence of noise (XXX figure). The algorithm models the data assuming no event is occurring at a given time 't' and finds where the probability of a measurement is low. Hereafter, the assumption of no event at a given time will be called \emph{no-event hypothesis}. 
+\firstp We define an event as when the time derivative of force applied to a molecule exhibits a discontinuity as the molecule passes over a free-energy barrier. We assume this event takes place on timescales much smaller than the response time of the probe. If this is not true, the data assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `t' and finds where the probability of a measurement is low. Hereafter, the definition of an event and the assumptions of no event at a given time will be referred to as the \emph{no-event hypothesis}. 
 
 \subsubsection{Mathematical background for testing the no-event hypothesis}
 
-\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at points t can be well-approximated by the sum of a smooth signal and an noise distribution as follows (XXX Figure):
+\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at points t can be well-approximated by the sum of a smooth signal and an noise distribution (\fRef{FeatherExample}):
 
 \eqs{ F_t = g_t + X(0,\sigma^2) }
 
-where `g$_t$' is the function representing the noiseless force with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the smooth signal and the noise distribution are assumed unknown and can vary from one force extension curve to the next. If `$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then we define an error distribution $R_t$ such that: \pl
+where `g$_t$' is a smooth function with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the smooth signal and the noise distribution are assumed unknown and can vary from one force extension curve to the next. If `$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then we define an error distribution $R_t$ such that: \pl
 
 \eqs{ R_t \equiv F_t - g^{*}_t = \epsilon_t + X(0,\sigma) }
 
 where
 
-\eqs{ E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2 }
+\eqlab{ E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2 }{feather-sigma}
 
 and 
 
-\eqs{ |E[R_t]| = \epsilon_t \le E[|R_t|] }
+\eqlab{ |E[R_t]| = \epsilon_t \le E[|R_t|] }{feather-epsilon}
 
-In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by (XXX) the averaging over all time points $\epsilon_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |E[R_t]|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality is:
+In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by the average over all time points $\hat{\epsilon}_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |r_t|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality is:
 
-\eqs{ P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
- (\frac{\sigma}{r_t-\epsilon_t})^2 }
+\eqlab{ P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
+ (\frac{\sigma}{r_t-\epsilon_t})^2 }{feather-probability}
 
 
-For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\epsilon$ and the noise $\sigma$ by XXX). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. \pl
+For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by \eRef{feather-epsilon} and \eRef{feather-sigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. \pl
 
 \subsubsection{Accurate estimators for hypothesis testing}
 
 XXX auto correlation time motivation \pl 
 
-The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline (b-spline, XXX) to the force versus time curve. The spline is second-order to ensure a continuous first derivative (see XXX), and the spline knots are spaced uniformly at intervals of $\tau$. Figure XXX is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $r_t$ by eq XX.  \pl
+The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline (b-spline, ) to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of $\tau$. \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{feather-sigma}, \eRef{feather-epsilon}, and \eRef{feather-probability}. \pl
 
-Using $r_t$ as shown in eq XXX does not provide a strong signal in the presence of an event(see supplemental Figure XXX). In order to improve the method, the distribution of windowed standard deviations `$s_t$' of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of $r_t$. Using $s_t$ instead of $r_t$ provides a much stronger signal (see Figure XXX).  \pl
+Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, the distribution of windowed standard deviations `$s_t$' of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of $r_t$. Using $s_t$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  \pl
 
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$. From this distribution, $\sigma$ is set to the standard deviation of $s_t$ within the interquartile range and $\epsilon$ is approximated by the median. The standard deviation of the interquartile range and median are used instead of the standard deviation of the entire range and mean in order to remove the influence of possible events. The removal of possible events is necessary to ensure accurate estimations of $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$ and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
 
 
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
-\caption[\name example]{\noindent\fLabel{FeatherExample}\pStartF Algorithm experiment \pEndF }
+\caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Algorithm experiment \pEndF }
 \end{figure}
 
 
