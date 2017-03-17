@@ -210,6 +210,8 @@ def read_categories(categories,force_read,cache_directory,limit):
     return categories
 
 
+    
+    
 def get_categories(positives_directory,use_simulated=False):
     """
     get all the categories associated with the loading rates we will use

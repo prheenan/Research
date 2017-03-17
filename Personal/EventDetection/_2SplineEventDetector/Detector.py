@@ -298,7 +298,7 @@ def integral_mask_function(split_fec,slice_to_use,
     thresh = sigma
     local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
     # the threshold is the noise sigma times  the number of points 
-    # (2*num_between)
+    # (2*min_points_between) in the window
     thresh_integral = 2 * sigma * min_points_between
     probability_integral = _no_event_chebyshev(local_integral,0,thresh_integral)
     probability_updated[slice_to_use] *= probability_integral

@@ -230,7 +230,7 @@ def local_integral(y,n,mode='reflect'):
 
     Args:
         y: to integrate
-        n: window wize
+        n: window size (in either direction)
         mode: see cumtrapz
     Returns:
         array, same size as y, of the centered integral (edges are 

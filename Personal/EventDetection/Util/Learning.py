@@ -457,7 +457,7 @@ def single_fold_score(fold_data,func,kwargs,pool):
         # we make a list of functor objects (functions + arguments)
         # that we can then safely run
         functors_args = [ (func,ex,kwargs) for ex in fold_data]
-        scores_info = pool.map(multiprocessing_functor(),functors_args)
+        scores_info = pool.map(multiprocessing_functor(),functors_args)     
     # POST: got the scores an info, somehow...
     scores = [s[0] for s in scores_info]
     info = [s[1] for s in scores_info]
