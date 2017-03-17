@@ -25,7 +25,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 200
+    limit = 50
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True

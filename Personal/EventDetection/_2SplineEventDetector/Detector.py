@@ -303,6 +303,12 @@ def integral_mask_function(split_fec,slice_to_use,
     probability_integral = _no_event_chebyshev(local_integral,0,thresh_integral)
     probability_updated[slice_to_use] *= probability_integral
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
+    # zero out all the previous ones ie: no new points from this mask, just
+    # better signal. XXX: not quite working right?
+    where_not_already = np.where(np.logical_not(boolean_array))[0]    
+    if (where_not_already.size > 0):
+        probability_updated[where_not_already] = 1
+        boolean_ret = (probability_updated < threshold)
     return slice_to_use,boolean_ret,probability_updated
 
 def delta_mask_function(split_fec,slice_to_use,
@@ -548,6 +554,15 @@ def _event_mask(probability,threshold):
     return np.where(boolean_thresh)[0]
 
 def _probability_by_cheby_k(k):
+    """
+    given a chebyshev 'k' value (number of stdevs 'out'), returns the 
+    probability bound, normalized to 1
+    
+    Args:
+        k: array-like to use
+    Returns:
+        Probability for each point accoring to chebyshevs, bounded 0->1
+    """
     # determine where the chebyshev is 'safe', otherwise we are at or above
     # the mean estimate and hence not a useful metric
     cheby_idx = np.where(np.abs(k) >= 1)
@@ -558,6 +573,15 @@ def _probability_by_cheby_k(k):
 
 
 def _no_event_chebyshev(g,epsilon,sigma):
+    """
+    Given an array of values, an epsilon estimate, and a sigma, returns the 
+    no-event probability
+    
+    Args:
+        g: remainder value
+        epsilon: mean parameter, estimate of fitting noise
+        sigma: stdev parameter, estimate of noise on g-g*
+    """
     denom = (g-epsilon)
     k = denom/sigma
     return _probability_by_cheby_k(k)
@@ -758,7 +782,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     mask = np.where(bool_array)[0]
     n = mask.size
     if (mask.size > 0):
-        event_slices = _event_slices_from_mask(mask,min_points_between)
+        event_slices = _event_slices_from_mask(mask,int(min_points_between/5))
     else:
         event_slices = []
     # XXX reject events with a very small time?
@@ -767,7 +791,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                         for delta in event_duration]
     # determine where the events are happening locally (guarentee at least
     # a search window of min_points)
-    remainder_split = [max(0,d) for d in delta_split_rem ]
+    # XXX debugging 
+    remainder_split = [0 for d in delta_split_rem ]
     event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
     # POST: slices are of length min points, determine which events overlap, 
