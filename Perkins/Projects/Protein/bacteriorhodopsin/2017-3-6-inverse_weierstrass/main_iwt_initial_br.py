@@ -51,16 +51,14 @@ def run():
         This is a description of what is returned.
     """
     base = FEC_Util.default_data_root()
-    relative_data_base = "/HighSpeedPull/FEC_30nms/"
-    relative_data_dir = "161011_FEC_raw/"
-    absolute_data_dir = base + relative_data_base + relative_data_dir
     # XXX use Haos...
-    absolute_data_dir = base + "4Patrick/Scratch/Tmp_Data_Scratch/"  
+    absolute_data_dir = base + \
+        "4Patrick/Scratch/Tmp_Data_Scratch/hao-data-cache/"  
     downsample_n = 100
     fraction_for_vel = 0.1    
-    limit = 5
-    force_sample = False
-    force= False
+    limit = 10
+    force_sample = True
+    force= True
     cache_directory = "./"
     out_base = cache_directory    
     retracts = CheckpointUtilities.getCheckpoint("downsample.pkl",
@@ -92,17 +90,25 @@ def run():
     # slice the retract object to just where we care about
     retracts = [FEC_Util.MakeTimeSepForceFromSlice(d,slice(0,idx+fudge(d),1)) 
                 for idx,d in zip(last_idx,retracts)]
+    # comes in pN/nm, convert to N/m
+    for r in retracts:
+        r.Force *= 1e-12
+        r.Separation *= 1e-9
+    for r in retracts:
+        plt.plot(r.Force)
+        plt.show()
     data_iwt = [IWT_Util.ToIWTObject(d) for d in retracts]
     # set all the effective velocities
     for d in data_iwt:
         IWT_Util.set_separation_velocity_by_first_frac(d,fraction_for_vel)
     # POST: they are all set. get the IWT 
-    num_bins = 50
+    num_bins = 250
     LandscapeObj =  InverseWeierstrass.\
-        FreeEnergyAtZeroForce(data_iwt,NumBins=num_bins)    
+        FreeEnergyAtZeroForce(data_iwt,NumBins=num_bins)
     fig = PlotUtilities.figure(figsize=(12,12))
-    IWT_Plot.plot_single_landscape(LandscapeObj)
-    PlotUtilities.savefig(fig,OutBase + "IWT.pdf".format(b))
+    IWT_Plot.plot_single_landscape(LandscapeObj,force_one_half_N=16e-12,
+                                   add_meta_half=False,add_meta_free=False)  
+    PlotUtilities.savefig(fig,out_base + "IWT.pdf")
 
 
 if __name__ == "__main__":
