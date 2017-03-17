@@ -232,7 +232,7 @@
 
 \begin{abstract}
 
-\firstp Single Molecule Force Spectroscopy (\singlemol{}) is a technique which applies mechanical forces to individual biomolecules via a force probe such as an optical trap or an atomic force microscope (AFM). In \singlemol{} unfolding experiments, the molecule of interest is pulled apart and the force at each molecalr extension is measured. Although these unfolding experiments are capable of measuring a wide class of molecular phenomena, interpreting \singlemol{} data is hindered by identifying where unfolding events occur. This paper introduces a new algorithm, \name{} (\acronym), for identifying the locations of molecular unfolding events. Relative to two other event-detection algorithms on an annotated data set, \name{} features a median event localization error of 4nm, a 100-fold improvement, and a Bhattacharyya coefficient of 0.96, an improvement of 0.4, for the joint probability distribution of event loading rates and rupture forces. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.
+\firstp In a Single Molecule Force Spectroscopy (\singlemol{}) experiment, mechanical forces are applied to individual biomolecules via a force probe such as an optical trap or an atomic force microscope (AFM). In \singlemol{} unfolding experiments, the molecule of interest is pulled apart and force is measured as a function of probe position relative to a relaxed state. Although these unfolding experiments are capable of measuring a wide class of molecular phenomena, interpreting \singlemol{} data is hindered by identifying where unfolding events occur. This paper introduces a new algorithm, \name{} (\acronym), for identifying the locations of molecular unfolding events. Relative to two other event-detection algorithms on an annotated data set, \name{} features a median event localization error of 4nm, a 100-fold improvement, and a Bhattacharyya coefficient of 0.96, an improvement of 0.4, for the joint probability distribution of event loading rates and rupture forces. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.
 \end{abstract}
 
 \clearpage
@@ -275,7 +275,7 @@
 
 \firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins (XXX Hao/Matt). The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
 
-During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample(\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
+During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample (\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
 
 In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip attacheds to a molecule and stretches it to measure the relationship between force and extension over time. This experiment records the force-extension curve of the molecule (\fRef{Cartoon}). Force-extension curves yield information such as kinetic rates of processive enzymes \citePRH{comstock_direct_2015}, protein-ligand bond strength \citePRH{yuan_energy_2000}, and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. \pl
 
@@ -286,9 +286,9 @@ In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip a
 \end{figure}
 
 
-The analysis and interpretability of \singlemol{} experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, quality \singlemol{} data between an attached molecule and commercially-available AFM tips occur less than one curve in tens of thousands\cite{bosshart_reference-free_2012}. Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite Rob XXX), but the majority of the data taken is still uninterpretable and must be filtered out. Filtering data without events is a major challenge in AFM data management and analysis.\pl
+The analysis and interpretability of \singlemol{} experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, quality \singlemol{} data between an attached molecule and commercially-available AFM tips occur less than one curve in tens of thousands\cite{bosshart_reference-free_2012}. Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite Rob XXX), but the majority of the data taken is still uninterpretable and must be filtered out. Filtering data without events and identifying the locations of events within data is a major challenge in AFM data management and analysis.\pl
 
-Methods exist to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Methods include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algorithms bias results towards the dominant features and necessarily require a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (\fRef{Performance}).\pl
+Methods exist to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Automation techniques include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algorithms bias results towards the dominant features and necessarily require a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (\fRef{Performance}).\pl
 
 This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (\acronym{}), require no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges. \name{} is so-named since it is designed to make few assumptions about the data, operate over a wide range of AFM data, and require a small time and memory footprint compared to existing techniques.\pl
 
@@ -319,7 +319,7 @@ The expected rupture forces and loading rates were calculated from the annotated
 
 
 
-\subsection{\sLabel{Algorithm}Algorithm Design}
+\subsection{\sLabel{Algorithm}Algorithm Design and Analysis}
 
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
@@ -336,7 +336,7 @@ F_i &\equiv \text{ distribution of `i' rupture forces over all k} \\
 d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\
  }
 
-\firstp For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. The metrics we report, $F_{1,d}$ and $BC_{\nu,F}$ are defined in \tRef{metrics} and respectively give normalized estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data. \pl
+\firstp For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. The metrics we report are defined in \tRef{metrics} and give estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data. \pl
 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l | l | l | l  }
@@ -350,7 +350,35 @@ BC$_{\nu,F}$ & Bhattacharyya Coefficient: $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d
 \caption[Definition of algorithmic performance metrics]{\tLabel{metrics} }
 \end{table}
 
-The metrics are constructed such $BC_{v,F}$ is one if and only if the joint distribution of rupture force and loading rates are equal. \pl
+\subsubsection{\sLabel{Compare}Choice of competing methods}
+
+\firstp The following two algorithms were chosen for comparison to \name{}: \pl
+
+\begin{enumerate}
+\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\cite{roduit_openfovea:_2012}
+\item The general-purpose `find\_peaks\_cwt' method from the Numerical Python package.\cite{Jones_SciPy:_2001}
+\end{enumerate}
+
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (XXX table). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Numerical Python method is wavelet-based algorithm. \pl
+
+\subsubsection{\sLabel{Tuning}Algorithm tuning }
+
+\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter.
+
+
+\section{\sLabel{Results}Results}
+
+\subsection{\sLabel{Timing}Algorithmic time complexity}
+
+\firstp \fRef{Timing} compares the runtimes, T(n), of \name{} and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name{} having roughly tendold better asymptotic slopes.  \pl
+
+\begin{figure}
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
+\caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of each algorithm is approximately linear. (a) The runtime per curve versus number of points in the curve, T(N), for each algorithm is plotted as points. Lines around the data show the best-fit upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n. (b) The linear constants $a_1$, representing the asymptotic runtime per data point, for each algorithm from (a) are plotted. \pEndF}
+\end{figure}
+
+\subsection{\sLabel{Performance}Algorithmic event detection performance}
 
 
 \begin{table}
@@ -365,44 +393,12 @@ wavelet transform & 0.556 & 5.25e-07 & 1.77e-06 & 0.318 & 1\e
 \end{table}
 
 
-\subsection{\sLabel{Compare}Choice of competing methods}
-
-XXX inttro
-
-\firstp The following two algorithms were chosen for comparison: \pl
-
-\begin{enumerate}
-\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\cite{roduit_openfovea:_2012}
-\item The general-purpose `find\_peaks\_cwt' method from the Numerical Python package.
-\end{enumerate}
-
- These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (XXX table). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Numerical Python method is wavelet-based algorithm. \pl
-
-\subsection{\sLabel{Tuning}Algorithm tuning }
-
-\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter.
-
-
-\section{\sLabel{Results}Results}
-
-\subsection{\sLabel{Timing}Algorithmic time complexity}
-
-\firstp \fRef{Timing} compares the runtimes, T(n), of \name{} and the baselines. As expected, the runtime of each algorithm is roughly linear for in the region of interest, with \name{} having XXX  runtime coefficients.  \pl
-
-\begin{figure}
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
-\caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of each algorithm is approximately linear. (a) The runtime per curve versus number of points in the curve, T(N), for each algorithm is plotted as points. Lines around the data show the best-fit upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n. (b) The linear constants $a_1$, representing the asymptotic runtime per data point, for each algorithm from (a) are plotted. \pEndF}
-\end{figure}
-
-\subsection{\sLabel{Performance}Algorithmic event detection performance}
-
 
 
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}`s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined by (XXX). (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The Bhattacharya coefficiences for (XXX). (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for Numerical Python \pEndF }
+\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}`s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for Numerical Python \pEndF }
 \end{figure}
 
 
@@ -412,9 +408,6 @@ XXX inttro
 
 \firstp \pl
 
-\subsubsection{\sLabel{Beer}XRF depends on wavelength and element}
-
-\firstp \pl
 
 \clearpage
 
@@ -423,8 +416,6 @@ XXX inttro
 
 
 \clearpage
-
-Bibliography 
 
 \section{Bibliography}
 
@@ -469,7 +460,7 @@ To create azide-functionalized surfaces, etched glass was activated using 30 min
 
 The purity of the DNA was verified by depositing 20pmol of DNA in imaging buffer, 3mM Nickel \supply{Sigma}{654597}, 10mM Hepes \supply{Sigma}{H4034} at pH 7, onto freshly-cleaved, 10mm diameter, V1 mica \supply{Ted Pella}{50} for 10 minutes, rinsing serially 5 times with 1mL of deionized water and 5 times with imaging buffer. The sample was then imaged with Cypher using a cantilever with a spring constant of $\approx 300 \frac{\text{pN}}{\text{nm}}$ \supply{Bruker}{SNL-10} with a line scan rate of 1Hz and free amplitude of $\approx$1nm (\fRef{Prep}).\pl 
 
-For DNA deposition onto azide surface, 20uL of the DNA at 40nM (see section XXX) was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see \sRef{Surface}) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE at pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
+For DNA deposition onto azide surface, 20uL of the DNA at 40nM was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see \sRef{Surface}) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE at pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
 
 \subsubsection{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
 
@@ -560,8 +551,6 @@ def event_indices(force,threshhold):
 \caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF XXX code  \pEndF }
 \end{figure}
 
-
-XXX table?
 
 \subsubsection{Improvements}
 
