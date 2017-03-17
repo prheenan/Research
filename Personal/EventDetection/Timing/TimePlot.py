@@ -104,7 +104,7 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
                    yerr=plot_y_error,log=True,
                    error_kw=dict(ecolor='k',linewidth=2,capsize=15))
     # add some text for labels, title and axes ticks
-    ax.set_xticks(ind + width / 2)
+    ax.set_xticks(ind)
     ax.set_xticklabels(labels)
     xlim = plt.xlim()
     fudge = width/2

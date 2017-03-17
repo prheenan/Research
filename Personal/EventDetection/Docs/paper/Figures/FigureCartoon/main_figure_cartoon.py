@@ -90,8 +90,8 @@ def run(base="./"):
     letters = [ [r"({:s}{:d})".format(s,n+1) for s in letters]
                 for n in range(n_categories)]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
-    bottom = (-1.2,1)
-    top = (-1.56,1)
+    bottom = (-0.25,1)
+    top = (-0.60,1)
     loc = [top for i in range(n_categories)] +  \
           [bottom for i in range(n_categories)] 
     PlotUtilities.label_tom(fig,flat_letters,loc=loc)
