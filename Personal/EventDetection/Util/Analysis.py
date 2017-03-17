@@ -217,7 +217,7 @@ def local_integral(y,n,mode='reflect'):
 
     Args:
         y: to integrate
-        n: window wize
+        n: window size (in either direction)
         mode: see cumtrapz
     Returns:
         array, same size as y, of the centered integral (edges are 
@@ -226,8 +226,8 @@ def local_integral(y,n,mode='reflect'):
     cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
     size = y.size
     # get the centered integral difference. 
-    diff = np.array([cumulative_integral[min(size-1,i+n/2)]-\
-                     cumulative_integral[max(0,i-n/2)]
+    diff = np.array([cumulative_integral[min(size-1,i+n)]-\
+                     cumulative_integral[max(0,i-n)]
                      for i in range(size)])
     return diff
 
