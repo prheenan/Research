@@ -87,7 +87,7 @@ def run():
                       round_integer]
     numbers = []
     # get the number for the data table
-    for t in table_rows:    
+    for t in table_rows[::-1]:    
         numbers.append(t.get_relevant_numbers(count_numbers,count_ge))
     # round them
     formatted_numbers = []
@@ -96,12 +96,12 @@ def run():
         formatted_numbers.append(fmt_tmp)
     # make a latex table 
     join_str = " & "
-    event_headers = [(r"$N_{\mathrm{e}=" + (" {:d}").format(n) + r"}$" )
+    event_headers = [(r"N$_{\mathrm{e}=" + (" {:d}").format(n) + r"}$" )
                      for n in count_numbers]
-    event_headers += [(r"$N_{\mathrm{e}\ge"+("{:d}").format(count_ge[0]))+"}$"]
+    event_headers += [(r"N$_{\mathrm{e}\ge"+("{:d}").format(count_ge[0]))+"}$"]
     headers = ["v [nm/s]",r"N$_\mathrm{curves}$","$\mu_{\mathrm{Curve Size}}$",
                 "$\sigma_{\mathrm{Curve Size}}$"] + event_headers
-    end_str = r" \hline \\" + "\n"
+    end_str = r"  \\ \hline" + "\n"
     format_str = join_str.join(headers) + end_str
     for f in formatted_numbers:
         format_str += (join_str.join(f) + end_str)
