@@ -46,7 +46,7 @@ def run():
                 textcoords='offset points',
                 arrowprops=dict(width = 5.,
                                 headwidth = 20.,
-                                frac = 0.2,
+                                headlength=20,
                                 shrink = 0.05,
                                 linewidth = 2,
                                 alpha=0.5,
@@ -61,8 +61,8 @@ def run():
                             "AFM image of mica-bound DNA")
     PlotUtilities.colorbar("Height (nm)")
     axis_func = lambda x: x[:-1]
-    PlotUtilities.label_tom(fig,loc=(-1.1,1.0),axis_func=axis_func)
-    PlotUtilities.savefig(fig,"./out.svg",subplots_adjust=dict(left=0.07))
+    PlotUtilities.label_tom(fig,loc=(-0.1,1.0),axis_func=axis_func)
+    PlotUtilities.savefig(fig,"./prep.pdf",subplots_adjust=dict(left=0.07))
 
 
 if __name__ == "__main__":

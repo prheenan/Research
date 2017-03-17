@@ -224,6 +224,19 @@ def get_true_and_predicted_ruptures_per_param(learner):
     ruptures_valid_pred = rupture_objects(valid_scores,get_true=False)
     return ruptures_valid_true,ruptures_valid_pred
 
+def lambda_distribution(scores,f_lambda):
+    """
+    gets the distribution of distances at each paramter value
+
+    Args:
+         scores: learner._scores_by_params object
+         **kwargs: passed to minimum_distance_distribution
+    Returns:
+         concatenates distributions at each parameter value
+    """
+    func_fold = lambda x: [f_lambda(v) for v in x]
+    return _walk_scores(scores,func_fold = func_fold,
+                        func_param=np.concatenate,func_top=np.array)
 
 def event_distance_distribution(scores,**kwargs):
     """

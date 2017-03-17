@@ -35,8 +35,10 @@ class split_force_extension:
     def set_espilon_and_sigma(self,epsilon,sigma):
         self.epsilon =epsilon
         self.sigma = sigma
-    def calculate_epsilon_and_sigma(self,n_points=None,
-                                    slice_fit_approach=None):
+    def _approach_stdevs_epsilon_and_sigma(self,n_points=None,
+                                           slice_fit_approach=None):
+        if (n_points is None):
+            n_points = self.tau_num_points
         if (slice_fit_approach is None):
             approach_surface_idx = self.get_predicted_approach_surface_index()
             slice_fit_approach= slice(0,approach_surface_idx,1)
@@ -50,8 +52,11 @@ class split_force_extension:
         stdevs,epsilon,sigma = \
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
+        return stdevs,epsilon,sigma
+    def calculate_epsilon_and_sigma(self,*args,**kwargs):
+        stdevs,epsilon,sigma = self._approach_stdevs_epsilon_and_sigma(*args,
+                                                                       **kwargs)
         return epsilon,sigma
-
 
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
@@ -152,6 +157,14 @@ class split_force_extension:
         idx = [ slice(min(ev)-offset,max(ev)-offset,1) 
                 for ev in self.retract.Events]
         return idx
+    def has_events(self):
+        return len(self.retract.Events) > 0 
+    def get_retract_event_slices(self):
+        event_idx_retract = self.get_retract_event_centers()
+        starts = [0] + event_idx_retract
+        ends = event_idx_retract + [None]
+        slices = [slice(i,f,1) for i,f in zip(starts,ends)]
+        return slices
     def get_retract_event_centers(self):
         """
         Returns:
