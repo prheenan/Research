@@ -109,6 +109,8 @@ def run(base="./"):
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,18))
     entire_figure = gridspec.GridSpec(3,1)
+    import matplotlib as mpl
+    mpl.rcParams['hatch.linewidth'] = 4
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
         best_param_idx = m.best_param_idx
@@ -121,8 +123,8 @@ def run(base="./"):
         bins = np.logspace(*log_limit,num=n_bins)
         # define the styles for the histograms
         common_style_hist = dict(alpha=0.3,linewidth=0)
-        label_true_dist_hist = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
-        label_pred_dist_hist = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
+        label_pred_dist_hist = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
+        label_true_dist_hist = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
         color_true = 'g'
         style_true = dict(color=color_true,label=label_true_dist_hist,
                           **common_style_hist)

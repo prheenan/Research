@@ -787,7 +787,9 @@ def debug_plot_derivs(approach_time,approach_force,
     PlotUtilities.lazyLabel("time","Deriv","")
     
 
-def before_and_after(x,y,before_slice,after_slice,style,label=None):
+def before_and_after(x,y,before_slice,after_slice,style=dict(),
+                     color_before = 'r',
+                     color_after = 'b',label=None):
     """
     plots x and y two before and after slices
 
@@ -798,8 +800,6 @@ def before_and_after(x,y,before_slice,after_slice,style,label=None):
         style; for each of them
         label: for one of them
     """
-    color_before = 'b'
-    color_after = 'r'
     tuples = [ [x,y,before_slice,color_before,style,label],
                [x,y,after_slice,color_after,style,None]]
     for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:

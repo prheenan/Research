@@ -28,7 +28,7 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = False
+    debugging = True
     force_read = False
     force_relearn = False
     force_learn = False

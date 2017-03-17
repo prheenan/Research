@@ -10,11 +10,11 @@ from GeneralUtil.python import PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util.InputOutput import \
     read_and_cache_file
-from Research.Personal.EventDetection.Util import Analysis 
+from Research.Personal.EventDetection.Util import Analysis,Plotting
 # /!\ note the 'SVG' function also in svgutils.compose
 import matplotlib.gridspec as gridspec
 
-def plot_fec(example,color='r',n_filter=1000):
+def plot_fec(example,colors=['r','g','b'],n_filter=1000,use_events=True,):
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
     retract = fec_split.retract
     retract.Force -= np.median(retract.Force)
@@ -26,9 +26,22 @@ def plot_fec(example,color='r',n_filter=1000):
     force = y_plot(retract.Force)
     sep_filtered = x_plot(retract_filtered.Separation)
     force_filtered = y_plot(retract_filtered.Force)
-    style = dict(color=color)
-    plt.plot(sep,force,alpha=0.3,**style)
-    plt.plot(sep_filtered,force_filtered,**style)
+    if fec_split.has_events() and use_events:
+        slices = fec_split.get_retract_event_slices()
+        colors_before = colors
+        colors_after = colors
+        for i in range(len(slices)-1):
+            before_kwargs = dict(before_slice=slices[i],after_slice=slices[i+1],
+                                 color_before=colors_before[i],
+                                 color_after=colors_after[i+1])
+            Plotting.before_and_after(x=sep,y=force,style=dict(alpha=0.3),
+                                      **before_kwargs)
+            Plotting.before_and_after(x=sep_filtered,y=force_filtered,
+                                      style=dict(alpha=1),**before_kwargs)
+    else:
+        style = dict(color=colors[0])
+        plt.plot(sep,force,alpha=0.3,**style)
+        plt.plot(sep_filtered,force_filtered,**style)
     plt.tight_layout()
 
 def fmt(remove_x_labels=True,remove_y_labels=True):
@@ -52,9 +65,9 @@ def run(base="./"):
     cases = [read_and_cache_file(f,**kw) for f in file_paths]
     n_cases = len(cases)
     out_names = []
-    styles = [dict(color='k'),
-              dict(color='g'),
-              dict(color='r')]
+    styles = [dict(colors='r',use_events=False),
+              dict(colors=['r','b']),
+              dict(colors=['r','b','k'])]
     fig_x_in = 16
     fig_y_in = 8
     im_path = base + "/cartoon/SurfaceChemistry Dig10p3_pmod-0{:d}.png"
