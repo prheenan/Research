@@ -126,7 +126,6 @@ def make_main_figure(output_path,trials):
     PlotUtilities.label_tom(fig,loc=(-0.15,1))
     PlotUtilities.savefig(fig,output_path)
 
-
 def run(base="./"):
     """
     
