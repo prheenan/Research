@@ -435,9 +435,9 @@ def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     x_train,train_dist,train_dist_std,x_valid,valid_dist,valid_dist_std = \
         get_train_test_n_off_and_error(x_values,train_scores,valid_scores)
     _plot_num_events_off(x_train,train_dist,train_dist_std,
-                         x_valid,valid_dist,valid_error)
+                         x_valid,valid_dist,valid_dist_std)
     if ylim is None:
-        ylim = [1e-2,max(train_dist+train_error)]
+        ylim = [1e-2,max(train_dist+train_dist_std)]
     plt.ylim(ylim)
 
 def _plot_num_events_off(x_train,train_dist,train_error,
