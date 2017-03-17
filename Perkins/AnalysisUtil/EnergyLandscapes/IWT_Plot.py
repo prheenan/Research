@@ -66,11 +66,64 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
     np.savetxt(X=np.c_[Obj.landscape_ext_nm,Obj.OffsetTilted_kT],
                fname=OutBase+"Landscape"+ext,**common)
     
+def plot_single_landscape(LandscapeObj,bounds=None,min_landscape_kT=None,
+                          max_landscape_kT=None):
+    """
+    Plots a detailed energy landscape, and saves
 
+    Args:
+        LandscapeObj: energy landscape object (untilted)
+        bounds: Where to 'zoom' in the plot, Iwt_Util.BoundsObj instance
+        Bins: how many bins to use in the energy landscape plots
+        <min/max>_landscape_kT: bounds on the landscape
+    Returns:
+        nothing
+    """                          
+    if (bounds is None):
+        all = [0,np.inf]
+        bounds = IWT_Util.BoundsObj(all,all,all,all)
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
+                                    bounds)
+    plt.subplot(2,1,1)
+    plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
+    plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
+                linestyle='--',
+        label=(r"$\Delta x^{\ddag}$=" +
+               "{:.1f}nm".format(Obj.DeltaXDagger) ))
+    plt.axhline(Obj.DeltaGDagger,linewidth=4,color='b',
+                linestyle='--',
+                label=(r"$\Delta G^{\ddag}}$=" +
+                       "{:.1f}kT".format(Obj.DeltaGDagger) ))
+    plt.ylim([-0.5,max(Obj.Landscape_kT)*1.05])
+    PlotUtilities.lazyLabel("","Landscape at F=0","",frameon=True)
+    plt.subplot(2,1,2)
+    plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT,color='b',alpha=0.7)
+    plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
+                linestyle='--',
+        label=(r"$\Delta x^{\ddag}$=" +
+               "{:.1f}nm".format(Obj.DeltaXDagger) ))
+    plt.plot(Obj.pred_fold_x,
+             np.polyval(Obj.coeffs_fold,Obj.pred_fold_x)-Obj.Offset,
+             linestyle='--',color='r',linewidth=4,
+             label="Folded State at {:.1f}nm".format(Obj.x0_fold))
+    plt.plot(Obj.pred_tx_x,
+             np.polyval(Obj.coeffs_tx,Obj.pred_tx_x)-Obj.Offset,
+             linestyle='--',color='g',linewidth=4,
+             label="Transition State at {:.1f}nm".format(Obj.x0_tx))
+    plt.plot(Obj.pred_unfold_x,
+             np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Obj.Offset,
+             linestyle='--',color='r',linewidth=4,
+             label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
+    if (max_landscape_kT is None):
+        max_landscape_kT = max(Obj.OffsetTilted_kT)*1.5
+    if (min_landscape_kT is None):
+        min_landscape_kT = np.percentile(Obj.OffsetTilted_kT,5)-2
+    plt.ylim( min_landscape_kT,max_landscape_kT)
+    PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2","",
+                            frameon=True)
+                            
 def InTheWeedsPlot(OutBase,UnfoldObj,bounds=None,RefoldObj=[],Example=None,
-                   Bins=[50,75,100,150,200,500,1000],
-                   min_landscape_kT=None,
-                   max_landscape_kT=None):
+                   Bins=[50,75,100,150,200,500,1000],**kwargs):
     """
     Plots a detailed energy landscape, and saves
 
@@ -99,46 +152,9 @@ def InTheWeedsPlot(OutBase,UnfoldObj,bounds=None,RefoldObj=[],Example=None,
                                               nBins=b)
             PlotUtilities.savefig(fig,OutBase + "0_{:d}hist.pdf".format(b))
         # get the distance to the transition state etc
-        Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
-                                        bounds)
+
         print("DeltaG_Dagger is {:.1f}kT".format(Obj.DeltaGDagger))
         fig = PlotUtilities.figure(figsize=(12,12))
-        plt.subplot(2,1,1)
-        plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
-        plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
-                    linestyle='--',
-            label=(r"$\Delta x^{\ddag}$=" +
-                   "{:.1f}nm".format(Obj.DeltaXDagger) ))
-        plt.axhline(Obj.DeltaGDagger,linewidth=4,color='b',
-                    linestyle='--',
-                    label=(r"$\Delta G^{\ddag}}$=" +
-                           "{:.1f}kT".format(Obj.DeltaGDagger) ))
-        plt.ylim([-0.5,max(Obj.Landscape_kT)*1.05])
-        PlotUtilities.lazyLabel("","Landscape at F=0","",frameon=True)
-        plt.subplot(2,1,2)
-        plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT,color='b',alpha=0.7)
-        plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
-                    linestyle='--',
-            label=(r"$\Delta x^{\ddag}$=" +
-                   "{:.1f}nm".format(Obj.DeltaXDagger) ))
-        plt.plot(Obj.pred_fold_x,
-                 np.polyval(Obj.coeffs_fold,Obj.pred_fold_x)-Obj.Offset,
-                 linestyle='--',color='r',linewidth=4,
-                 label="Folded State at {:.1f}nm".format(Obj.x0_fold))
-        plt.plot(Obj.pred_tx_x,
-                 np.polyval(Obj.coeffs_tx,Obj.pred_tx_x)-Obj.Offset,
-                 linestyle='--',color='g',linewidth=4,
-                 label="Transition State at {:.1f}nm".format(Obj.x0_tx))
-        plt.plot(Obj.pred_unfold_x,
-                 np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Obj.Offset,
-                 linestyle='--',color='r',linewidth=4,
-                 label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
-        if (max_landscape_kT is None):
-            max_landscape_kT = max(Obj.OffsetTilted_kT)*1.5
-        if (min_landscape_kT is None):
-            min_landscape_kT = np.percentile(Obj.OffsetTilted_kT,5)-2
-        plt.ylim( min_landscape_kT,max_landscape_kT)
-        PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2","",
-                                frameon=True)
+        plot_single_landscape(LandscapeObj,bounds=bounds,**kwargs)
         PlotUtilities.savefig(fig,OutBase + "1_{:d}IWT.pdf".format(b))
 

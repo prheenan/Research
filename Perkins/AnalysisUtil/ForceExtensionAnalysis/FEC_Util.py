@@ -495,12 +495,13 @@ def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,FlipSign=True,
         StopIdxArr = None
     NewSlice = slice(ZeroIdx,StopIdxArr)
     MyObj = MakeTimeSepForceFromSlice(o,NewSlice)
+    if (FlipSign):
+        MyObj.Force *= -1
     if (Correct):
         # sign correct and offset the force
-        MyObj.Force = MyObj.Force * -1
         MyObj.Force -= MedRetr
         MyObj.Separation -= np.min(MyObj.Separation)
-        MyObj.offset_z_sensor(MyObj)
+        MyObj.offset_z_sensor(np.min(MyObj.Zsnsr))
     return MyObj
 
 

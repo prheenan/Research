@@ -758,7 +758,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     mask = np.where(bool_array)[0]
     n = mask.size
     if (mask.size > 0):
-        event_slices = _event_slices_from_mask(mask,min_points_between)
+        event_slices = _event_slices_from_mask(mask,int(min_points_between/5))
     else:
         event_slices = []
     # XXX reject events with a very small time?
@@ -767,7 +767,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                         for delta in event_duration]
     # determine where the events are happening locally (guarentee at least
     # a search window of min_points)
-    remainder_split = [max(0,d) for d in delta_split_rem ]
+    remainder_split = [0 for d in delta_split_rem ]
     event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
     # POST: slices are of length min points, determine which events overlap, 

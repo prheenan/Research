@@ -28,7 +28,7 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     force_read = False
     force_relearn = False
     force_learn = False
@@ -43,8 +43,8 @@ def run():
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
-    n_learners = 3
-    learners = Learners.get_learners(**learners_kwargs)[:n_learners]
+    n_learners = 1
+    learners = Learners.get_learners(**learners_kwargs)[1:]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
