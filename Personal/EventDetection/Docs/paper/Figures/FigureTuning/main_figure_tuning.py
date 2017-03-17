@@ -59,19 +59,24 @@ def run(base="./"):
     n_cols = 3
     parameters = ["no-event probability","Open Fovea sensitivity",
                   "minimum cwt SNR"]
+    xlim = [None,[0.5,2],[10,200]]
     for i,(args,name) in enumerate(events_off):
         first = (i == 0)
         param = parameters[i]
         xlabel = "Tuning Parameter\n({:s})".format(param)
-        ylabel = "" if not first else "Relative number of events"
+        ylabel = "" if not first else \
+                 "Relative number of extra or missing events"
         plt.subplot(1,n_cols,(i+1))
         lazy_kwargs = dict(useLegend=first,
                            frameon=True)
         Plotting._plot_num_events_off(*args,xlabel=xlabel,ylabel=ylabel,
                                       lazy_kwargs=lazy_kwargs)
         plt.ylim(ylim)
+        if (xlim[i] is not None):
+            plt.xlim(xlim[i])
+        PlotUtilities.tickAxisFont()
         PlotUtilities.title("Tuning curve for {:s}".format(name))
-    loc = (-1.15,1.025)
+    loc = (-0.20,1.025)
     PlotUtilities.label_tom(fig,loc=loc)
     PlotUtilities.savefig(fig,out_base + "tuning.pdf")
 
