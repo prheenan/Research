@@ -384,7 +384,18 @@ All timing and tuning experiments were carried out on a desktop with 16GB of RAM
 
 \subsubsection{\sLabel{Metrics}Algorithm description}
 
-\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occuring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}). The probability at each point is then iteratively updated in order to remove the effect of adhesions and other false-positives. As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning}). Contigous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determiend within each region by the method of \fRef{Rupture} and the relevant text.
+\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occuring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}). The probability at each point is then iteratively updated in order to remove the effect of adhesions and other false-positives. As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning}). Contigous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determiend within each region by the method of \fRef{Rupture} and the relevant text. \name{} takes in a smoothing parameter and a probability threshold, which are detailed in \tRef{parameters}
+
+
+\begin{table}
+\begin{tabularx}{\textwidth}{ l | l | l | l  }
+\hline \hline
+Name & Meaning  & Value used in this work \e
+$\tau$ & Number of points used for spline grid smoothing & 2\% of the curve length \e
+threshold & Probability theshold above which to reject events  & Determined by tuning (see \fRef{Tuning}) \e
+\end{tabularx}
+\caption[Algorithm parameters]{\tLabel{parameters} The names and definitions of the parameters used by \name{}}
+\end{table}
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
