@@ -792,7 +792,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     # determine where the events are happening locally (guarentee at least
     # a search window of min_points)
     # XXX debugging 
-    remainder_split = [0 for d in delta_split_rem ]
+    remainder_split = [max(3,d) for d in event_duration ]
     event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
     # POST: slices are of length min points, determine which events overlap, 
