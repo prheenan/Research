@@ -145,7 +145,7 @@ def run(base="./"):
     plt.plot(time_approach_plot,approach_diff[slice_fit_approach],alpha=0.3,
              label=label_r_t,**style_approach)
     plt.plot(time_approach_plot,approach_stdev_plot,label=label_s_t,
-             **style_approach)
+             linestyle='--',**style_approach)
     PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ [pN]",
                             "",frameon=True)
     plt.xlim(xlim_approach)
@@ -154,10 +154,11 @@ def run(base="./"):
     plt.ylim(*ylim_diff)
     # plot the 'raw error distribution for the retract
     plt.subplot(gs[1,1])
+    filted_stdev_style = dict(linestyle='--',**style_filtered)
     Plotting.before_and_after(x_plot,diff_pN,slice_before,slice_after,
                               style_raw,label=label_r_t)
     Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
-                              style_filtered,label=label_s_t)
+                              filted_stdev_style,label=label_s_t)
     PlotUtilities.lazyLabel("","","",frameon=True)
     PlotUtilities.no_x_ticks()
     plt.ylim(*ylim_diff)
