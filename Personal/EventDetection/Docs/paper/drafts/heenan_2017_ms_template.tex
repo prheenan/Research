@@ -332,7 +332,7 @@ of scholarly work in the above mentioned discipline.
 
 \section{\sLabel{Intro}Introduction}
 
-\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins (\citePRH{yu_hidden_2017}). The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
+\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins\citePRH{yu_hidden_2017}. The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
 
 During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample (\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
 
@@ -599,25 +599,24 @@ The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution 
 
 \begin{figure}
   \begin{lstlisting}[language=Python]
-def event_indices(force,threshhold):
-   autocorrelation = [0,1] normalized autocorrelation of force
-   med = median of autocorrelation
-   autocorrelation_small_t = autocorrelation until reaching med
-   $\tau$ = slope from line fit to log of autocorrelation_small_t
+def event_indices(force,threshold,tau):
    N = number of points in force
    grid = array of points each spaced $\tau$ apart
    g$^{*}$ = second-order spline fit to force using grid for knots
-   r = force - g$^{*}$
-   n = number of points in force
+   r = force.retract - g$^{*}$
+   n = number of points in force.retarct
    s[i] = standard deviation of r[max(0,i-$\tau$/2):min(i+$\tau$/2,n)]
    $\epsilon$ = median of s
    $\sigma$ = standard deviation of s within its interquartile region
    k = (s-$\epsilon$)/$\sigma$
    chebyshev = max(1,1/k$^2$)
    possible_events = indices where chebyshev <= threshhold
+   # update the probability to remove false positives (adhesions)
+   surface_location = last point where force.retract > 0
+   set possible events containing surface_location to 0
    return possible_events
 \end{lstlisting}
-\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. XXX fix\pEndF }
+\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one definining the maximum probability; and `tau' which is the number of points between the spline filter g$^{*}$. \pEndF }
 \end{figure}
 
 
@@ -651,10 +650,9 @@ For example, $d_{t\rightarrow p,4}$ represents the distances from the true to th
 \caption[Performance of \name{} on larger data set]{\noindent\fLabel{LargeDataset}\pStartF This figure is identical to \fRef{Performance}, except it details the performance of only \name{} on the full data set listed in \tRef{statistics}, instead of merely the highest loading rate.  \pEndF }
 \end{figure}
 
-\subsubsection{Improvements}
+\subsubsection{\sLabel{Domain Knowledge} Improvements}
 
-XXX figure out how to determine where the adhesion ends, how to improve SNR by derivative stuffs.
-
+As shown in \fRef{Code}... 
 
 \begin{figure}
 \centering
