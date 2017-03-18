@@ -384,7 +384,7 @@ All timing and tuning experiments were carried out on a desktop with 16GB of RAM
 
 \subsubsection{\sLabel{Metrics}Algorithm description}
 
-\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occuring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}). The probability at each point is then iteratively updated using Bayesian inference, in order to remove the effect of adhesions and other false-positives (see XXX). As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning}). Contigous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determiend within each region by the method of \fRef{Rupture} and the relevant text.
+\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occuring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}). The probability at each point is then iteratively updated in order to remove the effect of adhesions and other false-positives. As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning}). Contigous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determiend within each region by the method of \fRef{Rupture} and the relevant text.
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
@@ -579,13 +579,15 @@ For \emph{any} noise distribution, this bounds the probability of a measurement 
 
 \subsubsection{Accurate estimators for hypothesis testing}
 
-XXX auto correlation time motivation \pl 
+\firstp In order to obtain an accurate estimator for $g_t$, the data must be smoothed. \name{} uses spline smoothing, assuming the user has a time scale $\tau$ below which events are occuring. For these experiments, $\tau$ was set to 2\% of the curve length. \pl 
 
 The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline (b-spline, ) to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of $\tau$. \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{feather-sigma}, \eRef{feather-epsilon}, and \eRef{feather-probability}. \pl
 
 Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, the distribution of windowed standard deviations `$s_t$' of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of $r_t$. Using $s_t$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  \pl
 
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. \pl
+
+The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilites. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}. Specifically, the relevant operation (integration,differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the probabilities are multiplied together. 
 
 
 \begin{figure}
@@ -594,29 +596,45 @@ The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution 
 \caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Demonstrating how \name{} works. (a,b) The approach and retract forces versus time, with spline fits overlayed. (c,d) The approach and retract r$_t$ versus time, with s$_t$ overlayed, demonstrating the signa-to-noise benefit of using s$_t$. (e,f) The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlayed. (g) The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event. \pEndF }
 \end{figure}
 
+\clearpage
 
 \subsubsection{Algorithm psuedocode}
 
 \begin{figure}
   \begin{lstlisting}[language=Python]
-def event_indices(force,threshold,tau):
-   N = number of points in force
-   grid = array of points each spaced $\tau$ apart
-   g$^{*}$ = second-order spline fit to force using grid for knots
+def event_indices(force,threshold,$\tau$):
+   g$^{*}$ = second-order spline fit to retract using $\tau$ for knots
+   g$_a$ = second order spline fit to approach using $\tau$ for knots
    r = force.retract - g$^{*}$
-   n = number of points in force.retarct
-   s[i] = standard deviation of r[max(0,i-$\tau$/2):min(i+$\tau$/2,n)]
-   $\epsilon$ = median of s
-   $\sigma$ = standard deviation of s within its interquartile region
+   r$_a$ = force.approach - g$^{*}$
+   s[i] = standard deviation of r[i-$\tau$/2:i+$\tau$/2]
+   s$_a$[i] = standard deviation of r$_a$[i-$\tau$/2:i+$\tau$/2]
+   $\epsilon$ = median of s$_a$
+   $\sigma$ = standard deviation of s$_a$
    k = (s-$\epsilon$)/$\sigma$
-   chebyshev = max(1,1/k$^2$)
-   possible_events = indices where chebyshev <= threshhold
+   probability = mininimum(1,k$^{-2}$)
+   # multiply by the integral probability 
+   integrated$_{s}$[i] = integrate (s-$\epsilon$) from [i-$\tau$] to [i+$\tau$]
+   set integrated$_{s}$ where positive to 0
+   k$_{\text{integ}}$ = (integrated$_{s}$/$\sigma$)
+   probability = probability * minimum(1,k$_{\text{integ}}^{-2}$)
+   # multiply by the derivative probability
+   $\epsilon_d$  = median of derivative of g$_a$
+   $\sigma_d$ = standard deviation of derivative of g$_a$
+   g$_{\text{deriv}}$ = derivative of $g^{*}$ with respect to time
+   k$_{\text{deriv}}$ = (g$_{\text{deriv}}$ - $\epsilon_d$)/$\sigma_d$
+   probability = probability * minimum(1,k$_{\text{deriv}}^{-2}$)
+   # multiply by the differential probability 
+   df[i] = g$^{*}$[i+tau] - g$^{*}$[i-tau]
+   k$_{\text{df}}$ = (df - $2\tau \epsilon$)/$\sigma$
+   probability = probability * minimum(1,k$_{\text{df}}^{-2}$)
+   possible_events = indices where probability <= threshhold
    # update the probability to remove false positives (adhesions)
    surface_location = last point where force.retract > 0
    set possible events containing surface_location to 0
    return possible_events
 \end{lstlisting}
-\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one definining the maximum probability; and `tau' which is the number of points between the spline filter g$^{*}$. \pEndF }
+\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one definining the maximum probability; and `$\tau$' which is the even number of points between the spline knots. \pEndF }
 \end{figure}
 
 
@@ -649,10 +667,6 @@ For example, $d_{t\rightarrow p,4}$ represents the distances from the true to th
 \includegraphics[width=\figwidth]{../Figures/Finals/feather_full_set.pdf}% Here is how to import EPS art
 \caption[Performance of \name{} on larger data set]{\noindent\fLabel{LargeDataset}\pStartF This figure is identical to \fRef{Performance}, except it details the performance of only \name{} on the full data set listed in \tRef{statistics}, instead of merely the highest loading rate.  \pEndF }
 \end{figure}
-
-\subsubsection{\sLabel{Domain Knowledge} Improvements}
-
-As shown in \fRef{Code}... 
 
 \begin{figure}
 \centering
