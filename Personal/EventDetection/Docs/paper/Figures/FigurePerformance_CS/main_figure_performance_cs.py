@@ -28,8 +28,8 @@ def write_coeffs_file(out_file,coeffs):
     funcs_names_values = []
     for c in coeffs:
         tmp =[ [opt_high,r"bc2 ($\uparrow$)",c.bc_2d],
-               [opt_low,r"median ($\downarrow$)",c.cat_median],
-               [opt_low,r"q ($\downarrow$)",c.cat_q],
+               [opt_low,r"median [nm] ($\downarrow$)",c.cat_median*1e9],
+               [opt_low,r"q [nm]($\downarrow$)",c.cat_q*1e9],
                [opt_low,r"relative median ($\downarrow$)",
                 c.cat_relative_median],
                [opt_low,r"relative q ($\downarrow$)",c.cat_relative_q]]
