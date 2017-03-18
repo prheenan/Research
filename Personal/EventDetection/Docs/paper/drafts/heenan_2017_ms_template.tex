@@ -404,7 +404,7 @@ d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$
 Name & Notation  & Range & \text{Optimum} \e 
 Relative event error & f$_{85}$ &   [0,1] & 0 \e
 Absolue event error & z$_{85}$ & [0,max(x$_k$)] &  0 \e
-Rupture Spectrum Bhattacharya Coefficient  & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
+Rupture Bhattacharya Coefficient  & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
 \end{tabularx}
 \caption[Definition of algorithmic performance metrics]{\tLabel{metrics} }
 \end{table}
@@ -442,12 +442,12 @@ Rupture Spectrum Bhattacharya Coefficient  & $\braket{d_{(\nu,F),t}^{\frac{1}{2}
 \fRef{Performance} shows the event-detection performance of \name{} and the baseline algorthms. As defined by \tRef{Metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and almost doubles the Bhattacharya coefficient over the spectrum of loading rates and rupture forces. 
 
 \begin{table}
-\begin{tabularx}{\textwidth}{ l || l | l | l | l | l }
+\begin{tabularx}{\textwidth}{ l || l | l | l | }
 \hline \hline
-  & bc2 ($\uparrow$) & median [nm] ($\downarrow$) & q [nm]($\downarrow$) & relative median ($\downarrow$) & relative q ($\downarrow$)\e\hline 
-no event & \textbf{0.96} & \textbf{4.45} & \textbf{9.42} & \textbf{0.00272} & \textbf{0.0054}\e
-open fovea & 0.354 & 432 & 951 & 0.261 & 0.57\e
-wavelet transform & 0.556 & 525 & 1.77e+03 & 0.318 & 1\e
+ & Rupture Bhattacharge Coeffficient ($\uparrow$) & Absolute event error [nm]($\downarrow$) & Relative event error ($\downarrow$)\e\hline 
+no event & \textbf{0.96} & \textbf{9.42} & \textbf{0.0054}\e
+open fovea & 0.354 & 951 & 0.57\e
+wavelet transform & 0.556 & 1.77e+03 & 1\e
 \end{tabularx}
 \caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics across the three algorithms. The optimal algorithm row for each metric is highlighted in bold, depending on if the metric optimum is low (denoted by a $\downarrow$ next to the name) or high (denoted by a $\uparrow$ next to the name).} 
 \end{table}
@@ -473,6 +473,8 @@ XXX possible by modelin
 XXX big data set?...
 
 XXX unfolding
+
+XXX other places?
 
 XXX
 
@@ -626,10 +628,9 @@ def event_indices(force,threshhold):
    k = (s-$\epsilon$)/$\sigma$
    chebyshev = max(1,1/k$^2$)
    possible_events = indices where chebyshev <= threshhold
-   # XXX: add in derivative filtering
    return possible_events
 \end{lstlisting}
-\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}  \pEndF }
+\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. XXX fix\pEndF }
 \end{figure}
 
 
