@@ -52,10 +52,14 @@ def run():
                              n_folds,pool_size=pool_size,
                              learners=learners)
     for l in learners:
+        """
         if (debugging):
             break
+        """
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
+        best_metric = Offline.best_metric_from_learner(l)
+        rupture_kwargs = dict(distance_histogram=dict())
         Plotting.plot_individual_learner(debug_directory,l)
     num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)

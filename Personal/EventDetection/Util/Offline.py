@@ -164,15 +164,60 @@ def update_limits(previous,new,floor=None):
     to_update_max = np.max(cat_max)
     return [to_update_min,to_update_max]
 
+def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
+                       xlabel="Distance[m]",distance_limits=None):
+    """
+    Args:
+        see Plotting.histogram_event_distribution
+    Returns:
+        a dict with the event error kwargs, see 
+        Plotting.histogram_event_distribution
+    """
+    common_style_hist = dict(alpha=0.3,linewidth=0)
+    label_pred_dist_hist = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
+    label_true_dist_hist = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
+    style_true = dict(color=color_true,label=label_true_dist_hist,
+                      **common_style_hist)
+    style_pred = dict(color=color_pred,label=label_pred_dist_hist,
+                      **common_style_hist)
+    to_true,to_pred = metric.to_true_and_pred_distances()
+    limit = metric.distance_limit()
+    log_limit = np.log10(limit)
+    bins = np.logspace(*log_limit,num=n_bins)
+    if (distance_limits is None):
+        distance_limits = limit
+    return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
+                bins=bins,style_true=style_true,style_pred=style_pred,
+                xlabel=xlabel)
+
+def best_metric_from_learner(l):
+    """
+    returns the best metric from the learner l
+
+    Args:
+        l: learning_curve object
+    Returns:
+        *best* plotting_metrics
+    """
+    ruptures_valid_true,ruptures_valid_pred = \
+        Learning.get_true_and_predicted_ruptures_per_param(l)
+    ret  = [metrics(true,pred) \
+            for true,pred in zip(ruptures_valid_true,ruptures_valid_pred)]
+    return plotting_metrics(l,ret)
+
 def get_metric_list(data_file):
+    """
+    gets a list of the *best* tuning parameter found from the learners in
+    the pickle'd data_file
+
+    Args:
+        data_file: the pkl file with all the learnered
+    Returns:
+        lit of plotting_metric objects (for compression of tuning results)
+    """
     trials = CheckpointUtilities.lazy_load(data_file)
     best_fold = []
     metric_list = []
     for l in trials:
-        ruptures_valid_true,ruptures_valid_pred = \
-                Learning.get_true_and_predicted_ruptures_per_param(l)
-        ret  = [metrics(true,pred) \
-                for true,pred in zip(ruptures_valid_true,ruptures_valid_pred)]
-        tmp = plotting_metrics(l,ret)
-        metric_list.append(tmp)
+        metric_list.append(best_metric_from_learner(l))
     return metric_list    

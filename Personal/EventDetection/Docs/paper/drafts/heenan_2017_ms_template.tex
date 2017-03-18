@@ -179,7 +179,7 @@
     Date
   \end{tabular}
 }
-\newcommand{\name}[0]{Feather}
+\newcommand{\name}[0]{FEATHER}
 \newcommand{\acronym}[0]{\textbf{F}orce \textbf{E}xtension \textbf{A}nalysis using a \textbf{T}estable \textbf{H}ypothesis for \textbf{E}vent \textbf{R}ecognition}
 \newcommand{\TitleName}[0]{A Bayesian Algorithm for Detecting Molecular Unbinding Events in Force Spectroscopy Time Series Data}
 \newcommand{\figwidth}[0]{\linewidth}
@@ -332,7 +332,7 @@ of scholarly work in the above mentioned discipline.
 
 \section{\sLabel{Intro}Introduction}
 
-\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins (XXX Hao/Matt). The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
+\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins (\citePRH{yu_hidden_2017}). The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studies of biological systems. \pl
 
 During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample (\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
 
@@ -351,7 +351,7 @@ Methods exist to automate manually sorting \singlemol{} data and detect tip-samp
 
 This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (\acronym{}), require no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has a single, easy-to-interpret parameter which generalizes well to typical \singlemol{} data ranges. \name{} is so-named since it is designed to make few assumptions about the data, operate over a wide range of AFM data, and require a small time and memory footprint compared to existing techniques.\pl
 
- The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). After, this research details manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described \pl
+ The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). After, this research details manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. \pl
 
 \section{\sLabel{Materials}Materials and Methods}
 
@@ -372,7 +372,7 @@ This paper describes a new method based on machine learning for detecting events
 \caption[Definition of rupture force and loading rate]{\fLabel{Rupture} (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force are defined as the last data point above the linear fit in the fitting region. The loading rate is defined by the slope of the linear fit. }
 \end{figure}
 
-\firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files and are available at (XXX link?). \pl
+\firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files. \pl
 
 The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in \fRef{Rupture}. The region leading up to the event start was fit by a line, with the region length set to 2\% of the number of points in the retract. The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line at the time value where the data was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in \fRef{Performance}. \pl
 
@@ -380,33 +380,22 @@ The expected rupture forces and loading rates were calculated from the annotated
 
 \subsection{\sLabel{Algorithm}Algorithm Design and Analysis}
 
+All timing and tuning experiments were carried out on a desktop with 16GB of RAM, a 3.7GHz i7-4790 CPU, and a 1TB hard drive. \pl
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
-\firstp Three metrics were used for comparing the event-finding performance of \name with the human-annotated data. For clarity, we define the following, where `k' is one of the K total force-extension curves and `i' and `j' represent either true (t) or predicted (p): \pl
-
-\eqs{ 
-x_k &\equiv \text{the total displacement of the force extension curve} \\
-d_{i\rightarrow j,k} &\equiv \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\
-f_{\text{x}} &\equiv \text{ the `x'-th percentile of the concatenation of } \frac{1}{x_k}d_{t\rightarrow p,k} \text{ and } \frac{1}{x_k}d_{p\rightarrow t,k} \text{ over all k } \\
-z_{\text{x}} &\equiv \text{ as f$_{\text{x}}$, but without dividing by $x_k$}\\
-\nu_i &\equiv \text{ distribution of `i' loading rates over all k} \\
-F_i &\equiv \text{ distribution of `i' rupture forces over all k} \\
-d_{(\nu,F),i} &\equiv \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\
- }
-
-\firstp For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. The metrics we report are defined in \tRef{metrics} and give estimates for how closely the distributions of predicted event locations and event properties align with the human-tagged data. \pl
+\firstp Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics} with more details in \tRef{MetricParts}. The event error metrics, $f_{85}$ and $z_{85}$, describe how closely the predicted event locations align with the human-tagged data, and the rupture Bhattacharya coefficient, $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the overlap between the expected and actual distribution over loading rates and rupture forces . \pl
 
 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l | l | l | l  }
 \hline \hline
 Name & Notation  & Range & \text{Optimum} \e 
-Relative event error & f$_{85}$ &   [0,1] & 0 \e
-Absolue event error & z$_{85}$ & [0,max(x$_k$)] &  0 \e
-Rupture Bhattacharya Coefficient  & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
+relative event error & f$_{85}$ &   [0,1] & 0 \e
+absolute event error & z$_{85}$ & [0,max(x$_k$)] &  0 \e
+rupture Bhattacharya coefficient (BC) & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
 \end{tabularx}
-\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} }
+\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. All the symbols used are defined in \tRef{MetricParts}, with the exception of the rupture BC's bra-ket notation, representing an inner product between its arguments. }
 \end{table}
 
 \subsubsection{\sLabel{Compare}Choice of competing methods}
@@ -420,10 +409,11 @@ Rupture Bhattacharya Coefficient  & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu
 
  These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (see \tRef{statistics}). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method is a wavelet-based algorithm. \pl
 
-\subsubsection{\sLabel{Tuning}Algorithm tuning }
+\subsubsection{\sLabel{Tuning}Algorithm tuning}
 
-\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter.
+\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter. \pl
 
+Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=1000nm/s, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (XXX Figure). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
 
 \section{\sLabel{Results}Results}
 
@@ -439,12 +429,12 @@ Rupture Bhattacharya Coefficient  & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
 
-\fRef{Performance} shows the event-detection performance of \name{} and the baseline algorthms. As defined by \tRef{Metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and almost doubles the Bhattacharya coefficient over the spectrum of loading rates and rupture forces. 
+\fRef{Performance} shows the event-detection performance of \name{} and the baseline algorthms. As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and almost doubles the Bhattacharya coefficient over the spectrum of loading rates and rupture forces. 
 
 \begin{table}
-\begin{tabularx}{\textwidth}{ l || l | l | l | }
+\begin{tabularx}{\textwidth}{ l || l | l | l }
 \hline \hline
- & Rupture Bhattacharge Coeffficient ($\uparrow$) & Absolute event error [nm]($\downarrow$) & Relative event error ($\downarrow$)\e\hline 
+ & Rupture BC ($\uparrow$) & Absolute event error [nm]($\downarrow$) & Relative event error ($\downarrow$)\e\hline 
 no event & \textbf{0.96} & \textbf{9.42} & \textbf{0.0054}\e
 open fovea & 0.354 & 951 & 0.57\e
 wavelet transform & 0.556 & 1.77e+03 & 1\e
@@ -632,6 +622,30 @@ def event_indices(force,threshhold):
 \end{lstlisting}
 \caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. XXX fix\pEndF }
 \end{figure}
+
+
+\subsubsection{Performance Metrics}
+
+For the performance metrics, we define the following, where `k' is one of the K total force-extension curves and `i' and `j' represent either true (t) or predicted (p): 
+
+
+
+\begin{table}
+\begin{tabularx}{\textwidth}{ l | l  }
+Name & Definition \\ \hline \hline
+$x_k$ & \text{the total displacement of the force extension curve} \\ \hline 
+$d_{i\rightarrow j,k}$ & \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\\hline 
+$f_{\text{x}}$ &  \text{ the `x'-th percentile of the concatenation of } $\frac{1}{x_k}d_{t\rightarrow p,k}$ \text{ and } $\frac{1}{x_k}d_{p\rightarrow t,k}$ \text{ over all k } \\ \hline 
+$z_{\text{x}}$ & \text{ as f$_{\text{x}}$, but without dividing by $x_k$}\\\hline 
+$\nu_i$ & \text{ distribution of `i' loading rates over all k} \\\hline 
+$F_i$ & \text{ distribution of `i' rupture forces over all k} \\\hline 
+$d_{(\nu,F),i}$ & \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\\hline 
+\end{tabularx}
+\caption[Data set statistical information]{\tLabel{MetricParts}  }
+\end{table}
+
+
+For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. \pl
 
 
 \subsubsection{Improvements}
