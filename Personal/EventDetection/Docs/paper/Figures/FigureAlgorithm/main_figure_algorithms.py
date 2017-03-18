@@ -16,10 +16,6 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 
 import matplotlib.gridspec as gridspec
 
-def fmt(ax):
-    ax.set_xlim([-0.1,2.5])
-    ax.set_ylim([-50,40])
-
 def plot_epsilon(epsilon_plot,sigma_plot):
     epsilon_style = dict(color='b')
     plt.axhline(epsilon_plot,label="$\epsilon$")
@@ -104,6 +100,9 @@ def run(base="./"):
     approach_stdev_plot = y_plot_f(approach_stdev)
     ylim_diff_filtered = [min(stdev_plot),max(stdev_plot)]
     ylim_diff = [min(diff_pN),max(diff_pN)]
+    ylim_force_min = min([min(force_plot),min(force_approach)])
+    ylim_force_max = max([max(force_plot),max(force_approach)])
+    ylim_force = [ylim_force_min,ylim_force_max]
     fig = PlotUtilities.figure((16,12))
     n_rows = 3
     n_cols = 2
@@ -117,6 +116,8 @@ def run(base="./"):
     style_filtered = dict(linewidth=3,**common)
     retract_style = dict(color='g',**common)
     style_retract_error_dist = dict(linewidth=2,**common)
+    label_s_t = r"s$_t$"
+    label_r_t = r"r$_t$"
     plt.plot(time_approach,force_approach,label="Raw (approach)",
              alpha=0.3,**style_approach)
     plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
@@ -127,6 +128,7 @@ def run(base="./"):
     plt.xlim(xlim_approach)
     tick_function()
     PlotUtilities.no_x_ticks()
+    plt.ylim(ylim_force)
     plt.subplot(gs[0,1])
     Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
                               style_raw,label="Raw (retract)")
@@ -137,12 +139,15 @@ def run(base="./"):
     PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
     tick_function()
     PlotUtilities.no_x_ticks()
+    plt.ylim(ylim_force)
     # plot the 'raw' error distribution for the approach
     plt.subplot(gs[1,0])
     plt.plot(time_approach_plot,approach_diff[slice_fit_approach],alpha=0.3,
+             label=label_r_t,**style_approach)
+    plt.plot(time_approach_plot,approach_stdev_plot,label=label_s_t,
              **style_approach)
-    plt.plot(time_approach_plot,approach_stdev_plot,**style_approach)
-    PlotUtilities.lazyLabel("","R$_\mathrm{t}$ [pN]","",frameon=True)
+    PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ [pN]",
+                            "",frameon=True)
     plt.xlim(xlim_approach)
     PlotUtilities.no_x_ticks()
     tick_function()
@@ -150,10 +155,10 @@ def run(base="./"):
     # plot the 'raw error distribution for the retract
     plt.subplot(gs[1,1])
     Plotting.before_and_after(x_plot,diff_pN,slice_before,slice_after,
-                              style_raw)
+                              style_raw,label=label_r_t)
     Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
-                              style_filtered)
-    PlotUtilities.lazyLabel("","","")
+                              style_filtered,label=label_s_t)
+    PlotUtilities.lazyLabel("","","",frameon=True)
     PlotUtilities.no_x_ticks()
     plt.ylim(*ylim_diff)
     tick_function()
@@ -164,7 +169,7 @@ def run(base="./"):
     plt.xlim(xlim_approach)
     plt.ylim(*ylim_diff_filtered)
     tick_function()
-    PlotUtilities.lazyLabel("Time (s)","R$_{\mathrm{t}}$$^{*}$ [pN]","",
+    PlotUtilities.lazyLabel("Time (s)","s$_{\mathrm{t}}$$^{*}$ [pN]","",
                             frameon=True,loc='upper right')
     # filtered error distribution for the retract
     plt.subplot(gs[2,1])
