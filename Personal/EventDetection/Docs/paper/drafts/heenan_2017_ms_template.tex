@@ -596,7 +596,7 @@ The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a leas
 
 Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, the distribution of windowed standard deviations `$s_t$' of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of $r_t$. Using $s_t$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  \pl
 
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$ and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis.
 
 
 \begin{figure}
