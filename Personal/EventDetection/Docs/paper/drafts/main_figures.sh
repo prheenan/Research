@@ -55,6 +55,7 @@ cartoon_dir="${base_dir_rel}FigureCartoon/"
 timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
+copy_pdfs ${base_dir_rel}FigurePerformance_FullSet_Only_FEATHER/ $out_path 
 copy_pdfs ${base_dir_rel}FigurePerformance_CS/ $out_path 
 copy_pdfs ${base_dir_rel}FigureAlgorithm/ $out_path 
 copy_pdfs ${base_dir_rel}FigureTuning/ $out_path 

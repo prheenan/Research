@@ -413,7 +413,7 @@ rupture Bhattacharya coefficient (BC) & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{
 
 \firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter. \pl
 
-Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=1000nm/s, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (XXX Figure). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
+Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=1000nm/s, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDatase}). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
 
 \section{\sLabel{Results}Results}
 
@@ -466,7 +466,7 @@ XXX unfolding
 
 XXX other places?
 
-XXX
+XXX \fRef{LargeDataset}
 
 
 \clearpage
@@ -647,6 +647,12 @@ $d_{(\nu,F),i}$ & \text{ joint probability distribution of $\nu_i$ and $F_i$ ove
 
 For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. \pl
 
+
+\begin{figure}
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/feather_full_set.pdf}% Here is how to import EPS art
+\caption[Performance of \name{} on larger data set]{\noindent\fLabel{LargeDatase}\pStartF This figure is identical to \fRef{Performance}, except it details the performance of only \name{} on the full data set listed in \tRef{statistics}, instead of merely the highest loading rate.  \pEndF }
+\end{figure}
 
 \subsubsection{Improvements}
 

@@ -655,7 +655,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.ylim([0,1])
     # just empty :-(
 
-def rupture_distribution_plot(learner,out_file_stem,**kwargs):
+def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
     """
     plots *and saves* the distributions of ruptures in *all* validation folds
     (ie: the entire sample) 
@@ -672,11 +672,10 @@ def rupture_distribution_plot(learner,out_file_stem,**kwargs):
         Learning.get_true_and_predicted_ruptures_per_param(learner)
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
-        fig = PlotUtilities.figure(figsize=(12,12))
-        rupture_plot(true,pred,fig,**kwargs)
-        out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
+        fig = PlotUtilities.figure(figsize=(16,8))
+        rupture_plot(true,pred,fig,distance_histogram=distance_histogram)
+        out_path = "{:s}{:s}{:d}.pdf".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
-
 
 def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
     """
@@ -694,7 +693,8 @@ def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
-    rupture_distribution_plot(learner,out_file_stem,**rupture_kwargs)
+    rupture_distribution_plot(learner,out_file_stem,
+                              distance_histogram=rupture_kwargs)
     fig = PlotUtilities.figure()
     distance_distribution_plot(learner,to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "histogram_to_true.png")

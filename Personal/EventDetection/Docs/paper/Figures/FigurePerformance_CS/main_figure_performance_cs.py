@@ -57,7 +57,7 @@ def run(base="./"):
     """
     out_base = base
     data_file = base + "data/Scores.pkl"
-    force=True
+    force=False
     metric_list = CheckpointUtilities.getCheckpoint(base + "cache.pkl",
                                                     Offline.get_metric_list,
                                                     force,data_file)
