@@ -30,9 +30,10 @@ def run(base="./"):
                               fig=fig)
         final_out_path = "{:s}_{:d}.pdf".format(out_base,i)
         PlotUtilities.label_tom(fig,loc=(-0.25,1.1),fontsize=18)
+        plt.suptitle("FEATHER",fontsize=25,y=0.95,fontcolor='b')
         PlotUtilities.savefig(fig,final_out_path,
                               subplots_adjust=dict(wspace=0.4,left=0.10,
-                                                   top=0.9))
+                                                   top=0.8))
 
 
 
