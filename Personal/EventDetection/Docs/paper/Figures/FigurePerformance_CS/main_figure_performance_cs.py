@@ -142,11 +142,11 @@ def run(base="./"):
     letters = [ ["({:s}{:d})".format(s,n+1) for n in range(n_subplots)]
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
-    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.1),fontsize=18)
+    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.12),fontsize=18)
     final_out_path = out_base + "landscape.pdf"
     PlotUtilities.savefig(fig,final_out_path,
                           subplots_adjust=dict(left=0.10,
-                                               hspace=0.2,wspace=0.2,top=0.95))
+                                               hspace=0.3,wspace=0.2,top=0.95))
 
 
 
