@@ -340,6 +340,21 @@ def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
         PlotUtilities.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
                                 "",frameon=True)
 
+def set_separation_velocity_by_first_frac(iwt_data,fraction_for_vel):
+    """
+    Sets the velocity and offset of the given iwt_object by the first
+    fraction [0,1] points in iwt_data.Time
+
+    Args:
+        see set_separation_velocity_by_first_num, except:
+        fraction_for_vel: the fraction [0,1] to use for the fitting
+    Returns:
+        see set_separation_velocity_by_first_num
+    """
+    Num = int(np.ceil(iwt_data.Time.size * fraction_for_vel))
+    return set_separation_velocity_by_first_num(iwt_data,Num)
+                                
+                                
 def set_separation_velocity_by_first_num(iwt_data,num):
     """
     Sets the velocity and offset of the given iwt_object by the first
@@ -400,11 +415,9 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
         IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None)
         IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None)
     # switch the velocities of all ToIWTObject folding objects..
-    # get the number of points to use for the fit. 
-    Num = int(np.ceil(unfold_tmp.Time.size * fraction_for_vel))
     # set the velocity and Z functions
-    set_separation_velocity_by_first_num(IwtData,Num)
-    set_separation_velocity_by_first_num(IwtData_fold,Num)
+    set_separation_velocity_by_first_frac(IwtData,fraction_for_vel)
+    set_separation_velocity_by_first_frac(IwtData_fold,fraction_for_vel)
     return IwtData,IwtData_fold
 
 
