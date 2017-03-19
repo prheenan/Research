@@ -109,6 +109,9 @@ def run(base="./"):
     entire_figure = gridspec.GridSpec(3,1)
     import matplotlib as mpl
     mpl.rcParams['hatch.linewidth'] = 4
+    title_dict = {"no event":"FEATHER",
+                  "open fovea":"Open Fovea",
+                  "wavelet transform":"Scientific Python"}
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
         best_param_idx = m.best_param_idx
@@ -135,6 +138,8 @@ def run(base="./"):
                               count_limit=[0.5,count_max*2],
                               distance_histogram=distance_kw,gs=gs,
                               fig=fig)
+        plt.title(title_dict[name],fontsize=25,x=-2,y=3.85,color=color_pred,
+                  alpha=1)
     # individual plot labels
     n_subplots = 5
     n_categories = len(metric_list)
