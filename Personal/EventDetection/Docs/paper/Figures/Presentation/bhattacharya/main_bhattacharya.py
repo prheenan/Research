@@ -8,8 +8,29 @@ from __future__ import unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+sys.path.append("../../../../../../../../")
+from GeneralUtil.python import PlotUtilities
 
+def bc(x,y):
+    p_x = (x/sum(x))
+    p_y = (y/sum(y))
+    return sum(np.sqrt(p_x) * np.sqrt(p_y))
 
+def plot_bhattacharya(sigma,n_samples,bins,low,high):
+    np.random.seed(42)
+    distribution = np.random.normal(loc=0,scale=sigma,size=n_samples)
+    uniform = np.random.uniform(low,high, size=n_samples)
+    min_v,max_v = np.min([min(distribution),min(uniform)]),\
+                  np.max([max(distribution),max(uniform)])
+    common_style = dict(alpha=0.3)
+    label_gauss= r"$\mathcal{N}$" + \
+                 (r"($\mu$={:d},$\sigma$={:d})").format(0,sigma)
+    label_uniform=r"$\mathcal{U}$" + (r"(a={:d},b={:d})").format(low,high)
+    n_uniform,e_uniform,_ = plt.hist(uniform,bins=bins,label=label_uniform,
+                                     **common_style)
+    n_gauss,e_gauss,_ = plt.hist(distribution,bins=bins,label=label_gauss,
+                                 hatch="////",**common_style)
+    return bc(n_uniform,n_gauss)
 
 def run():
     """
@@ -23,31 +44,37 @@ def run():
     """
     n_samples = int(1e4)
     sigma = 1
-    n_sigma = 2
+    bounds_arr = [[-5,-2],[-3,0],[-2,1]]
     n_bins = 50
-    distribution = np.random.normal(loc=0,scale=sigma,size=n_samples)
-    uniform = np.random.uniform(-n_sigma*sigma, n_sigma*sigma, size=n_samples)
-    min_v,max_v = np.min([min(distribution),min(uniform)]),\
-                  np.max([max(distribution),max(uniform)])
-    bins = np.linspace(min_v,max_v,endpoint=True,num=n_bins)
-    common_style = dict(alpha=0.3)
-    fig = plt.figure(dpi=400)
-    n_uniform,e_uniform,_ = plt.hist(uniform,bins=bins,label="uniform",
-                                     **common_style)
-    n_gauss,e_gauss,_ = plt.hist(distribution,bins=bins,label="gaussian",
-                                 hatch="//",**common_style)
-    p_uniform = (n_uniform/n_samples)
-    p_gauss = (n_gauss/n_samples)
-    bhattacharya =  sum(np.sqrt(p_uniform) * np.sqrt(p_gauss))
-    title = (r"Uniform over $\pm$" +str(n_sigma) + \
-             "$\sigma_{\mathrm{Gaussian}}$"+ \
-             " has a BC of {:.3f} with the Gaussian".format(bhattacharya))
-    xlim = [min_v,max_v]
+    ylim = [0,n_samples/4]
+    n_cols = 3+1
+    xlim = [-10,10]
+    bins = np.linspace(*xlim,endpoint=True,num=n_bins)
+    fig = PlotUtilities.figure((16,5))
+    plt.subplot(1,n_cols,1)
+    bhattacharya = plot_bhattacharya(sigma,n_samples,bins=bins,
+                                     low=-9,high=-6)
     plt.xlim(xlim)
-    plt.xlabel("Value")
-    plt.ylabel("Count")
-    plt.title(title)
-    fig.savefig("bc.png")
+    PlotUtilities.tickAxisFont()
+    PlotUtilities.xlabel("Value")
+    PlotUtilities.ylabel("Count")
+    PlotUtilities.legend(frameon=True)
+    plt.ylim(ylim)
+    title = (r"BC of {:.3f}".format(bhattacharya))
+    PlotUtilities.title(title)
+    for i,bounds in enumerate(bounds_arr):
+        plt.subplot(1,n_cols,(i+2))
+        bhattacharya = plot_bhattacharya(sigma,n_samples,bins,
+                                         *bounds)
+        title = (r"BC of {:.3f}".format(bhattacharya))
+        PlotUtilities.title(title)
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        PlotUtilities.tickAxisFont()
+        PlotUtilities.no_y_ticks()
+        PlotUtilities.legend(frameon=True)
+        PlotUtilities.xlabel("Value")
+    PlotUtilities.savefig(fig,"bc.pdf",subplots_adjust=dict(wspace=0.1))
     
 if __name__ == "__main__":
     run()
