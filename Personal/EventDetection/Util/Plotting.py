@@ -8,7 +8,7 @@ from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
-from Research.Personal.EventDetection.Util import Analysis,Learning
+from Research.Personal.EventDetection.Util import Analysis,Learning,Offline
 import matplotlib.gridspec as gridspec
 
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
@@ -490,7 +490,8 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
                             frameon=True)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
-                                 style_true,style_pred,xlabel="Distance [m]"):
+                                 style_true,style_pred,max_x_true,max_x_pred,
+                                 xlabel="Distance [m]"):
     """
     plots the distribution of distances from true/predicted to counterparts
 
@@ -504,9 +505,10 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
     if (to_pred.size > 0):
-        plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
+        plt.hist(to_pred/max_x_true,
+                 log=True,bins=bins,hatch= true_hatch(),**style_true)
     if (to_true.size > 0):
-        plt.hist(to_true,log=True,bins=bins,**style_pred)
+        plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
     PlotUtilities.lazyLabel(xlabel,"Count","",frameon=True)
@@ -637,18 +639,26 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         coeffs = Analysis.\
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                                     ruptures_true,ruptures_pred,bins_rupture)
+        # just get the 2d (last one
+        coeffs = [coeffs[-1]]
     else:
-        coeffs = [0,0,0]
-    labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
+        coeffs = [0]
+    labels_coeffs = [r"BC"]
+    # add in the relative distance metrics, if the are here
+    if (distance_histogram is not None):
+        labels_coeffs.append(r"1-f$_{85}$")
+        _,_,cat_relative_median,cat_relative_q = \
+            Offline.relative_and_absolute_median_and_q(**distance_histogram)
+        coeffs.append(1-cat_relative_q)
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
-    label_func = lambda i,r: "{:.2f}".format(r.get_height())
+    label_func = lambda i,r: "{:.3f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
     PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func,
                             fontsize=PlotUtilities.g_font_legend,
                             fontweight='bold')
-    plt.xticks(index + bar_width / 2, labels_coeffs,
+    plt.xticks(index, labels_coeffs,
                rotation=30,fontsize=PlotUtilities.g_font_label)
     PlotUtilities.ylabel("BC value")
     PlotUtilities.tickAxisFont()

@@ -65,7 +65,7 @@ def run(base="./"):
     lim_force_max = [0,0]
     distance_limits = [0,0]
     count_max = 0
-    distance_mins = np.inf
+    distance_limits = []
     coeffs_compare = []
     # get the plotting limits
     update_limits = Offline.update_limits
@@ -73,11 +73,10 @@ def run(base="./"):
         lim_force_max = update_limits(m.lim_force,lim_force_max)
         lim_load_max = update_limits(m.lim_load,lim_load_max,floor=1e-1)        
         count_max = max(m.counts,count_max)
-        distance_limits = update_limits(m.distance_limit(),distance_limits)
-        distance_mins = min(distance_mins,min(m.distance_limit()))
+        distance_limits.append(m.distance_limit(True))
         coeffs_compare.append(m.coefficients())
     write_coeffs_file(out_base + "coeffs.txt",coeffs_compare)
-    distance_limits = [distance_mins,max(distance_limits)]
+    distance_limits = [np.min(distance_limits),np.max(distance_limits)]
     # POST: have limits...
     # plot the best fold for each
     out_names = []
@@ -117,7 +116,8 @@ def run(base="./"):
         color_pred =  colors_pred[i]
         # define the styles for the histogram
         use_legend = (i == 0)
-        xlabel_histogram = "Distance [m]" if (i == len(metric_list)-1) else ""
+        xlabel_histogram = r"Distance [x$_k$]" \
+                           if (i == len(metric_list)-1) else ""
         # get the distance information we'll need
         distance_kw = Offline.\
             event_error_kwargs(m,color_pred=color_pred,

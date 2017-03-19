@@ -567,7 +567,7 @@ This section details the mathematics and choices behind the event-detection algo
 
 \subsubsection{Mathematical background for testing the no-event hypothesis}
 
-\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at points t can be well-approximated by the sum of a smooth signal and an noise distribution (\fRef{FeatherExample}):
+\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at time points `t' can be well-approximated by the sum of a smooth signal and an noise distribution (\fRef{FeatherExample}):
 
 \eqs{ F_t = g_t + X(0,\sigma^2) }
 
@@ -583,10 +583,10 @@ and
 
 \eqlab{ |E[R_t]| = \epsilon_t \le E[|R_t|] }{feather-epsilon}
 
-In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by the average over all time points $\hat{\epsilon}_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |r_t|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality is:
+In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by the average over all time points $\hat{\epsilon}_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |r_t|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality:
 
-\eqlab{ P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
- (\frac{\sigma}{|r_t-\epsilon_t|})^2 }{feather-probability}
+\eqlab{ \boxed{P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
+ (\frac{\sigma}{|r_t-\epsilon_t|})^2 }}{feather-probability}
 
 
 For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by \eRef{feather-epsilon} and \eRef{feather-sigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. \pl
@@ -601,7 +601,7 @@ Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal 
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. \pl
 
-The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changes appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
+The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
 
 
 \begin{figure}
@@ -609,6 +609,8 @@ The quality of \name{}'s results are improved by multiplying the no-event probab
 \includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
 \caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Demonstrating how \name{} works. (a,b) The approach and retract forces versus time, with spline fits overlaid. (c,d) The approach and retract r$_t$ versus time, with s$_t$ overlaid, demonstrating the signal-to-noise benefit of using s$_t$. (e,f) The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlaid. (g) The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event. \pEndF }
 \end{figure}
+
+\clearpage
 
 \subsubsection{Algorithm psuedocode}
 
@@ -660,7 +662,7 @@ For the performance metrics, we define the following, where `k' is one of the K 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l | l  }
 Name & Definition \\ \hline \hline
-$x_k$ & \text{the total displacement of the force extension curve} \\ \hline 
+$x_k$ & \text{the total displacement of the force-extension curve} \\ \hline 
 $d_{i\rightarrow j,k}$ & \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\\hline 
 $f_{\text{x}}$ &  \text{ the `x'-th percentile of the concatenation of } $\frac{1}{x_k}d_{t\rightarrow p,k}$ \text{ and } $\frac{1}{x_k}d_{p\rightarrow t,k}$ \text{ over all k } \\ \hline 
 $z_{\text{x}}$ & \text{ as f$_{\text{x}}$, but without dividing by $x_k$}\\\hline 
@@ -668,7 +670,7 @@ $\nu_i$ & \text{ distribution of `i' loading rates over all k} \\\hline
 $F_i$ & \text{ distribution of `i' rupture forces over all k} \\\hline 
 $d_{(\nu,F),i}$ & \text{ joint probability distribution of $\nu_i$ and $F_i$ over all k} \\\hline 
 \end{tabularx}
-\caption[Data set statistical information]{\tLabel{MetricParts}  }
+\caption[Data set statistical information]{\tLabel{MetricParts}  The quantities used in defining the error metrics. Throughout, `k' refers to the (arbitrary) index of force-extension curve, and `i' and `'j' refer to either true or predicted.}
 \end{table}
 
 

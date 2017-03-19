@@ -83,13 +83,18 @@ class plotting_metrics:
         true_pos = np.minimum(pred,true)
         precision = sum(true_pos)/sum(pred)
         return precision
-    def distance_limit(self,**kwargs):
+    def distance_limit(self,relative=False,**kwargs):
         true,pred = self.to_true_and_pred_distances(**kwargs)
         safe_max = lambda x: max(x[np.where(x>0)]) if len(x) > 0 else -1
-        safe_min = lambda x: min(x[np.where(x>0)]) if len(x) > 0 else np.inf
+        safe_min = lambda x: min(x[np.where(x>0)]) if len(x) > 0 else np.inf   
+        if (relative):
+            max_x_true,max_x_pred =  self.max_x_distances_true_pred()
+            true = true/max_x_pred
+            pred = pred/max_x_true
         max_dist = max([safe_max(true),safe_max(pred)])
         min_dist = min([safe_min(true),safe_min(pred)])
         tmp_limits = [min_dist,max_dist]
+
         return tmp_limits
     def coefficients(self):
         ruptures_true,loading_true = \
@@ -104,23 +109,31 @@ class plotting_metrics:
                                                ruptures_pred,bins_rupture)
         to_true,to_pred = self.to_true_and_pred_distances()
         max_x_true,max_x_pred = self.max_x_distances_true_pred()
-        to_true_relative = to_true/max_x_pred
-        to_pred_relative = to_pred/max_x_true
-        q = 85
-        if (len(to_true) > 0):
-            cat = np.concatenate([to_true,to_pred])
-            cat_rel = np.concatenate([to_true_relative,to_pred_relative])
-        else:
-            cat = to_true
-            cat_rel = to_true_relative
-        cat_median = np.median(cat)
-        cat_q = np.percentile(cat,q)
-        # get the relative metrics
-        cat_relative_median = np.median(cat_rel)
-        cat_relative_q = np.percentile(cat_rel,85)
+        q=85
+        cat_median,cat_q,cat_relative_median,cat_relative_q = \
+                relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,
+                                                   max_x_pred,q=85)
         return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,q=q,
                       cat_relative_median=cat_relative_median,
                       cat_relative_q=cat_relative_q)
+
+def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
+                                       q=85,**kwargs):
+    to_true_relative = to_true/max_x_pred
+    to_pred_relative = to_pred/max_x_true
+    q = 85
+    if (len(to_true) > 0):
+        cat = np.concatenate([to_true,to_pred])
+        cat_rel = np.concatenate([to_true_relative,to_pred_relative])
+    else:
+        cat = to_true
+        cat_rel = to_true_relative
+    cat_median = np.median(cat)
+    cat_q = np.percentile(cat,q)
+    # get the relative metrics
+    cat_relative_median = np.median(cat_rel)
+    cat_relative_q = np.percentile(cat_rel,85)
+    return cat_median,cat_q,cat_relative_median,cat_relative_q
 
 def metrics(true,pred):
     """
@@ -165,7 +178,7 @@ def update_limits(previous,new,floor=None):
     return [to_update_min,to_update_max]
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
-                       xlabel="Distance[m]",distance_limits=None):
+                       xlabel="Distance [x$_k$]",distance_limits=None):
     """
     Args:
         see Plotting.histogram_event_distribution
@@ -181,14 +194,15 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
     style_pred = dict(color=color_pred,label=label_pred_dist_hist,
                       **common_style_hist)
     to_true,to_pred = metric.to_true_and_pred_distances()
-    limit = metric.distance_limit()
+    limit = metric.distance_limit(relative=True)
     log_limit = np.log10(limit)
+    max_x_true,max_x_pred =  metric.max_x_distances_true_pred()
     bins = np.logspace(*log_limit,num=n_bins)
     if (distance_limits is None):
         distance_limits = limit
     return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
                 bins=bins,style_true=style_true,style_pred=style_pred,
-                xlabel=xlabel)
+                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred)
 
 def best_metric_from_learner(l):
     """
