@@ -519,7 +519,7 @@ Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e
 
 \subsubsection{\sLabel{Surface}Azide-functionalied surfaces}
 
-\firstp Glass surfaces were smoothed using Potassium Hydroxide etching as follows. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, sonicated  for 5 minutes in 250mL of ACS grade acetone \supply{Fisher}{A18-4}, and transferred to a solution of 80g of Potassium Hydroxide \supply{Fisher}{P250-500} dissolved in  170mL of 65\% ethanol and 80mL of deionized water \supply{Barnstead}{GenPure Pro} for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature in a dust-proof box. \pl
+\firstp Glass surfaces were etched using Potassium Hydroxide. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of ACS grade acetone \supply{Fisher}{A18-4}, 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, and transferred to a solution of 80g of Potassium Hydroxide \supply{Fisher}{P250-500} dissolved in  170mL of 65\% ethanol and 80mL of deionized water \supply{Barnstead}{GenPure Pro} for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature in a dust-proof box. \pl
 
 To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then mounted in a custom-made teflon-holder and rinsed serially in 250mL of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with Nitrogen gas and stored in a dust-proof container at 4\degreeC{}. \pl 
 
@@ -599,7 +599,7 @@ Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal 
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. \pl
 
-The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilites. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changes appropriately. Specifically, the relevant operation (integration,differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
+The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilites. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changes appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
 
 
 \begin{figure}
@@ -607,8 +607,6 @@ The quality of \name{}'s results are improved by multiplying the no-event probab
 \includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
 \caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Demonstrating how \name{} works. (a,b) The approach and retract forces versus time, with spline fits overlayed. (c,d) The approach and retract r$_t$ versus time, with s$_t$ overlayed, demonstrating the signa-to-noise benefit of using s$_t$. (e,f) The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlayed. (g) The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event. \pEndF }
 \end{figure}
-
-\clearpage
 
 \subsubsection{Algorithm psuedocode}
 
@@ -638,7 +636,7 @@ def event_indices(force,threshold,$\tau$):
    probability = probability * minimum(1,k$_{\text{deriv}}^{-2}$)
    # multiply by the differential probability 
    df[i] = g$^{*}$[i+tau] - g$^{*}$[i-tau]
-   k$_{\text{df}}$ = (df - $2\tau \epsilon$)/$\sigma$
+   k$_{\text{df}}$ = (df - $\epsilon$)/$\sigma$
    probability = probability * minimum(1,k$_{\text{df}}^{-2}$)
    possible_events = indices where probability <= threshhold
    # update the probability to remove false positives (adhesions)
@@ -649,6 +647,7 @@ def event_indices(force,threshold,$\tau$):
 \caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one definining the maximum probability; and `$\tau$' which is the even number of points between the spline knots. \pEndF }
 \end{figure}
 
+\clearpage
 
 \subsubsection{Performance Metrics}
 

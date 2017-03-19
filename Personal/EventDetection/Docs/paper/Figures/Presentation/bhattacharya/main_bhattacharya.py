@@ -23,11 +23,13 @@ def run():
     """
     n_samples = int(1e4)
     sigma = 1
-    n_sigma = 5
+    n_sigma = 2
+    n_bins = 50
     distribution = np.random.normal(loc=0,scale=sigma,size=n_samples)
-    min_v,max_v = np.min(distribution),np.max(distribution)
     uniform = np.random.uniform(-n_sigma*sigma, n_sigma*sigma, size=n_samples)
-    bins = np.linspace(min(uniform),max(uniform),endpoint=True,num=50)
+    min_v,max_v = np.min([min(distribution),min(uniform)]),\
+                  np.max([max(distribution),max(uniform)])
+    bins = np.linspace(min_v,max_v,endpoint=True,num=n_bins)
     common_style = dict(alpha=0.3)
     fig = plt.figure(dpi=400)
     n_uniform,e_uniform,_ = plt.hist(uniform,bins=bins,label="uniform",
@@ -37,8 +39,11 @@ def run():
     p_uniform = (n_uniform/n_samples)
     p_gauss = (n_gauss/n_samples)
     bhattacharya =  sum(np.sqrt(p_uniform) * np.sqrt(p_gauss))
-    title = (r"Uniform over $\pm$5$\sigma_{\mathrm{Gaussian}}$"+ \
+    title = (r"Uniform over $\pm$" +str(n_sigma) + \
+             "$\sigma_{\mathrm{Gaussian}}$"+ \
              " has a BC of {:.3f} with the Gaussian".format(bhattacharya))
+    xlim = [min_v,max_v]
+    plt.xlim(xlim)
     plt.xlabel("Value")
     plt.ylabel("Count")
     plt.title(title)
