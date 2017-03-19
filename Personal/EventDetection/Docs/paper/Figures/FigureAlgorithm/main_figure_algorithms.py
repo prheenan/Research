@@ -147,7 +147,7 @@ def run(base="./"):
     plt.plot(time_approach_plot,approach_stdev_plot,label=label_s_t,
              linestyle='--',**style_approach)
     PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ [pN]",
-                            "",frameon=True)
+                            "",frameon=True,loc='upper right')
     plt.xlim(xlim_approach)
     PlotUtilities.no_x_ticks()
     tick_function()
@@ -159,7 +159,7 @@ def run(base="./"):
                               style_raw,label=label_r_t)
     Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
                               filted_stdev_style,label=label_s_t)
-    PlotUtilities.lazyLabel("","","",frameon=True)
+    PlotUtilities.lazyLabel("","","",frameon=True,loc='upper right')
     PlotUtilities.no_x_ticks()
     plt.ylim(*ylim_diff)
     tick_function()
