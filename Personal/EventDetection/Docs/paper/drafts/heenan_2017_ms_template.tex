@@ -180,6 +180,7 @@
   \end{tabular}
 }
 \newcommand{\name}[0]{FEATHER}
+\newcommand{\na}[0]{\textemdash{}}
 \newcommand{\bc}[0]{Bhattacharyya}
 \newcommand{\acronym}[0]{\textbf{F}orce \textbf{E}xtension \textbf{A}nalysis using a \textbf{T}estable \textbf{H}ypothesis for \textbf{E}vent \textbf{R}ecognition}
 \newcommand{\TitleName}[0]{A Bayesian Algorithm for Detecting Molecular Unbinding Events in Force Spectroscopy Time Series Data}
@@ -412,18 +413,28 @@ threshold & Probability threshold above which to reject events  & Determined by 
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
-\firstp Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics} with more details in \tRef{MetricParts}. The event error metrics, $f_{85}$ and $z_{85}$, describe how closely the predicted event locations align with the human-tagged data, and the rupture \bc{} coefficient, $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the overlap between the expected and actual distribution over loading rates and rupture forces. \pl
+\firstp Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics}. The event error metrics, $f_{85}$ and $z_{85}$, describe how closely the predicted event locations align with the human-tagged data, and the rupture \bc{} coefficient, $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the overlap between the expected and actual distribution over loading rates and rupture forces. \pl
 
 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l | l | l | l  }
 \hline \hline
 Name & Notation  & Range & \text{Optimum} \e 
-relative event error & f$_{85}$ &   [0,1] & 0 \e
-absolute event error & z$_{85}$ & [0,max(x$_k$)] &  0 \e
-rupture \bc{} coefficient (BC) & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \e
+$x_k$ & \text{total displacement of the force-extension curve} & \na & \na\\ \hline 
+$d_{i\rightarrow j,k}$ & \text{distribution of distances in `k' from `i' ruptures } & \na &\na \\ 
+& \text{to the closest `j' ruptures in or $x_k$ if none } &  & \\\hline 
+$f_{\text{x}}$ &  \text{the `x'-th percentile of the concatenation of } & \na & \na \\
+& $\frac{1}{x_k}d_{t\rightarrow p,k}$ \text{ and } $\frac{1}{x_k}d_{p\rightarrow t,k}$ \text{ over all k }  &&  \\ \hline 
+$z_{\text{x}}$ & \text{as f$_{\text{x}}$, but without dividing by $x_k$} & \na & \na  \\\hline 
+$\nu_i$ & \text{histogram of `i' loading rates over all k} & \na & \na \\\hline 
+$F_i$ & \text{histogram of `i' rupture forces over all k} & \na & \na \\\hline 
+$d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \na \\
+& \text{by the number of curves} && \\\hline \hline 
+\textbf{relative event error} & f$_{85}$ &   [0,1] & 0 \e
+\textbf{absolute event error} & z$_{85}$ & [0,max(x$_k$)] &  0 \e
+\textbf{rupture BC} & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \\
 \end{tabularx}
-\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. All the symbols used are defined in \tRef{MetricParts}, with the exception of the rupture BC's bra-ket notation, representing an inner product between its arguments. }
+\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. BC stands for \bc{} coefficient. The metrics are bolded; the quantities that they depend on are listed first. Throughout, `k' refers to the (arbitrary) index of force-extension curve, and `i' and `'j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. \pl }
 \end{table}
 
 
@@ -653,29 +664,6 @@ def event_indices(force,threshold,$\tau$):
 \end{figure}
 
 \clearpage
-
-\subsubsection{Performance Metrics}
-
-For the performance metrics, we define the following, where `k' is one of the K total force-extension curves and `i' and `j' represent either true (t) or predicted (p): 
-
-
-
-\begin{table}
-\begin{tabularx}{\textwidth}{ l | l  }
-Name & Definition \\ \hline \hline
-$x_k$ & \text{the total displacement of the force-extension curve} \\ \hline 
-$d_{i\rightarrow j,k}$ & \text{ distribution of distances in `k' from `i' ruptures to the closest `j' ruptures in or $x_k$ if none } \\\hline 
-$f_{\text{x}}$ &  \text{ the `x'-th percentile of the concatenation of } $\frac{1}{x_k}d_{t\rightarrow p,k}$ \text{ and } $\frac{1}{x_k}d_{p\rightarrow t,k}$ \text{ over all k } \\ \hline 
-$z_{\text{x}}$ & \text{ as f$_{\text{x}}$, but without dividing by $x_k$}\\\hline 
-$\nu_i$ & \text{ histogram of `i' loading rates over all k} \\\hline 
-$F_i$ & \text{ histogram of `i' rupture forces over all k} \\\hline 
-$d_{(\nu,F),i}$ & \text{ joint histogram of $\nu_i$ and $F_i$ divided by the number of curves} \\\hline 
-\end{tabularx}
-\caption[Data set statistical information]{\tLabel{MetricParts}  The quantities used in defining the error metrics. Throughout, `k' refers to the (arbitrary) index of force-extension curve, and `i' and `'j' refer to either true or predicted.}
-\end{table}
-
-
-For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, $\nu_t$ represents the distribution of true ruptures forces over all curves, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. \pl
 
 
 \begin{figure}
