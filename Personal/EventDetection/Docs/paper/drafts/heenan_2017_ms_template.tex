@@ -348,11 +348,11 @@ In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip a
 
 The analysis and interpretability of \singlemol{} experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, quality \singlemol{} data between an attached molecule and commercially-available AFM tips occur less than one curve in tens of thousands\cite{bosshart_reference-free_2012}. Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite Rob XXX), but the majority of the data taken is still uninterpretable and must be filtered out. Filtering data without events and identifying the locations of events within data is a major challenge in AFM data management and analysis.\pl
 
-Methods exist to automate manually sorting \singlemol{} data and detect tip-sample events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Automation techniques include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algorithms bias results towards the dominant features and necessarily require a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (\fRef{Performance}).\pl
+Methods exist to automate manually sorting \singlemol{} data and detect sample unfolding or unbinding events. Automation removes the burden of tedious data filtering and improves scientific reproducibility. Automation techniques include alignment and binning in contour-length space\cite{kuhn_automated_2005,bosshart_reference-free_2012}, thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}, and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algorithms bias results towards the dominant features and necessarily require a polymer model for the contour length as a function of force and extension. In applications interested in novel biomolecules or rare behavior of a biomolecule, alignment algorithms will have limited use.  On the other hand, thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As we show below, these optimizations do not generalize well to the typical range of \singlemol{} data (\fRef{Performance}).\pl
 
 This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (\acronym{}), require no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well to typical \singlemol{} data ranges. \name{} is so-named since it is designed to make few assumptions about the data, operate over a wide range of AFM data, and require a small time and memory footprint compared to existing techniques.\pl
 
- The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}). After, this research details manually annotating the unbinding events in the force-extension curves of the DNA at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. \pl
+ The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. \pl
 
 \section{\sLabel{Materials}Materials and Methods}
 
@@ -370,7 +370,7 @@ This paper describes a new method based on machine learning for detecting events
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
-\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force are defined as the last data point above the linear fit in the fitting region. The loading rate is defined by the slope of the linear fit. For all subplots, the force changes color at the location of a tagged event. }
+\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force and loading rate are defined using the data and the fit, as described in the text. For all subplots, the force changes color at the location of a tagged event. }
 \end{figure}
 
 \firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files. \pl
@@ -385,7 +385,7 @@ All timing and tuning results were obtained via a desktop with 16GB of RAM, a 3.
 
 \subsubsection{\sLabel{Metrics}Algorithm description}
 
-\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occuring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}). The probability at each point is then iteratively updated in order to remove the effect of adhesions and other false-positives. As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning}). Contigous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determiend within each region by the method of \fRef{Rupture} and the relevant text. \name{} takes in a smoothing parameter and a probability threshold, which are detailed in \tRef{Parameters}.
+\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occurring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}). The probability at each point is then iteratively updated in order to remove the effect of adhesions and other false-positives. As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determined within each region by the method of \fRef{Rupture} and the relevant text. \name{} takes in a smoothing parameter and a probability threshold, which are detailed in \tRef{Parameters}.
 
 
 \begin{table}
@@ -393,10 +393,22 @@ All timing and tuning results were obtained via a desktop with 16GB of RAM, a 3.
 \hline \hline
 Name & Meaning  & Value used in this work \e
 $\tau$ & Number of points used for spline grid smoothing & 2\% of the curve length \e
-threshold & Probability theshold above which to reject events  & Determined by tuning (see \fRef{Tuning}) \e
+threshold & Probability threshold above which to reject events  & Determined by tuning (see \fRef{Tuning}) \e
 \end{tabularx}
 \caption[Algorithm parameters]{\tLabel{Parameters} The names and definitions of the parameters used by \name{}}
 \end{table}
+
+
+\subsubsection{\sLabel{Compare}Choice of competing methods}
+
+\firstp The following two algorithms were chosen for comparison to \name{}: \pl
+
+\begin{enumerate}
+\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\cite{roduit_openfovea:_2012}
+\item The general-purpose `find\_peaks\_cwt' method from the Scientific Python package.\cite{Jones_SciPy:_2001}
+\end{enumerate}
+
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (see \tRef{statistics}). The baselines represent two common methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method is a wavelet-based algorithm. \pl
 
 \subsubsection{\sLabel{Metrics}Performance Metrics}
 
@@ -414,20 +426,10 @@ rupture \bc{} coefficient (BC) & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F)
 \caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. All the symbols used are defined in \tRef{MetricParts}, with the exception of the rupture BC's bra-ket notation, representing an inner product between its arguments. }
 \end{table}
 
-\subsubsection{\sLabel{Compare}Choice of competing methods}
-
-\firstp The following two algorithms were chosen for comparison to \name{}: \pl
-
-\begin{enumerate}
-\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\cite{roduit_openfovea:_2012}
-\item The general-purpose `find\_peaks\_cwt' method from the Scientific Python package.\cite{Jones_SciPy:_2001}
-\end{enumerate}
-
- These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (see \tRef{statistics}). The baselines represent two common, distinct methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method is a wavelet-based algorithm. \pl
 
 \subsubsection{\sLabel{Tuning}Algorithm tuning}
 
-\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algoritm's best parameter. \pl
+\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. \pl
 
 Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=1000nm/s, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
 
@@ -445,7 +447,7 @@ Since tuning the baselines on the full dataset using our computer would have req
 
 \subsection{\sLabel{Performance}Algorithmic event detection performance}
 
-\fRef{Performance} shows the event-detection performance of \name{} and the baseline algorthms. As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and almost doubles the \bc{} coefficient over the spectrum of loading rates and rupture forces. 
+\fRef{Performance} shows the event-detection performance of \name{} and the baseline algorithms. As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and almost doubles the \bc{} coefficient over the spectrum of loading rates and rupture forces. 
 
 \begin{table}
 \begin{tabularx}{\textwidth}{ l || l | l | l }
@@ -464,7 +466,7 @@ wavelet transform & 0.556 & 1.77e+03 & 1\e
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python basline \pEndF }
+\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python baseline. \pEndF }
 \end{figure}
 
 
@@ -476,7 +478,7 @@ wavelet transform & 0.556 & 1.77e+03 & 1\e
 
 This work applied \name{} to unfolding in \singlemol{} data, but the algorithm could be generalized to a wider array of applications. Changing \name{} to search for refolding events in \singlemol{} data is a natural and useful generalization. In addition, domain-specific models could be combined with \name{} to further filter data, based on the specific experiment. For example, if an experimenter was attempting to measure the force-extension relationship of a DNA hairpin of contour length 100nm, she could first obtain all rupture locations in her data via \name{}, fit a polymer model to each curve up to final rupture to obtain the contour length, then remove all data with contour lengths outside of (100$\pm \epsilon$)nm, where $\epsilon$ is a small number. By predicting where events occur without providing any domain-specific model of the event, \name{} is one tool in a longer \singlemol{} analysis pipeline.
 
-\name{} could be used in different scientific domains than \singlemol{}. To reduce the risk of overfitting to a specific tipe of \singlemol{} experiment, \name{} purposefully makes no assumptions about domain-specific data models (e.g. a polymer model for the force-extension relationship of DNA). \singlemol{} data is a natural application for \name{}, since each retract curve, with its scientifically interesting data, is paired with an approach curve which is assumed lacking any events. The approach gives approximations to the parameters needed to estimate \name{}'s probability bound. In domains which can estimate \name{}'s parameters (\fRef{FeatherExample}) and endeavor to localize events defined by discontinuous derivatives in otherwise continuous time series data (as shown in \fRef{Cartoon}), \name{} could be leveraged to improve scientific reproducibility.
+\name{} could be used in different scientific domains than \singlemol{}. To reduce the risk of overfitting to a specific type of \singlemol{} experiment, \name{} purposefully makes no assumptions about domain-specific data models (e.g. a polymer model for the force-extension relationship of DNA). \singlemol{} data is a natural application for \name{}, since each retract curve, with its scientifically interesting data, is paired with an approach curve which is assumed lacking any events. The approach curve gives approximations to the parameters needed to estimate \name{}'s probability bound. In domains which can estimate \name{}'s parameters (\fRef{FeatherExample}) and endeavor to localize events defined by discontinuous derivatives in otherwise continuous time series data (as shown in \fRef{Cartoon}), \name{} could be leveraged to improve scientific reproducibility.
 
 \clearpage
 
@@ -517,7 +519,7 @@ Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e
 \end{table}
 
 
-\subsubsection{\sLabel{Surface}Azide-functionalied surfaces}
+\subsubsection{\sLabel{Surface}Azide-functionalized surfaces}
 
 \firstp Glass surfaces were etched using Potassium Hydroxide. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of ACS grade acetone \supply{Fisher}{A18-4}, 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, and transferred to a solution of 80g of Potassium Hydroxide \supply{Fisher}{P250-500} dissolved in  170mL of 65\% ethanol and 80mL of deionized water \supply{Barnstead}{GenPure Pro} for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature in a dust-proof box. \pl
 
@@ -544,7 +546,7 @@ v [nm/s] & N$_\mathrm{curves}$ & $\mu_{\mathrm{Curve Size}}$ & $\sigma_{\mathrm{
 500 & 200 & 200000 & 1000 & 140 & 40 & 8 & 12  \\ \hline
 1000 & 200 & 117000 & 7000 & 174 & 25 & 1 & 0  \\ \hline
 \end{tabularx}
-\caption[Data set statistical information]{\tLabel{statistics} For each loading rate v in the data set, this table lists the number of curves N$_{\mathrm{curves}}$; mean and standard deivaiton of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data ponts; the number of curves with `x' events N$_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. }
+\caption[Data set statistical information]{\tLabel{statistics} For each loading rate v in the data set, this table lists the number of curves N$_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events N$_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. }
 \end{table}
 
 
@@ -591,7 +593,7 @@ For \emph{any} noise distribution, this bounds the probability of a measurement 
 
 \subsubsection{Accurate estimators for hypothesis testing}
 
-\firstp In order to obtain an accurate estimator for $g_t$, the data must be smoothed. \name{} uses spline smoothing, assuming the user has a time scale $\tau$ below which events are occuring. For these experiments, $\tau$ was set as listed in \tRef{Parameters}. \pl 
+\firstp In order to obtain an accurate estimator for $g_t$, the data must be smoothed. \name{} uses spline smoothing, assuming the user has a time scale $\tau$ below which events are occurring. For these experiments, $\tau$ was set as listed in \tRef{Parameters}. \pl 
 
 The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline\citePRH{dierckx_algorithm_1975} to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of $\tau$. \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{feather-sigma}, \eRef{feather-epsilon}, and \eRef{feather-probability}. \pl
 
@@ -599,13 +601,13 @@ Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal 
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. \pl
 
-The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilites. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changes appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
+The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changes appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
 
 
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
-\caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Demonstrating how \name{} works. (a,b) The approach and retract forces versus time, with spline fits overlayed. (c,d) The approach and retract r$_t$ versus time, with s$_t$ overlayed, demonstrating the signa-to-noise benefit of using s$_t$. (e,f) The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlayed. (g) The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event. \pEndF }
+\caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Demonstrating how \name{} works. (a,b) The approach and retract forces versus time, with spline fits overlaid. (c,d) The approach and retract r$_t$ versus time, with s$_t$ overlaid, demonstrating the signal-to-noise benefit of using s$_t$. (e,f) The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlaid. (g) The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event. \pEndF }
 \end{figure}
 
 \subsubsection{Algorithm psuedocode}
@@ -638,13 +640,13 @@ def event_indices(force,threshold,$\tau$):
    df[i] = g$^{*}$[i+tau] - g$^{*}$[i-tau]
    k$_{\text{df}}$ = (df - $\epsilon$)/$\sigma$
    probability = probability * minimum(1,k$_{\text{df}}^{-2}$)
-   possible_events = indices where probability <= threshhold
+   possible_events = indices where probability <= threshold
    # update the probability to remove false positives (adhesions)
    surface_location = last point where force.retract > 0
    set possible events containing surface_location to 0
    return possible_events
 \end{lstlisting}
-\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one definining the maximum probability; and `$\tau$' which is the even number of points between the spline knots. \pEndF }
+\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one defining the maximum probability; and `$\tau$' which is the even number of points between the spline knots. \pEndF }
 \end{figure}
 
 \clearpage
@@ -682,7 +684,7 @@ For example, $d_{t\rightarrow p,4}$ represents the distances from the true to th
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/prep.pdf}% Here is how to import EPS art
-\caption[Verification of sample purity]{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. (a) A 2\% electrophoretic agarose gel, showing a maor band at just below 2kbp, as expected. (b) A false-color AFM image of the DNA bound to mica. \pEndF }
+\caption[Verification of sample purity]{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. (a) A 2\% electrophoretic agarose gel, showing a major band at just below 2kbp, as expected. (b) A false-color AFM image of the DNA bound to mica. \pEndF }
 \end{figure}
 
 
