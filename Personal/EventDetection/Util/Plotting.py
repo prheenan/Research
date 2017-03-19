@@ -660,7 +660,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                             fontweight='bold')
     plt.xticks(index, labels_coeffs,
                rotation=30,fontsize=PlotUtilities.g_font_label)
-    PlotUtilities.ylabel("BC value")
+    PlotUtilities.ylabel("Metric")
     PlotUtilities.tickAxisFont()
     plt.ylim([0,1])
     # just empty :-(

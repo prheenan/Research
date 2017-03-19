@@ -29,7 +29,10 @@ def run(base="./"):
                               distance_histogram=distance_histogram,
                               fig=fig)
         final_out_path = "{:s}_{:d}.pdf".format(out_base,i)
-        PlotUtilities.savefig(fig,final_out_path)
+        PlotUtilities.label_tom(fig,loc=(-0.25,1.1),fontsize=18)
+        PlotUtilities.savefig(fig,final_out_path,
+                              subplots_adjust=dict(wspace=0.4,left=0.10,
+                                                   top=0.9))
 
 
 
