@@ -16,7 +16,7 @@ style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
 
 
 def algorithm_colors():
-    return ['b','k','y']
+    return ['b','k','r']
 
 def algorithm_markers():
     return ['s','o','v']
