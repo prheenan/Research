@@ -292,7 +292,7 @@ of scholarly work in the above mentioned discipline.
 
 
 \begin{abstract}
-\firstp In a Single Molecule Force Spectroscopy (\singlemol{}) experiment, mechanical forces are applied to individual biomolecules via a force probe such as an optical trap or an atomic force microscope (AFM). In \singlemol{} unfolding experiments, the molecule of interest is pulled apart and force is measured as a function of probe position relative to a relaxed state. Although unfolding experiments are capable of measuring a wide class of molecular phenomena, interpreting \singlemol{} data is hindered by identifying where unfolding events occur. This paper introduces a new algorithm, \name{} (\acronym), for identifying the locations of molecular unfolding events. Relative to two other event-detection algorithms on an annotated data set, \name{} features an event detection error of 4nm, a 100-fold improvement, and a \bc{} coefficient of 0.96, an improvement of 0.3, for the joint distribution of event loading rates and rupture forces. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.
+\firstp In Single Molecule Force Spectroscopy (\singlemol{}) experiments, mechanical forces are applied to individual biomolecules via a probe such as an optical trap or an atomic force microscope (AFM). In \singlemol{} unfolding experiments, the molecule of interest is pulled apart and force is measured as a function of probe position relative to a relaxed state. Although unfolding experiments are capable of measuring a wide class of molecular phenomena, interpreting \singlemol{} data is hindered by identifying where unfolding events occur in the presence of noise. This paper introduces a new algorithm, \name{} (\acronym), for identifying the locations of molecular unfolding events. Relative to two other event-detection algorithms on an annotated data set, \name{} features an event detection error of 8nm, a 100-fold improvement, and a \bc{} coefficient of 0.96, an improvement of 0.3, for the joint distribution of event loading rates and rupture forces. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.
 \end{abstract}
 
 \clearpage
@@ -342,7 +342,7 @@ In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip a
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/cartoon.pdf}% Here is how to import EPS art
-\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. (a1,a2) A diagram and force-extension curve corresponding to no attachments. (b1,b2) As previous, except illustrating a single attachment. (c1,c2) As previous, except illustrating multiple attachments. For all subplots, the force changes color at the location of a tagged event.  \pEndF }
+\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. (a1,a2) A diagram of an AFM tip and a force-extension curve corresponding to no attachments. (b1,b2) As previous, except illustrating a single attachment. (c1,c2) As previous, except illustrating multiple attachments. For all subplots, the force changes color at the location of a tagged event.  \pEndF }
 \end{figure}
 
 
@@ -453,9 +453,9 @@ Since tuning the baselines on the full dataset using our computer would have req
 \begin{tabularx}{\textwidth}{ l || l | l | l }
 \hline \hline
  & Rupture BC ($\uparrow$) & Absolute event error [nm]($\downarrow$) & Relative event error ($\downarrow$)\e\hline 
-no event & \textbf{0.96} & \textbf{9.42} & \textbf{0.0054}\e
-open fovea & 0.354 & 951 & 0.57\e
-wavelet transform & 0.556 & 1.77e+03 & 1\e
+no event & \textbf{0.96} & \textbf{7.9} & \textbf{0.00494}\e
+open fovea & 0.367 & 969 & 0.58\e
+wavelet transform & 0.651 & 811 & 0.514\e
 \end{tabularx}
 \caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics across the three algorithms. The optimal algorithm row for each metric is highlighted in bold, depending on if the metric optimum is low (denoted by a $\downarrow$ next to the name) or high (denoted by a $\uparrow$ next to the name).} 
 \end{table}
@@ -466,7 +466,7 @@ wavelet transform & 0.556 & 1.77e+03 & 1\e
 \begin{figure}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of this algorithm compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics between 0 and 1 defined in \tRef{metrics}. Note that the relative event error is complemented by one, to facilitate plotting. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python baseline. \pEndF }
+\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of \name{} compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. Note that the relative event error is complemented by one and the absolute event error is not listed, to facilitate plotting on the same axis. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python baseline. \pEndF }
 \end{figure}
 
 
