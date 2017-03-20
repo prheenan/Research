@@ -315,8 +315,9 @@ def delta_mask_function(split_fec,slice_to_use,
                         boolean_array,probability,threshold,
                         *args,**kwargs):
     x = split_fec.retract.Time
+    force = split_fec.retract.Force
     x_sliced = x[slice_to_use]
-    force_sliced = split_fec.retract.Force[slice_to_use]
+    force_sliced = force[slice_to_use]
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)
     boolean_ret = boolean_array.copy()
@@ -333,16 +334,13 @@ def delta_mask_function(split_fec,slice_to_use,
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
-    where_no_event = np.where(1-ratio_probability<tol)[0]
-    if (where_no_event.size > 0):
-        probability_updated[slice_to_use][where_no_event] = 1
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold) 
     #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    f0 = [interp_f[max(0,i-2*n_points)] for i in range(interp_f.size)]
-    gt_condition[slice_to_use] = ((interp_f - stdev < median) |
-                                  (interp_f - stdev < f0))
+    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
+    gt_condition[slice_to_use] = ((interp_f - sigma < median) |
+                                  (interp_f - sigma > f0))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
