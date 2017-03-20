@@ -325,7 +325,7 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     median = np.median(interp_f)
     stdev = Analysis.local_stdev(force_sliced-interp_f,n_points)
-    df_true = Analysis.local_centered_diff(interp_f,n=2*n_points)
+    df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     df_relative = df_true-(-epsilon)
     # finally, modulate by the ratio 
@@ -341,7 +341,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     f0 = [interp_f[max(0,i-2*n_points)] for i in range(interp_f.size)]
-    gt_condition[slice_to_use] = (interp_f - stdev < f0)
+    gt_condition[slice_to_use] = (interp_f - stdev < median)
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
