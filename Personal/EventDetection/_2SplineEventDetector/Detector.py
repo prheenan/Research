@@ -328,7 +328,8 @@ def delta_mask_function(split_fec,slice_to_use,
     stdev = Analysis.local_stdev(force_sliced-interp_f,n_points)
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    df_relative = df_true-(-epsilon)
+    min_signal = epsilon+sigma
+    df_relative = df_true-(-min_signal)
     # finally, modulate by the ratio 
     k_cheby_ratio = np.minimum(df_relative/sigma,1)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
@@ -341,9 +342,9 @@ def delta_mask_function(split_fec,slice_to_use,
     #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    f0 = [interp_f[max(0,i-2*n_points)] for i in range(interp_f.size)]
-    gt_condition[slice_to_use] = ((interp_f - stdev < median) |
-                                  (interp_f - stdev > f0))
+    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
+    gt_condition[slice_to_use] = ((interp_f - min_signal < median) |
+                                  (interp_f - min_signal > f0))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
@@ -352,6 +353,20 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
+    """
+    xlim = plt.xlim(min(x_sliced),max(x_sliced))
+    plt.subplot(3,1,1)
+    plt.plot(x_sliced,interp_f)
+    plt.xlim(xlim)
+    plt.subplot(3,1,2)
+    plt.plot(x_sliced,interp_f-(min_signal+f0))
+    plt.axhline(0)
+    plt.xlim(xlim)
+    plt.subplot(3,1,3)
+    plt.semilogy(x,probability_updated)
+    plt.xlim(xlim)
+    plt.show()
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
@@ -798,7 +813,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     # a search window of min_points)
     # XXX debugging 
     remainder_split = [max(0,d) for d in delta_split_rem ]
-    event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
+    event_slices = [slice(event.start-2*remainder,event.stop,1)
                     for event,remainder in zip(event_slices,remainder_split)]
     # combine them if they do.
     event_slices = list(join_contiguous_slices(event_slices))
