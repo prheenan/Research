@@ -172,9 +172,10 @@ def plot_prediction_info(ex,info,xlabel="Time",
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
     styles = [dict(color='k',linestyle=':',alpha=0.3),
-              dict(color='k',linestyle='-.',alpha=0.3),
+              dict(color='b',linestyle='-.',alpha=0.3),
+              dict(color='y',linestyle='-',alpha=1),
               dict(color='g',linestyle='-',alpha=0.7),
-              dict(color='m',linestyle='--')]
+              dict(color='m',linestyle='--'),]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
         plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
