@@ -27,12 +27,12 @@ def write_coeffs_file(out_file,coeffs):
     opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
-        tmp =[ [opt_high,r"bc2 ($\uparrow$)",c.bc_2d],
-               [opt_low,r"median ($\downarrow$)",c.cat_median],
-               [opt_low,r"q ($\downarrow$)",c.cat_q],
-               [opt_low,r"relative median ($\downarrow$)",
-                c.cat_relative_median],
-               [opt_low,r"relative q ($\downarrow$)",c.cat_relative_q]]
+        tmp =[ [opt_high,r"Rupture BC ($\uparrow$)",
+                c.bc_2d],
+               [opt_low,r"Absolute event error [nm]($\downarrow$)",
+                c.cat_q*1e9],
+               [opt_low,r"Relative event error ($\downarrow$)",
+                c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
@@ -82,7 +82,6 @@ def run(base="./"):
     # plot the best fold for each
     out_names = []
     colors_pred =  algorithm_colors()
-    n_bins = 50
     for m in metric_list:
         precision = m.precision()
         recall = m.recall()
@@ -116,27 +115,14 @@ def run(base="./"):
         best_param_idx = m.best_param_idx
         out_learner_base = "{:s}{:s}".format(out_base,name)
         color_pred =  colors_pred[i]
-        # get the distance information we'll need
-        to_true,to_pred = m.to_true_and_pred_distances()
-        limit = m.distance_limit()
-        log_limit = np.log10(limit)
-        bins = np.logspace(*log_limit,num=n_bins)
-        # define the styles for the histograms
-        common_style_hist = dict(alpha=0.3,linewidth=0)
-        label_pred_dist_hist = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
-        label_true_dist_hist = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
-        color_true = 'g'
-        style_true = dict(color=color_true,label=label_true_dist_hist,
-                          **common_style_hist)
-        style_pred = dict(color=color_pred,label=label_pred_dist_hist,
-                          **common_style_hist)
+        # define the styles for the histogram
         use_legend = (i == 0)
         xlabel_histogram = "Distance [m]" if (i == len(metric_list)-1) else ""
-        distance_histogram = dict(to_true=to_true,to_pred=to_pred,
-                                  distance_limits=distance_limits,
-                                  bins=bins,style_true=style_true,
-                                  style_pred=style_pred,
-                                  xlabel=xlabel_histogram)
+        # get the distance information we'll need
+        distance_kw = Offline.\
+            event_error_kwargs(m,color_pred=color_pred,
+                               distance_limits=distance_limits,
+                               xlabel=xlabel_histogram)
         gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
                                               height_ratios=[2,1],
                                               subplot_spec=entire_figure[i],
@@ -147,7 +133,7 @@ def run(base="./"):
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,
                               count_limit=[0.5,count_max*2],
-                              distance_histogram=distance_histogram,gs=gs,
+                              distance_histogram=distance_kw,gs=gs,
                               fig=fig)
     # individual plot labels
     n_subplots = 5

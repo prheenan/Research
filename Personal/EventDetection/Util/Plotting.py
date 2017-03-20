@@ -424,7 +424,7 @@ def get_train_test_n_off_and_error(x_values,train_scores,valid_scores):
 
 def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     """
-    Plots the number of 
+    Plots the number of extra or missing events (irrespective of where they are0
 
     Args:
         cache_directory: where to save the plots
@@ -443,6 +443,15 @@ def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
 def _plot_num_events_off(x_train,train_dist,train_error,
                           x_valid,valid_dist,valid_error,ylim=None,
                          xlabel=None,ylabel=None,lazy_kwargs=dict()):
+    """
+    see plot_num_events off
+
+    Args;
+        x_<y> : the x values for data type y (valid or train)
+        <y>_dist: the distribution of values of y (ie: graphical y values)
+        <y>_error: the error of the graphical y values
+        others: plotting
+    """
     if (xlabel is None):
         xlabel = "Tuning parameter"
     if (ylabel is None):
@@ -482,6 +491,16 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,xlabel="Distance [m]"):
+    """
+    plots the distribution of distances from true/predicted to counterparts
+
+    Args:
+        to_<y> : list of distances to y from its counterpart
+        distance_limits: x limits
+        bins: fed to plt.hist
+        style_<x>:  the histogram style for x
+        xlabel: label for the x axis 
+    """
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
     if (to_pred.size > 0):
@@ -636,7 +655,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.ylim([0,1])
     # just empty :-(
 
-def rupture_distribution_plot(learner,out_file_stem):
+def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
     """
     plots *and saves* the distributions of ruptures in *all* validation folds
     (ie: the entire sample) 
@@ -645,7 +664,7 @@ def rupture_distribution_plot(learner,out_file_stem):
         learner: see plot_individual_learner
         out_file_stem: base to save
     Returns:
-        nothingS
+        nothing
     """
     name = learner.description.lower()
     x_values = learner.param_values()
@@ -653,13 +672,12 @@ def rupture_distribution_plot(learner,out_file_stem):
         Learning.get_true_and_predicted_ruptures_per_param(learner)
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
-        fig = PlotUtilities.figure(figsize=(12,12))
-        rupture_plot(true,pred,fig)
-        out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
+        fig = PlotUtilities.figure(figsize=(16,8))
+        rupture_plot(true,pred,fig,distance_histogram=distance_histogram)
+        out_path = "{:s}{:s}{:d}.pdf".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
-
-def plot_individual_learner(cache_directory,learner):
+def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
     """
     Plots the results for a single, individual learner
 
@@ -675,7 +693,8 @@ def plot_individual_learner(cache_directory,learner):
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
-    rupture_distribution_plot(learner,out_file_stem)
+    rupture_distribution_plot(learner,out_file_stem,
+                              distance_histogram=rupture_kwargs)
     fig = PlotUtilities.figure()
     distance_distribution_plot(learner,to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "histogram_to_true.png")

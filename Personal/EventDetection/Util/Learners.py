@@ -5,8 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-from Learning import _get_single_curve
-
+from Research.Personal.EventDetection.Util.Learning import _get_single_curve
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea import \
     fovea

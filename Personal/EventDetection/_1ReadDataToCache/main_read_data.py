@@ -8,7 +8,7 @@ from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from Research.Personal.EventDetection.Util import Learning,Learners
+from Research.Personal.EventDetection.Util import Learning,Learners,Offline
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -25,7 +25,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 200
+    limit = 100
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
@@ -56,7 +56,10 @@ def run():
             break
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
-        Plotting.plot_individual_learner(debug_directory,l)
+        best_metric = Offline.best_metric_from_learner(l)
+        distance_histogram= Offline.event_error_kwargs(best_metric)
+        Plotting.plot_individual_learner(debug_directory,l,
+                                         rupture_kwargs=distance_histogram)
     num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
