@@ -325,7 +325,7 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     median = np.median(interp_f)
     stdev = Analysis.local_stdev(force_sliced-interp_f,n_points)
-    df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
+    df_true = Analysis.local_centered_diff(interp_f,n=2*n_points)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     df_relative = df_true-(-epsilon)
     # finally, modulate by the ratio 
