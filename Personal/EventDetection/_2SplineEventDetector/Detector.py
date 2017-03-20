@@ -340,8 +340,8 @@ def delta_mask_function(split_fec,slice_to_use,
     #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
-    gt_condition[slice_to_use] = (interp_f - stdev < median)
+    f0 = [interp_f[max(0,i-2*n_points)] for i in range(interp_f.size)]
+    gt_condition[slice_to_use] = (interp_f - stdev < f0)
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
