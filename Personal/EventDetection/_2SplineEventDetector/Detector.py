@@ -338,7 +338,7 @@ def delta_mask_function(split_fec,slice_to_use,
     #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
+    f0 = [interp_f[max(0,i-2*n_points)] for i in range(interp_f.size)]
     gt_condition[slice_to_use] = ((interp_f - sigma < median) |
                                   (interp_f - sigma > f0))
     get_best_slice_func = lambda slice_list: \
@@ -797,9 +797,6 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     remainder_split = [max(0,d) for d in delta_split_rem ]
     event_slices = [slice(event.start-remainder,event.stop+remainder,1) 
                     for event,remainder in zip(event_slices,remainder_split)]
-    # POST: slices are of length min points, determine which events overlap, 
-    # combine them if they do.
-    event_slices = list(join_contiguous_slices(event_slices))
     # POST: event slices aren't contiguous
     event_idx = [local_event_idx_function(x,y,e) for e in event_slices]
     to_ret = prediction_info(event_idx = event_idx,
