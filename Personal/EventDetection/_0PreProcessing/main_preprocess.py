@@ -146,7 +146,7 @@ def output_waves_in_directory_to_csv_files(input_directory,output_directory):
         for i,dat in enumerate(data):
             file_name = os.path.basename(file_path)
             meta_name = dat.Meta.Name
-            output_path = d_out + file_name + "_"+ meta_name+ ".csv"
+            output_path = d_out + file_name + meta_name+ ".csv"
             print("\t Saving out {:s} ({:d}/{:d})".format(meta_name,i+1,n))                
             FEC_Util.save_time_sep_force_as_csv(output_path,dat) 
             
@@ -160,8 +160,8 @@ def run():
     output_base_directory = base_directory + "Masters_CSCI/"
     positive_directory = output_base_directory + "Positive/"
     relative_650 = "650nm-4x-bio/pxp/"
-    relative_input_dir = [relative_650 + "100-nanometers-per-second/",
-                          relative_650 + "1000-nanometers-per-second/",
+    relative_input_dir = [relative_650 + "1000-nanometers-per-second/",
+                          relative_650 + "100-nanometers-per-second/",
                           relative_650 + "500-nanometers-per-second/"]
     absolute_input_dir = [positive_directory + d for d in relative_input_dir]
     absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
