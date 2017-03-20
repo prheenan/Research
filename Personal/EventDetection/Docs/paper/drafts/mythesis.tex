@@ -71,59 +71,22 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
   keywordstyle=\color{blue}\ttfamily,
   stringstyle=\color{red}\ttfamily,
   commentstyle=\color{green}\ttfamily}
-\usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
 % amsmath: for align, etc
 \usepackage{amsmath}
 %\usepackage[mathlines]{lineno}% Enable numbering of text and display math
 %\linenumbers\relax % Commence numbering lines
 \usepackage{txfonts}
-% use natbib / superscripts
 \usepackage[super]{natbib}
-\bibliographystyle{unsrtnat}
 \usepackage{tabularx}
-% hyperref: enable clicking on citations
-\usepackage{hyperref}
-% use times new roman
-% http://tex.stackexchange.com/questions/153168/how-to-set-document-font-to-times-new-roman-by-command
-\usepackage{times}
-% 'Thesis margins should be 1 inch from all edges.'
-% 1 inch margins
 % http://kb.mit.edu/confluence/pages/viewpage.action?pageId=3907057
-\usepackage[margin=1in]{geometry}
-\usepackage{graphicx}% Include figure files
-% reducing heading madness
-% http://tex.stackexchange.com/questions/53338/reducing-spacing-after-headings
-\newcommand{\captionspacing}[0]{4pt plus 2pt minus 2pt}
-% put the page number on the right handside
-% http://tex.stackexchange.com/questions/56316/top-right-side-page-numbering
-\usepackage{fancyhdr}
-\pagestyle{fancy}
-\fancyhf{}
-\fancyhead[R]{\thepage}
-% indent *all* paragraphs, not just after first
-% "The first line of paragraphs or footnotes is indented uniformly in the 
-% thesis.''
-\usepackage{indentfirst}
 
-\newcommand{\ndiffn}[3]{\frac{\partial^{#3}#1}{\partial^{#3}#2}}
-\newcommand{\diffn}[2]{\ndiffn{#1}{#2}{}}
 \newcommand{\eqs}[1]{
 \begin{align*} 
 \begin{split}
 #1
 \end{split}					
 \end{align*}}
-
-\newcommand{\pFig}[3]{
-\begin{figure}[h!]
-\centering
-\pcaption{#2}
-\boxed{\includegraphics[width=0.75\textwidth]{#1}}
-\label{figure:#3}
-\end{figure}}
-
-
 
 \newcommand{\eqlab}[2]{
 \begin{equation}
@@ -134,26 +97,7 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
 \end{equation}
 }
 
-
-\newcommand{\brac}[1]
-{
-  \Big[ #1 \Big]
-}
-
-\newcommand{\tab}[2]
-{
-\begin{tabular}[h!]{#1}
-\hline
-#2
-\end{tabular}
-}
-
 \newcommand{\e}[0]{\\ \hline}
-
-\newcommand{\pMat}[1]{
- \left[ \begin{array}
-#1 \end{array} \right]
-}
 
 % for making specific references.
 \newcommand{\tRef}[1]{Table \ref{table:#1}}
@@ -176,8 +120,6 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
 % tex.stackexchange.com/questions/153334/change-the-baselinestretch-line-spacing-only-for-figure-captions
 \usepackage{graphicx,kantlipsum}
 \usepackage{caption}
-\captionsetup[table]{font={stretch=1}}    
-\captionsetup[figure]{font={stretch=1}}
 
 % see: tex.stackexchange.com/questions/48152/dynamic-signature-date-line
 \newcommand{\titledate}[2][2in]{%
@@ -208,18 +150,6 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
 \newcommand{\degreeC}[0]{$^{\circ}$C}
 % citePRH: for controlling the citation method
 \newcommand{\citePRH}[1]{\cite{#1}}
-
-
-% change the equations to not be so awful
-%tex.stackexchange.com/questions/69662/how-to-globally-change-the-spacing-around-equations
-\newcommand{\pSkip}[0]{0pt}
-\makeatletter
-\g@addto@macro\normalsize{%
-  \setlength\abovedisplayskip{\pSkip}
-  \setlength\belowdisplayskip{\pSkip}
-  \setlength\abovedisplayshortskip{\pSkip}
-  \setlength\belowdisplayshortskip{\pSkip}
-}
 
 
 \begin{document}
