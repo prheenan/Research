@@ -54,9 +54,6 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \usepackage{braket}
-% use utf-8 for  the input encoding (so the bibliography isnt terrible)
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
 % allow for break spaces...
 % defines \textmu, which is now what inputenx seems to use for μ - probably due inpmath.. also \textdegree... but not \textrho. Need utf - BOM
 \usepackage{textcomp} 
@@ -116,10 +113,9 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
 \newcommand{\pEndF}[0]{ \\ }
 \newcommand{\pStartF}[0]{ }
 
-% single-spaced captions. see:
+
 % tex.stackexchange.com/questions/153334/change-the-baselinestretch-line-spacing-only-for-figure-captions
-\usepackage{graphicx,kantlipsum}
-\usepackage{caption}
+\usepackage{kantlipsum}
 
 % see: tex.stackexchange.com/questions/48152/dynamic-signature-date-line
 \newcommand{\titledate}[2][2in]{%
@@ -160,11 +156,8 @@ B.S. Physics, University of North Carolina at Chapel Hill, 2013}
 \bibliographystyle{plain}	% or "siam", or "alpha", etc.
 \bibliography{Masters}		% Bib database in "refs.bib"
 
-
-
 %%%%%%%%%   then the Appendices, if any   %%%%%%%%%
 \appendix
-
 \input heenan_2017_ms_appendix.tex 
 
 
