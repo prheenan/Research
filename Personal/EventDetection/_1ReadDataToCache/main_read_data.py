@@ -52,7 +52,7 @@ def run():
                              n_folds,pool_size=pool_size,
                              learners=learners)
     for l in learners:
-        if (debugging):
+        if not debugging:
             break
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
@@ -88,7 +88,7 @@ def run():
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
-    debugging_str = "_" if debugging else ""
+    debugging_str = "_" if not debugging else ""
     file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])

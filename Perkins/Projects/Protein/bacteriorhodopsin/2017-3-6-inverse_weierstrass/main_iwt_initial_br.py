@@ -57,8 +57,8 @@ def run():
     downsample_n = 100
     fraction_for_vel = 0.1    
     limit = 10
-    force_sample = True
-    force= True
+    force_sample = False
+    force= False
     cache_directory = "./"
     out_base = cache_directory    
     retracts = CheckpointUtilities.getCheckpoint("downsample.pkl",
@@ -94,9 +94,6 @@ def run():
     for r in retracts:
         r.Force *= 1e-12
         r.Separation *= 1e-9
-    for r in retracts:
-        plt.plot(r.Force)
-        plt.show()
     data_iwt = [IWT_Util.ToIWTObject(d) for d in retracts]
     # set all the effective velocities
     for d in data_iwt:
@@ -106,7 +103,7 @@ def run():
     LandscapeObj =  InverseWeierstrass.\
         FreeEnergyAtZeroForce(data_iwt,NumBins=num_bins)
     fig = PlotUtilities.figure(figsize=(12,12))
-    IWT_Plot.plot_single_landscape(LandscapeObj,force_one_half_N=16e-12,
+    IWT_Plot.plot_single_landscape(LandscapeObj,force_one_half_N=15e-12,
                                    add_meta_half=False,add_meta_free=False)  
     PlotUtilities.savefig(fig,out_base + "IWT.pdf")
 
