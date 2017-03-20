@@ -395,9 +395,10 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
             _no_event_probability(time,interp,force,n_points,
                                   slice_fit=slice_update,**kwargs)
         probability_updated[slice_update] = probability_updated_slice
+        boolean_ret = (probability_updated < threshold)
     else:
         slice_update = slice(0,None,1)        
-    return slice_update,boolean_array,probability_updated
+    return slice_update,boolean_ret,probability_updated
 
 def _min_points_between(autocorrelation_tau_num_points):
     """
@@ -453,6 +454,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
     where_derivative_le_zero_absolute = where_deriv_le_zero
     min_idx = where_derivative_le_zero_absolute[0]
     to_ret[:min_idx] = 0
+    slice_to_use = slice(min_idx,-min_points_between,1)
     # POST: we found a peak (or a flat point) followed by some kind of increase
     # this means we should have passed (at least one) adhesion peak.
     # however, if there is an event happening here, we need to continue
@@ -461,11 +463,11 @@ def adhesion_mask(surface_index,n_points,split_fec,
     force = retract.Force
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     kwargs_no_event = dict(epsilon=epsilon,sigma=sigma)
-    probability_distribution = _no_event_probability(x=time,
-                                                     interp=interp,
-                                                     y=force,
-                                                     n_points=n_points,
-                                                     **kwargs_no_event)
+    probability_distribution,_ = _no_event_probability(x=time[slice_to_use],
+                                                       interp=interp,
+                                                       y=force[slice_to_use],
+                                                       n_points=n_points,
+                                                       **kwargs_no_event)
     non_events = probability_distribution > threshold    
     # note: need to offset events
     no_event_mask = np.where(non_events)[0] + min_idx
@@ -498,7 +500,7 @@ def adhesion_mask(surface_index,n_points,split_fec,
                            (slice_idx > min_idx))[0]
     if (where_below.size > 0):
         min_idx = where_below[0]
-    to_ret[:min_idx] = 0                  
+    to_ret[:min_idx] = 0            
     return to_ret                     
                      
 

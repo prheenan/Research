@@ -106,9 +106,9 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x
-    example_numbers = []
-    examples_filtered = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples):
+    example_numbers = [29]
+    examples_f = [examples[i] for i in example_numbers]
+    for i,example in enumerate(examples_f):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
         if (debugging):
