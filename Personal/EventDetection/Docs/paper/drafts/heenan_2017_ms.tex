@@ -1,4 +1,4 @@
-\section{\sLabel{Intro}Introduction}
+\chapter{\sLabel{Intro}Introduction}
 
 \firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins\citePRH{yu_hidden_2017}. The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studying biological systems. \pl
 
@@ -6,7 +6,7 @@ During an AFM experiment, an atomically sharp tip attached to a cantilever inter
 
 In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip attaches to a molecule and stretches it to measure the relationship between force and extension over time. The experiment records the force-extension curve of the molecule (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes \citePRH{comstock_direct_2015}, protein-ligand bond strength \citePRH{yuan_energy_2000}, and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. \pl
 
-\begin{figure}
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/cartoon.pdf}% Here is how to import EPS art
 \caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. (a1,a2) A diagram of an AFM tip and a force-extension curve corresponding to no attachments. (b1,b2) As previous, except illustrating a single attachment. (c1,c2) As previous, except illustrating multiple attachments. For all subplots, the force changes color at the location of a tagged event.  \pEndF }
@@ -21,20 +21,20 @@ This paper describes a new method based on machine learning for detecting events
 
  The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. \pl
 
-\section{\sLabel{Materials}Materials and Methods}
+\chapter{\sLabel{Materials}Materials and Methods}
 
-\subsection{Sample Preparation}
+\section{Sample Preparation}
 
 \firstp Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation has been described elsewhere (CITE XXX Rob) and in \sRef{SampleDetails}. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with Dibenzocyclooctyl (DBCO) at one end to ensure a covalent bond with an azide-functionalized surface. The polymer is also functionalized with biotin at the opposite end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. \pl
 
-\subsection{\sLabel{Surface}Atomic force microscopy}
+\section{\sLabel{Surface}Atomic force microscopy}
 
 \firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method\citePRH{cleveland_nondestructive_1993}. All measurements were carried out with a 2 second pause at the surface. To reduce the effect of a possible non-uniform spatial distribution of the sample, measurements were taken over a series of 25$\muup$m x 25$\muup$m grids at points separated by 1$\muup$m. The stage was translated to a new grid point after measuring three force-extension curves. \pl
 
-\subsection{\sLabel{Annotation}Data annotation}
+\section{\sLabel{Annotation}Data annotation}
 
 
-\begin{figure}
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
 \caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining the rupture and its associated properties. (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force and loading rate are defined using the data and the fit, as described in the text. For all subplots, the force changes color at the location of a tagged event. }
@@ -46,7 +46,7 @@ The expected rupture forces and loading rates were calculated from the annotated
 
 
 
-\subsection{\sLabel{Algorithm}Algorithm Design and Analysis}
+\section{\sLabel{Algorithm}Algorithm Design and Analysis}
 
 All timing and tuning results were obtained via a desktop with 16GB of RAM, a 3.7GHz i7-4790 CPU, and a 1TB hard drive. \pl
 
@@ -110,19 +110,19 @@ $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \n
 
 Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=1000nm/s, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
 
-\section{\sLabel{Results}Results}
+\chapter{\sLabel{Results}Results}
 
-\subsection{\sLabel{Timing}Algorithmic time complexity}
+\section{\sLabel{Timing}Algorithmic time complexity}
 
 \firstp \fRef{Timing} compares the runtimes, T(n), of \name{} and the baselines. As expected, the runtime of each algorithm is roughly linear in the thousands to millions of points, with \name{} having a roughly tenfold better asymptotic slope.  \pl
 
-\begin{figure}
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
 \caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of each algorithm is approximately linear. (a) The runtime per curve versus number of points in the curve, T(N), for each algorithm is plotted as points. Lines around the data show the best-fit upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n. (b) The linear constants $a_1$, representing the asymptotic runtime per data point, for each algorithm from (a) are plotted. \pEndF}
 \end{figure}
 
-\subsection{\sLabel{Performance}Algorithmic event detection performance}
+\section{\sLabel{Performance}Algorithmic event detection performance}
 
 \fRef{Performance} shows the event-detection performance of \name{} and the baseline algorithms. As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient by about 0.3 over the spectrum of loading rates and rupture forces. 
 
@@ -140,7 +140,7 @@ wavelet transform & 0.651 & 811 & 0.514\e
 
 
 
-\begin{figure}
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
 \caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of \name{} compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. Note that the relative event error is complemented by one and the absolute event error is not listed, to facilitate plotting on the same axis. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python baseline. \pEndF }
@@ -148,7 +148,7 @@ wavelet transform & 0.651 & 811 & 0.514\e
 
 
 
-\section{\sLabel{Discussion}Discussion}
+\chapter{\sLabel{Discussion}Discussion}
 
 
 \firstp \pl \name{} provides order-of-magnitude improvements in both speed and physically-relevant metrics for algorithm performance, relative to the baselines presented. As shown in \fRef{LargeDataset}, \name{} also generalizes well to more complex \singlemol{} data.  \pl
