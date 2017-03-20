@@ -109,9 +109,7 @@ def run(base="./"):
     entire_figure = gridspec.GridSpec(3,1)
     import matplotlib as mpl
     mpl.rcParams['hatch.linewidth'] = 4
-    title_dict = {"no event":"FEATHER",
-                  "open fovea":"Open Fovea",
-                  "wavelet transform":"Scientific Python"}
+    title_dict = Plotting.algorithm_title_dict()
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
         best_param_idx = m.best_param_idx

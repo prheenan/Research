@@ -42,7 +42,7 @@ def get_supplemental_figure(output_path,trials):
     y_label_big_o = "Runtime per curve (s) "
     ylim_big_o = [1e-3,1e3]
     for i,learner_trials in enumerate(trials):
-        description = learner_trials.learner.description.lower()
+        description = TimePlot.learner_name(learner_trials)
         plot_idx = i*n_cols+1
         plt.subplot(n_rows,n_cols,plot_idx)
         # plot the timing veruses loading rate and number of points 
@@ -122,7 +122,7 @@ def make_main_figure(output_path,trials):
     TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
     plt.ylim([1e3,3e6])
     PlotUtilities.legend(loc="lower right",frameon=True)
-    PlotUtilities.title(r"No event asymptotic T(N) is $\geq$10x faster")
+    PlotUtilities.title(r"FEATHER asymptotic T(N) is $\geq$10x faster")
     PlotUtilities.label_tom(fig,loc=(-0.15,1))
     PlotUtilities.savefig(fig,output_path)
 

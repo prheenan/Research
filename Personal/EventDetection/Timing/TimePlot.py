@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import sys,random,multiprocessing,re
 from timeit import default_timer as timer
 from GeneralUtil.python import GenUtilities,PlotUtilities
+from Research.Personal.EventDetection.Util import Plotting
+
 
 class timing_info:
     def __init__(self,learner_trials):
@@ -33,6 +35,10 @@ class timing_info:
         return self.nums.size                           
                     
 
+def learner_name(timer):
+    timer_desc = timer.learner.description.lower()
+    return Plotting.algorithm_title_dict()[timer_desc]
+    
 
 def get_loading_rate_slopes_and_errors(inf):
     """
@@ -96,7 +102,7 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
     # d(1/f) = (1/f^2) * df
     plot_y_error = plot_y**2 * (np.array(time_per_point_error))
     N = len(time_per_point)
-    labels = [l.learner.description.lower() for l in learners]
+    labels = [learner_name(l) for l in learners]
     ind = np.arange(N)  # the x locations for the groups
     width = 0.4       # the width of the bars
     ax = plt.gca()
@@ -149,7 +155,7 @@ def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
     slope = coeffs[0]
     lower_label = r"{:.2f}$ c_0 N \leq $".format(fudge)
     upper_label = r"$\leq \frac{c_0}{" + "{:.2f}".format(fudge) + "} N$"
-    label_timing = learner_trials.learner.description.lower()
+    label_timing = learner_name(learner_trials)
     style_timing = style_pred
     idx_good  = np.where(y_pred > min_pred)
     x_pred_plot = x_pred[idx_good]

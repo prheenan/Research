@@ -24,6 +24,15 @@ def algorithm_markers():
 def algorithm_linestyles():
     return ['--','-.','-']    
 
+def algorithm_title_dict():
+    """
+    returns a dicitonary mapping <description of algorithm> -> plot title
+    """
+    dict_v = {"no event":"FEATHER",
+              "open fovea":"Open Fovea",
+              "wavelet transform":"Scientific Python"}
+    return dict_v
+
 def true_hatch():
     return "//"
 
@@ -872,3 +881,4 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.yscale('log')
     plt.ylim([min(probability_updated)/5,2])
     PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")
+
