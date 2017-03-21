@@ -310,13 +310,13 @@ def delta_mask_function(split_fec,slice_to_use,
     min_points_between = _min_points_between(n_points)
     boolean_ret = boolean_array.copy()
     probability_updated = probability.copy()
+    # get the retract df spectrum
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
     median = np.median(interp_f)
-    stdev = Analysis.local_stdev(force_sliced-interp_f,n_points)
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    min_signal = epsilon+sigma
+    min_signal = (epsilon+sigma)
     df_relative = df_true-(-min_signal)
     # finally, modulate by the ratio 
     k_cheby_ratio = np.minimum(df_relative/sigma,1)
@@ -324,12 +324,12 @@ def delta_mask_function(split_fec,slice_to_use,
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
+    xlim = [min(x),max(x)]
     #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
-    gt_condition[slice_to_use] = ((interp_f - min_signal < median) |
-                                  (interp_f - min_signal > f0) | 
+    gt_condition[slice_to_use] = ((interp_f - min_signal > f0) | 
                                   (no_event_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
@@ -339,10 +339,13 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    """
-    xlim = plt.xlim(min(x_sliced),max(x_sliced))
+    xlim = plt.xlim(min(x),max(x))
     plt.subplot(3,1,1)
-    plt.plot(x_sliced,interp_f)
+    valid_idx = np.where(np.logical_not(gt_condition))
+    invalid_idx = np.where(gt_condition)
+    plt.plot(x[invalid_idx],force[invalid_idx],color='k',alpha=0.3)
+    plt.plot(x[valid_idx],force[valid_idx],color='g')    
+    plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
     plt.subplot(3,1,2)
     plt.plot(x_sliced,interp_f-(min_signal+f0))
@@ -353,7 +356,6 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.semilogy(x,probability)
     plt.xlim(xlim)
     plt.show()
-    """
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
