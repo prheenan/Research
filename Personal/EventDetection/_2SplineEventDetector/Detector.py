@@ -209,6 +209,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     boolean_ret = boolean_array.copy()
     probability_updated = probability.copy()
     n_full_force = split_fec.retract.Force.size
+    n_full_force = split_fec.retract.Force.size
     stop = n_full_force if (slice_to_use.stop) is None else slice_to_use.stop
     if ((stop - offset) < min_points_between):
         return slice_to_use,boolean_ret,probability_updated
@@ -227,7 +228,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     where_below = np.where(interp_deriv > median)[0]
     last_index = offset + min(where_above[-1],where_below[-1])
     absolute_min_idx = offset +min_points_between
-    absolute_max_index = min(stop,last_index)
+    absolute_max_index = min(slice_to_use.stop,last_index)
     # remove the bad points
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
@@ -719,7 +720,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     bool_array = probability_distribution < threshold
     masks = [np.where(bool_array)[0]]
     probabilities = [probability_distribution.copy()]
-    slice_to_use = slice(0,None,1)
+    slice_to_use = slice(0,y.size-1,1)
     if (remasking_functions is not None):
         for f in remasking_functions:
             res = f(slice_to_use=slice_to_use,
