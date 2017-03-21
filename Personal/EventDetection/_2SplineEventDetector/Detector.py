@@ -363,7 +363,8 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.axhline(0)
     plt.xlim(xlim)
     plt.subplot(3,1,3)
-    plt.semilogy(x,probability_updated)
+    plt.semilogy(x,probability_updated,linestyle='--')
+    plt.semilogy(x,probability)
     plt.xlim(xlim)
     plt.show()
     """
