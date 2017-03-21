@@ -120,18 +120,6 @@ def force_value_mask_function(split_fec,slice_to_use,
     probability_updated[slice_to_use] *= \
             _no_event_chebyshev(local_integral,0,thresh_integral)
     boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
-    median = np.median(interp_f)
-    bool_interp = ( (interp_f - stdev < median) |
-                    (stdev - epsilon < sigma) )
-    where_not_bool_in_slice = np.where(~bool_interp)[0]
-    no_event_possible = np.ones(boolean_array.size)
-    no_event_possible[slice_to_use] = bool_interp
-    get_best_slice_func = lambda slice_list: \
-        get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
-    ret = safe_reslice(boolean_ret,probability_updated,
-                       condition=no_event_possible,
-                       min_points_between=min_points_between,
-                       get_best_slice_func=get_best_slice_func)
     boolean_updated,probability_updated = ret
     return slice_to_use,boolean_updated,probability_updated
 
@@ -335,16 +323,14 @@ def delta_mask_function(split_fec,slice_to_use,
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
-    where_no_event = np.where(1-ratio_probability<tol)[0]
-    if (where_no_event.size > 0):
-        probability_updated[slice_to_use][where_no_event] = 1
-    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold) 
+    no_event_cond = (1-ratio_probability<tol)
     #XXX debugging without this...
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
     gt_condition[slice_to_use] = ((interp_f - min_signal < median) |
-                                  (interp_f - min_signal > f0))
+                                  (interp_f - min_signal > f0) | 
+                                  (no_event_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     boolean_ret,probability_updated = \
@@ -892,8 +878,9 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function,
-              derivative_mask_function,integral_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,
+              derivative_mask_function,integral_mask_function,
+              delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)
