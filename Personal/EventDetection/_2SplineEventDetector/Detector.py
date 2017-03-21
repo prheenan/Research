@@ -188,6 +188,7 @@ def safe_reslice(original_boolean,original_probability,condition,
 
 def derivative_mask_function(split_fec,slice_to_use,
                              boolean_array,probability,threshold,
+                             negative_only=True,
                              *args,**kwargs):
     """
     returns : see adhesion_mask_function_for_split_fec 
@@ -207,7 +208,9 @@ def derivative_mask_function(split_fec,slice_to_use,
     # if we dont have any points, return
     boolean_ret = boolean_array.copy()
     probability_updated = probability.copy()
-    if ((slice_to_use.stop - offset) < min_points_between):
+    n_full_force = split_fec.retract.Force.size
+    stop = n_full_force if (slice_to_use.stop) is None else slice_to_use.stop
+    if ((stop - offset) < min_points_between):
         return slice_to_use,boolean_ret,probability_updated
     # POST: something to look at. find the spline-interpolated derivative
     # probability
@@ -224,7 +227,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     where_below = np.where(interp_deriv > median)[0]
     last_index = offset + min(where_above[-1],where_below[-1])
     absolute_min_idx = offset +min_points_between
-    absolute_max_index = min(slice_to_use.stop,last_index)
+    absolute_max_index = min(stop,last_index)
     # remove the bad points
     boolean_ret[:absolute_min_idx] = 0
     boolean_ret[absolute_max_index:] = 0
@@ -254,7 +257,7 @@ def derivative_mask_function(split_fec,slice_to_use,
     std_deriv_appr = np.std(approach_interp_deriv)
     kwargs_approach_deriv = dict(loc=med_deriv_appr,
                                  scale=std_deriv_appr,
-                                 negative_only=True)
+                                 negative_only=negative_only)
     # modulate the probabilities by the approach
     probability_deriv = \
             _spline_derivative_probability_generic(x_sliced,interp,
@@ -265,8 +268,7 @@ def derivative_mask_function(split_fec,slice_to_use,
 
 
 def integral_mask_function(split_fec,slice_to_use,
-                           boolean_array,probability,threshold,
-                           *args,**kwargs):
+                           boolean_array,probability,threshold):
     # modify again, based on the integal noise
     x = split_fec.retract.Time
     x_sliced = x[slice_to_use]
@@ -300,8 +302,7 @@ def integral_mask_function(split_fec,slice_to_use,
     return slice_to_use,boolean_ret,probability_updated
 
 def delta_mask_function(split_fec,slice_to_use,
-                        boolean_array,probability,threshold,
-                        *args,**kwargs):
+                        boolean_array,probability,threshold,negative_only=True):
     x = split_fec.retract.Time
     force = split_fec.retract.Force
     x_sliced = x[slice_to_use]
@@ -317,19 +318,29 @@ def delta_mask_function(split_fec,slice_to_use,
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     min_signal = (epsilon+sigma)
-    df_relative = df_true-(-min_signal)
+    if (negative_only):
+        baseline = -min_signal
+    else:
+        baseline = min_signal
+    df_relative = df_true-baseline
     # finally, modulate by the ratio 
-    k_cheby_ratio = np.minimum(df_relative/sigma,1)
+    if negative_only:
+        k_cheby_ratio = np.minimum(df_relative/sigma,1)
+    else:
+        k_cheby_ratio = np.abs(df_relative/sigma)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
-    xlim = [min(x),max(x)]
-    #XXX debugging without this...
+    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]    
+    interp_f_minus_baseline = interp_f - min_signal -f0
+    if (negative_only):
+        value_cond = (interp_f_minus_baseline > 0)
+    else:
+        value_cond = (np.abs(interp_f_minus_baseline) < 0)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]
-    gt_condition[slice_to_use] = ((interp_f - min_signal > f0) | 
+    gt_condition[slice_to_use] = ((value_cond) | 
                                   (no_event_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
@@ -339,6 +350,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
+    """                         
     xlim = plt.xlim(min(x),max(x))
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
@@ -356,11 +368,11 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.semilogy(x,probability)
     plt.xlim(xlim)
     plt.show()
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
-                                         probability,threshold,
-                                         *args,**kwargs):
+                                         probability,threshold):
     """
    returns the funciton adhesion_mask, with surface_index set to whatever
     the surface index of split_fec is predicted to be by the approach
@@ -373,36 +385,60 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     Returns:
         new mask and probability distribution
     """
-    surface_index = split_fec.get_predicted_retract_surface_index()
     n_points = split_fec.tau_num_points
-    bool_adhesion = adhesion_mask(surface_index,n_points,split_fec,
-                                  probability_distribution=probability,
-                                  threshold=threshold,*args,**kwargs)
-    where_not_adhesion = np.where(bool_adhesion)[0]
-    probability_updated= probability.copy()
-    if (where_not_adhesion.size > 1):
-        adhesions_removed = boolean_array.copy()
-        start = where_not_adhesion[0]
-        end = where_not_adhesion[-1]
-        # remove the starting and ending adhesion
-        adhesions_removed[:start] = 0
-        adhesions_removed[end:] = 0
-        # update the no-event probabilities
-        slice_update = slice(start,end,1)
-        retract = split_fec.retract
-        time = retract.Time
-        force = retract.Force
-        interp = split_fec.\
-            retract_spline_interpolator(slice_to_fit=slice_update)
-        epsilon,sigma = split_fec.get_epsilon_and_sigma()
-        kwargs = dict(epsilon=epsilon,sigma=sigma)
-        probability_updated_slice, _ = \
-            _no_event_probability(time,interp,force,n_points,
-                                  slice_fit=slice_update,**kwargs)
-        probability_updated[slice_update] = probability_updated_slice
-        boolean_ret = (probability_updated < threshold)
-    else:
-        slice_update = slice(0,None,1)        
+    probability_functions_and_kw = \
+        [ [derivative_mask_function,dict(negative_only=False)],
+          [integral_mask_function,dict()],
+          [delta_mask_function,dict(negative_only=False)]]
+    probability_updated = probability.copy()      
+    boolean_ret = boolean_array.copy()
+    slice_updated = slice_to_use
+    surface_index = split_fec.get_predicted_retract_surface_index()    
+    for f,kw_tmp in probability_functions_and_kw:
+        kw = dict(split_fec=split_fec,
+                  slice_to_use=slice_updated,
+                  threshold=threshold,
+                  boolean_array=boolean_ret,
+                  probability=probability_updated,**kw_tmp)
+        slice_update,boolean_ret,probability_tmp = f(**kw)
+        probability_updated = probability_tmp*probability_updated
+    non_events = probability_updated > threshold
+    min_points_between = _min_points_between(n_points)
+    min_idx = surface_index + min_points_between
+    n = split_fec.retract.Force.size
+    # remove all things before the predicted surface, and at the boundary
+    boolean_ret[:min_idx] = 0
+    boolean_ret[-min_points_between:] = 0
+    probability_updated[:min_idx] = 1
+    probability_updated[-min_points_between:] = 1
+    slice_update = slice(min_idx,n-min_points_between,1)
+    # note: need to offset events
+    no_event_mask = np.where(non_events)[0] 
+    # XXX finish current event, keep consuming events until startd/end
+    # are beyond threshold
+    event_mask = np.where(~non_events)[0]
+    if (event_mask.size ==0 or no_event_mask.size == 0):
+        return slice_update,boolean_ret,probability_updated
+    # POST: we have at least one event and one non-event
+    # (could be some adhesion!)
+    # determine events that contain the surface index
+    event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
+    # get a list of the events with a starting point below the surface
+    events_containing_surface = [e for e in event_boundaries
+                                 if (e.start <= surface_index)]                             
+    n_events_surface = len(events_containing_surface)
+    if (n_events_surface == 0):
+        return slice_update,boolean_ret,probability_updated
+    last_event_containing_surface_end = \
+        events_containing_surface[-1].stop + min_points_between
+    min_idx = max(min_idx,last_event_containing_surface_end)
+    # update the boolean array and the probably to just reflect the slice
+    # ie: ignore the non-unfolding probabilities above
+    boolean_ret[:min_idx] = 0
+    slice_update = slice(min_idx,slice_update.stop,1)
+    probability_updated = probability.copy()
+    probability_updated[:min_idx] = 1
+    probability_updated[slice_update.stop:] = 1
     return slice_update,boolean_ret,probability_updated
 
 def _min_points_between(autocorrelation_tau_num_points):
@@ -414,99 +450,7 @@ def _min_points_between(autocorrelation_tau_num_points):
         autocorrelation_tau_num_points: number of filtering points
     """
     return int(np.ceil(autocorrelation_tau_num_points/4))
-    
-def adhesion_mask(surface_index,n_points,split_fec,
-                  probability_distribution,threshold):
-    """
-    returns a boolean mask which is 0 where we can predict and adhesion 
-    and zero elsewhere
-    
-    Args:
-        surface_index: our best guess for where the surface is. 
-        probability_distribution: see Detector._event_mask
-        threshold: see Detector._event_mask
-    Returns:
-        list of event slices
-    """
-    to_ret = np.ones(probability_distribution.size,dtype=np.bool_)
-    retract = split_fec.retract   
-    # determine the boundaries of the 'no events'
-    min_points_between = _min_points_between(n_points)
-    min_idx = surface_index + min_points_between
-    # remove all things before the predicted surface, and at the boundary
-    to_ret[:min_idx] = 0    
-    to_ret[-min_points_between:] = 0    
-    # determine where the derivative after the predicted surface is first zero
-    time = retract.Time
-    # we *fit* the spline to the entire data set
-    slice_to_fit = slice(0,None,1)
-    # we only *consider* points that are above some marker (e.g. surface_index)
-    slice_idx = np.arange(0,time.size)
-    time_to_fit = time[slice_to_fit]
-    force_to_fit = retract.Force[slice_to_fit]
-    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_fit)
-    force_fit = interp(time_to_fit)
-    deriv = interp.derivative()(time_to_fit)
-    derivative_gt_zero = deriv > 0
-    derivative_le_zero = deriv <= 0
-    # must be above the surface *and* have a derivative <= 0 
-    where_deriv_le_zero = \
-        np.where(derivative_le_zero & (slice_idx > surface_index) )[0]
-    if (where_deriv_le_zero.size == 0):
-        return to_ret
-    # POST: have at least one point we can test, figure out where we get back
-    # to the force baseline
-    where_derivative_le_zero_absolute = where_deriv_le_zero
-    min_idx = where_derivative_le_zero_absolute[0]
-    to_ret[:min_idx] = 0
-    slice_to_use = slice(min_idx,-min_points_between,1)
-    # POST: we found a peak (or a flat point) followed by some kind of increase
-    # this means we should have passed (at least one) adhesion peak.
-    # however, if there is an event happening here, we need to continue
-    # consuming them (noting that we determine the probability distribution
-    # again, since that initial adhesion prolly messed us up 
-    force = retract.Force
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    kwargs_no_event = dict(epsilon=epsilon,sigma=sigma)
-    probability_distribution,_ = _no_event_probability(x=time[slice_to_use],
-                                                       interp=interp,
-                                                       y=force[slice_to_use],
-                                                       n_points=n_points,
-                                                       **kwargs_no_event)
-    non_events = probability_distribution > threshold    
-    # note: need to offset events
-    no_event_mask = np.where(non_events)[0] + min_idx
-    # XXX finish current event, keep consuming events until startd/end
-    # are beyond threshold
-    event_mask = np.where(~non_events)[0] + min_idx
-    if (event_mask.size ==0 or no_event_mask.size == 0):
-        return to_ret
-    # POST: we have at least one event and one non-event
-    # (could be some adhesion!)
-    # determine events that contain the surface index
-    event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
-    # get a list of the events with a starting point below the surface
-    events_containing_surface = [e for e in event_boundaries
-                                 if (e.start <= min_idx)]
-    n_events_surface = len(events_containing_surface)  
-    if (n_events_surface == 0):
-        return to_ret
-    # POST: at least one event contains the surface. Update the minimum index
-    # to go to the end of the (last) event below or at the surface, unless
-    # the end is below the surface, then just keep the minimum at the surface
-    last_event_containing_surface_end = \
-        events_containing_surface[-1].stop + min_points_between
-    min_idx = max(min_idx,last_event_containing_surface_end)    
-    to_ret[:min_idx] = 0              
-    # finally, make sure we are at least at the N-th percentile
-    N = 75
-    pct_threshold = np.percentile(force_to_fit[min_idx:],N)
-    where_below = np.where((force_to_fit < pct_threshold) & \
-                           (slice_idx > min_idx))[0]
-    if (where_below.size > 0):
-        min_idx = where_below[0]
-    to_ret[:min_idx] = 0            
-    return to_ret                     
+              
                      
 
 class prediction_info:

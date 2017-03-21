@@ -186,9 +186,9 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        n_points = _index_surface_relative(self.retract.Separation,
-                                           self.surface_distance_from_trigger())
-        return n_points
+        above_med = \
+            np.where(self.retract.Force > np.median(self.retract.Force))[0]
+        return above_med[0]
 
 def _index_surface_relative(x,offset_needed):
     """
