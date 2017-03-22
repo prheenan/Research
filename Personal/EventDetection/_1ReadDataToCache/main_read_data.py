@@ -28,7 +28,7 @@ def run():
     limit = 75
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     copy_files = True
     force_read = False
     force_relearn = False
@@ -107,8 +107,8 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 0.2
-    example_numbers = [0,1,8]
+    threshold = best_x
+    example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
