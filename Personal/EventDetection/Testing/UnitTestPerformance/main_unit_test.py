@@ -33,6 +33,7 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 0.2
+    fractional_error_tolerance = 0.01    
     for i,f in enumerate(load_paths):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 
         # get the prediction, save out the plotting information
@@ -49,7 +50,14 @@ def run():
         n_expected = len(example.Events)
         err_str = "for {:s}, expected {:d}, got {:d}".\
             format(f,n_expected,n_found)
-        assert n_found == n_expected , err_str        
+        assert n_found == n_expected , err_str   
+        # POST: number of events match. check that the locations match (within
+        # fractional_error_tolerance * number of points)
+        predicted_centers = sorted(pred_info.event_idx)
+        actual_centers = sorted(example_split.get_retract_event_centers())
+        n = example_split.retract.Force.size
+        for pred,actual in zip(predicted_centers,actual_centers):
+            assert abs(pred-actual) <= fractional_error_tolerance * n
 
 if __name__ == "__main__":
     run()
