@@ -334,11 +334,13 @@ def delta_mask_function(split_fec,slice_to_use,
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]    
-    interp_f_minus_baseline = interp_f - min_signal -f0
+    interp_f_minus_baseline = interp_f - f0
     if (negative_only):
-        value_cond = (interp_f_minus_baseline > 0)
+        # XXX ?.... shouldnt this be minimum? (*dont* want positive)
+        value_cond = (np.abs(np.maximum(0,interp_f_minus_baseline))\
+                      < min_signal)
     else:
-        value_cond = (np.abs(interp_f_minus_baseline) < 0)
+        value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | 
