@@ -29,6 +29,7 @@ def run():
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True
+    copy_files = False
     force_read = False
     force_relearn = False
     force_learn = False
@@ -94,7 +95,8 @@ def run():
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
-    load_paths_tmp = [cache_directory + f for f in load_files]
+    load_paths_tmp = [(cache_directory + f).replace(".pxpI",".pxp_I")
+                      for f in load_files]
     # replace the final underscore...
     print("loading: {:s}".format(load_paths_tmp))
     load_paths = []
@@ -111,7 +113,7 @@ def run():
     for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
-        if (debugging):
+        if (copy_files):
             copyfile(load_paths[i],debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \

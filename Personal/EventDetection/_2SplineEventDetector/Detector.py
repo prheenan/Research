@@ -426,13 +426,14 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries
-                                 if (e.start <= surface_index)]                             
+                                 if (e.start <= surface_index)]     
     n_events_surface = len(events_containing_surface)
     if (n_events_surface == 0):
         return slice_update,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)
+    min_idx = min(probability.size-1,min_idx)
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
