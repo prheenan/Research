@@ -28,7 +28,7 @@ def run():
     limit = 75
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = False
+    debugging = True
     copy_files = True
     force_read = False
     force_relearn = False
@@ -95,7 +95,7 @@ def run():
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
-    load_paths_tmp = [(cache_directory + f).replace(".pxpI",".pxp_I")
+    load_paths_tmp = [(cache_directory + f)
                       for f in load_files]
     # replace the final underscore...
     print("loading: {:s}".format(load_paths_tmp))
@@ -107,10 +107,10 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
-    example_numbers = [5,7,17,19]
+    threshold = 0.2
+    example_numbers = [0,1,8]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples):
+    for i,example in enumerate(examples_f):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
         if (copy_files):

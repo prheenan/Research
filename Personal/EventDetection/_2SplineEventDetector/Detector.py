@@ -330,7 +330,9 @@ def delta_mask_function(split_fec,slice_to_use,
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
-    f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]    
+    n_slice_region = interp_f.size
+    f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
+          for i in range(n_slice_region)]    
     interp_f_minus_baseline = interp_f - f0
     if (negative_only):
         # XXX ?.... shouldnt this be minimum? (*dont* want positive)
@@ -361,13 +363,9 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
     plt.subplot(3,1,2)
-    plt.plot(x_sliced,interp_f_minus_baseline)
-    plt.axhline(0)
-    plt.xlim(xlim)
-    plt.subplot(4,1,3)
     plt.plot(x,boolean_ret)
     plt.xlim(xlim)
-    plt.subplot(4,1,4)
+    plt.subplot(3,1,3)
     plt.semilogy(x,probability_updated,linestyle='--')
     plt.semilogy(x,probability)
     plt.xlim(xlim)
