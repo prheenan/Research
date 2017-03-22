@@ -37,7 +37,8 @@ def write_coeffs_file(out_file,coeffs):
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
     coeff_names = [coeff_tmp[1] for coeff_tmp in funcs_names_values[0] ]
-    method_names = [c.name for c in coeffs]
+    plot_dict = Plotting.algorithm_title_dict()
+    method_names = [plot_dict[c.name] for c in coeffs]
     # get the list of coefficients
     coeffs = [[f[2] for f in coeff_tmp] for coeff_tmp in funcs_names_values ]
     coeffs_array = np.array(coeffs)

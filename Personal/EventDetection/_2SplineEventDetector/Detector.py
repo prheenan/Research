@@ -331,11 +331,13 @@ def delta_mask_function(split_fec,slice_to_use,
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     f0 = [interp_f[max(0,i-n_points)] for i in range(interp_f.size)]    
-    interp_f_minus_baseline = interp_f - min_signal -f0
+    interp_f_minus_baseline = interp_f - f0
     if (negative_only):
-        value_cond = (interp_f_minus_baseline > 0)
+        # XXX ?.... shouldnt this be minimum? (*dont* want positive)
+        value_cond = (np.abs(np.maximum(0,interp_f_minus_baseline))\
+                      < min_signal)
     else:
-        value_cond = (np.abs(interp_f_minus_baseline) < 0)
+        value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | 
@@ -348,7 +350,8 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    """                         
+    boolean_ret = probability_updated < threshold
+    """
     xlim = plt.xlim(min(x),max(x))
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
@@ -358,12 +361,17 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
     plt.subplot(3,1,2)
-    plt.plot(x_sliced,interp_f-(min_signal+f0))
+    plt.plot(x_sliced,interp_f_minus_baseline)
     plt.axhline(0)
     plt.xlim(xlim)
-    plt.subplot(3,1,3)
+    plt.subplot(4,1,3)
+    plt.plot(x,boolean_ret)
+    plt.xlim(xlim)
+    plt.subplot(4,1,4)
     plt.semilogy(x,probability_updated,linestyle='--')
     plt.semilogy(x,probability)
+    plt.xlim(xlim)
+    plt.axhline(threshold)
     plt.xlim(xlim)
     plt.show()
     """
@@ -423,7 +431,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries
-                                 if (e.start <= surface_index)]                             
+                                 if (e.start <= surface_index)]     
     n_events_surface = len(events_containing_surface)
     if (n_events_surface == 0):
         return slice_update,boolean_ret,probability_updated

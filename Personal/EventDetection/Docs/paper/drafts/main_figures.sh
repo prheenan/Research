@@ -16,6 +16,12 @@ function copy_pdfs()
 	# try to run the pdf; ignore errors
 	python2 "$i" || true
     done
+    abs=$PWD
+    for i in *.pdf; do
+	out="${2}/_$i.png"
+	inkscape "${abs}/$i" -z --export-dpi=100 --export-area-drawing \
+	    --export-png="${out}" 
+    done
     cd -
     cp ${1}*.pdf ${2}
 }
@@ -41,12 +47,13 @@ prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
 copy_pdfs ${base_dir_rel}FigurePerformance_FullSet_Only_FEATHER/ $out_path 
 copy_pdfs ${prep_dir} $out_path 
-copy_pdfs "${base_dir_rel}FigurePerformance_CS/" $out_path 
 copy_pdfs "${base_dir_rel}FigureAlgorithm/" $out_path 
 copy_pdfs "${base_dir_rel}FigureTuning/" $out_path 
 copy_pdfs "${timing_dir}" $out_path 
 copy_pdfs "${cartoon_dir}" $out_path 
 copy_pdfs "${rupture_dir}" $out_path 
+copy_pdfs "${base_dir_rel}FigurePerformance_CS/" $out_path 
+
 
 
 
