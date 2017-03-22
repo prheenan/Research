@@ -241,11 +241,8 @@ def derivative_mask_function(split_fec,slice_to_use,
     diff_sliced = interp_sliced - force_sliced
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
     # XXX debuugging...
-    idx_offset_approach = split_fec.get_predicted_approach_surface_index()
-    n_approach = split_fec.approach.Force.size
-    offset_approach = max([offset,n_approach - idx_offset_approach,
-                           n_approach-absolute_max_index])
-    slice_approach = slice(offset_approach,-offset_approach,1)
+    idx_offset_approach = split_fec.get_predicted_approach_surface_index()           
+    slice_approach = slice(0,idx_offset_approach,1)
     approach_interp = split_fec.\
         approach_spline_interpolator(slice_to_fit=slice_approach)
     approach = split_fec.approach
@@ -433,6 +430,8 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)
+    n = probability.size-1
+    min_idx = min(n-(n_points+1),min_idx)       
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
