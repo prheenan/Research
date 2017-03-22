@@ -75,7 +75,8 @@ def run(base="./"):
         if (xlim[i] is not None):
             plt.xlim(xlim[i])
         PlotUtilities.tickAxisFont()
-        PlotUtilities.title("Tuning curve for {:s}".format(name))
+        plot_name = Plotting.algorithm_title_dict()[name]
+        PlotUtilities.title("Tuning curve for {:s}".format(plot_name))
     loc = (-0.20,1.025)
     PlotUtilities.label_tom(fig,loc=loc)
     PlotUtilities.savefig(fig,out_base + "tuning.pdf")
