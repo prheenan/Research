@@ -447,6 +447,9 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_update.stop:] = 1
+    Plotting.debug_plot_adhesion_info(time,force,force_fit,min_idx,boolean_ret)
+    plt.show()
+
     return slice_update,boolean_ret,probability_updated
 
 def _min_points_between(autocorrelation_tau_num_points):

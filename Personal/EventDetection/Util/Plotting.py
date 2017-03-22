@@ -264,8 +264,7 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
                             loc="upper left")
 
-def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
-                             derivative_le_zero,to_ret):
+def debug_plot_adhesion_info(time,force,force_fit,min_idx,boolean_ret):
     """
     Used inside of Detector.adhesion_mask to tell wtf is happening
     
@@ -281,9 +280,7 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
     PlotUtilities.lazyLabel("","Force","",loc="upper right",
                             frameon=True)     
     plt.subplot(2,1,2)
-    plt.plot(time,derivative_gt_zero,label="ge")
-    plt.plot(time,derivative_le_zero,label="le")
-    plt.plot(time,to_ret,color='k',linestyle='--')
+    plt.plot(time,boolean_ret,color='k',linestyle='--')
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
 
