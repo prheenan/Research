@@ -110,7 +110,7 @@ def run():
     threshold = 0.2
     example_numbers = [0,1,8]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples_f):
+    for i,example in enumerate(examples):
         # copy the pkl file to the debugging location
         debugging_file_path = debug_directory + load_files[i]
         if (copy_files):

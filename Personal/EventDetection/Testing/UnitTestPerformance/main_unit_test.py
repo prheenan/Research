@@ -31,18 +31,11 @@ def run():
     data_base = base + "data/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
-    base_500 = r"2017-02-04-masters-data-650nm-dna-2.5ng_ul_1-15_dilution-25-hours-in-pbs-multiple-loading-rates-170203-500nm-s.pxp"
-    base_100 = r"2017-02-04-masters-data-650nm-dna-2.5ng_ul_1-15_dilution-25-hours-in-pbs-multiple-loading-rates-170203-1um_s_#1.pxp"
-    info = [\
-        test_info(file_name=(base_100+"Image3893")),
-         test_info(file_name=(base_100+"Image3580"))\
-         ]
-    load_paths = [data_base + i.file_name for i in info]
-    print(load_paths)
+    load_paths = [f for f in GenUtilities.getAllFiles(data_base,ext=".pkl")]
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = 0.2
-    for i,(info,example) in enumerate(zip(info,examples)):
+    for i,example in enumerate(examples):
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
@@ -55,7 +48,7 @@ def run():
         Plotting.debugging_plots(id_string,example_split,pred_info)
         n_expected = len(example.Events)
         err_str = "for {:s}, expected {:d}, got {:d}".\
-            format(info.file_name[-12:],n_expected,n_found)
+            format(load_paths[i],n_expected,n_found)
         assert n_found == n_expected , err_str        
 
 if __name__ == "__main__":
