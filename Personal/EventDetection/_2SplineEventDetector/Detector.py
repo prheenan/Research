@@ -346,6 +346,7 @@ def delta_mask_function(split_fec,slice_to_use,
                                   (no_event_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
+    # update the boolean array before we slice
     boolean_ret = probability_updated < threshold
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
