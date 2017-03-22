@@ -31,11 +31,10 @@ def run():
     data_base = base + "data/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
-    load_paths = [f for f in GenUtilities.getAllFiles(data_base,ext=".pkl")]
-    examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
-                for f in load_paths]
+    load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 0.2
-    for i,example in enumerate(examples):
+    for i,f in enumerate(load_paths):
+        example = CheckpointUtilities.getCheckpoint(f,None,False) 
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
@@ -46,9 +45,10 @@ def run():
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
+        # after plotting, check if anything went wrong
         n_expected = len(example.Events)
         err_str = "for {:s}, expected {:d}, got {:d}".\
-            format(load_paths[i],n_expected,n_found)
+            format(f,n_expected,n_found)
         assert n_found == n_expected , err_str        
 
 if __name__ == "__main__":
