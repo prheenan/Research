@@ -351,7 +351,8 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    """                         
+    boolean_ret = probability_updated < threshold
+    """
     xlim = plt.xlim(min(x),max(x))
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
@@ -361,12 +362,17 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
     plt.subplot(3,1,2)
-    plt.plot(x_sliced,interp_f-(min_signal+f0))
+    plt.plot(x_sliced,interp_f_minus_baseline)
     plt.axhline(0)
     plt.xlim(xlim)
-    plt.subplot(3,1,3)
+    plt.subplot(4,1,3)
+    plt.plot(x,boolean_ret)
+    plt.xlim(xlim)
+    plt.subplot(4,1,4)
     plt.semilogy(x,probability_updated,linestyle='--')
     plt.semilogy(x,probability)
+    plt.xlim(xlim)
+    plt.axhline(threshold)
     plt.xlim(xlim)
     plt.show()
     """
