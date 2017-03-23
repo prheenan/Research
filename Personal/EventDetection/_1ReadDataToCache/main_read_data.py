@@ -111,10 +111,13 @@ def run():
     example_numbers = [9,10,18,20]
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples_f):
+        load_file_name = (os.path.basename(example.Meta.SourceFile) + \
+                          example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
-        debugging_file_path = debug_directory + load_files[i]
+        load_path = load_file_name
+        debugging_file_path = debug_directory + load_file_name
         if (copy_files):
-            copyfile(load_paths[i],debugging_file_path)
+            copyfile(cache_directory + load_file_name,debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
