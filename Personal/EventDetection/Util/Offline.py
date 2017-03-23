@@ -178,7 +178,7 @@ def update_limits(previous,new,floor=None):
     return [to_update_min,to_update_max]
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
-                       xlabel="Distance [x$_k$]",distance_limits=None):
+                       xlabel="Relative Error [x$_k$]",distance_limits=None):
     """
     Args:
         see Plotting.histogram_event_distribution

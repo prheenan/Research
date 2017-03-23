@@ -66,7 +66,8 @@ def run():
     axis_func = lambda x: x[:-1]
     PlotUtilities.label_tom(fig,loc=(-0.1,1.1),axis_func=axis_func)
     PlotUtilities.savefig(fig,"./prep.pdf",subplots_adjust=dict(left=0.07,
-                                                                right=0.8))
+                                                                right=0.8,
+                                                                hspace=0.2))
 
 
 if __name__ == "__main__":

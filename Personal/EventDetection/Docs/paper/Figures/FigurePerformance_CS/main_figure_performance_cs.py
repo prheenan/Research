@@ -108,8 +108,6 @@ def run(base="./"):
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,18))
     entire_figure = gridspec.GridSpec(3,1)
-    import matplotlib as mpl
-    mpl.rcParams['hatch.linewidth'] = 4
     title_dict = Plotting.algorithm_title_dict()
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
