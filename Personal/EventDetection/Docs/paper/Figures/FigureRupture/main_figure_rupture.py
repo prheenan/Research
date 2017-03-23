@@ -26,14 +26,11 @@ def connect_bbox(bbox1, bbox2,
                  prop_lines, prop_patches=None):
     if prop_patches is None:
         prop_patches = prop_lines.copy()
-        prop_patches["alpha"] = prop_patches.get("alpha", 1)*0.2
-
     c1 = BboxConnector(bbox1, bbox2, loc1=loc1a, loc2=loc2a, **prop_lines)
     c1.set_clip_on(False)
     c2 = BboxConnector(bbox1, bbox2, loc1=loc1b, loc2=loc2b, **prop_lines)
     c2.set_clip_on(False)
-
-    bbox_patch1 = BboxPatch(bbox1, **prop_patches)
+    bbox_patch1 = BboxPatch(bbox1, color='b',**prop_patches)
     bbox_patch2 = BboxPatch(bbox2, color='w',**prop_patches)
     p = BboxConnectorPatch(bbox1, bbox2,
                            # loc1a=3, loc2a=2, loc1b=4, loc2b=1,
@@ -65,13 +62,14 @@ def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
     mybbox2 = TransformedBbox(bbox, trans2)
 
     prop_patches = kwargs.copy()
+    alpha = 0.2
     prop_patches["ec"] = "none"
-    prop_patches["alpha"] = 0.2
-
+    prop_patches["alpha"] = alpha
+    prop_lines = dict(color='b',alpha=alpha,**kwargs)
     c1, c2, bbox_patch1, bbox_patch2, p = \
         connect_bbox(mybbox1, mybbox2,
                      loc1a=3, loc2a=2, loc1b=4, loc2b=1,
-                     prop_lines=kwargs, prop_patches=prop_patches)
+                     prop_lines=prop_lines, prop_patches=prop_patches)
 
     ax1.add_patch(bbox_patch1)
     ax2.add_patch(bbox_patch2)
@@ -209,7 +207,7 @@ def run(base="./"):
     PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
                               0,s=string,width=scale_width)
     PlotUtilities.no_x_axis()
-    PlotUtilities.label_tom(fig,loc=(-0.12,0.97))
+    PlotUtilities.label_tom(fig,loc=(-0.1,0.97))
     # draw lines connecting the plots
     zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
     zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
