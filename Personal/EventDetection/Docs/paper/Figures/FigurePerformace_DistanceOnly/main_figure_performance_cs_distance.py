@@ -14,21 +14,10 @@ from Research.Personal.EventDetection.Util import Offline,Plotting,Analysis
 def get_feather_run(data_file):
     return CheckpointUtilities.lazy_load(data_file)[0]
 
-def run(base="./"):
-    """
-    
-    """
-    out_base = base
-    data_base = base + "data/"
-    data_file = data_base + "Scores.pkl"
-    force=False
-    cache_file = data_base + "cache.pkl"
-    l = CheckpointUtilities.getCheckpoint(cache_file,get_feather_run,force,
-                                          data_file)
+def make_distance_figure(l,data_file,fec_file):
     # get the multiple one to plot
-    multiple_fec = CheckpointUtilities.lazy_load(data_base + "multiple.csv.pkl")
+    multiple_fec = CheckpointUtilities.lazy_load(fec_file)
     split_fec = Analysis.zero_and_split_force_extension_curve(multiple_fec)
-    fig = PlotUtilities.figure((16,8))
     m = Offline.best_metric_from_learner(l)
     distance_histogram= Offline.event_error_kwargs(m)
     name,true,pred = m.name,m.true,m.pred
@@ -92,11 +81,29 @@ def run(base="./"):
     Plotting.histogram_event_distribution(**distance_histogram)
     ylim = plt.ylim()
     plt.ylim(min(ylim)/2,max(ylim)*2)
+
+
+def run(base="./"):
+    """
+    
+    """
+    out_base = base
+    data_base = base + "data/"
+    data_file = data_base + "Scores.pkl"
+    force=False
+    cache_file = data_base + "cache.pkl"
+    fec_file = data_base + "multiple.csv.pkl"
+    l = CheckpointUtilities.getCheckpoint(cache_file,get_feather_run,force,
+                                          data_file)
+    # make the distance histogram figure
+    fig = PlotUtilities.figure((16,8))
+    make_distance_figure(l,data_file,fec_file)
     name = "FEATHER"
     PlotUtilities.title("Results for {:s}".format(name))
-    final_out_path = "{:s}{:s}.pdf".format(out_base,name)
+    final_out_hist = "{:s}{:s}_distances.pdf".format(out_base,name)
     PlotUtilities.label_tom(fig,loc=(-0.15,1.1),fontsize=18)
-    PlotUtilities.savefig(fig,final_out_path)
+    PlotUtilities.savefig(fig,final_out_hist)
+    # make the rupture spectrum figure
 
 
 
