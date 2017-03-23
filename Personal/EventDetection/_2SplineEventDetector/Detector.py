@@ -330,15 +330,16 @@ def delta_mask_function(split_fec,slice_to_use,
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
-    n_slice_region = interp_f.size
-    f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
-          for i in range(n_slice_region)]    
-    interp_f_minus_baseline = interp_f - f0
     if (negative_only):
         # XXX ?.... shouldnt this be minimum? (*dont* want positive)
-        value_cond = (np.abs(np.maximum(0,interp_f_minus_baseline))\
-                      < min_signal)
+        value_cond = (np.minimum(0,df_true) > baseline)
     else:
+        # XXX should *not* need to have two separate methods. determine why
+        # (probably adhesions fault)
+        n_slice_region = interp_f.size
+        f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
+          for i in range(n_slice_region)]            
+        interp_f_minus_baseline = interp_f - f0
         value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
@@ -365,7 +366,9 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
     plt.subplot(3,1,2)
-    plt.plot(x,boolean_ret)
+    plt.plot(x_sliced,value_cond)
+    plt.plot(x_sliced,no_event_cond+1.1)
+    
     plt.xlim(xlim)
     plt.subplot(3,1,3)
     plt.semilogy(x,probability_updated,linestyle='--')
