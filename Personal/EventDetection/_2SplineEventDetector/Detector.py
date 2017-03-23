@@ -322,6 +322,10 @@ def delta_mask_function(split_fec,slice_to_use,
     df_approach = Analysis.local_centered_diff(interpolator_approach_f,
                                                n=min_points_between)
     epsilon,sigma = np.median(df_approach),np.std(df_approach)
+    plt.plot(df_approach)
+    plt.axhline(epsilon)
+    plt.axhline(epsilon+sigma)
+    plt.show()
     min_signal = (epsilon+sigma)
     if (negative_only):
         baseline = -min_signal
