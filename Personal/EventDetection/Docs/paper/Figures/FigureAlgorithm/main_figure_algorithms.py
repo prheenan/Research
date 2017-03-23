@@ -122,7 +122,7 @@ def run(base="./"):
              alpha=0.3,**style_approach)
     plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
              **style_approach)
-    PlotUtilities.lazyLabel("","Force [pN]",
+    PlotUtilities.lazyLabel("","Force (pN)",
                             "Estimating $\epsilon$ and $\sigma$",
                             frameon=True)
     plt.xlim(xlim_approach)
@@ -146,7 +146,7 @@ def run(base="./"):
              label=label_r_t,**style_approach)
     plt.plot(time_approach_plot,approach_stdev_plot,label=label_s_t,
              linestyle='--',**style_approach)
-    PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ [pN]",
+    PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ (pN)",
                             "",frameon=True,loc='upper right')
     plt.xlim(xlim_approach)
     PlotUtilities.no_x_ticks()
@@ -170,7 +170,7 @@ def run(base="./"):
     plt.xlim(xlim_approach)
     plt.ylim(*ylim_diff_filtered)
     tick_function()
-    PlotUtilities.lazyLabel("Time (s)","s$_{\mathrm{t}}$$^{*}$ [pN]","",
+    PlotUtilities.lazyLabel("Time (s)","s$_{\mathrm{t}}$$^{*}$ (pN)","",
                             frameon=True,loc='upper right')
     # filtered error distribution for the retract
     plt.subplot(gs[2,1])
@@ -191,7 +191,6 @@ def run(base="./"):
                               style_retract_error_dist,label="masked no-event")
     PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
     plt.ylim([min(plt.ylim()),1.5])
-    #tick_function()
     PlotUtilities.label_tom(fig,loc=(-0.15,1.0))
     PlotUtilities.savefig(fig,out_fig,
                           subplots_adjust=dict(hspace=0.2,wspace=0.2))

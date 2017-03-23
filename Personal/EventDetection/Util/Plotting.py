@@ -883,3 +883,43 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.ylim([min(probability_updated)/5,2])
     PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")
 
+
+
+def plot_fec(example,colors=['r','g','b'],n_filter=1000,use_events=True):
+    """
+    plots the given fec (*not* split)
+
+    Args:
+        example: TimeSepForce to split 
+        colors: if use_events, one color per event on the fec (we switch)
+        n_filter: how many points to use while filtering
+    Returns:
+        None
+    """
+    fec_split = Analysis.zero_and_split_force_extension_curve(example)
+    retract = fec_split.retract
+    retract.Force -= np.median(retract.Force)
+    retract_filtered = FEC_Util.GetFilteredForce(retract,n_filter)
+    # get everything in terms of ploting variables
+    x_plot = lambda x: x * 1e9
+    y_plot = lambda y: y * 1e12
+    sep = x_plot(retract.Separation)
+    force = y_plot(retract.Force)
+    sep_filtered = x_plot(retract_filtered.Separation)
+    force_filtered = y_plot(retract_filtered.Force)
+    if fec_split.has_events() and use_events:
+        slices = fec_split.get_retract_event_slices()
+        colors_before = colors
+        colors_after = colors
+        for i in range(len(slices)-1):
+            before_kwargs = dict(before_slice=slices[i],after_slice=slices[i+1],
+                                 color_before=colors_before[i],
+                                 color_after=colors_after[i+1])
+            before_and_after(x=sep,y=force,style=dict(alpha=0.3),
+                             **before_kwargs)
+            before_and_after(x=sep_filtered,y=force_filtered,
+                             style=dict(alpha=1),**before_kwargs)
+    else:
+        style = dict(color=colors[0])
+        plt.plot(sep,force,alpha=0.3,**style)
+        plt.plot(sep_filtered,force_filtered,**style)

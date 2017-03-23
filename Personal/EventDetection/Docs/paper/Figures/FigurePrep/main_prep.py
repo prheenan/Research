@@ -56,13 +56,17 @@ def run():
     PlotUtilities.lazyLabel("","","Electrophoretic purification of 647nm DNA")
     plt.subplot(1,2,2)
     kwargs = dict(vmin=qlow,vmax=qhigh,cmap=plt.cm.afmhot,range_plot=range_plot)
-    ImageUtil.PlotImage(wave,**kwargs)
-    PlotUtilities.lazyLabel("nanometers","nanometers",
+    im = ImageUtil.PlotImage(wave,aspect='equal',**kwargs)
+    PlotUtilities.lazyLabel("x position (nm)","y position (nm)",
                             "AFM image of mica-bound DNA")
-    PlotUtilities.colorbar("Height (nm)")
+    plt.gca().invert_yaxis()
+    cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    PlotUtilities.colorbar(label="Height (nm)",
+                           bar_kwargs=dict(mappable=im,cax=cbar_ax))
     axis_func = lambda x: x[:-1]
-    PlotUtilities.label_tom(fig,loc=(-0.1,1.0),axis_func=axis_func)
-    PlotUtilities.savefig(fig,"./prep.pdf",subplots_adjust=dict(left=0.07))
+    PlotUtilities.label_tom(fig,loc=(-0.1,1.1),axis_func=axis_func)
+    PlotUtilities.savefig(fig,"./prep.pdf",subplots_adjust=dict(left=0.07,
+                                                                right=0.8))
 
 
 if __name__ == "__main__":
