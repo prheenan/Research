@@ -110,7 +110,7 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
     width = 0.4       # the width of the bars
     ax = plt.gca()
     for x,y,c,m in zip(ind,plot_y,color,markers):
-        plt.scatter(x=x,y=y,c=c,marker=m,alpha=0.4,linewidth=0,s=100)
+        plt.scatter(x=x,y=y,c=c,marker=m,linewidth=0,s=100)
     # add some text for labels, title and axes ticks
     ax.set_xticks(ind)
     ax.set_xticklabels(labels)

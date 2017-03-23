@@ -571,19 +571,19 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
                  title="",distance_histogram=None,gs=None):
+    if (distance_histogram is None):
+        n_rows = 2
+        n_cols = 2
+        widths = [3,1]
+        heights = [3,1]
+        offset=0
+    else:
+        n_rows = 2
+        n_cols = 3
+        widths = [2,2,1]
+        heights = [2,2]
+        offset=1
     if (gs is None):
-        if (distance_histogram is None):
-            n_rows = 2
-            n_cols = 2
-            widths = [3,1]
-            heights = [3,1]
-            offset=0
-        else:
-            n_rows = 2
-            n_cols = 3
-            widths = [2,2,1]
-            heights = [2,2]
-            offset=1
         gs = gridspec.GridSpec(n_rows,n_cols,width_ratios=widths,
                                height_ratios=heights)
     subplot_f = lambda x: plt.subplot(x)

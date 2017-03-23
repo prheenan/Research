@@ -123,7 +123,7 @@ def make_main_figure(output_path,trials):
     plt.ylim([1e3,3e6])
     PlotUtilities.legend(loc="lower right",frameon=True)
     PlotUtilities.title(r"FEATHER asymptotic T(N) is $\geq$10x faster")
-    PlotUtilities.label_tom(fig,loc=(-0.15,1))
+    PlotUtilities.label_tom(fig,loc=(-0.05,1))
     PlotUtilities.savefig(fig,output_path)
 
 def run(base="./"):
