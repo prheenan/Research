@@ -354,6 +354,7 @@ def delta_mask_function(split_fec,slice_to_use,
                                         slice_to_use.start
     zero_force = interp_f[pred_retract_surface_idx_in_slice]
     diff = interp_f - np.maximum(0,df_true)
+    zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
     """
     plt.subplot(2,1,1)
     plt.plot(diff)
@@ -363,7 +364,7 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.axhline(zero_force)
     plt.show()
     """
-    consistent_with_zero_cond = (diff <= zero_force) 
+    consistent_with_zero_cond = (diff <= zero_condition_baseline) 
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
