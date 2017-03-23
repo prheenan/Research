@@ -14,25 +14,73 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 
-def fmt(ax):
-    ax.set_xlim([-0.1,2.5])
-    ax.set_ylim([-50,40])
+from mpl_toolkits.axes_grid1.inset_locator import BboxPatch, BboxConnector,\
+    BboxConnectorPatch
+from matplotlib.transforms import Bbox, TransformedBbox, \
+    blended_transform_factory
 
 
 
-def highlight_box(force,xlim,ylim):
-    # add a rectangle and its border
-    min_f = min(force)
-    max_f = max(force)
-    plt.ylim([min_f,max_f])
-    norm = lambda x: (x-min_f)/(max_f-min_f)
-    ymin_box = norm(min(ylim))
-    ymax_box = norm(max(ylim))
-    y_args = dict(ymin=ymin_box,ymax=ymax_box)
-    plt.axvspan(*xlim, fill=False,linestyle='dashdot',edgecolor='k',
-                linewidth=3,**y_args)
-    plt.axvspan(*xlim, fill=True,color='k',alpha=0.15,
-                **y_args)
+def connect_bbox(bbox1, bbox2,
+                 loc1a, loc2a, loc1b, loc2b,
+                 prop_lines, prop_patches=None):
+    if prop_patches is None:
+        prop_patches = prop_lines.copy()
+        prop_patches["alpha"] = prop_patches.get("alpha", 1)*0.2
+
+    c1 = BboxConnector(bbox1, bbox2, loc1=loc1a, loc2=loc2a, **prop_lines)
+    c1.set_clip_on(False)
+    c2 = BboxConnector(bbox1, bbox2, loc1=loc1b, loc2=loc2b, **prop_lines)
+    c2.set_clip_on(False)
+
+    bbox_patch1 = BboxPatch(bbox1, **prop_patches)
+    bbox_patch2 = BboxPatch(bbox2, color='w',**prop_patches)
+    p = BboxConnectorPatch(bbox1, bbox2,
+                           # loc1a=3, loc2a=2, loc1b=4, loc2b=1,
+                           loc1a=loc1a, loc2a=loc2a, loc1b=loc1b, loc2b=loc2b,
+                           **prop_patches)
+    p.set_clip_on(False)
+
+    return c1, c2, bbox_patch1, bbox_patch2, p
+
+
+def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
+    """
+    ax1 : the main axes
+    ax1 : the zoomed axes
+    (xmin,xmax) : the limits of the colored area in both plot axes.
+
+    connect ax1 & ax2. The x-range of (xmin, xmax) in both axes will
+    be marked.  The keywords parameters will be used ti create
+    patches.
+
+    """
+
+    trans1 = blended_transform_factory(ax1.transData, ax1.transAxes)
+    trans2 = blended_transform_factory(ax2.transData, ax2.transAxes)
+
+    bbox = Bbox.from_extents(xmin, 0, xmax, 1)
+
+    mybbox1 = TransformedBbox(bbox, trans1)
+    mybbox2 = TransformedBbox(bbox, trans2)
+
+    prop_patches = kwargs.copy()
+    prop_patches["ec"] = "none"
+    prop_patches["alpha"] = 0.2
+
+    c1, c2, bbox_patch1, bbox_patch2, p = \
+        connect_bbox(mybbox1, mybbox2,
+                     loc1a=3, loc2a=2, loc1b=4, loc2b=1,
+                     prop_lines=kwargs, prop_patches=prop_patches)
+
+    ax1.add_patch(bbox_patch1)
+    ax2.add_patch(bbox_patch2)
+    ax2.add_patch(c1)
+    ax2.add_patch(c2)
+    ax2.add_patch(p)
+
+    return c1, c2, bbox_patch1, bbox_patch2, p
+
 
 def run(base="./"):
     """
@@ -79,6 +127,8 @@ def run(base="./"):
     slice_after_event = slice(index_absolute,None,1)
     x_zoom = x[slice_event_subplot]
     f_zoom = force[slice_event_subplot]
+    ylim = [-25,30]
+    xlim = [0,2.5]
     xlim_zoom = [min(x_zoom),max(x_zoom)]
     ylim_zoom = [min(f_zoom),max(f_zoom)]
     # get the second zoom
@@ -92,26 +142,30 @@ def run(base="./"):
     xlim_second_zoom = [min(x_second_zoom),max(x_second_zoom)]
     ylim_second_zoom = [min(force_second_zoom),max(force_second_zoom)]
     # plot everything
-    n_plots = 3
-    fig = PlotUtilities.figure((16,4))
-    plt.subplot(1,n_plots,1)
-    ax = plt.gca()
-    fmt(ax)
+    n_rows = 3
+    n_cols = 1
+    ylabel = "Force (pN)"
+    fig = PlotUtilities.figure((8,16))
+    ax1 = plt.subplot(n_rows,n_cols,1)
     style_data = dict(alpha=0.3,linewidth=1)
-    style_filtered = dict(alpha=1,linewidth=2)
+    style_filtered = dict(alpha=1.0,linewidth=3)
     # plot the force etc
     Plotting.before_and_after(x,force,slice_before_event,slice_after_event,
                               style_data,label="Raw data (25kHz)")
     Plotting.before_and_after(x,force_filtered,slice_before_event,
                               slice_after_event,style_filtered,
                               label="Filtered data (25Hz)")
-    highlight_box(force,xlim_zoom,ylim_zoom)
-    PlotUtilities.lazyLabel("Time [s]","Force (pN)","",loc="lower right",
+    PlotUtilities.lazyLabel("Time [s]",ylabel,"",loc="upper left",
                             frameon=True)
+    PlotUtilities.set_legend_kw()
+    plt.ylim(ylim)
+    plt.xlim(xlim)
+    ax1.xaxis.tick_top()
+    ax1.xaxis.set_label_position('top') 
     # plot the rupture
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
-    plt.subplot(1,n_plots,2)
+    ax2 = plt.subplot(n_rows,n_cols,2)
     style_data_post_zoom = dict(style_data)
     post_alpha = 0.3
     style_data_post_zoom['alpha']=post_alpha
@@ -119,29 +173,47 @@ def run(base="./"):
     style_filtered_post_zoom['alpha']=1
     Plotting.before_and_after(x,force,slice_before_zoom,slice_after_zoom,
                               style_data_post_zoom)
-    plot_rupture = lambda l: plt.plot(x[index_absolute],predicted[index],'go',
-                                      markersize=7,linewidth=0,alpha=0.7,
+    plot_rupture = lambda l: plt.plot(x[index_absolute],predicted[index]*1.1,
+                                      'gv',
+                                      markersize=15,linewidth=0,alpha=0.7,
                                       label=l)
-    plot_line = lambda l :  plt.plot(x_event,predicted,color='k',
-                                   linestyle='--',linewidth=3,label=l)
+    plot_line = lambda l :  plt.plot(x_event,predicted,color='m',
+                                   linestyle='-',linewidth=3,label=l)
     plot_rupture('Rupture')
     plot_line("Linear\nfit")
-    PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
+    PlotUtilities.lazyLabel("Time [s]",ylabel,"",frameon=True,loc='upper right',
                             legend_kwargs=dict(numpoints=1))
-    highlight_box(f_zoom,xlim_second_zoom,ylim_second_zoom)
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
-    plt.subplot(1,n_plots,3)
+    # make a scale bar for this plot
+    scale_width = 0.025
+    string = "{:d}ms".format(int(scale_width*1000))
+    get_bar_location = lambda _xlim: np.mean([np.mean(_xlim),min(_xlim)])
+    PlotUtilities.scale_bar_x(get_bar_location(xlim_zoom),
+                              -10,s=string,width=scale_width)
+    PlotUtilities.no_x_axis()
+    ax2.xaxis.tick_top()
+    PlotUtilities.set_legend_kw()
+    ax2.xaxis.set_label_position('top') 
+    ax3 = plt.subplot(n_rows,n_cols,3)
     Plotting.before_and_after(x,force,zoom_second_before,zoom_second_after,
                               style_data_post_zoom)
     plt.xlim(xlim_second_zoom)
     plt.ylim(ylim_second_zoom)
     plot_rupture("")
     plot_line("")
-    PlotUtilities.lazyLabel("Time [s]","","",frameon=True,loc='upper right',
-                            legend_kwargs=dict(numpoints=1))
+    PlotUtilities.lazyLabel("Time [s]",ylabel,"")
+    # make a scale bar for this plot
+    scale_width = 0.002
+    string = "{:d}ms".format(int(scale_width*1000))
+    PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
+                              0,s=string,width=scale_width)
+    PlotUtilities.no_x_axis()
     PlotUtilities.label_tom(fig,loc=(-0.12,0.97))
-    PlotUtilities.savefig(fig,out_fig)
+    # draw lines connecting the plots
+    zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
+    zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
+    PlotUtilities.savefig(fig,out_fig,subplots_adjust=dict(hspace=0.1))
     
 
 if __name__ == "__main__":
