@@ -349,10 +349,11 @@ def delta_mask_function(split_fec,slice_to_use,
           for i in range(n_slice_region)]            
         interp_f_minus_baseline = interp_f - f0
         value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
+    consistent_with_zero_cond = ( interp_f - (min_signal) <= 0) 
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    gt_condition[slice_to_use] = ((value_cond) | 
-                                  (no_event_cond))
+    gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
+                                  (consistent_with_zero_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     # update the boolean array before we slice
