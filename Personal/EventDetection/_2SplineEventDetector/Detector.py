@@ -314,7 +314,14 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     median = np.median(interp_f)
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    # get the 
+    interpolator_approach = split_fec.cached_approach_interpolator
+    slice_approach = split_fec.cached_approach_slice_to_fit
+    approach_time = split_fec.approach.time[slice_approach]
+    interpolator_approach_f = interpolator_approach[approach_time]
+    df_approach = Analysis.local_centered_diff(interpolator_approach_f,
+                                               n=min_points_between)
+    epsilon,sigma = np.median(df_approach),np.std(dr_approach)
     min_signal = (epsilon+sigma)
     if (negative_only):
         baseline = -min_signal
@@ -356,7 +363,6 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """
     xlim = plt.xlim(min(x),max(x))
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
@@ -377,7 +383,6 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.axhline(threshold)
     plt.xlim(xlim)
     plt.show()
-    """
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
