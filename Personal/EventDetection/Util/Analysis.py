@@ -35,8 +35,10 @@ class split_force_extension:
     def set_espilon_and_sigma(self,epsilon,sigma):
         self.epsilon =epsilon
         self.sigma = sigma
-    def _approach_stdevs_epsilon_and_sigma(self,n_points=None,
-                                           slice_fit_approach=None):
+    def set_approach_metrics(self,slice_to_fit,interpolator):
+        self.cached_approach_interpolator = interpolator
+        self.cached_approach_slice_to_fit = slice_to_fit
+    def _approach_metrics(self,n_points=None,slice_fit_approach=None):
         if (n_points is None):
             n_points = self.tau_num_points
         if (slice_fit_approach is None):
@@ -52,11 +54,7 @@ class split_force_extension:
         stdevs,epsilon,sigma = \
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
-        return stdevs,epsilon,sigma
-    def calculate_epsilon_and_sigma(self,*args,**kwargs):
-        stdevs,epsilon,sigma = self._approach_stdevs_epsilon_and_sigma(*args,
-                                                                       **kwargs)
-        return epsilon,sigma
+        return stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach
 
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """

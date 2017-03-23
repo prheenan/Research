@@ -25,10 +25,10 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 75
+    limit = 100
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     copy_files = True
     force_read = False
     force_relearn = False
@@ -108,9 +108,9 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x
-    example_numbers = [9,10,18,20]
+    example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples_f):
+    for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location

@@ -335,7 +335,7 @@ def delta_mask_function(split_fec,slice_to_use,
         value_cond = (np.minimum(0,df_true) > baseline)
     else:
         # XXX should *not* need to have two separate methods. determine why
-        # (probably adhesions fault)
+        # (probably adhesions)
         n_slice_region = interp_f.size
         f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
           for i in range(n_slice_region)]            
@@ -801,8 +801,10 @@ def _predict_helper(split_fec,threshold,**kwargs):
     split_fec.set_retract_knots(interp)
     # set the epsilon and tau by the approach
     min_points_between = _min_points_between(n_points)    
-    epsilon,sigma = split_fec.calculate_epsilon_and_sigma(n_points=n_points)
+    stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach =\
+        split_fec._approach_metrics()
     split_fec.set_espilon_and_sigma(epsilon,sigma)
+    split_fec.set_approach_metrics(slice_fit_approach,spline_fit_approach)
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**kwargs)
     to_ret = _predict(x=time,
                       y=force,
