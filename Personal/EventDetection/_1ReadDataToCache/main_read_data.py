@@ -108,9 +108,9 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = 1e-2
-    example_numbers = []
+    example_numbers = [21,23,27]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples):
+    for i,example in enumerate(examples_f):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location

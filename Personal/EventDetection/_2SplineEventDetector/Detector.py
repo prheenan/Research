@@ -353,7 +353,17 @@ def delta_mask_function(split_fec,slice_to_use,
     pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
                                         slice_to_use.start
     zero_force = interp_f[pred_retract_surface_idx_in_slice]
-    consistent_with_zero_cond = ( interp_f - df_true <= zero_force+epsilon) 
+    diff = interp_f - np.maximum(0,df_true)
+    """
+    plt.subplot(2,1,1)
+    plt.plot(diff)
+    plt.axhline(zero_force)
+    plt.subplot(2,1,2)    
+    plt.plot(diff)
+    plt.axhline(zero_force)
+    plt.show()
+    """
+    consistent_with_zero_cond = (diff <= zero_force) 
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
@@ -369,8 +379,8 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """
     xlim = plt.xlim(min(x),max(x))
+    """
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
     invalid_idx = np.where(gt_condition)
@@ -381,7 +391,6 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.subplot(3,1,2)
     plt.plot(x_sliced,value_cond)
     plt.plot(x_sliced,no_event_cond+1.1)
-    
     plt.xlim(xlim)
     plt.subplot(3,1,3)
     plt.semilogy(x,probability_updated,linestyle='--')
