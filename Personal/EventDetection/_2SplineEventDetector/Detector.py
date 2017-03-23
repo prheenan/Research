@@ -349,7 +349,11 @@ def delta_mask_function(split_fec,slice_to_use,
           for i in range(n_slice_region)]            
         interp_f_minus_baseline = interp_f - f0
         value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
-    consistent_with_zero_cond = ( interp_f - (min_signal) <= 0) 
+    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
+    pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
+                                        slice_to_use.start
+    zero_force = interp_f[pred_retract_surface_idx_in_slice]
+    consistent_with_zero_cond = ( interp_f - df_true <= zero_force+epsilon) 
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
