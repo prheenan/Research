@@ -93,17 +93,23 @@ def run(base="./"):
     force=False
     cache_file = data_base + "cache.pkl"
     fec_file = data_base + "multiple.csv.pkl"
+    name = "FEATHER"
     l = CheckpointUtilities.getCheckpoint(cache_file,get_feather_run,force,
                                           data_file)
+    # make the rupture spectrum figure
+    fig = PlotUtilities.figure((16,6))
+    final_out_rupture = "{:s}{:s}_rupture.pdf".format(out_base,name)
+    metric = Offline.best_metric_from_learner(l)
+    x,name,true,pred = metric.x_values,metric.name,metric.true,metric.pred
+    Plotting.rupture_plot(true,pred,fig=fig)
+    PlotUtilities.savefig(fig,final_out_rupture)
     # make the distance histogram figure
     fig = PlotUtilities.figure((16,8))
     make_distance_figure(l,data_file,fec_file)
-    name = "FEATHER"
     PlotUtilities.title("Results for {:s}".format(name))
     final_out_hist = "{:s}{:s}_distances.pdf".format(out_base,name)
     PlotUtilities.label_tom(fig,loc=(-0.15,1.1),fontsize=18)
     PlotUtilities.savefig(fig,final_out_hist)
-    # make the rupture spectrum figure
 
 
 

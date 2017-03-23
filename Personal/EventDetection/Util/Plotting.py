@@ -349,12 +349,13 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
         style_predicted = dict(color='k',label="predicted",
                                 linewidth=2,**line_style)
     if (style_true is None):
-        style_true = dict(color='g',label="true",alpha=0.5,**line_style)
+        style_true = dict(markerfacecolor='w',markeredgecolor='g',
+                          label="true",alpha=0.5)
     _plot_rupture_objects(true,marker='o',linewidth=0,linestyle="None",
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
-    PlotUtilities.lazyLabel("Loading Rate [pN/s]",r"F$_{\mathrm{rupt}}$[pN]",
+    PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture\nForce (pN)",
                             title,frameon=True,legend_kwargs=dict(numpoints=1),
                             useLegend=use_legend,loc=loc)
 
@@ -571,8 +572,20 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
                  title="",distance_histogram=None,gs=None):
     if (gs is None):
-        gs = gridspec.GridSpec(2,3,width_ratios=[2,2,1],
-                               height_ratios=[2,2])
+        if (distance_histogram is None):
+            n_rows = 2
+            n_cols = 2
+            widths = [3,1]
+            heights = [3,1]
+            offset=0
+        else:
+            n_rows = 2
+            n_cols = 3
+            widths = [2,2,1]
+            heights = [2,2]
+            offset=1
+        gs = gridspec.GridSpec(n_rows,n_cols,width_ratios=widths,
+                               height_ratios=heights)
     subplot_f = lambda x: plt.subplot(x)
     ruptures_true,loading_true = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
@@ -608,7 +621,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     if (distance_histogram is not None):
         ax_hist = plt.subplot(gs[:,0])
         histogram_event_distribution(**distance_histogram)
-    ax0 = subplot_f(gs[0,1])
+    ax0 = subplot_f(gs[0,offset])
     plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
                                      **scatter_kwargs)
     PlotUtilities.xlabel("")
@@ -617,7 +630,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     PlotUtilities.title(title)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
-    ax1 =subplot_f(gs[0,2])
+    ax1 =subplot_f(gs[0,offset+1])
     hatch_true = true_hatch()
     true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
     pred_style_histogam = dict(zorder=1,**style_pred)
@@ -626,13 +639,17 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
                             **true_style_histogram)
     PlotUtilities.lazyLabel("Count","","")
+    ax = plt.gca()
+    # push count to the top
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top') 
     if (remove_ticks):
         ax1.get_yaxis().set_ticklabels([])
     if (count_limit is not None):
         plt.xlim(count_limit)
     plt.ylim(lim_plot_force)
     plt.xscale('log')
-    ax4 = subplot_f(gs[1,1])
+    ax4 = subplot_f(gs[1,offset])
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
                           label="predicted", **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
@@ -644,7 +661,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.xlim(lim_plot_load)
     if (count_limit is not None):
         plt.ylim(count_limit)
-    ax3 = subplot_f(gs[1,2])
+    ax3 = subplot_f(gs[1,offset+1])
     if (len(loading_pred) > 0):
         coeffs = Analysis.\
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
@@ -672,6 +689,11 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                rotation=30,fontsize=PlotUtilities.g_font_label)
     PlotUtilities.ylabel("Metric")
     PlotUtilities.tickAxisFont()
+    # push metric to the top
+    ax = plt.gca()
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position('right') 
+
     plt.ylim([0,1])
     # just empty :-(
 
