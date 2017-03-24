@@ -6,7 +6,7 @@ During an AFM experiment, an atomically sharp tip attached to a cantilever inter
 
 In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip attaches to a molecule and stretches it to measure the relationship between force and extension over time. The experiment records the force-extension curve of the molecule (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes,\citePRH{comstock_direct_2015} protein-ligand bond strength, \citePRH{yuan_energy_2000} and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. 
 \begin{figure}[htpb]
-\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. \subref{A} A diagram of an AFM tip and a force-extension curve corresponding to no attachments. \subref{B} As (A), except illustrating a single attachment. \subref{C} As (A), except illustrating multiple attachments. For all subplots, the force changes color at the location of a tagged event, and the raw data is plotted along with the 1000-point, second order Savitsky-Golay filtered data.  \pEndF }
+\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. \subref{A} A diagram of an AFM tip and a force-extension curve corresponding to no attachments. \subref{B} As (A), except illustrating a single attachment. \subref{C} As (A), except illustrating multiple attachments. For all subplots, the force changes color at the location of a tagged event, and the raw data is plotted along with the data smoothed by a 1000-point, second order Savitsky-Golay filter. \pEndF }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/cartoon.pdf}% Here is how to import EPS art
 \end{figure}
@@ -26,13 +26,13 @@ This paper describes a new method based on machine learning for detecting events
 
 \section{\sLabel{Surface}Atomic force microscopy}
 
-\firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method.\citePRH{hutter_calibration_1993} All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of \ValUnit{25}{$\muup$m} x \ValUnit{25}{$\muup$m} grids at points separated by 1$\muup$m. The stage was translated to a new grid point after measuring three force-extension curves. \pl
+\firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method.\citePRH{hutter_calibration_1993} All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, \ValUnit{25}{$\muup$m} long grids at points separated by 1$\muup$m. The stage was translated to a new grid point after measuring three force-extension curves. \pl
 
 \section{\sLabel{Annotation}Data annotation}
 
 
 \begin{figure}[htpb]
-\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining the rupture and its associated properties. \subref{A} A force extension curve with a shadow over an event. The raw data is plotted and overlayed with the 1000-point, second-order Savitsky-Golay filtered data. \subref{B} The shadowed region of (A), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. \subref{C} The shadowed region from (B). The rupture point and rupture force and loading rate are defined using the data and the fit, as described in the text. For all subplots, the force changes color at the location of a tagged event. }
+\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining the rupture and its associated properties. \subref{A} A force extension curve with a shadow over an event. The overlayed curve is the data smoothed by a 1000-point, second order Savitsky-Golay filter. \subref{B} The shadowed region of (A), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. \subref{C} The shadowed region from (B). The rupture point and rupture force and loading rate are defined using the data and the fit, as described in the text. For all subplots, the force changes color at the location of a tagged event. }
 \centering
 \includegraphics[width=0.5\linewidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
 \end{figure}
@@ -126,7 +126,13 @@ Since tuning the baselines on the full dataset using our computer would have req
 
 \section{\sLabel{Performance}Algorithmic event detection performance}
 
-\fRef{Performance} shows the event-detection performance of \name{} and the baseline algorithms. As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient by about 0.3 over the spectrum of loading rates and rupture forces. 
+\firstp \tRef{AppliedMetrics} lists the performance metrics for each algorithm. This section describes the metrics in more detail for each algorithm. \pl
+
+\fRef{PerformanceFEATHER} shows the event-detection performance of \name{}. The distributions of the two types of relative distance errors, as defined in \fRef{DistanceMetric} and \tRef{metrics}, exhibit a higher degree of symmetry than the baselines (see below). This symmetry is due to a low false-positive rate, since false-positives skew the distances from predicted to true points (d$_{\mathrm{p}\rightarrow\mathrm{t}}$). In addition, the distribution is skewed towards zero, indicating most errors are a small fraction of the length of the curve. Finally, \fRef{DistanceMetric} shows good agreement between the expected and predicted two-dimensional distributions over rupture forces and loading rates \pl
+
+The baselines do not perform as well as \name{}. \fRef{PerformanceFovea} and \fRef{PerformanceScipy} are identical to \fRef{PerformanceFEATHER}, but they describe the performance of the Open Fovea and Scientific Python baselines, respectively. Open Fovea's relative distance error distribution is heavily skew-right and asymmetric between the two error types, indicating many false positives. The same distribution for Scientific Python is more symmetric between error types, indicating fewer false positives than Open Fovea. However, the distribution is still skew-right, indicating a high error in predicted event location. Both baselines fail to accurately reproduce the expected and predicted distribution over rupture forces and loading rates.\pl
+
+As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient complement by a factor of 8. For completeness, \fRef{Performance} lists the performance of all three algorithms on a single page.
 
 \begin{table}
 \caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics across the three algorithms. The optimal algorithm row for each metric is highlighted in bold, depending on if the metric optimum is low (denoted by a $\downarrow$ next to the name) or high (denoted by a $\uparrow$ next to the name).} 
@@ -142,13 +148,13 @@ Scientific Python & 0.349 & 0.514\e
 
 
 \begin{figure}[htpb]
-\caption[Algorithm Performance]{\noindent\fLabel{PerformanceFEATHER}\pStartF Performance of \name{} compared to the baseline algorithms. \subref{A} The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. \subref{B} \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. \subref{C,D} The histograms of rupture forces and loading rates, respectively, for \name{}.  \subref{E} The metrics defined in \tRef{metrics}. \pEndF }
+\caption[\name{} Performance]{\noindent\fLabel{PerformanceFEATHER}\pStartF Performance of \name{} compared to the baseline algorithms. \subref{A} The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. \subref{B} \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. \subref{C,D} The histograms of rupture forces and loading rates, respectively, for \name{}.  \subref{E} The metrics defined in \tRef{metrics}. \pEndF }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/FEATHER.pdf}% Here is how to import EPS art
 \end{figure}
 
 \begin{figure}[htpb]
-\caption[Algorithm Performance]{\noindent\fLabel{PerformanceFovea}\pStartF Performance of the Open Fovea baseline. \subref{A-E}: As in \fRef{PerformanceFEATHER}, but for the Open Fovea baseline.}
+\caption[Open Fovea Performance]{\noindent\fLabel{PerformanceFovea}\pStartF Performance of the Open Fovea baseline. \subref{A-E}: As in \fRef{PerformanceFEATHER}, but for the Open Fovea baseline.}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/OpenFovea}% Here is how to import EPS art
 \end{figure}
@@ -156,7 +162,7 @@ Scientific Python & 0.349 & 0.514\e
 
 
 \begin{figure}[htpb]
-\caption[Algorithm Performance]{\noindent\fLabel{PerformanceScipy}\pStartF Performance of the Scientific Python baseline. \subref{A-E}: As in \fRef{PerformanceFEATHER}, but for the Scientific Python baseline. \pEndF }
+\caption[Scientific Python Performance]{\noindent\fLabel{PerformanceScipy}\pStartF Performance of the Scientific Python baseline. \subref{A-E}: As in \fRef{PerformanceFEATHER}, but for the Scientific Python baseline. \pEndF }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/ScientificPython}% Here is how to import EPS art
 \end{figure}
@@ -167,6 +173,6 @@ Scientific Python & 0.349 & 0.514\e
 
 \firstp \pl \name{} provides order-of-magnitude improvements in both speed and physically-relevant metrics for algorithm performance, relative to the baselines presented. As shown in \fRef{LargeDataset}, \name{} also generalizes well to more complex \singlemol{} data.  \pl
 
-This work applied \name{} to unfolding in \singlemol{} data, but the algorithm could be generalized to a wider array of applications. Changing \name{} to search for refolding events in \singlemol{} data is a natural and useful generalization. In addition, domain-specific models could be combined with \name{} to further filter data, based on the specific experiment. For example, if an experimenter was attempting to measure the force-extension relationship of a DNA hairpin of contour length \ValUnit{100}{nm}, she could first obtain all rupture locations in her data via \name{}, fit a polymer model to each curve up to final rupture to obtain the contour length, then remove all data with contour lengths outside of \ValUnit{(100$\pm \epsilon$)}{nm}, where $\epsilon$ is a small number. By predicting where events occur without providing any domain-specific model of the event, \name{} is one tool in a longer \singlemol{} analysis pipeline.
+This work applied \name{} to unfolding in \singlemol{} data, but the algorithm could be generalized to a wider array of applications. Changing \name{} to search for refolding events in \singlemol{} data is a natural and useful generalization. In addition, domain-specific models could be combined with \name{} to further filter data, based on the specific experiment. For example, an experimenter could attempt to measure the force-extension relationship of a DNA hairpin of contour length \ValUnit{100}{nm}. After first obtaining all rupture locations in the data via \name{}, the experimenter could fit a polymer model to each curve up to final rupture to obtain the contour length, then remove all data with contour lengths outside of \ValUnit{(100$\pm \epsilon$)}{nm}, where $\epsilon$ is a small number. By predicting where events occur without providing any domain-specific model of the event, \name{} is one tool in a longer \singlemol{} analysis pipeline.
 
-\name{} could be used in different scientific domains than \singlemol{}. To reduce the risk of overfitting to a specific type of \singlemol{} experiment, \name{} purposefully makes no assumptions about domain-specific data models (e.g. a polymer model for the force-extension relationship of DNA). \singlemol{} data is a natural application for \name{}, since each retract curve, with its scientifically interesting data, is paired with an approach curve which is assumed lacking any events. The parameters needed to estimate \name{}'s probability bound are estimated from the approach curve. In domains which can estimate \name{}'s parameters (\fRef{FeatherExample}) and endeavor to localize events defined by discontinuous derivatives in otherwise continuous time series data (as shown in \fRef{Cartoon}), \name{} could be leveraged to improve scientific reproducibility.
+\name{} could be used in different scientific domains than \singlemol{}. To reduce the risk of overfitting to a specific type of \singlemol{} experiment, \name{} purposefully makes no assumptions about domain-specific data models (e.g. a polymer model for the force-extension relationship of DNA). \singlemol{} data is a natural application for \name{}, since each retract curve, with its scientifically interesting data, is paired with an approach curve which is assumed lacking any events. The parameters needed to estimate \name{}'s probability bound are estimated from the approach curve. Since these parameters are all \name{} needs, \name{} could be a powerful tool in domains besides \singlemol{}. The requirements for applying \name{} are estimating the relevant parameters (\fRef{FeatherExample}) and defining events by discontinuous derivatives in otherwise continuous time series data. \name{}'s order-of-magnitude improvements in event detection improves the quality and reproducibility of event detection in time series data.
