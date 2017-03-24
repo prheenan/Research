@@ -184,8 +184,8 @@ def run(base="./"):
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
     # make a scale bar for this plot
-    scale_width = 0.025
-    string = "{:d}ms".format(int(scale_width*1000))
+    scale_width = 0.040
+    string = "{:d} ms".format(int(scale_width*1000))
     get_bar_location = lambda _xlim: np.mean([np.mean(_xlim),min(_xlim)])
     PlotUtilities.scale_bar_x(get_bar_location(xlim_zoom),
                               -10,s=string,width=scale_width)
@@ -203,7 +203,7 @@ def run(base="./"):
     PlotUtilities.lazyLabel("Time [s]",ylabel,"")
     # make a scale bar for this plot
     scale_width = 0.002
-    string = "{:d}ms".format(int(scale_width*1000))
+    string = "{:d} ms".format(int(scale_width*1000))
     PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
                               0,s=string,width=scale_width)
     PlotUtilities.no_x_axis()
