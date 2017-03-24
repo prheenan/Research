@@ -523,7 +523,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
-    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=True)
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False)
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """

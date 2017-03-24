@@ -72,8 +72,7 @@ def make_distance_figure(l,data_file,fec_file):
                 label="Predicted event")
     # plot the events as arrows
     Plotting.plot_arrows_above_events(event_starts,plot_x,plot_y,fudge_pN)
-    PlotUtilities.lazyLabel("Separation (nm)","Force(pN)","",
-                            frameon=True)
+    PlotUtilities.lazyLabel("Separation (nm)","Force(pN)","",frameon=False)
     plt.subplot(1,2,2)
     Plotting.histogram_event_distribution(**distance_histogram)
     ylim = plt.ylim()

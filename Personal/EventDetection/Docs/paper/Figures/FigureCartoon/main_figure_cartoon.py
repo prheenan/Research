@@ -76,7 +76,7 @@ def run(base="./"):
             y_label = ""
             x_label = ""
             ax = plt.gca()
-            PlotUtilities.no_y_ticks(ax=ax)
+            PlotUtilities.no_y_label(ax=ax)
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
         PlotUtilities.tick_axis_number(num_x_major=4)
