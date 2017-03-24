@@ -690,13 +690,12 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                rotation=30,fontsize=PlotUtilities.g_font_label)
     PlotUtilities.ylabel("Metric")
     PlotUtilities.tickAxisFont()
-    # push metric to the top
+    # push metric to the right
     ax = plt.gca()
     ax.yaxis.tick_right()
     ax.yaxis.set_label_position('right') 
-
+    ax.tick_params(axis=u'x', which=u'both',length=0)
     plt.ylim([0,1])
-    # just empty :-(
 
 def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
     """
@@ -869,7 +868,7 @@ def top_bars(x,y,slices,colors,ymin=None,ymax=None):
     for s,c in zip(slices,colors):
         x_sliced = x[s]
         plt.axvspan(xmin=x_sliced[0],xmax=x_sliced[-1],ymin=ymin,ymax=ymax,
-                    color=c,alpha=0.3)
+                    color=c,alpha=0.3,linewidth=0)
 
 def before_and_after(x,y,before_slice,after_slice,style=dict(),
                      color_before='r',color_after='b',label=None):

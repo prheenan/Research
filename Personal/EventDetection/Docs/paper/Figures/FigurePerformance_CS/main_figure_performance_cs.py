@@ -138,8 +138,8 @@ def run(base="./"):
     # individual plot labels
     n_subplots = 5
     n_categories = len(metric_list)
-    letters =  string.lowercase[:n_categories]
-    letters = [ ["({:s}{:d})".format(s,n+1) for n in range(n_subplots)]
+    letters =  string.uppercase[:n_categories]
+    letters = [ ["{:s}{:d}".format(s,n+1) for n in range(n_subplots)]
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
     PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.14),fontsize=18)
