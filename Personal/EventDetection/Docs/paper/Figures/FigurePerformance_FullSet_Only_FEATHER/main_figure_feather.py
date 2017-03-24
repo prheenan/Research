@@ -11,29 +11,42 @@ from GeneralUtil.python import CheckpointUtilities
 
 from Research.Personal.EventDetection.Util import Offline,Plotting
 
-def run(base="./"):
+def get_best_metrics(data_file):
+    learners = CheckpointUtilities.lazy_load(data_file)
+    metrics = [Offline.best_metric_from_learner(l) for l in learners]
+    return metrics
+
+def run(in_base="./"):
     """
     
     """
-    out_base = base
-    data_file = base + "data/Scores.pkl"
+    out_base = in_base
+    data_file = in_base + "data/Scores.pkl"
     force=False
-    learners = CheckpointUtilities.lazy_load(data_file)
-    for i,l in enumerate(learners):
+    cache_file = out_base + "cache.pkl"
+    metrics = CheckpointUtilities.getCheckpoint(cache_file,get_best_metrics,
+                                                False,data_file)
+    loc_left = (-0.10,1.1)
+    loc_top = (-0.12,1.05)
+    loc_lower = (-0.12,0.95)
+    locs = [loc_top,loc_left,loc_left,loc_lower,loc_lower]
+    titles = Plotting.algorithm_title_dict()
+    colors = Plotting.algorithm_colors()
+    for i,m in enumerate(metrics):
+        name = titles[m.name.lower()]
         fig = PlotUtilities.figure((16,8))
-        m = Offline.best_metric_from_learner(l)
         distance_histogram= Offline.event_error_kwargs(m)
-        name,true,pred = m.name,m.true,m.pred
+        true,pred = m.true,m.pred
         # plot the metric plot
         Plotting.rupture_plot(true,pred,use_legend=True,
                               distance_histogram=distance_histogram,
                               fig=fig)
-        final_out_path = "{:s}_{:d}.pdf".format(out_base,i)
-        PlotUtilities.label_tom(fig,loc=(-0.25,1.1),fontsize=18)
-        plt.suptitle("FEATHER",fontsize=25,y=0.95,color='b',alpha=0.7)
+        final_out_path = "{:s}{:s}.pdf".format(out_base,name)
+        PlotUtilities.label_tom(fig,loc=locs,fontsize=18)
+        plt.suptitle(name,fontsize=25,y=0.95,color=colors[i],alpha=0.7)
         PlotUtilities.savefig(fig,final_out_path,
-                              subplots_adjust=dict(wspace=0.4,left=0.10,
-                                                   top=0.85))
+                              subplots_adjust=dict(wspace=0.2,hspace=0.1,
+                                                   left=0.05,top=0.85))
 
 
 

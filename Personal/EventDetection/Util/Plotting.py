@@ -355,7 +355,7 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
-    PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture\nForce (pN)",
+    PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
                             title,frameon=True,legend_kwargs=dict(numpoints=1),
                             useLegend=use_legend,loc=loc)
 

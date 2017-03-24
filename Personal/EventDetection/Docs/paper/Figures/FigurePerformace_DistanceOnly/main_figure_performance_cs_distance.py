@@ -104,7 +104,7 @@ def run(base="./"):
     Plotting.rupture_plot(true,pred,fig=fig)
     PlotUtilities.savefig(fig,final_out_rupture)
     # make the distance histogram figure
-    fig = PlotUtilities.figure((16,8))
+    fig = PlotUtilities.figure((16,6))
     make_distance_figure(l,data_file,fec_file)
     PlotUtilities.title("Results for {:s}".format(name))
     final_out_hist = "{:s}{:s}_distances.pdf".format(out_base,name)
