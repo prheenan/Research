@@ -144,7 +144,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     x = x_func(retract)
     surface_index = ex.get_predicted_retract_surface_index()
     min_x,max_x = min(x),max(x)
-    ylabel = "Force [pN]"
+    ylabel = "Force (pN)"
     x_range = max_x - min_x
     fudge = x_range * 0.05
     x_limits = [min_x - fudge,max_x + fudge]
@@ -654,7 +654,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                           label="predicted", **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
                            label="true",**true_style_histogram)
-    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","",frameon=True,
+    PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=True,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')
     plt.yscale('log')

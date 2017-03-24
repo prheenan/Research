@@ -29,9 +29,7 @@ def write_coeffs_file(out_file,coeffs):
     for c in coeffs:
         tmp =[ [opt_high,r"Rupture BC ($\uparrow$)",
                 c.bc_2d],
-               [opt_low,r"Absolute event error [nm]($\downarrow$)",
-                c.cat_q*1e9],
-               [opt_low,r"Relative event error ($\downarrow$)",
+               [opt_low,r"Relative event error P$_{85}$ ($\downarrow$)",
                 c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos

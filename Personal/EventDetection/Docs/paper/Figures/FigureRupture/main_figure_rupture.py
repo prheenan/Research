@@ -143,7 +143,7 @@ def run(base="./"):
     n_rows = 3
     n_cols = 1
     ylabel = "Force (pN)"
-    fig = PlotUtilities.figure((8,16))
+    fig = PlotUtilities.figure((8,12))
     ax1 = plt.subplot(n_rows,n_cols,1)
     style_data = dict(alpha=0.3,linewidth=1)
     style_filtered = dict(alpha=1.0,linewidth=3)

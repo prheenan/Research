@@ -74,8 +74,7 @@ def make_distance_figure(l,data_file,fec_file):
     for start in event_starts:
         plt.plot(plot_x[start],plot_y[start]+fudge_pN,color='g',marker='v',
                  markersize=15,zorder=10,alpha=1)
-    PlotUtilities.lazyLabel("Separation (nm)","Force(pN)",
-                            "Illustration of distance error metrics",
+    PlotUtilities.lazyLabel("Separation (nm)","Force(pN)","",
                             frameon=True)
     plt.subplot(1,2,2)
     Plotting.histogram_event_distribution(**distance_histogram)
@@ -106,9 +105,8 @@ def run(base="./"):
     # make the distance histogram figure
     fig = PlotUtilities.figure((16,6))
     make_distance_figure(l,data_file,fec_file)
-    PlotUtilities.title("Results for {:s}".format(name))
     final_out_hist = "{:s}{:s}_distances.pdf".format(out_base,name)
-    PlotUtilities.label_tom(fig,loc=(-0.15,1.1),fontsize=18)
+    PlotUtilities.label_tom(fig,loc=(-0.1,1.0),fontsize=18)
     PlotUtilities.savefig(fig,final_out_hist)
 
 

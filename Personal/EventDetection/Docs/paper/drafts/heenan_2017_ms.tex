@@ -34,7 +34,7 @@ This paper describes a new method based on machine learning for detecting events
 \begin{figure}[htpb]
 \caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining the rupture and its associated properties. (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force and loading rate are defined using the data and the fit, as described in the text. For all subplots, the force changes color at the location of a tagged event. }
 \centering
-\includegraphics[width=\figwidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
+\includegraphics[width=0.5\linewidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
 \end{figure}
 
 \firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files. \pl
@@ -76,7 +76,7 @@ threshold & Probability threshold above which to reject events  & Determined by 
 
 \subsection{\sLabel{Metrics}Performance Metrics}
 
-\firstp Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics}. The event error metrics, $f_{85}$ and $z_{85}$, describe how closely the predicted event locations align with the human-tagged data, and the rupture \bc{} coefficient, $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the overlap between the expected and actual distribution over loading rates and rupture forces. \pl
+\firstp Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics}. The event error metric, $P_{85}$, is the 85th percentile of relative error (see \fRef{DistanceMetric}) between predicted and true event locations.  The rupture \bc{} coefficient, $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the overlap between the expected and actual distribution over loading rates and rupture forces. \pl
 
 
 \begin{table}
@@ -94,11 +94,17 @@ $\nu_i$ & \text{histogram of `i' loading rates over all k} & \na & \na \\\hline
 $F_i$ & \text{histogram of `i' rupture forces over all k} & \na & \na \\\hline 
 $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \na \\
 & \text{by the number of curves} && \\\hline \hline 
-\textbf{relative event error} & f$_{85}$ &   [0,1] & 0 \e
-\textbf{absolute event error} & z$_{85}$ & [0,max(x$_k$)] &  0 \e
+\textbf{relative event error} & P$_{85}$ &   [0,1] & 0 \e
 \textbf{rupture BC} & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \\
 \end{tabularx}
 \end{table}
+
+\begin{figure}[htpb]
+\caption[Distance metric illustration]{\noindent\fLabel{DistanceMetric}\pStartF  Illustration of distance metric. (a) A force extension curve with two events, marked by green triangles, a predicted event location denoted by a dashed line, and examples of the distances in \tRef{metrics} shown as labelled arrows. The predicted event is not the output from any algorithm and is for illustration only. (b) The distribution of distances obtained by concatenating many curves analyzed as in (a). \pEndF}
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/no_event_distances.pdf}% Here is how to import EPS art
+\end{figure}
+
 
 
 \subsection{\sLabel{Tuning}Algorithm tuning}
@@ -133,16 +139,6 @@ Open Fovea & 0.367 & 969 & 0.58\e
 Scientific Python & 0.651 & 811 & 0.514\e
 \end{tabularx}
 \end{table}
-
-
-
-
-\begin{figure}[htpb]
-\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of \name{} compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. Note that the relative event error is complemented by one and the absolute event error is not listed, to facilitate plotting on the same axis. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python baseline. \pEndF }
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\end{figure}
-
 
 
 \chapter{\sLabel{Discussion}Discussion}

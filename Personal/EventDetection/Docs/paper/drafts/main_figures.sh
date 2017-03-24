@@ -47,6 +47,7 @@ prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
 copy_pdfs ${base_dir_rel}FigurePerformance_FullSet_Only_FEATHER/ $out_path 
 copy_pdfs ${prep_dir} $out_path 
+copy_pdfs "${base_dir_rel}FigurePerformace_DistanceOnly/" $out_path 
 copy_pdfs "${base_dir_rel}FigureAlgorithm/" $out_path 
 copy_pdfs "${base_dir_rel}FigureTuning/" $out_path 
 copy_pdfs "${timing_dir}" $out_path 
