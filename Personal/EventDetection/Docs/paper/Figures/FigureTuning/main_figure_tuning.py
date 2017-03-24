@@ -57,8 +57,8 @@ def run(base="./"):
     # plot everything
     fig = PlotUtilities.figure((16,8))
     n_cols = 3
-    parameters = ["no-event probability","Open Fovea sensitivity",
-                  "minimum cwt SNR"]
+    parameters = ["FEATHER probability","Open Fovea sensitivity",
+                  "Scientific Python minimum SNR"]
     xlim = [None,[0.5,2],[10,200]]
     for i,(args,name) in enumerate(events_off):
         first = (i == 0)

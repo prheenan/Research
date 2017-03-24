@@ -127,7 +127,7 @@ def run(base="./"):
                             frameon=True)
     plt.xlim(xlim_approach)
     tick_function()
-    PlotUtilities.no_x_ticks()
+    PlotUtilities.no_x_label()
     plt.ylim(ylim_force)
     plt.subplot(gs[0,1])
     Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
@@ -138,7 +138,7 @@ def run(base="./"):
     title = "Calculating the no-event probability"
     PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
     tick_function()
-    PlotUtilities.no_x_ticks()
+    PlotUtilities.no_x_label()
     plt.ylim(ylim_force)
     # plot the 'raw' error distribution for the approach
     plt.subplot(gs[1,0])
@@ -149,7 +149,7 @@ def run(base="./"):
     PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ (pN)",
                             "",frameon=True,loc='upper right')
     plt.xlim(xlim_approach)
-    PlotUtilities.no_x_ticks()
+    PlotUtilities.no_x_label()
     tick_function()
     plt.ylim(*ylim_diff)
     # plot the 'raw error distribution for the retract
@@ -160,7 +160,7 @@ def run(base="./"):
     Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
                               filted_stdev_style,label=label_s_t)
     PlotUtilities.lazyLabel("","","",frameon=True,loc='upper right')
-    PlotUtilities.no_x_ticks()
+    PlotUtilities.no_x_label()
     plt.ylim(*ylim_diff)
     tick_function()
     # filtered error distribution for the approach
@@ -179,7 +179,7 @@ def run(base="./"):
     plot_epsilon(epsilon_plot,sigma_plot)
     PlotUtilities.lazyLabel("","","",frameon=True,
                             loc="upper right")
-    PlotUtilities.no_x_ticks()
+    PlotUtilities.no_x_label()
     plt.ylim(*ylim_diff_filtered)
     tick_function()
     # probability distribution for the retract

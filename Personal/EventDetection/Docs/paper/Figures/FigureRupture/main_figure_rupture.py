@@ -196,7 +196,7 @@ def run(base="./",increment=False):
     get_bar_location = lambda _xlim: np.mean([np.mean(_xlim),min(_xlim)])
     PlotUtilities.scale_bar_x(get_bar_location(xlim_zoom),
                               -10,s=string,width=scale_width)
-    PlotUtilities.no_x_labels()
+    PlotUtilities.no_x_label()
     ax3 = plt.subplot(n_rows,n_cols,3)
     Plotting.before_and_after(x,force,zoom_second_before,zoom_second_after,
                               style_data_post_zoom)
@@ -210,7 +210,7 @@ def run(base="./",increment=False):
     string = "{:.1f} ms".format(scale_width*1000)
     PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
                               0,s=string,width=scale_width)
-    PlotUtilities.no_x_labels()
+    PlotUtilities.no_x_label()
     PlotUtilities.label_tom(fig,loc=(-0.1,0.97))
     if increment:
         PlotUtilities.legend_and_save(fig,out_fig,ext=".pdf")
