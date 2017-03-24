@@ -53,20 +53,23 @@ def run():
                                 color = 'orange'),
                 bbox=dict(boxstyle="round", fc="orange",alpha=0.3)
             )
-    PlotUtilities.lazyLabel("","","Electrophoretic purification of 647nm DNA")
+    PlotUtilities.lazyLabel("","","Purification of 647 nm DNA")
     plt.subplot(1,2,2)
     kwargs = dict(vmin=qlow,vmax=qhigh,cmap=plt.cm.afmhot,range_plot=range_plot)
     im = ImageUtil.PlotImage(wave,aspect='equal',**kwargs)
     PlotUtilities.lazyLabel("x position (nm)","y position (nm)",
                             "AFM image of mica-bound DNA")
-    plt.gca().invert_yaxis()
+    ax = plt.gca()
+    ax.invert_yaxis()
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position('right') 
     cbar_ax = fig.add_axes([0.85, 0.15, 0.05, 0.7])
     PlotUtilities.colorbar(label="Height (nm)",
                            bar_kwargs=dict(mappable=im,cax=cbar_ax))
     axis_func = lambda x: x[:-1]
-    PlotUtilities.label_tom(fig,loc=(-0.1,1.1),axis_func=axis_func)
+    PlotUtilities.label_tom(fig,loc=(0,1.1),axis_func=axis_func)
     PlotUtilities.savefig(fig,"./prep.pdf",subplots_adjust=dict(left=0.07,
-                                                                right=0.8,
+                                                                right=0.75,
                                                                 hspace=0.2))
 
 
