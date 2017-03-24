@@ -8,7 +8,7 @@ from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from Research.Personal.EventDetection.Util import Learning,Learners
+from Research.Personal.EventDetection.Util import Learning,Learners,Offline
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -29,6 +29,7 @@ def run():
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
+    copy_files = True
     force_read = False
     force_relearn = False
     force_learn = False
@@ -54,11 +55,14 @@ def run():
                              n_folds,pool_size=pool_size,
                              learners=learners)
     for l in learners:
-        if (debugging):
+        if debugging:
             break
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
-        Plotting.plot_individual_learner(debug_directory,l)
+        best_metric = Offline.best_metric_from_learner(l)
+        distance_histogram= Offline.event_error_kwargs(best_metric)
+        Plotting.plot_individual_learner(debug_directory,l,
+                                         rupture_kwargs=distance_histogram)
     num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
@@ -87,13 +91,14 @@ def run():
                       key=lambda i:(number_relative[i],median_dist[i]))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
-    debugging_str = "_" if debugging else ""
+    debugging_str = ""
     file_names = [scores[i].source_file + debugging_str + scores[i].name 
                   for i in worst_n_idx]
     print([ (number_relative[i],median_dist[i]) for i in worst_n_idx])
     # os.path.split gives <before file,after file>
     load_files = [os.path.basename(f) +".csv.pkl" for f in file_names]
-    load_paths_tmp = [cache_directory + f for f in load_files]
+    load_paths_tmp = [(cache_directory + f)
+                      for f in load_files]
     # replace the final underscore...
     print("loading: {:s}".format(load_paths_tmp))
     load_paths = []
@@ -104,14 +109,17 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 1e-2
     example_numbers = []
-    examples_filtered = [examples[i] for i in example_numbers]
+    examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
+        load_file_name = (os.path.basename(example.Meta.SourceFile) + \
+                          example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
-        debugging_file_path = debug_directory + load_files[i]
-        if (debugging):
-            copyfile(load_paths[i],debugging_file_path)
+        load_path = load_file_name
+        debugging_file_path = debug_directory + load_file_name
+        if (copy_files):
+            copyfile(cache_directory + load_file_name,debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)

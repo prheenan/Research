@@ -27,17 +27,18 @@ def write_coeffs_file(out_file,coeffs):
     opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
-        tmp =[ [opt_high,r"bc2 ($\uparrow$)",c.bc_2d],
-               [opt_low,r"median ($\downarrow$)",c.cat_median],
-               [opt_low,r"q ($\downarrow$)",c.cat_q],
-               [opt_low,r"relative median ($\downarrow$)",
-                c.cat_relative_median],
-               [opt_low,r"relative q ($\downarrow$)",c.cat_relative_q]]
+        tmp =[ [opt_high,r"Rupture BC ($\uparrow$)",
+                c.bc_2d],
+               [opt_low,r"Absolute event error [nm]($\downarrow$)",
+                c.cat_q*1e9],
+               [opt_low,r"Relative event error ($\downarrow$)",
+                c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
     coeff_names = [coeff_tmp[1] for coeff_tmp in funcs_names_values[0] ]
-    method_names = [c.name for c in coeffs]
+    plot_dict = Plotting.algorithm_title_dict()
+    method_names = [plot_dict[c.name] for c in coeffs]
     # get the list of coefficients
     coeffs = [[f[2] for f in coeff_tmp] for coeff_tmp in funcs_names_values ]
     coeffs_array = np.array(coeffs)
@@ -65,7 +66,7 @@ def run(base="./"):
     lim_force_max = [0,0]
     distance_limits = [0,0]
     count_max = 0
-    distance_mins = np.inf
+    distance_limits = []
     coeffs_compare = []
     # get the plotting limits
     update_limits = Offline.update_limits
@@ -73,16 +74,14 @@ def run(base="./"):
         lim_force_max = update_limits(m.lim_force,lim_force_max)
         lim_load_max = update_limits(m.lim_load,lim_load_max,floor=1e-1)        
         count_max = max(m.counts,count_max)
-        distance_limits = update_limits(m.distance_limit(),distance_limits)
-        distance_mins = min(distance_mins,min(m.distance_limit()))
+        distance_limits.append(m.distance_limit(True))
         coeffs_compare.append(m.coefficients())
     write_coeffs_file(out_base + "coeffs.txt",coeffs_compare)
-    distance_limits = [distance_mins,max(distance_limits)]
+    distance_limits = [np.min(distance_limits),np.max(distance_limits)]
     # POST: have limits...
     # plot the best fold for each
     out_names = []
     colors_pred =  algorithm_colors()
-    n_bins = 50
     for m in metric_list:
         precision = m.precision()
         recall = m.recall()
@@ -111,32 +110,21 @@ def run(base="./"):
     entire_figure = gridspec.GridSpec(3,1)
     import matplotlib as mpl
     mpl.rcParams['hatch.linewidth'] = 4
+    title_dict = Plotting.algorithm_title_dict()
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
         best_param_idx = m.best_param_idx
         out_learner_base = "{:s}{:s}".format(out_base,name)
         color_pred =  colors_pred[i]
-        # get the distance information we'll need
-        to_true,to_pred = m.to_true_and_pred_distances()
-        limit = m.distance_limit()
-        log_limit = np.log10(limit)
-        bins = np.logspace(*log_limit,num=n_bins)
-        # define the styles for the histograms
-        common_style_hist = dict(alpha=0.3,linewidth=0)
-        label_pred_dist_hist = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
-        label_true_dist_hist = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
-        color_true = 'g'
-        style_true = dict(color=color_true,label=label_true_dist_hist,
-                          **common_style_hist)
-        style_pred = dict(color=color_pred,label=label_pred_dist_hist,
-                          **common_style_hist)
+        # define the styles for the histogram
         use_legend = (i == 0)
-        xlabel_histogram = "Distance [m]" if (i == len(metric_list)-1) else ""
-        distance_histogram = dict(to_true=to_true,to_pred=to_pred,
-                                  distance_limits=distance_limits,
-                                  bins=bins,style_true=style_true,
-                                  style_pred=style_pred,
-                                  xlabel=xlabel_histogram)
+        xlabel_histogram = r"Distance [x$_k$]" \
+                           if (i == len(metric_list)-1) else ""
+        # get the distance information we'll need
+        distance_kw = Offline.\
+            event_error_kwargs(m,color_pred=color_pred,
+                               distance_limits=distance_limits,
+                               xlabel=xlabel_histogram)
         gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
                                               height_ratios=[2,1],
                                               subplot_spec=entire_figure[i],
@@ -147,8 +135,10 @@ def run(base="./"):
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,
                               count_limit=[0.5,count_max*2],
-                              distance_histogram=distance_histogram,gs=gs,
+                              distance_histogram=distance_kw,gs=gs,
                               fig=fig)
+        plt.title(title_dict[name],fontsize=25,x=-2,y=3.85,color=color_pred,
+                  alpha=1)
     # individual plot labels
     n_subplots = 5
     n_categories = len(metric_list)
@@ -156,11 +146,11 @@ def run(base="./"):
     letters = [ ["({:s}{:d})".format(s,n+1) for n in range(n_subplots)]
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
-    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.1),fontsize=18)
+    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.14),fontsize=18)
     final_out_path = out_base + "landscape.pdf"
     PlotUtilities.savefig(fig,final_out_path,
                           subplots_adjust=dict(left=0.10,
-                                               hspace=0.2,wspace=0.2,top=0.95))
+                                               hspace=0.3,wspace=0.2,top=0.95))
 
 
 

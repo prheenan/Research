@@ -1,0 +1,180 @@
+\chapter{\sLabel{SampleDetails}Sample and Cantilever Preparation}
+
+\section{\sLabel{Surface}Azide-functionalized surfaces}
+
+\firstp Glass surfaces were etched using Potassium Hydroxide. 12mm diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in 250mL of ACS grade acetone \supply{Fisher}{A18-4}, 5 minutes in 250mL of 95\% ethanol \supply{Decon}{2801}, and transferred to a solution of 80g of Potassium Hydroxide \supply{Fisher}{P250-500} dissolved in  170mL of 95\% ethanol and 80mL of deionized water \supply{Barnstead}{GenPure Pro} for 3 minutes. To removed residual KOH, the glass was serially diluted in two 1L beakers of 18.2M$\Omega$ deionized water. The etched surfaces were dried with 99.8\% pure Nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature in a dust-proof box. \pl
+
+To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then mounted in a custom-made teflon-holder and rinsed serially in 250mL of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with Nitrogen gas and stored in a dust-proof container at 4\degreeC{}. \pl 
+
+
+\begin{table}[htp]
+\caption[DNA primer sequences]{\tLabel{Sequences}Sequences for single-stranded DNA construct and for double-stranded DNA primers. The forward and reverse primers amplify a 647nm piece of DNA, from positions 1607 to 3520 on the M13mp18 plasmid, as discussed in the next. Unmodified DNA bases are lowercase. The uppercase letters `T',`B', and `D' respectively represent biotinylated Thymidine residues, a terminal Biotin separated from the sequence by triethyleneglycol spacer, and a terminal Dibenzocyclooctyl (DBCO) separated from the sequence by triethyleneglycol spacer.}
+\begin{tabularx}{\textwidth}{ l | l  }
+\hline \hline
+Forward primer & Dagttgttcctttctattctcactccgc \\ \e 
+Reverse primer & BtcaataaTcggctgtctTtccttatcaTtc \\ \e 
+\end{tabularx}
+\end{table}
+
+\section{\sLabel{Sample}DNA Samples}
+
+\firstp For the 1914bp double-stranded DNA, the 1607 forward-sense and 3520 reverse-sense primers (\tRef{Sequences}) for the M13mp18 plasmid \supply{New England BioLabs}{N4018S} were obtained from Integrated DNA Technologies  and used for polymerase-chain reaction \supply{Millipore}{71086-4} using 40 cycles on a thermocycler \supply{Bio-Rad}{T100}. The reverse-sense primer was modified to include three biotinylated thyimine bases and a 5-prime biotin after a PEG spacer, and the forward-sense primer was modified to include a 5-prime Dibenzocyclooctyl (DBCO) after a PEG-spacer (see \tRef{Sequences}). After the PCR product was purified \supply{Qiagen}{28106} and the 1.9kbp band selected by 2\% gel electrophoresis \supply{Sigma}{A9539-500}, the agarose was eluted out \supply{Bio-Rad}{732-6165}, the DNA solution was concentrated \supply{Millipore}{UFC501096}, purified \supply{Qiagen}{28106}, and stored at 4\degreeC{} in a solution of TE, 10mM Tris \supply{Fisher}{BP151-1} and 1mM EDTA \supply{Fisher}{S311-500} at pH 8.0. The typical recovery efficiency of this procedure was 25\%. \pl
+
+The purity of the DNA was verified by depositing 20pmol of DNA in imaging buffer, 3mM Nickel \supply{Sigma}{654597}, 10mM Hepes \supply{Sigma}{H4034} at pH 7, onto freshly-cleaved, 10mm diameter, V1 mica \supply{Ted Pella}{50} for 10 minutes, rinsing serially 5 times with 1mL of deionized water and 5 times with imaging buffer. The sample was then imaged with Cypher using a cantilever with a spring constant of $\approx 300 \frac{\text{pN}}{\text{nm}}$ \supply{Bruker}{SNL-10} with a line scan rate of 1Hz and free amplitude of $\approx$1nm (\fRef{Prep}).\pl 
+
+For DNA deposition onto azide surface, 20uL of the DNA at 40nM was mixed with 80uL of TE at pH 8.0 and deposited onto azide-functionalized glass (see \sRef{Surface}) affixed with epoxy \supply{Devcon}{14250} to specimen disks \supply{Ted Pella}{16218} and incubated at 4C for 15 hours. The surfaces were rinsed by 7mL of TE at pH 8.0 and 7mL of PBS with 1mM EDTA at pH 7.4, and stored at 4\degreeC{}. 
+
+\section{\sLabel{Cantilevers}Streptravidin-functionalized cantilevers}
+
+\firstp Functionalized cantilevers with nominal spring constants of 4 $\frac{\text{pN}}{nm}$  were used for all experiments. Functionalization etches away gold to improve force stability\cite{sullan_atomic_2013} and covalently attaches streptatividin to the etched cantilevers to improve attachment to the biotinylated DNA. Commercially available cantilevers \supply{Asylum Research}{BL-RC-150VB} were serially rinsed for 30 seconds in 50mL of gold etchant \supply{Transene}{TFA}, 250mL of deionized water, 50mL of chromium etchant \supply{Transene}{1020}, 250mL of deionized water, and one final rinse in 250mL of deionized water. After drying, the tips were activated using 30 minutes exposure in a UV-Ozone chamber and incubated for three hours in a 70mL, 60\degreeC{} solution of 0.15mg/mL 600Dalton Silane-PEG-Maleimide \supply{Nanocs}{PG2-MLSL-600} dissolved in toluene. The maleimide-functionalized tips were serially rinsed in 50mL of toluene, isopropanol, water, immediately dried \supply{KimTech}{5511}, and immersed for three hours in a 0.4mg/mL solution of thiol-streptavidin \supply{Protein Mods}{SAVT} in PBS \supply{Millipore}{524650} at pH 6.75 with 1mM TCEP \supply{Thermo Scientific}{77720} at room temperature in a moisture-proof container. The tips were then tranferred to 4\degreeC{} for 15 hours. After the 4\degreeC{} incubation, to remove free streptavidin, the tips were serially rinsed in two 10mL beakers of PBS at pH 7.4 and submerged in a 20mL petri dish of PBS for 10 minutes. The tips were then stored in 50$\muup$L of PBS at 4C in plastic wafers \supply{Entegris}{H22-10/1-0615} until loading into the atomic force microscope. \pl
+
+
+\begin{table}[htp]
+\caption[Data set statistical information]{\tLabel{statistics} For each loading rate v in the data set, this table lists the number of curves N$_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events N$_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. }
+\begin{tabularx}{\textwidth}{ l | l | l | l |l |l|l|l }
+\hline \hline
+v [nm/s] & N$_\mathrm{curves}$ & $\mu_{\mathrm{Curve Size}}$ & $\sigma_{\mathrm{Curve Size}}$ & N$_{\mathrm{e}= 1}$ & N$_{\mathrm{e}= 2}$ & N$_{\mathrm{e}= 3}$ & N$_{\mathrm{e}\ge4}$  \\ \hline
+100 & 200 & 667000 & 47000 & 159 & 33 & 5 & 3  \\ \hline
+500 & 200 & 200000 & 1000 & 140 & 40 & 8 & 12  \\ \hline
+1000 & 200 & 117000 & 7000 & 174 & 25 & 1 & 0  \\ \hline
+\end{tabularx}
+\end{table}
+
+
+
+\chapter{\sLabel{DesignDetails} Algorithm Design}
+
+This section details the mathematics and choices behind the event-detection algorithm. The following conventions are followed:
+
+\begin{enumerate}
+ \item All variables with uppercase letters are random variables.
+ \item All variables with lowercase letters are either instances of the corresponding uppercase random variables (i.e., measurements) or pure functions.
+ \item All variables with a hat (e.g. $\hat{\epsilon}_t$) are empirical measurements or estimated of an already-defined variable .
+\end{enumerate}
+
+\section{Defining the no-event hypothesis}
+
+\firstp We define an event as when the time derivative of force applied to a molecule exhibits a discontinuity as the molecule passes over a free-energy barrier. We assume this event takes place on timescales much smaller than the response time of the probe. If this is not true, the data assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `t' and finds where the probability of a measurement is low. Hereafter, the definition of an event and the assumptions of no event at a given time will be referred to as the \emph{no-event hypothesis}. 
+
+\section{Mathematical background for testing the no-event hypothesis}
+
+\firstp Under the no-event hypothesis, the noise-dependent distribution of force `F' for a discrete series of forces sampled at time points `t' can be well-approximated by the sum of a smooth signal and an noise distribution (\fRef{FeatherExample}):
+
+\eqs{ F_t = g_t + X(0,\sigma^2) }
+
+where `g$_t$' is a smooth function with a continuous first derivative and `X' is a random variable with zero mean and variance $\sigma^2$. The closed form of the smooth signal and the noise distribution are assumed unknown and can vary from one force extension curve to the next. If `$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then we define an error distribution $R_t$ such that: \pl
+
+\eqs{ R_t \equiv F_t - g^{*}_t = \epsilon_t + X(0,\sigma) }
+
+where
+
+\eqlab{ E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2 }{feather-sigma}
+
+and 
+
+\eqlab{ |E[R_t]| = \epsilon_t \le E[|R_t|] }{feather-epsilon}
+
+In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by the average over all time points $\hat{\epsilon}_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |r_t|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality:
+
+\eqlab{ \boxed{P( |R_t-\epsilon_t| \ge r_t-\epsilon_t ) \le
+ (\frac{\sigma}{|r_t-\epsilon_t|})^2 }}{feather-probability}
+
+
+For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by \eRef{feather-epsilon} and \eRef{feather-sigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. \pl
+
+\section{Accurate estimators for hypothesis testing}
+
+\firstp In order to obtain an accurate estimator for $g_t$, the data must be smoothed. \name{} uses spline smoothing, assuming the user has a time scale $\tau$ below which events are occurring. For these experiments, $\tau$ was set as listed in \tRef{Parameters}. \pl 
+
+The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline\citePRH{dierckx_algorithm_1975} to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of $\tau$. \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{feather-sigma}, \eRef{feather-epsilon}, and \eRef{feather-probability}. \pl
+
+Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, the distribution of windowed standard deviations `$s_t$' of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$ was used in place of $r_t$. Using $s_t$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  \pl
+
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $s_t$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $s_t$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean in order to remove the influence of possible false-positive events in the approach due to stage noise. The removal of these psuedo-events is necessary to ensure accurate estimations for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. \pl
+
+The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
+
+
+\begin{figure}[htp]
+\caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample}\pStartF Demonstrating how \name{} works. (a,b) The approach and retract forces versus time, with spline fits overlaid. (c,d) The approach and retract r$_t$ versus time, with s$_t$ overlaid, demonstrating the signal-to-noise benefit of using s$_t$. (e,f) The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlaid. (g) The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event. \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
+\end{figure}
+
+\begin{figure}[htp]
+\caption[\name{} psuedocode]{\noindent\fLabel{Code}\pStartF The psuedocode of \name{}. \name{} takes in `force', which is assumed broken into an approach and retract portion; `threshold', which is a number between 0 and one defining the maximum probability; and `$\tau$' which is the even number of points between the spline knots. \pEndF }
+  \begin{lstlisting}[language=Python]
+def event_indices(force,threshold,$\tau$):
+   g$^{*}$ = second-order spline fit to retract using $\tau$ for knots
+   g$_a$ = second order spline fit to approach using $\tau$ for knots
+   r = force.retract - g$^{*}$
+   r$_a$ = force.approach - g$^{*}$
+   s[i] = standard deviation of r[i-$\tau$/2:i+$\tau$/2]
+   s$_a$[i] = standard deviation of r$_a$[i-$\tau$/2:i+$\tau$/2]
+   $\epsilon$ = median of s$_a$
+   $\sigma$ = standard deviation of s$_a$
+   k = (s-$\epsilon$)/$\sigma$
+   probability = mininimum(1,k$^{-2}$)
+   # multiply by the integral probability 
+   integrated$_{s}$[i] = integrate (s-$\epsilon$) from [i-$\tau$] to [i+$\tau$]
+   set integrated$_{s}$ where positive to 0
+   k$_{\text{integ}}$ = (integrated$_{s}$/$\sigma$)
+   probability = probability * minimum(1,k$_{\text{integ}}^{-2}$)
+   # multiply by the derivative probability
+   $\epsilon_d$  = median of derivative of g$_a$
+   $\sigma_d$ = standard deviation of derivative of g$_a$
+   g$_{\text{deriv}}$ = derivative of $g^{*}$ with respect to time
+   k$_{\text{deriv}}$ = (g$_{\text{deriv}}$ - $\epsilon_d$)/$\sigma_d$
+   probability = probability * minimum(1,k$_{\text{deriv}}^{-2}$)
+   # multiply by the differential probability 
+   df[i] = g$^{*}$[i+tau] - g$^{*}$[i-tau]
+   k$_{\text{df}}$ = (df - $\epsilon$)/$\sigma$
+   probability = probability * minimum(1,k$_{\text{df}}^{-2}$)
+   possible_events = indices where probability <= threshold
+   # update the probability to remove false positives (adhesions)
+   surface_location = last point where force.retract > 0
+   set possible events containing surface_location to 0
+   return possible_events
+\end{lstlisting}
+\end{figure}
+
+
+
+\begin{figure}[htp]
+\caption[Performance of \name{} on larger data set]{\noindent\fLabel{LargeDataset}\pStartF This figure is identical to \fRef{Performance}, except it details the performance of only \name{} on the full data set listed in \tRef{statistics}, instead of merely the highest loading rate.  \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/_0.pdf}% Here is how to import EPS art
+\end{figure}
+
+\begin{figure}[htp]
+\caption[Verification of sample purity]{\noindent\fLabel{Prep}\pStartF Purity of the sample preparation. (a) A 2\% electrophoretic agarose gel, showing a major band at just below 2kbp, as expected. (b) A false-color AFM image of the DNA bound to mica. \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/prep.pdf}% Here is how to import EPS art
+\end{figure}
+
+
+\begin{figure}[htp]
+\caption[Cross validation of algorithms and optimal parameters]{\noindent\fLabel{Tuning}\pStartF Details of tuning experiments. (a) The total number of extra and missing predicted events divided by the expected number of events for \name{}. (b) As (a), but for the Open Fovea method. (c) As (a), but for the Scientific Python method; \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/tuning.pdf}% Here is how to import EPS art
+\end{figure}
+
+
+
+\begin{figure}
+\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details}\pStartF The runtime of the three methods versus loading rate and number of points. (a) \name{}'s total runtime versus number of curves analyzed for the curve sizes, N, listed. (b) The runtime per curve versus number of points, N. The runtimes at each N are obtained by the slope of the relevant line in (a).  (c,d) As (a,b), but for the Open Fovea method. (e,f) As (a,b), but for the Scientific Python method. \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
+\end{figure}
+
+
+
+\end{document}
+
+%
+% XXX difference wrt to solids. Auger, no space? \\
+
+%
+
+%
+% ****** End of file aipsamp.tex ******

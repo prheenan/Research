@@ -1,0 +1,155 @@
+\chapter{\sLabel{Intro}Introduction}
+
+\firstp Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of biological molecules.  AFM can resolve sub-nanometer molecular structure such as the major and minor grooves of DNA \citePRH{ido_beyond_2013}, lattice structure of membrane-bound proteins \citePRH{muller_surface_1999}, and real-time motion of motor proteins\citePRH{ando_high-speed_2007}. As a force spectroscopy technique, AFM is capable of dynamic experiments including measuring the unfolding and refolding kinetics of single proteins\citePRH{he_direct_2015}, unzipping double-stranded DNA\citePRH{krautbauer_Unzipping_2003}, and unfolding and refolding pathways for membrane proteins\citePRH{yu_hidden_2017}. The viability of AFM in a wide range of temperatures, solvents, and other environmental variables makes it attractive for studying biological systems. \pl
+
+During an AFM experiment, an atomically sharp tip attached to a cantilever interacts with a sample (\fRef{Cartoon}). The interaction is measured by the displacement of the tip via deflection of the cantilever. A calibrated tip can record interaction forces from piconewtons to nanonewtons. \pl
+
+In single molecular force spectroscopy (\singlemol{}) experiments, the AFM tip attaches to a molecule and stretches it to measure the relationship between force and extension over time. The experiment records the force-extension curve of the molecule (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes \citePRH{comstock_direct_2015}, protein-ligand bond strength \citePRH{yuan_energy_2000}, and the energy landscapes of proteins and nucleic acids \citePRH{dudko_Theory_2008}. 
+\begin{figure}[htpb]
+\caption[Diagram of AFM attachment geometry]{\fLabel{Cartoon}\pStartF Diagram of tip attachment geometry. (a1,a2) A diagram of an AFM tip and a force-extension curve corresponding to no attachments. (b1,b2) As previous, except illustrating a single attachment. (c1,c2) As previous, except illustrating multiple attachments. For all subplots, the force changes color at the location of a tagged event.  \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/cartoon.pdf}% Here is how to import EPS art
+\end{figure}
+The analysis and interpretability of \singlemol{} experiments is limited by the attachment of the tip to the molecule of interest. Even with a high-concentration sample, quality \singlemol{} data between an attached molecule and commercially-available AFM tips occur less than one curve in tens of thousands\cite{bosshart_reference-free_2012}. Attachment rates are improved by coating the AFM tip with a molecule exhibiting high binding affinity for the sample of interest (cite Rob XXX), but the majority of the data taken is still uninterpretable and must be filtered out. Although a trained human is capable of filtering \singlemol{} data and locating possible events (see \fRef{Rupture}), this process is time-consuming and not scientifically reproducible. Filtering data without events and identifying the locations of events within data is a major challenge in AFM data management and analysis.\pl
+
+Methods exist to automate manually sorting \singlemol{} data and detect sample unfolding or unbinding events. Automation removes the burden of manual data filtering and improves scientific reproducibility. Automation techniques include aligning by the contour length at each extension by applying polymer models \cite{kuhn_automated_2005,bosshart_reference-free_2012}; thresholding based on signal and noise characteristics \cite{gergely_semi-automatized_2001,roduit_openfovea:_2012} or wavelet transformations \cite{garcia-masso_automated_2016,benitez_searching_2017}; and classification schemes \cite{kasas_fuzzy_2000}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization and interpretability. In particular, contour-length alignment algorithms bias results towards the dominant features and necessarily require a polymer model for the contour length as a function of force and extension. In \singlemol{} studies which apply forces to biomolecules with no existing theoretical polymer model or experiments focusing on rare behavior of a biomolecule, alignment algorithms will have limited use.  Thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As we show below, these methods do not generalize well to the typical range of \singlemol{} data (\fRef{Performance}).\pl
+
+This paper describes a new method based on machine learning for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (\acronym{}), requires no \emph{a priori} knowledge of the polymer under study, does not bias interpretation of the data towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well to typical \singlemol{} data ranges. \name{} is designed to make few assumptions about the data, operate over a wide range of AFM data, and require a small time and memory footprint compared to existing techniques.\pl
+
+ The first part of the paper describes the sample preparation, data acquisition, and data annotation needed to capture the unbinding of functionalized double-stranded DNA from functionalized AFM cantilevers (\fRef{Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. \pl
+
+\chapter{\sLabel{Materials}Materials and Methods}
+
+\section{Sample Preparation}
+
+\firstp Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation has been described elsewhere (CITE XXX Rob) and in \sRef{SampleDetails}. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with Dibenzocyclooctyl (DBCO) at one end to ensure a covalent bond with an azide-functionalized surface. The polymer is also functionalized with biotin at the opposite end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. \pl
+
+\section{\sLabel{Surface}Atomic force microscopy}
+
+\firstp All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method\citePRH{cleveland_nondestructive_1993}. All measurements were carried out with a 2 second pause at the surface. To reduce the effect of a possible non-uniform spatial distribution of the sample, measurements were taken over a series of 25$\muup$m x 25$\muup$m grids at points separated by 1$\muup$m. The stage was translated to a new grid point after measuring three force-extension curves. \pl
+
+\section{\sLabel{Annotation}Data annotation}
+
+
+\begin{figure}[htpb]
+\caption[Definition of rupture force and loading rate]{\fLabel{Rupture} Defining the rupture and its associated properties. (a) A force extension curve with a shadow over an event. (b) The shadowed region of (a), with a linear fit of the data in region immediately proceeding the rupture region, which is shadowed. (c) The shadowed region from (b). The rupture point and rupture force and loading rate are defined using the data and the fit, as described in the text. For all subplots, the force changes color at the location of a tagged event. }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/ruptures.pdf}% Here is how to import EPS art
+\end{figure}
+
+\firstp Two hundred force-extension curves with events were obtained at three different pulling velocities (100nm/s,500nm/s,1000nm/s). The start and end of each event in a curve, as indices offset from the start of the curve, were obtained through manual annotation. The curves and the events were saved into comma-separated value files. \pl
+
+The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in \fRef{Rupture}. The region leading up to the event start was fit by a line, with the region length set to $\tau$ (see \tRef{Parameters}). The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line at the time value where the unfiltered data was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in \fRef{Performance}. \pl
+
+
+
+\section{\sLabel{Algorithm}Algorithm Design and Analysis}
+
+All timing and tuning results were obtained via a desktop with 16GB of RAM, a 3.7GHz i7-4790 CPU, and a 1TB hard drive. \pl
+
+\subsection{\sLabel{Metrics}Algorithm description}
+
+\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. In summary, the algorithm calculates an upper bound on the probability of no event occurring at each time point, using parameters estimated from the approach portion of the curve (see \sRef{DesignDetails}) and a smoothing parameter from the user (see \tRef{Parameters}). The probability at each point is then iteratively updated in order to remove the effect of adhesions and other false-positives. As shown in \fRef{FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see \sRef{Tuning} and \tRef{Parameters}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture location is determined within each region as described in \sRef{Annotation}.
+
+
+\begin{table}
+\caption[Algorithm parameters]{\tLabel{Parameters} The names and definitions of the parameters used by \name{}}
+\begin{tabularx}{\textwidth}{ l | l | l | l  }
+\hline \hline
+Name & Meaning  & Value used in this work \e
+$\tau$ & Number of points used for spline grid smoothing & 2\% of the curve length \e
+threshold & Probability threshold above which to reject events  & Determined by tuning (see \fRef{Tuning}) \e
+\end{tabularx}
+\end{table}
+
+
+\subsection{\sLabel{Compare}Choice of competing methods}
+
+\firstp The following two algorithms were chosen for comparison to \name{}: \pl
+
+\begin{itemize}
+\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\cite{roduit_openfovea:_2012}
+\item The general-purpose `find\_peaks\_cwt' method from the Scientific Python package.\cite{Jones_SciPy:_2001}
+\end{itemize}
+
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (see \tRef{statistics}). The baselines represent two common methods of event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method is a wavelet-based algorithm. \pl
+
+\subsection{\sLabel{Metrics}Performance Metrics}
+
+\firstp Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics}. The event error metrics, $f_{85}$ and $z_{85}$, describe how closely the predicted event locations align with the human-tagged data, and the rupture \bc{} coefficient, $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the overlap between the expected and actual distribution over loading rates and rupture forces. \pl
+
+
+\begin{table}
+\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. BC stands for \bc{} coefficient. The metrics are bolded; the quantities that they depend on are listed first. Throughout, `k' refers to the (arbitrary) index of force-extension curve, and `i' and `'j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces. \pl }
+\begin{tabularx}{\textwidth}{ l | l | l | l  }
+\hline \hline
+Name & Notation  & Range & \text{Optimum} \e 
+$x_k$ & \text{total displacement of the force-extension curve} & \na & \na\\ \hline 
+$d_{i\rightarrow j,k}$ & \text{distribution of distances in `k' from `i' ruptures } & \na &\na \\ 
+& \text{to the closest `j' ruptures in or $x_k$ if none } &  & \\\hline 
+$f_{\text{x}}$ &  \text{the `x'-th percentile of the concatenation of } & \na & \na \\
+& $\frac{1}{x_k}d_{t\rightarrow p,k}$ \text{ and } $\frac{1}{x_k}d_{p\rightarrow t,k}$ \text{ over all k }  &&  \\ \hline 
+$z_{\text{x}}$ & \text{as f$_{\text{x}}$, but without dividing by $x_k$} & \na & \na  \\\hline 
+$\nu_i$ & \text{histogram of `i' loading rates over all k} & \na & \na \\\hline 
+$F_i$ & \text{histogram of `i' rupture forces over all k} & \na & \na \\\hline 
+$d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \na \\
+& \text{by the number of curves} && \\\hline \hline 
+\textbf{relative event error} & f$_{85}$ &   [0,1] & 0 \e
+\textbf{absolute event error} & z$_{85}$ & [0,max(x$_k$)] &  0 \e
+\textbf{rupture BC} & $\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 1 \\
+\end{tabularx}
+\end{table}
+
+
+\subsection{\sLabel{Tuning}Algorithm tuning}
+
+\firstp All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. \pl
+
+Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=1000nm/s, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
+
+\chapter{\sLabel{Results}Results}
+
+\section{\sLabel{Timing}Algorithmic time complexity}
+
+\firstp \fRef{Timing} compares the runtimes, T(n), of \name{} and the baselines. As expected, the runtime of each algorithm is roughly linear in the thousands to millions of points, with \name{} having a roughly tenfold better asymptotic slope.  \pl
+
+\begin{figure}[htpb]
+\caption[Runtime versus length of curve]{\noindent\fLabel{Timing}\pStartF  Big-O runtime of each algorithm is approximately linear. (a) The runtime per curve versus number of points in the curve, T(N), for each algorithm is plotted as points. Lines around the data show the best-fit upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n. (b) The linear constants $a_1$, representing the asymptotic runtime per data point, for each algorithm from (a) are plotted. \pEndF}
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/timing.pdf}% Here is how to import EPS art
+\end{figure}
+
+\section{\sLabel{Performance}Algorithmic event detection performance}
+
+\fRef{Performance} shows the event-detection performance of \name{} and the baseline algorithms. As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient by about 0.3 over the spectrum of loading rates and rupture forces. 
+
+\begin{table}
+\caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics across the three algorithms. The optimal algorithm row for each metric is highlighted in bold, depending on if the metric optimum is low (denoted by a $\downarrow$ next to the name) or high (denoted by a $\uparrow$ next to the name).} 
+\begin{tabularx}{\textwidth}{ l || l | l | l }
+\hline \hline
+ & Rupture BC ($\uparrow$) & Absolute event error [nm]($\downarrow$) & Relative event error ($\downarrow$)\e\hline 
+FEATHER & \textbf{0.96} & \textbf{7.9} & \textbf{0.00494}\e
+Open Fovea & 0.367 & 969 & 0.58\e
+Scientific Python & 0.651 & 811 & 0.514\e
+\end{tabularx}
+\end{table}
+
+
+
+
+\begin{figure}[htpb]
+\caption[Algorithm Performance]{\noindent\fLabel{Performance}\pStartF Performance of \name{} compared to the baseline algorithms. (a1) The distributions of distances from predicted to true points d$_{\mathrm{p}\rightarrow\mathrm{t}}$ and from true to predicted points, d$_{\mathrm{t}\rightarrow\mathrm{p}}$ for \name{}. (a2) \name{}'s two-dimensional distribution of predicted and actual rupture force and loading rate, as defined in \fRef{Rupture}. (a3 and a4) The histograms of rupture forces and loading rates, respectively, for \name{}.  (a5) The metrics defined in \tRef{metrics}. Note that the relative event error is complemented by one and the absolute event error is not listed, to facilitate plotting on the same axis. (b1-b5): As a1-a5, but for OpenFovea. (c1-c5): As a1-a5, but for the Scientific Python baseline. \pEndF }
+\centering
+\includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
+\end{figure}
+
+
+
+\chapter{\sLabel{Discussion}Discussion}
+
+
+\firstp \pl \name{} provides order-of-magnitude improvements in both speed and physically-relevant metrics for algorithm performance, relative to the baselines presented. As shown in \fRef{LargeDataset}, \name{} also generalizes well to more complex \singlemol{} data.  \pl
+
+This work applied \name{} to unfolding in \singlemol{} data, but the algorithm could be generalized to a wider array of applications. Changing \name{} to search for refolding events in \singlemol{} data is a natural and useful generalization. In addition, domain-specific models could be combined with \name{} to further filter data, based on the specific experiment. For example, if an experimenter was attempting to measure the force-extension relationship of a DNA hairpin of contour length 100nm, she could first obtain all rupture locations in her data via \name{}, fit a polymer model to each curve up to final rupture to obtain the contour length, then remove all data with contour lengths outside of (100$\pm \epsilon$)nm, where $\epsilon$ is a small number. By predicting where events occur without providing any domain-specific model of the event, \name{} is one tool in a longer \singlemol{} analysis pipeline.
+
+\name{} could be used in different scientific domains than \singlemol{}. To reduce the risk of overfitting to a specific type of \singlemol{} experiment, \name{} purposefully makes no assumptions about domain-specific data models (e.g. a polymer model for the force-extension relationship of DNA). \singlemol{} data is a natural application for \name{}, since each retract curve, with its scientifically interesting data, is paired with an approach curve which is assumed lacking any events. The parameters needed to estimate \name{}'s probability bound are estimated from the approach curve. In domains which can estimate \name{}'s parameters (\fRef{FeatherExample}) and endeavor to localize events defined by discontinuous derivatives in otherwise continuous time series data (as shown in \fRef{Cartoon}), \name{} could be leveraged to improve scientific reproducibility.

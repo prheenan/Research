@@ -8,7 +8,7 @@ from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
-from Research.Personal.EventDetection.Util import Analysis,Learning
+from Research.Personal.EventDetection.Util import Analysis,Learning,Offline
 import matplotlib.gridspec as gridspec
 
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
@@ -16,13 +16,22 @@ style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
 
 
 def algorithm_colors():
-    return ['b','k','y']
+    return ['b','k','r']
 
 def algorithm_markers():
     return ['s','o','v']
 
 def algorithm_linestyles():
     return ['--','-.','-']    
+
+def algorithm_title_dict():
+    """
+    returns a dicitonary mapping <description of algorithm> -> plot title
+    """
+    dict_v = {"no event":"FEATHER",
+              "open fovea":"Open Fovea",
+              "wavelet transform":"Scientific Python"}
+    return dict_v
 
 def true_hatch():
     return "//"
@@ -162,10 +171,11 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    styles = [dict(color='k',linestyle=':',alpha=0.3),
-              dict(color='k',linestyle='-.',alpha=0.3),
+    styles = [dict(color='k',linestyle='-',alpha=0.3),
+              dict(color='b',linestyle='-.',alpha=0.3),
+              dict(color='y',linestyle=':',alpha=1),
               dict(color='g',linestyle='-',alpha=0.7),
-              dict(color='m',linestyle='--')]
+              dict(color='m',linestyle='--'),]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
         plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
@@ -254,8 +264,7 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
                             loc="upper left")
 
-def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
-                             derivative_le_zero,to_ret):
+def debug_plot_adhesion_info(split_fec,min_idx,boolean_ret):
     """
     Used inside of Detector.adhesion_mask to tell wtf is happening
     
@@ -263,17 +272,18 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
         all: internal Detector.adhesion_mask, see that function
     Returns:
         nothing
-    """                             
+    """      
+    surface_index = split_fec.get_predicted_retract_surface_index()    
+    x = split_fec.retract.Time
+    force = split_fec.retract.Force
     plt.subplot(2,1,1)
-    plt.plot(time,force*1e12,color='k',alpha=0.3)
-    plt.plot(time,force_fit*1e12)
-    plt.axvline(time[min_idx])
+    plt.plot(x,force*1e12,color='k',alpha=0.3)
+    plt.axvline(x[min_idx],label="minimum")
+    plt.axvline(x[surface_index],label="surface",linestyle='--')
     PlotUtilities.lazyLabel("","Force","",loc="upper right",
                             frameon=True)     
     plt.subplot(2,1,2)
-    plt.plot(time,derivative_gt_zero,label="ge")
-    plt.plot(time,derivative_le_zero,label="le")
-    plt.plot(time,to_ret,color='k',linestyle='--')
+    plt.plot(x,boolean_ret,color='k',linestyle='--')
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
 
@@ -424,7 +434,7 @@ def get_train_test_n_off_and_error(x_values,train_scores,valid_scores):
 
 def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     """
-    Plots the number of 
+    Plots the number of extra or missing events (irrespective of where they are0
 
     Args:
         cache_directory: where to save the plots
@@ -443,6 +453,15 @@ def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
 def _plot_num_events_off(x_train,train_dist,train_error,
                           x_valid,valid_dist,valid_error,ylim=None,
                          xlabel=None,ylabel=None,lazy_kwargs=dict()):
+    """
+    see plot_num_events off
+
+    Args;
+        x_<y> : the x values for data type y (valid or train)
+        <y>_dist: the distribution of values of y (ie: graphical y values)
+        <y>_error: the error of the graphical y values
+        others: plotting
+    """
     if (xlabel is None):
         xlabel = "Tuning parameter"
     if (ylabel is None):
@@ -481,13 +500,25 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
                             frameon=True)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
-                                 style_true,style_pred,xlabel="Distance [m]"):
+                                 style_true,style_pred,max_x_true,max_x_pred,
+                                 xlabel="Distance [m]"):
+    """
+    plots the distribution of distances from true/predicted to counterparts
+
+    Args:
+        to_<y> : list of distances to y from its counterpart
+        distance_limits: x limits
+        bins: fed to plt.hist
+        style_<x>:  the histogram style for x
+        xlabel: label for the x axis 
+    """
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
     if (to_pred.size > 0):
-        plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
+        plt.hist(to_pred/max_x_true,
+                 log=True,bins=bins,hatch= true_hatch(),**style_true)
     if (to_true.size > 0):
-        plt.hist(to_true,log=True,bins=bins,**style_pred)
+        plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
     PlotUtilities.lazyLabel(xlabel,"Count","",frameon=True)
@@ -618,25 +649,33 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         coeffs = Analysis.\
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                                     ruptures_true,ruptures_pred,bins_rupture)
+        # just get the 2d (last one
+        coeffs = [coeffs[-1]]
     else:
-        coeffs = [0,0,0]
-    labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
+        coeffs = [0]
+    labels_coeffs = [r"BC"]
+    # add in the relative distance metrics, if the are here
+    if (distance_histogram is not None):
+        labels_coeffs.append(r"1-f$_{85}$")
+        _,_,cat_relative_median,cat_relative_q = \
+            Offline.relative_and_absolute_median_and_q(**distance_histogram)
+        coeffs.append(1-cat_relative_q)
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
-    label_func = lambda i,r: "{:.2f}".format(r.get_height())
+    label_func = lambda i,r: "{:.3f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
     PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func,
                             fontsize=PlotUtilities.g_font_legend,
                             fontweight='bold')
-    plt.xticks(index + bar_width / 2, labels_coeffs,
+    plt.xticks(index, labels_coeffs,
                rotation=30,fontsize=PlotUtilities.g_font_label)
-    PlotUtilities.ylabel("BC value")
+    PlotUtilities.ylabel("Metric")
     PlotUtilities.tickAxisFont()
     plt.ylim([0,1])
     # just empty :-(
 
-def rupture_distribution_plot(learner,out_file_stem):
+def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
     """
     plots *and saves* the distributions of ruptures in *all* validation folds
     (ie: the entire sample) 
@@ -645,7 +684,7 @@ def rupture_distribution_plot(learner,out_file_stem):
         learner: see plot_individual_learner
         out_file_stem: base to save
     Returns:
-        nothingS
+        nothing
     """
     name = learner.description.lower()
     x_values = learner.param_values()
@@ -653,13 +692,12 @@ def rupture_distribution_plot(learner,out_file_stem):
         Learning.get_true_and_predicted_ruptures_per_param(learner)
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
-        fig = PlotUtilities.figure(figsize=(12,12))
-        rupture_plot(true,pred,fig)
-        out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
+        fig = PlotUtilities.figure(figsize=(16,8))
+        rupture_plot(true,pred,fig,distance_histogram=distance_histogram)
+        out_path = "{:s}{:s}{:d}.pdf".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
-
-def plot_individual_learner(cache_directory,learner):
+def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
     """
     Plots the results for a single, individual learner
 
@@ -675,7 +713,8 @@ def plot_individual_learner(cache_directory,learner):
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
-    rupture_distribution_plot(learner,out_file_stem)
+    rupture_distribution_plot(learner,out_file_stem,
+                              distance_histogram=rupture_kwargs)
     fig = PlotUtilities.figure()
     distance_distribution_plot(learner,to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "histogram_to_true.png")
@@ -843,3 +882,4 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.yscale('log')
     plt.ylim([min(probability_updated)/5,2])
     PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")
+

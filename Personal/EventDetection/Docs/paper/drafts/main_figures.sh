@@ -11,29 +11,19 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
 function copy_pdfs()
 {
-    cp ${1}*.pdf ${2}
-}
-
-function make_and_copy_figure()
-{
-    out_path=$1
-    in_path_tmp=$2
-    cd $in_path_tmp
-    in_path=$PWD
-    ext=".svg"
-    # make all the PDFs!
-    for i in *.svg; do
-	in_tmp="$in_path/$i"
-	# latex is unhappy with things like .svg.pdf, so just use .pdf
-	in_without_extension=${i%.*}
-	out_tmp="$out_path/$in_without_extension"
-	# export_latex needed to avoid crappy rendering:
-	# tex.stackexchange.com/questions/2099/how-to-include-svg-diagrams-in-latex
-	inkscape "$in_tmp" --export-ps="${out_tmp}.ps"
-	pstopdf "${out_tmp}.ps" -o "${out_tmp}.pdf"
-	rm "${out_tmp}.ps"
+    cd ${1}
+    for i in *.py; do
+	# try to run the pdf; ignore errors
+	python2 "$i" || true
+    done
+    abs=$PWD
+    for i in *.pdf; do
+	out="${2}/_$i.png"
+	inkscape "${abs}/$i" -z --export-dpi=100 --export-area-drawing \
+	    --export-png="${out}" 
     done
     cd -
+    cp ${1}*.pdf ${2}
 }
 
 # Description:
@@ -55,13 +45,15 @@ cartoon_dir="${base_dir_rel}FigureCartoon/"
 timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
-copy_pdfs ${base_dir_rel}FigurePerformance_CS/ $out_path 
-copy_pdfs ${base_dir_rel}FigureAlgorithm/ $out_path 
-copy_pdfs ${base_dir_rel}FigureTuning/ $out_path 
-copy_pdfs ${timing_dir} $out_path 
-copy_pdfs ${cartoon_dir} $out_path 
+copy_pdfs ${base_dir_rel}FigurePerformance_FullSet_Only_FEATHER/ $out_path 
 copy_pdfs ${prep_dir} $out_path 
-copy_pdfs ${rupture_dir} $out_path 
+copy_pdfs "${base_dir_rel}FigureAlgorithm/" $out_path 
+copy_pdfs "${base_dir_rel}FigureTuning/" $out_path 
+copy_pdfs "${timing_dir}" $out_path 
+copy_pdfs "${cartoon_dir}" $out_path 
+copy_pdfs "${rupture_dir}" $out_path 
+copy_pdfs "${base_dir_rel}FigurePerformance_CS/" $out_path 
+
 
 
 
