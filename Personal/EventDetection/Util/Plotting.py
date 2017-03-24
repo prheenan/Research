@@ -14,6 +14,7 @@ import matplotlib.gridspec as gridspec
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
 
+_fec_event_colors = ['k','r','b']
 
 def algorithm_colors():
     return ['b','k','r']
@@ -907,7 +908,7 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
 
 
 
-def plot_fec(example,colors=['r','g','b'],n_filter=1000,use_events=True):
+def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
     """
     plots the given fec (*not* split)
 
@@ -945,3 +946,16 @@ def plot_fec(example,colors=['r','g','b'],n_filter=1000,use_events=True):
         style = dict(color=colors[0])
         plt.plot(sep,force,alpha=0.3,**style)
         plt.plot(sep_filtered,force_filtered,**style)
+    return fec_split
+
+def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
+                             marker='v',markersize=15,alpha=1,zorder=10,
+                             **kwargs):
+    kw = dict(color=color,
+              zorder=zorder,
+              marker=marker,
+              markersize=markersize,
+              alpha=alpha,**kwargs)
+    for start in event_idx:
+        plt.plot(plot_x[start],plot_y[start]+fudge_y,**kw)
+

@@ -35,11 +35,13 @@ def run(base="./"):
     cases = [read_and_cache_file(f,**kw) for f in file_paths]
     n_cases = len(cases)
     out_names = []
-    styles = [dict(colors='r',use_events=False),
-              dict(colors=['r','b']),
-              dict(colors=['r','b','k'])]
+    event_styles = Plotting._fec_event_colors
+    styles = [dict(colors=event_styles,use_events=False),
+              dict(colors=event_styles),
+              dict(colors=event_styles)]
     fig_x_in = 16
     fig_y_in = 8
+    fudge_pN = [10,12,25]
     im_path = base + "/cartoon/SurfaceChemistry Dig10p3_pmod-0{:d}.png"
     fig = PlotUtilities.figure((fig_x_in,fig_y_in))
     gs= gridspec.GridSpec(2,3)
@@ -52,7 +54,15 @@ def run(base="./"):
     for i,c in enumerate(cases):
         plt.subplot(gs[1, i])
         style = styles[i]
-        Plotting.plot_fec(c,**style)
+        fec_split = Plotting.plot_fec(c,**style)
+        event_idx = [slice_v.stop 
+                     for slice_v in fec_split.get_retract_event_slices()]
+        if (len(event_idx) > 0):
+            event_idx = event_idx[:-1]
+            plot_x = fec_split.retract.Separation * 1e9
+            plot_y = fec_split.retract.Force *1e12
+            fudge =fudge_pN[i]
+            Plotting.plot_arrows_above_events(event_idx,plot_x,plot_y,fudge)
         not_first_plot = i != 0
         fmt(remove_y_labels=False,remove_x_labels=False)
         if (i == 0):

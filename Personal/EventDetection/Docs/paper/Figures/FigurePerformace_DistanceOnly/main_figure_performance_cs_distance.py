@@ -71,9 +71,7 @@ def make_distance_figure(l,data_file,fec_file):
     plt.axvline(plot_x[pred_idx],linestyle='--',color='b',
                 label="Predicted event")
     # plot the events as arrows
-    for start in event_starts:
-        plt.plot(plot_x[start],plot_y[start]+fudge_pN,color='g',marker='v',
-                 markersize=15,zorder=10,alpha=1)
+    Plotting.plot_arrows_above_events(event_starts,plot_x,plot_y,fudge_pN)
     PlotUtilities.lazyLabel("Separation (nm)","Force(pN)","",
                             frameon=True)
     plt.subplot(1,2,2)
