@@ -16,16 +16,16 @@ def get_best_metrics(data_file):
     metrics = [Offline.best_metric_from_learner(l) for l in learners]
     return metrics
 
-def run(in_base="./"):
+def run(in_base="../FigurePerformance_CS/"):
     """
     
     """
-    out_base = in_base
+    out_base = "./"
     data_file = in_base + "data/Scores.pkl"
     force=False
     cache_file = out_base + "cache.pkl"
     metrics = CheckpointUtilities.getCheckpoint(cache_file,get_best_metrics,
-                                                False,data_file)
+                                                force,data_file)
     loc_left = (-0.10,1.1)
     loc_top = (-0.12,1.05)
     loc_lower = (-0.12,0.95)
@@ -34,14 +34,15 @@ def run(in_base="./"):
     colors = Plotting.algorithm_colors()
     for i,m in enumerate(metrics):
         name = titles[m.name.lower()]
+        color_pred =  colors[i]
         fig = PlotUtilities.figure((16,8))
-        distance_histogram= Offline.event_error_kwargs(m)
+        distance_histogram= Offline.event_error_kwargs(m,color_pred=color_pred)
         true,pred = m.true,m.pred
         # plot the metric plot
         Plotting.rupture_plot(true,pred,use_legend=True,
                               distance_histogram=distance_histogram,
-                              fig=fig)
-        final_out_path = "{:s}{:s}.pdf".format(out_base,name)
+                              fig=fig,color_pred=color_pred)
+        final_out_path = "{:s}{:s}.pdf".format(out_base,name.replace(" ",""))
         PlotUtilities.label_tom(fig,loc=locs,fontsize=18)
         plt.suptitle(name,fontsize=25,y=0.95,color=colors[i],alpha=0.7)
         PlotUtilities.savefig(fig,final_out_path,

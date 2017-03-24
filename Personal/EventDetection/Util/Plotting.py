@@ -667,16 +667,16 @@ def rupture_plot(true,pred,fig,count_ticks=3,
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                                     ruptures_true,ruptures_pred,bins_rupture)
         # just get the 2d (last one
-        coeffs = [coeffs[-1]]
+        coeffs = [1-coeffs[-1]]
     else:
         coeffs = [0]
-    labels_coeffs = [r"BC"]
+    labels_coeffs = [r"BCC"]
     # add in the relative distance metrics, if the are here
     if (distance_histogram is not None):
-        labels_coeffs.append(r"1-f$_{85}$")
+        labels_coeffs.append(r"f$_{85}$")
         _,_,cat_relative_median,cat_relative_q = \
             Offline.relative_and_absolute_median_and_q(**distance_histogram)
-        coeffs.append(1-cat_relative_q)
+        coeffs.append(cat_relative_q)
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)

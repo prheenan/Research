@@ -153,7 +153,7 @@ def run(base="./"):
     Plotting.before_and_after(x,force_filtered,slice_before_event,
                               slice_after_event,style_filtered,
                               label="Filtered data (25Hz)")
-    PlotUtilities.lazyLabel("Time [s]",ylabel,"",loc="upper left",
+    PlotUtilities.lazyLabel("Time (s)",ylabel,"",loc="upper left",
                             frameon=True)
     PlotUtilities.set_legend_kw()
     plt.ylim(ylim)

@@ -27,8 +27,8 @@ def write_coeffs_file(out_file,coeffs):
     opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
-        tmp =[ [opt_high,r"Rupture BC ($\uparrow$)",
-                c.bc_2d],
+        tmp =[ [opt_low,r"Rupture BCC ($\downarrow$)",
+                1-c.bc_2d],
                [opt_low,r"Relative event error P$_{85}$ ($\downarrow$)",
                 c.cat_relative_q]]
         funcs_names_values.append(tmp)
