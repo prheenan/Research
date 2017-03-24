@@ -694,7 +694,7 @@ def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure(figsize=(16,8))
         rupture_plot(true,pred,fig,distance_histogram=distance_histogram)
-        out_path = "{:s}{:s}{:d}.pdf".format(out_file_stem,name,i)
+        out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
 def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
