@@ -103,7 +103,8 @@ def run(base="./"):
     # make the distance histogram figure
     fig = PlotUtilities.figure((16,6))
     make_distance_figure(l,data_file,fec_file)
-    final_out_hist = "{:s}{:s}_distances.pdf".format(out_base,name)
+    final_out_hist = "{:s}{:s}_distances.pdf".format(out_base,
+                                                     name.replace(" ","_"))
     PlotUtilities.label_tom(fig,loc=(-0.1,1.0),fontsize=18)
     PlotUtilities.savefig(fig,final_out_hist)
 
