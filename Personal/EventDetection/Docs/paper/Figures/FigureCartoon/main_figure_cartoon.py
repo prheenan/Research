@@ -55,13 +55,16 @@ def run(base="./"):
         plt.subplot(gs[1, i])
         style = styles[i]
         fec_split = Plotting.plot_fec(c,**style)
-        event_idx = [slice_v.stop 
-                     for slice_v in fec_split.get_retract_event_slices()]
+        plt.xlim([-30,650])
+        # decorate the plot to make it easier to read
+        plot_x = fec_split.retract.Separation * 1e9
+        plot_y = fec_split.retract.Force *1e12
+        slices = fec_split.get_retract_event_slices()
+        Plotting.top_bars(plot_x,plot_x,slices,colors=style['colors'])
+        event_idx = [slice_v.stop for slice_v in slices]
         if (len(event_idx) > 0):
             # remove the last index (just te end of the FEC)
             event_idx = event_idx[:-1]
-            plot_x = fec_split.retract.Separation * 1e9
-            plot_y = fec_split.retract.Force *1e12
             fudge =fudge_pN[i]
             Plotting.plot_arrows_above_events(event_idx,plot_x,plot_y,fudge)
         not_first_plot = i != 0
@@ -76,7 +79,6 @@ def run(base="./"):
             PlotUtilities.no_y_ticks(ax=ax)
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
-        plt.xlim([-30,650])
         PlotUtilities.tick_axis_number(num_x_major=4)
     n_subplots = 2
     n_categories = len(file_names)

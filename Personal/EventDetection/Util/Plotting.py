@@ -849,9 +849,30 @@ def debug_plot_derivs(approach_time,approach_force,
     PlotUtilities.lazyLabel("time","Deriv","")
     
 
+def top_bars(x,y,slices,colors,ymin=None,ymax=None):
+    """
+    adds bars to show when each slice changes (by color) from ymin to ymax
+
+    Args:
+        x,y: plot units
+        slices: array of slices: same size as colors
+        colors: given to axvspan
+        ymin/ymax: how thick the bar should be in y
+    Returns:
+        nothing
+    """
+    ylim = plt.ylim()
+    if (ymin is None):
+        ymin = 0.8
+    if (ymax is None):
+        ymax = 0.90
+    for s,c in zip(slices,colors):
+        x_sliced = x[s]
+        plt.axvspan(xmin=x_sliced[0],xmax=x_sliced[-1],ymin=ymin,ymax=ymax,
+                    color=c,alpha=0.3)
+
 def before_and_after(x,y,before_slice,after_slice,style=dict(),
-                     color_before = 'r',
-                     color_after = 'b',label=None):
+                     color_before='r',color_after='b',label=None):
     """
     plots x and y two before and after slices
 
@@ -952,6 +973,16 @@ def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
 def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
                              marker='v',markersize=15,alpha=1,zorder=10,
                              **kwargs):
+    """
+    plots arrows at the given indices, signifying an event
+
+    Args:
+        event_idx: where to put the arrow as indices into plot_<x/y>
+        fudge_y: array of offsets (ie: for moving the arrow up to prevent 
+        obscuring data)
+    
+        others: see plt.plot()
+    """
     kw = dict(color=color,
               zorder=zorder,
               marker=marker,
