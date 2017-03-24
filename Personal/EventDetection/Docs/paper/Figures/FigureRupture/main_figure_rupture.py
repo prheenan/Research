@@ -30,7 +30,7 @@ def connect_bbox(bbox1, bbox2,
     c1.set_clip_on(False)
     c2 = BboxConnector(bbox1, bbox2, loc1=loc1b, loc2=loc2b, **prop_lines)
     c2.set_clip_on(False)
-    bbox_patch1 = BboxPatch(bbox1, color='b',**prop_patches)
+    bbox_patch1 = BboxPatch(bbox1, color='k',**prop_patches)
     bbox_patch2 = BboxPatch(bbox2, color='w',**prop_patches)
     p = BboxConnectorPatch(bbox1, bbox2,
                            # loc1a=3, loc2a=2, loc1b=4, loc2b=1,
@@ -65,7 +65,7 @@ def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
     alpha = 0.2
     prop_patches["ec"] = "none"
     prop_patches["alpha"] = alpha
-    prop_lines = dict(color='b',alpha=alpha,**kwargs)
+    prop_lines = dict(color='k',alpha=alpha,**kwargs)
     c1, c2, bbox_patch1, bbox_patch2, p = \
         connect_bbox(mybbox1, mybbox2,
                      loc1a=3, loc2a=2, loc1b=4, loc2b=1,
@@ -80,7 +80,7 @@ def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
     return c1, c2, bbox_patch1, bbox_patch2, p
 
 
-def run(base="./"):
+def run(base="./",increment=False):
     """
     
     """
@@ -146,30 +146,32 @@ def run(base="./"):
     # plot everything
     n_rows = 3
     n_cols = 1
+    fudge_y = 5
     ylabel = "Force (pN)"
     fig = PlotUtilities.figure((8,12))
     ax1 = plt.subplot(n_rows,n_cols,1)
-    style_data = dict(alpha=0.3,linewidth=1)
+    style_data = dict(alpha=0.5,linewidth=1)
     style_filtered = dict(alpha=1.0,linewidth=3)
     # plot the force etc
     Plotting.before_and_after(x,force,slice_before_event,slice_after_event,
-                              style_data,label="Raw data (25kHz)")
+                              style_data,label="Raw (25kHz)")
     Plotting.before_and_after(x,force_filtered,slice_before_event,
                               slice_after_event,style_filtered,
-                              label="Filtered data (25Hz)")
+                              label="Filtered (25Hz)")
     PlotUtilities.lazyLabel("Time (s)",ylabel,"",loc="upper left",
-                            frameon=True)
-    PlotUtilities.set_legend_kw()
+                            frameon=False)
     plt.ylim(ylim)
     plt.xlim(xlim)
     ax1.xaxis.tick_top()
     ax1.xaxis.set_label_position('top') 
+    Plotting.plot_arrows_above_events([index_absolute],x,force_filtered,
+                                      fudge_y=fudge_y*4.5)
     # plot the rupture
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
     ax2 = plt.subplot(n_rows,n_cols,2)
     style_data_post_zoom = dict(style_data)
-    post_alpha = 0.3
+    post_alpha = style_data['alpha']
     style_data_post_zoom['alpha']=post_alpha
     style_filtered_post_zoom = dict(style_filtered)
     style_filtered_post_zoom['alpha']=1
@@ -177,15 +179,15 @@ def run(base="./"):
                               style_data_post_zoom)
     plot_rupture = lambda l: Plotting.\
         plot_arrows_above_events([index_after_event],x_event_both,
-                                 predicted_both,fudge_y=5)
+                                 predicted_both,fudge_y=fudge_y)
     plot_line = lambda l :  plt.plot(x_event_both[:index_after_event+1],
                                      predicted_both[:index_after_event+1],
                                      color='m',
                                      linestyle='-',linewidth=3,label=l)
     plot_rupture('Rupture')
-    plot_line("Linear\nfit")
-    PlotUtilities.lazyLabel("Time [s]",ylabel,"",frameon=True,loc='upper right',
-                            legend_kwargs=dict(numpoints=1))
+    plot_line("Fit")
+    PlotUtilities.lazyLabel("",ylabel,"",frameon=False,
+                            loc='upper right',legend_kwargs=dict(numpoints=1))
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
     # make a scale bar for this plot
@@ -194,10 +196,7 @@ def run(base="./"):
     get_bar_location = lambda _xlim: np.mean([np.mean(_xlim),min(_xlim)])
     PlotUtilities.scale_bar_x(get_bar_location(xlim_zoom),
                               -10,s=string,width=scale_width)
-    PlotUtilities.no_x_axis()
-    ax2.xaxis.tick_top()
-    PlotUtilities.set_legend_kw()
-    ax2.xaxis.set_label_position('top') 
+    PlotUtilities.no_x_labels()
     ax3 = plt.subplot(n_rows,n_cols,3)
     Plotting.before_and_after(x,force,zoom_second_before,zoom_second_after,
                               style_data_post_zoom)
@@ -205,14 +204,16 @@ def run(base="./"):
     plt.ylim(ylim_second_zoom)
     plot_rupture("")
     plot_line("")
-    PlotUtilities.lazyLabel("Time [s]",ylabel,"")
+    PlotUtilities.lazyLabel("",ylabel,"")
     # make a scale bar for this plot
     scale_width = scale_width/zoom_factor
     string = "{:.1f} ms".format(scale_width*1000)
     PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
                               0,s=string,width=scale_width)
-    PlotUtilities.no_x_axis()
+    PlotUtilities.no_x_labels()
     PlotUtilities.label_tom(fig,loc=(-0.1,0.97))
+    if increment:
+        PlotUtilities.legend_and_save(fig,out_fig,ext=".pdf")
     # draw lines connecting the plots
     zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
     zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
