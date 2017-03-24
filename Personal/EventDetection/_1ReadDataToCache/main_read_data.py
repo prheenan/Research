@@ -25,7 +25,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 100
+    limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
@@ -44,7 +44,7 @@ def run():
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
     n_learners = 1
-    learners = Learners.get_learners(**learners_kwargs)[:n_learners]
+    learners = Learners.get_learners(**learners_kwargs)[1:]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
