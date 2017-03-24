@@ -862,6 +862,7 @@ def before_and_after(x,y,before_slice,after_slice,style=dict(),
         style; for each of them
         label: for one of them
     """
+    before_slice = slice(before_slice.start,before_slice.stop+1,1)
     tuples = [ [x,y,before_slice,color_before,style,label],
                [x,y,after_slice,color_after,style,None]]
     for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:

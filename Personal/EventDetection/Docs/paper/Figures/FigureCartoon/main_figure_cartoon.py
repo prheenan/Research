@@ -58,6 +58,7 @@ def run(base="./"):
         event_idx = [slice_v.stop 
                      for slice_v in fec_split.get_retract_event_slices()]
         if (len(event_idx) > 0):
+            # remove the last index (just te end of the FEC)
             event_idx = event_idx[:-1]
             plot_x = fec_split.retract.Separation * 1e9
             plot_y = fec_split.retract.Force *1e12

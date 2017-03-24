@@ -114,9 +114,13 @@ def run(base="./"):
     slice_after_zoom = slice(event_idx,zoom_end_idx)
     x_event = x[slice_before_zoom]
     f_event = force[slice_before_zoom]
+    x_event_both = x[slice_event_subplot]
+    f_event_both = force[slice_event_subplot]
     coeffs,predicted,loading_rate,rupture_force,index = \
         Analysis._loading_rate_helper(x_event,f_event)
-    index_absolute = index + slice_event_subplot.start
+    predicted_both = np.polyval(coeffs,x_event_both)
+    index_after_event = index+1
+    index_absolute = index_after_event + slice_event_subplot.start
     rupture_time = x[index_absolute]
     # update all the slices
     slice_before_zoom = slice(zoom_start_idx,index_absolute)
@@ -125,8 +129,8 @@ def run(base="./"):
     slice_after_event = slice(index_absolute,None,1)
     x_zoom = x[slice_event_subplot]
     f_zoom = force[slice_event_subplot]
-    ylim = [-30,30]
-    xlim = [0,2.5]
+    ylim = [-30,max(force)*2]
+    xlim = [0,1.0]
     xlim_zoom = [min(x_zoom),max(x_zoom)]
     ylim_zoom = [min(f_zoom),max(f_zoom)]
     # get the second zoom
@@ -171,12 +175,13 @@ def run(base="./"):
     style_filtered_post_zoom['alpha']=1
     Plotting.before_and_after(x,force,slice_before_zoom,slice_after_zoom,
                               style_data_post_zoom)
-    plot_rupture = lambda l: plt.plot(x[index_absolute],predicted[index]*1.1,
-                                      'gv',
-                                      markersize=15,linewidth=0,alpha=0.7,
-                                      label=l)
-    plot_line = lambda l :  plt.plot(x_event,predicted,color='m',
-                                   linestyle='-',linewidth=3,label=l)
+    plot_rupture = lambda l: Plotting.\
+        plot_arrows_above_events([index_after_event],x_event_both,
+                                 predicted_both,fudge_y=5)
+    plot_line = lambda l :  plt.plot(x_event_both[:index_after_event+1],
+                                     predicted_both[:index_after_event+1],
+                                     color='m',
+                                     linestyle='-',linewidth=3,label=l)
     plot_rupture('Rupture')
     plot_line("Linear\nfit")
     PlotUtilities.lazyLabel("Time [s]",ylabel,"",frameon=True,loc='upper right',
@@ -184,7 +189,7 @@ def run(base="./"):
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
     # make a scale bar for this plot
-    scale_width = 0.040
+    scale_width = 0.01
     string = "{:d} ms".format(int(scale_width*1000))
     get_bar_location = lambda _xlim: np.mean([np.mean(_xlim),min(_xlim)])
     PlotUtilities.scale_bar_x(get_bar_location(xlim_zoom),
@@ -202,8 +207,8 @@ def run(base="./"):
     plot_line("")
     PlotUtilities.lazyLabel("Time [s]",ylabel,"")
     # make a scale bar for this plot
-    scale_width = 0.002
-    string = "{:d} ms".format(int(scale_width*1000))
+    scale_width = scale_width/zoom_factor
+    string = "{:.1f} ms".format(scale_width*1000)
     PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
                               0,s=string,width=scale_width)
     PlotUtilities.no_x_axis()
