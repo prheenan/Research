@@ -177,12 +177,11 @@
     \end{itemize}
   \invisible<1-3>{\item
     Rupture ($\textcolor{OliveGreen}{\blacktriangledown{}}$): molecule unbinds}
-    
   \end{itemize}
 \end{column}
 
 % rupture image column 
-\begin{column}{0.4\textwidth}  %%<--- here
+\begin{column}{0.45\textwidth}  %%<--- here
   \only<5->{
     \begin{figure}[ht]
       \centering
@@ -204,7 +203,7 @@
 \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{cartoon.pdf}};
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);
         \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);
