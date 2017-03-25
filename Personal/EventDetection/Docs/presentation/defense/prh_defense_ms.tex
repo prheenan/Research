@@ -161,7 +161,7 @@
 \begin{frame}{Applying Forces by Atomic Force Microscopy (AFM)}
 
 
-\begin{columns}
+\begin{columns}[T]
 \begin{column}{0.6\textwidth}
 % Your text here
   \begin{itemize}
@@ -183,10 +183,10 @@
 
 % rupture image column 
 \begin{column}{0.4\textwidth}  %%<--- here
-  \invisible<1-4>{
+  \only<5->{
     \begin{figure}[ht]
       \centering
-      %\includegraphics[width=\linewidth]{ruptures.pdf}
+      \includegraphics[width=\linewidth]{ruptures.pdf}
     \end{figure}
   }
 \end{column}
@@ -196,6 +196,7 @@
 
 
 \invisible<5->{ 
+
   \begin{figure}[ht]
     \centering
     \begin{overlayarea}{\linewidth}{10cm}
