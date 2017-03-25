@@ -261,52 +261,28 @@
 
 \subsection{Performance}
 
-\begin{frame}{Metric 1: Bhattacharya Coefficient Complement (BCC)}
+\begin{frame}{Rupture Metric: Bhattacharya Coefficient Complement (BCC)}
 
 \begin{columns}[T]
-\begin{column}{0.6\textwidth}
-% Your text here
+\begin{column}{0.7\textwidth}
+% column about BCC
   \begin{itemize}
-  \item
-    BCC measures disagreement between distributions (X,Y)
+  \item \DefineTerm{BCC}: disagreement between distributions (X,Y)
     \begin{itemize}
     \item
-      Mathematically: $1-\braket{X^{1/2}}{Y^{\frac{1}{2}}}$
-    \item<2->
-      Single attachment
-    \item<3->
-      Multiple attachments
+      Mathematically: $1-\braket{X^{\frac{1}{2}}|Y^{\frac{1}{2}}}$
+    \item 
+      Informally: probability mass difference
+    
     \end{itemize}
-  \invisible<1-3>{\item
-    \DefineTerm{Rupture} ($\textcolor{OliveGreen}{\blacktriangledown{}}$): molecule unbinds}
-  \only<5->{
-  \item Linear fit $\rightarrow$ rupture properties 
-    \begin{itemize}
-    \item<6->
-      \DefineTerm{Loading rate}: slope of fit
-    \item<7->
-      \DefineTerm{Rupture force}: fit value where data last above fit
-    \end{itemize}
- }
   \end{itemize}
 \end{column}
 
+% image column
+\begin{column}{0.5\textwidth}
+\end{column}
 
-\invisible<1-3>{ 
-  \begin{figure}[ht]
-    \centering
-      \begin{tikzpicture}
-% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
-% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon.pdf}};
-    \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);
-        \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);
-        \only<3> \fill [white] (1.0,0) rectangle (1.0,1.0);
-    \end{scope}
-\end{tikzpicture}
-  \end{figure}
-}
+\end{columns}
 
 
 \end{frame}
