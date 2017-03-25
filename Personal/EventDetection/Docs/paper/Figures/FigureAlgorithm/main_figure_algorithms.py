@@ -86,7 +86,7 @@ def run(base="./"):
     bool_final[mask_final] = 1
     prob_final = predict_info.probabilities[-1]
     # plot everything
-    lazy_kwargs = dict(loc='lower right',frameon=True)
+    lazy_kwargs = dict(loc='lower right',frameon=False)
     x_plot = time
     xlim_approach = [min(approach_time),min(time)]
     xlim_retract = [min(time),max(time)]
@@ -124,7 +124,7 @@ def run(base="./"):
              **style_approach)
     PlotUtilities.lazyLabel("","Force (pN)",
                             "Estimating $\epsilon$ and $\sigma$",
-                            frameon=True)
+                            frameon=False)
     plt.xlim(xlim_approach)
     tick_function()
     PlotUtilities.no_x_label()
@@ -171,13 +171,13 @@ def run(base="./"):
     plt.ylim(*ylim_diff_filtered)
     tick_function()
     PlotUtilities.lazyLabel("Time (s)","s$_{\mathrm{t}}$$^{*}$ (pN)","",
-                            frameon=True,loc='upper right')
+                            frameon=False,loc='upper right')
     # filtered error distribution for the retract
     plt.subplot(gs[2,1])
     Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
                               style_retract_error_dist)
     plot_epsilon(epsilon_plot,sigma_plot)
-    PlotUtilities.lazyLabel("","","",frameon=True,
+    PlotUtilities.lazyLabel("","","",frameon=False,
                             loc="upper right")
     PlotUtilities.no_x_label()
     plt.ylim(*ylim_diff_filtered)
@@ -188,7 +188,7 @@ def run(base="./"):
     plt.axhline(threshold,linewidth=3,linestyle='--',
                 label="threshold",color='k')
     Plotting.before_and_after(x_plot,prob_final,slice_before,slice_after,
-                              style_retract_error_dist,label="masked no-event")
+                              style_retract_error_dist)
     PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
     plt.ylim([min(plt.ylim()),1.5])
     PlotUtilities.label_tom(fig,loc=(-0.15,1.0))

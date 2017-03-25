@@ -115,14 +115,14 @@ def make_main_figure(output_path,trials):
             plot_learner_slope_versus_loading_rate(learner_trials,
                                                    style_data=style_data[i],
                                                    style_pred=style_pred[i])
-    PlotUtilities.legend(loc="upper left",frameon=True)
+    PlotUtilities.legend(loc="upper left",frameon=False)
     PlotUtilities.title("")
     plt.xlim(xlim)
     plt.ylim(ylim)
     plt.subplot(1,2,2)
     TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
     plt.ylim([1e3,3e6])
-    PlotUtilities.legend(loc="lower right",frameon=True)
+    PlotUtilities.legend(loc="lower right",frameon=False)
     PlotUtilities.title("")
     PlotUtilities.label_tom(fig,loc=(-0.05,1))
     PlotUtilities.savefig(fig,output_path)

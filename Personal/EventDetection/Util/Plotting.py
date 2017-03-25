@@ -160,7 +160,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     masked_cdf *= boolean_mask
     n_rows = 3
     n_cols = 1
-    lazy_kwargs = dict(frameon=True,loc="best")
+    lazy_kwargs = dict(frameon=False,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
@@ -185,7 +185,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",loc='upper right',
-                            frameon=True)
+                            frameon=False)
     plt.xlim(x_limits)
     plt.ylim([min_cdf/2,3])
     mask_styles = styles
@@ -255,14 +255,14 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     plt.subplot(2,1,1)
     plt.plot(x_plot(x),y_plot(y),alpha=0.3,color='k',label="raw")
     plt.plot(x_plot(fit_x),y_plot(fit_y),label="fit")
-    PlotUtilities.lazyLabel("","Force (pN)","",frameon=True)
+    PlotUtilities.lazyLabel("","Force (pN)","",frameon=False)
     plt.subplot(2,1,2)
     plt.plot(x_plot(fit_x),y_plot(fit_y))
     plt.plot(x_plot(x_event),y_plot(y_event),color='r',alpha=0.3,label="event")
     plt.plot(x_plot(x_event),y_plot(pred),label="prediction")
     if (len(idx_above_predicted) > 0):
         plt.axvline(x_plot(x[idx_above_predicted[-1]]))
-    PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
+    PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=False,
                             loc="upper left")
 
 def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
@@ -357,7 +357,7 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
                           **style_predicted)
     PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
-                            title,frameon=True,legend_kwargs=dict(numpoints=1),
+                            title,frameon=False,legend_kwargs=dict(numpoints=1),
                             useLegend=use_legend,loc=loc)
 
 
@@ -425,7 +425,7 @@ def cross_validation_distance_metric(x_values,train_scores,valid_scores,
     plt.xscale('log')
     plt.yscale('log')
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
-                            frameon=True)
+                            frameon=False)
     
 def get_train_test_n_off_and_error(x_values,train_scores,valid_scores):
     x_train,train_dist,train_dist_std = \
@@ -499,7 +499,7 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     plt.gca().set_yscale('log')
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
                             "Event distributions for {:s}".format(name),
-                            frameon=True)
+                            frameon=False)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
@@ -655,7 +655,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                           label="predicted", **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
                            label="true",**true_style_histogram)
-    PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=True,
+    PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')
     plt.yscale('log')

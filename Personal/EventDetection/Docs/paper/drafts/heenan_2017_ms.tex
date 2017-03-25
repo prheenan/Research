@@ -50,7 +50,7 @@ All timing and tuning results were obtained via a desktop with 16GB of RAM, a 3.
 
 \subsection{\sLabel{Metrics}Algorithm description}
 
-\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{Cartoon}).  \fRef{Code} lists the psuedocode for the method. The algorithm is based on a probabilistic model of a signal lacking any events, the \textit{no-event model}, described in \sRef{DesignDetails}. The algorithm has the following basic steps:
+\name{} improves on previous methods by using information present in the data collected during the approach of the AFM cantilever to the surface-bound molecules (\fRef{FeatherExample}).  \fRef{Code} lists the psuedocode for the method. The algorithm is based on a probabilistic model of a signal lacking any events, the \textit{no-event model}, described in \sRef{DesignDetails}. The algorithm has the following basic steps:
 
 \begin{enumerate}
 \item Estimate the no-event parameters (see \fRef{FeatherExample}) from the approach curve.
@@ -83,7 +83,7 @@ The following two algorithms were chosen for comparison to \name{}:
 \item The general-purpose `find\_peaks\_cwt' method from the Scientific Python package.\citePRH{Jones_SciPy:_2001}
 \end{itemize}
 
- These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of hundreds of thousands of points each (see \tRef{statistics}). These baselines represent two common approaches to event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method is a wavelet-based algorithm. 
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of force-extension curves of millions of points each (see \tRef{statistics}). These baselines represent two common approaches to event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method is a wavelet-based algorithm. 
 
 \subsection{\sLabel{Metrics}Performance Metrics}
 
@@ -110,7 +110,7 @@ $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \n
 \end{table}
 
 \begin{figure}[htpb]
-\caption[Distance metric illustration]{\noindent\fLabel{DistanceMetric} Illustration of distance metric. \subref{A} A force extension curve with two events, marked by green triangles, a predicted event location denoted by a dashed line, and examples of the distances in \tRef{metrics} shown as labelled arrows. The predicted event is not the output from any algorithm and is for illustration only. \subref{B} The distribution of distances obtained by concatenating the distances obtained from many curves as in (A). }
+\caption[Distance metric illustration]{\noindent\fLabel{DistanceMetric} Distance metric illustration. \subref{A} A force extension curve with two events, marked by green triangles, a predicted event location denoted by a dashed line, and examples of the distances in \tRef{metrics} shown as labelled arrows. The predicted event is not the output from any algorithm and is for illustration only. \subref{B} The distribution of distances obtained by concatenating the distances obtained from many curves as in (A). }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/no_event_distances.pdf}% Here is how to import EPS art
 \end{figure}
@@ -121,7 +121,7 @@ $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \n
 
 All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
 
-Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=\ValUnit{1000}{nm/s}, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to large data sets and a wide range of loading rates. 
+Since tuning the baselines on the full dataset using our computer would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=\ValUnit{1000}{nm/s}, N$\approx1\times10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to a wide range of data sets sizes and experimental parameters.
 
 \chapter{\sLabel{Results}Results}
 
@@ -141,7 +141,7 @@ Since tuning the baselines on the full dataset using our computer would have req
 
 \fRef{PerformanceFEATHER} shows the event-detection performance of \name{}. The distributions of the two types of relative distance errors, as defined in \fRef{DistanceMetric} and \tRef{metrics}, exhibit a higher degree of symmetry than the baselines (see below). This symmetry is due to a low false-positive rate, since false-positives skew the distances from predicted to true points (d$_{\mathrm{p}\rightarrow\mathrm{t}}$). In addition, the distribution is skewed towards zero, indicating most errors are a small fraction of the length of the curve. Finally, \fRef{DistanceMetric} shows good agreement between the expected and predicted two-dimensional distributions over rupture forces and loading rates 
 
-The baselines do not perform as well as \name{}. \fRef{PerformanceFovea} and \fRef{PerformanceScipy} are identical to \fRef{PerformanceFEATHER}, but they describe the performance of the Open Fovea and Scientific Python baselines, respectively. Open Fovea's relative distance error distribution is heavily skew-right and asymmetric between the two error types, indicating many false positives. The same distribution for Scientific Python is more symmetric between error types, indicating fewer false positives than Open Fovea. However, the distribution is still skew-right, indicating a high error in predicted event location. Both baselines fail to accurately reproduce the expected and predicted distribution over rupture forces and loading rates.
+The baselines do not perform as well as \name{}. \fRef{PerformanceFovea} and \fRef{PerformanceScipy} are identical to \fRef{PerformanceFEATHER}, but they describe the performance of the Open Fovea and Scientific Python baselines, respectively. Open Fovea's relative distance error distribution is heavily skew-right and asymmetric between the two error types, indicating many false positives. The same distribution for Scientific Python is more symmetric between error types, indicating fewer false positives than Open Fovea. However, the distance error distribution for Scientific Python is still skew-right, indicating a high error in predicted event location. Both baselines fail to accurately reproduce the expected and predicted distribution over rupture forces and loading rates.
 
 As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient complement by a factor of 8. For completeness, \fRef{Performance} lists the performance of all three algorithms on a single page.
 
