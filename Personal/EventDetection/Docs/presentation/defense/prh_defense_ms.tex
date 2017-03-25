@@ -45,13 +45,13 @@
 % does not look nice, try deleting the line with the fontenc.
 
 
-\title[Short Paper Title] % (optional, use only with long paper titles)
-{Presentation Title}
+\title[] % (optional, use only with long paper titles)
+{Detecting Molecular Unbinding Events in Force Spectroscopy Data via a Bayesian Algorithm}
 
 \subtitle
-{Presentation Subtitle} % (optional)
+{} % (optional)
 
-\author[Heenan] % (optional, use only with lots of authors)
+\author[] % (optional, use only with lots of authors)
 {P.~Heenan\inst{1}}
 % - Use the \inst{?} command only if the authors have different
 %   affiliation.
@@ -72,7 +72,15 @@
 % This is only inserted into the PDF information catalog. Can be left
 % out. 
 
-
+% styling, see:
+% github.com/josephwright/beamer/blob/master/examples/a-conference-talk/beamerexample-conference-talk.tex
+\usetheme{Darmstadt}
+\usefonttheme[onlylarge]{structurebold}
+\setbeamerfont*{frametitle}{size=\normalsize,series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+% remove footline, get more space. See:
+% tex.stackexchange.com/questions/223200/how-to-completely-remove-footer-in-beamer
+\setbeamertemplate{footline}{}
 
 % If you have a file called "university-logo-filename.xxx", where xxx
 % is a graphic format that can be processed by latex or pdflatex,
@@ -98,6 +106,7 @@
 
 %\beamerdefaultoverlayspecification{<+->}
 
+\graphicspath{{../../paper/Figures/Finals/}}
 
 \begin{document}
 
@@ -106,7 +115,7 @@
 \end{frame}
 
 \begin{frame}{Outline}
-  \tableofcontents
+  \tableofcontents[pausesections]
   % You might wish to add the option [pausesections]
 \end{frame}
 
@@ -121,11 +130,11 @@
 % - Talk about 30s to 2min per frame. So there should be between about
 %   15 and 30 frames, all told.
 
-\section{Introduction}
+\section{Introduction to Force Spectroscopy}
 
-\subsection[Short First Subsection Name]{First Subsection Name}
+\subsection[Physical Background]{Physical Background}
 
-\begin{frame}{Make Titles Informative. Use Uppercase Letters.}{Subtitles are optional.}
+\begin{frame}{Make Titles Informative. Use Uppercase Letters.}{}
   % - A title should summarize the slide in an understandable fashion
   %   for anyone how does not follow everything on the slide itself.
 
@@ -139,42 +148,40 @@
 
 \begin{frame}{Make Titles Informative.}
 
-  You can create overlays\dots
+  Atomic Force Microscopy
+
+  \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+% Your text here
   \begin{itemize}
-  \item using the \texttt{pause} command:
-    \begin{itemize}
-    \item
-      First item.
-      \pause
-    \item    
-      Second item.
-    \end{itemize}
   \item
     using overlay specifications:
     \begin{itemize}
-    \item<3->
+    \item<2->
       First item.
-    \item<4->
-      Second item.
     \end{itemize}
   \item
     using the general \texttt{uncover} command:
     \begin{itemize}
-      \uncover<5->{\item
+      \uncover<3->{\item
         First item.}
-      \uncover<6->{\item
-        Second item.}
     \end{itemize}
   \end{itemize}
-\begin{minipage}[c][0.4\textheight][c]{0.5\linewidth}
+
+    \end{column}
+    \begin{column}{.5\textwidth}
+% Your image included here
+    \end{column}
+  \end{columns}
+
   \centering
-  \includegraphics[width=0.8\linewidth]{example-image-b}
-\end{minipage}
+  \includegraphics[width=0.75\linewidth]{cartoon.pdf}
+
 
 \end{frame}
 
 
-\subsection{Second Subsection}
+\subsection{Event Detection}
 
 \begin{frame}{Make Titles Informative.}
 \end{frame}
@@ -183,6 +190,35 @@
 \end{frame}
 
 
+\section{Methods}
+
+\subsection{Sample Preparation and Data Acquisitions}
+
+\begin{frame}{Make Titles Informative.}
+\end{frame}
+
+\begin{frame}{Make Titles Informative.}
+\end{frame}
+
+\subsection{Algorithm Design, Theory, and Baselines}
+
+\begin{frame}{Make Titles Informative.}
+\end{frame}
+
+\begin{frame}{Make Titles Informative.}
+\end{frame}
+
+\section{Algorithm Results}
+
+\subsection{Timing}
+
+\begin{frame}{Make Titles Informative.}
+\end{frame}
+
+\subsection{Performance}
+
+\begin{frame}{Make Titles Informative.}
+\end{frame}
 
 
 \section*{Summary}
