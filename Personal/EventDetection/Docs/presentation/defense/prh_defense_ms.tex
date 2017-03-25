@@ -162,12 +162,6 @@
     \item<2->
       First item.
     \end{itemize}
-  \item
-    using the general \texttt{uncover} command:
-    \begin{itemize}
-      \uncover<3->{\item
-        First item.}
-    \end{itemize}
   \end{itemize}
 
     \end{column}
@@ -176,9 +170,12 @@
     \end{column}
   \end{columns}
 
-  \centering
-  \includegraphics[width=0.85\linewidth]{cartoon.pdf}
-
+  \begin{figure}[ht]
+    \centering
+    \begin{overlayarea}{\linewidth}{7cm}
+      \includegraphics[width=\linewidth]<2>{cartoon.pdf}
+    \end{overlayarea}
+  \end{figure}[ht]
 
 \end{frame}
 
