@@ -81,7 +81,9 @@
 % remove footline, get more space. See:
 % tex.stackexchange.com/questions/223200/how-to-completely-remove-footer-in-beamer
 \setbeamertemplate{footline}{}
-
+% remove the top subsection bar
+% tex.stackexchange.com/questions/89748/beamer-remove-subsection-bar-in-header
+\useoutertheme[subsection=false]{miniframes}
 % If you have a file called "university-logo-filename.xxx", where xxx
 % is a graphic format that can be processed by latex or pdflatex,
 % resp., then you can add a logo as follows:
@@ -175,7 +177,7 @@
   \end{columns}
 
   \centering
-  \includegraphics[width=0.75\linewidth]{cartoon.pdf}
+  \includegraphics[width=0.85\linewidth]{cartoon.pdf}
 
 
 \end{frame}
