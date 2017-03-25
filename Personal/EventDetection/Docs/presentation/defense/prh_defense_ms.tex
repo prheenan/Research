@@ -160,10 +160,13 @@
 
 \begin{frame}{Applying Forces by Atomic Force Microscopy (AFM)}
 
+
+\begin{columns}
+\begin{column}{0.6\textwidth}
 % Your text here
   \begin{itemize}
   \item
-    AFM tip pulls surface-bound sample.
+    Tip pulls surface-bound sample.
     \begin{itemize}
     \item
       No attachment
@@ -172,10 +175,25 @@
     \item<3->
       Multiple attachments
     \end{itemize}
-  \item<4->
-    \textit{Ruptures} ($\textcolor{OliveGreen}{\blacktriangledown{}}$): tip-molecule unbinding
+  \invisible<1-3>{\item
+    Rupture ($\textcolor{OliveGreen}{\blacktriangledown{}}$): molecule unbinds}
     
   \end{itemize}
+\end{column}
+
+% rupture image column 
+\begin{column}{0.4\textwidth}  %%<--- here
+  \invisible<1-4>{
+    \begin{figure}[ht]
+      \centering
+      %\includegraphics[width=\linewidth]{ruptures.pdf}
+    \end{figure}
+  }
+\end{column}
+
+\end{columns}
+
+
 
 \invisible<5->{ 
   \begin{figure}[ht]
