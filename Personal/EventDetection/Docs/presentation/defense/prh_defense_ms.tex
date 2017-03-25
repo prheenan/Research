@@ -91,7 +91,9 @@
 % \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
 % \logo{\pgfuseimage{university-logo}}
 
-
+% for drawing rectangles on parts of the plot 
+% tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+\usepackage{tikz}
 
 % Delete this, if you do not want the table of contents to pop up at
 % the beginning of each subsection:
@@ -173,7 +175,15 @@
   \begin{figure}[ht]
     \centering
     \begin{overlayarea}{\linewidth}{7cm}
-      \includegraphics[width=\linewidth]<2>{cartoon.pdf}
+
+\begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \fill [white] (0.4,0) rectangle (1.0,1.0);
+    \end{scope}
+\end{tikzpicture}
     \end{overlayarea}
   \end{figure}[ht]
 
