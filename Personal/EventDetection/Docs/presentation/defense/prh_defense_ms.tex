@@ -280,7 +280,7 @@
 
 
 \begin{overlayarea}{\textwidth}{\textheight}
-      \begin{tikzpicture}
+  \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_distances.pdf}};
@@ -288,6 +288,9 @@
         \only<-2> \fill [white] (0.5,0.0) rectangle (1.0,1.0);%
         \only<-3> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
     \end{scope}
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_dist.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{OpenFovea_dist.pdf}};
+    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_dist.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 
