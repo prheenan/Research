@@ -87,11 +87,11 @@ The following two algorithms were chosen for comparison to \name{}:
 
 \subsection{\sLabel{Metrics}Performance Metrics}
 
-Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics}. The event error metric, $P_{85}$, is the 85th percentile of relative error (see \fRef{DistanceMetric}) between predicted and true event locations.  The rupture \bc{} coefficient complement, $1-\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the mistmatch between the expected and actual distribution over loading rates and rupture forces. 
+Three metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics we report are listed in \tRef{metrics}. The event error metric, $P_{85}$, is the 85th percentile of relative error (see \fRef{DistanceMetric}) between predicted and true event locations.  The rupture \bc{} coefficient's complement, $1-\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the mistmatch between the expected and actual distribution over loading rates and rupture forces. 
 
 
 \begin{table}
-\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. BCC stands for \bc{} coefficient complement. The metrics are bolded; the quantities that they depend on are listed first. Throughout, `k' refers to the (arbitrary) index of force-extension curve, and `i' and `'j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces.  }
+\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. BCC stands for \bc{} coefficient's complement. The metrics are bolded; the quantities that they depend on are listed first. Throughout, `k' refers to the (arbitrary) index of force-extension curve, and `i' and `'j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in force-extension curve 4, and $d_{(\nu,F),p}$ represents the 2-d distribution of predicted points in the space of loading rates and rupture forces.  }
 \begin{tabularx}{\textwidth}{ l | l | l | l  }
 \hline \hline
 Name & Notation  & Range & \text{Optimum} \e 
@@ -143,7 +143,7 @@ Since tuning the baselines on the full dataset using our computer would have req
 
 The baselines do not perform as well as \name{}. \fRef{PerformanceFovea} and \fRef{PerformanceScipy} are identical to \fRef{PerformanceFEATHER}, but they describe the performance of the Open Fovea and Scientific Python baselines, respectively. Open Fovea's relative distance error distribution is heavily skew-right and asymmetric between the two error types, indicating many false positives. The same distribution for Scientific Python is more symmetric between error types, indicating fewer false positives than Open Fovea. However, the distance error distribution for Scientific Python is still skew-right, indicating a high error in predicted event location. Both baselines fail to accurately reproduce the expected and predicted distribution over rupture forces and loading rates.
 
-As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient complement by a factor of 8. For completeness, \fRef{Performance} lists the performance of all three algorithms on a single page.
+As defined by \tRef{metrics}, relative to the best baseline \name{} improves the relative and absolute event error by a factor of 100 and improves the \bc{} coefficient's complement by a factor of 8. For completeness, \fRef{Performance} lists the performance of all three algorithms on a single page.
 
 \begin{table}
 \caption[Algorithm performance]{\tLabel{AppliedMetrics} Performance metrics across the three algorithms. The optimal algorithm row for each metric is highlighted in bold, depending on if the metric optimum is low (denoted by a $\downarrow$ next to the name) or high (denoted by a $\uparrow$ next to the name).} 
