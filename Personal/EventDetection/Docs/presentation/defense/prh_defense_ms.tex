@@ -82,7 +82,7 @@
 \setbeamertemplate{navigation symbols}{}
 % remove footline, get more space. See:
 % tex.stackexchange.com/questions/223200/how-to-completely-remove-footer-in-beamer
-\setbeamertemplate{footline}{}
+\setbeamertemplate{footline}[page number]
 % remove the top subsection bar
 % tex.stackexchange.com/questions/89748/beamer-remove-subsection-bar-in-header
 \useoutertheme[subsection=false]{miniframes}
@@ -312,7 +312,7 @@
       Mathematically: $1-\braket{X^{\frac{1}{2}}|Y^{\frac{1}{2}}}$
     \item 
       Informally: probability mass difference
-    \invisible<-4>{\item Open Fovea, Scientific Python, FEATHER: }
+    \invisible<-5>{\item Open Fovea, Scientific Python, FEATHER: }
     \end{itemize}
   \end{itemize}
 \end{column}
@@ -321,25 +321,23 @@
 \end{column}
 \end{columns}
 
-\begin{columns}[T]
-\begin{column}{\textwidth}
-\visible<2-5>{ 
-  \begin{figure}[ht]
-    \centering
-      \begin{tikzpicture}
+%
+% % bcc description
+%
+\begin{overlayarea}{\textwidth}{\textheight}
+\begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{bcc.pdf}};
+    \only<1-5>{\node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{bcc.pdf}}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<-2> \fill [white] (0.28,0.0) rectangle (1.0,1.0);%
+        \only<-1> \fill [white] (0.28,0.0) rectangle (1.0,1.0);%
         \only<-3> \fill [white] (0.53,0.0) rectangle (1.0,1.0);%
         \only<-4> \fill [white] (0.76,0.0) rectangle (1.0,1.0);%
         \only<-5> \fill [white] (1.0 ,0.0) rectangle (1.0,1.0);%
     \end{scope}
+    \only<6-7>{\node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_rupture.pdf}}};
 \end{tikzpicture}
-  \end{figure}}%
-\end{column}
-\end{columns}
+\end{overlayarea}
 
 \end{frame}
 
