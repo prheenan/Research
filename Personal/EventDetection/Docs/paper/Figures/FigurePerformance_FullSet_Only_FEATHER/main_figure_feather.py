@@ -34,20 +34,21 @@ def run(in_base="../FigurePerformance_CS/"):
     colors = Plotting.algorithm_colors()
     for i,m in enumerate(metrics):
         name = titles[m.name.lower()]
+        safe_name = name.replace(" ","")
         color_pred =  colors[i]
         fig = PlotUtilities.figure((16,8))
         distance_histogram= Offline.event_error_kwargs(m,color_pred=color_pred)
         true,pred = m.true,m.pred
         # make the rupture spectrum figure
         fig = PlotUtilities.figure((16,6))
-        final_out_rupture = "{:s}{:s}_rupture.pdf".format(out_base,name)
+        final_out_rupture = "{:s}{:s}_rupture.pdf".format(out_base,safe_name)
         Plotting.rupture_plot(true,pred,fig=fig)
         PlotUtilities.savefig(fig,final_out_rupture)
         # plot the metric plot
         Plotting.rupture_plot(true,pred,use_legend=True,
                               distance_histogram=distance_histogram,
                               fig=fig,color_pred=color_pred)
-        final_out_path = "{:s}{:s}.pdf".format(out_base,name.replace(" ",""))
+        final_out_path = "{:s}{:s}.pdf".format(out_base,safe_name)
         PlotUtilities.label_tom(fig,loc=locs,fontsize=18)
         plt.suptitle(name,fontsize=25,y=0.95,color=colors[i],alpha=0.7)
         PlotUtilities.savefig(fig,final_out_path,
