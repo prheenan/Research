@@ -29,7 +29,6 @@
 {
   \usetheme{Warsaw}
   % or ...
-
   \setbeamercovered{transparent}
   % or whatever (possibly just delete it)
 }
@@ -228,11 +227,11 @@
 
 
 \begin{columns}[T]
-\begin{column}{0.6\textwidth}
+\begin{column}{0.4\textwidth}
 % Your text here
   \begin{itemize}
   \item
-    Wavelet transforms
+    Wavelet transform
   \item<2->
     Contour length transform
   \item<3->
@@ -240,12 +239,20 @@
  \end{itemize}
 \end{column}
 
-\begin{column}{0.4\textwidth}
+\begin{column}{0.6\textwidth}
   \begin{itemize}
-  \item[\textcolor{OliveGreen}{$+$}]
-    \textcolor{OliveGreen}{Plus}
-  \item[\textcolor{Red}{$-$}]
-    \textcolor{Red}{Minus}
+  \item[\textcolor{OliveGreen}{$\mathbf{+}$}]
+    \textcolor{OliveGreen}{
+      \only<1>{Plus}%
+      \only<2>{Plus2}%
+      \only<3>{Plus3}%
+}
+  \item[\textcolor{Red}{$\mathbf{-}$}]
+    \textcolor{Red}{
+      \only<1>{Minus}%
+      \only<2>{Minus2}%
+      \only<3>{Minus3}%
+}
  \end{itemize}
 \end{column}
 \end{columns}
@@ -262,7 +269,6 @@
 \end{overlayarea}
 
 \end{frame}
-
 
 
 \begin{frame}{Other Scientific Domains}
@@ -304,11 +310,37 @@
 
 \subsection{Algorithm Design, Theory, and Baselines}
 
-\begin{frame}{Make Titles Informative.}
+\begin{frame}{Algorithm Intuition}
 
+\begin{columns}[T]
+\begin{column}{0.4\textwidth}
+% Your text here
+  \begin{itemize}
+  \item Noise distribution
+    \begin{itemize}
+    \item Unknown
+    \item Changes between curves
+    \item Without events 
+    \end{itemize}
+  \end{itemize}
+\end{column}
+\begin{column}{0.6\textwidth}
+  \begin{tikzpicture}
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=2\textwidth]{algorithm.pdf}};
+    %\begin{scope}[x={(image.south east)},y={(image.north west)}]
+      %
+    %\end{scope}
+\end{tikzpicture}
+\end{column}
+\end{columns}
 
 \end{frame}
 
+\begin{frame}{Algorithm Formalism}
+\end{frame}
+
+\begin{frame}{Choice of Baselines}
+\end{frame}
 
 
 \section{Algorithm Results}
