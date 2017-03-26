@@ -177,7 +177,7 @@
     \item<7->
       \DefineTerm{Rupture force}: fit value where data last above fit
     \end{itemize}
- }
+ }%
   \end{itemize}
 \end{column}
 
@@ -192,14 +192,13 @@
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{ruptures.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.65);
-        \only<6> \fill [white] (0.0,0.0) rectangle (1.0,0.33);
-        \only<7> \fill [white] (0.0,0.0) rectangle (0.0,0.0);
+        \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.65);%
+        \only<6> \fill [white] (0.0,0.0) rectangle (1.0,0.33);%
+        \only<7> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
     \end{scope}
 \end{tikzpicture}
   \end{figure}
-}
-
+}%
 
 \end{column}
 
@@ -215,13 +214,13 @@
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);
-        \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);
-        \only<3> \fill [white] (1.0,0) rectangle (1.0,1.0);
+        \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);%
+        \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);%
+        \only<3> \fill [white] (1.0,0) rectangle (1.0,1.0);%
     \end{scope}
 \end{tikzpicture}
   \end{figure}
-}
+}%
 
 \end{frame}
 
@@ -279,7 +278,10 @@
 \end{columns}
 
 
-\visible<1-5>{ 
+
+\begin{columns}[T]
+\begin{column}{\textwidth}
+\visible<1-3>{ 
   \begin{figure}[ht]
     \centering
       \begin{tikzpicture}
@@ -287,12 +289,14 @@
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_distances.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<-2> \fill [white] (0.5,0.0) rectangle (1.0,1.0);
-        \only<-3> \fill [white] (1.0,0.0) rectangle (1.0,1.0);
+        \only<-2> \fill [white] (0.5,0.0) rectangle (1.0,1.0);%
+        \only<-3> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
     \end{scope}
 \end{tikzpicture}
   \end{figure}
-}
+}%
+\end{column}
+\end{columns}
 
 \end{frame}
 
@@ -308,17 +312,17 @@
       Mathematically: $1-\braket{X^{\frac{1}{2}}|Y^{\frac{1}{2}}}$
     \item 
       Informally: probability mass difference
-    \item 
-      Open Fovea, Scientific Python, FEATHER: 
+    \invisible<-4>{\item Open Fovea, Scientific Python, FEATHER: }
     \end{itemize}
   \end{itemize}
 \end{column}
 
 \begin{column}{0.01\textwidth}
 \end{column}
-
 \end{columns}
 
+\begin{columns}[T]
+\begin{column}{\textwidth}
 \visible<2-5>{ 
   \begin{figure}[ht]
     \centering
@@ -327,15 +331,15 @@
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{bcc.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<-2> \fill [white] (0.28,0.0) rectangle (1.0,1.0);
-        \only<-3> \fill [white] (0.53,0.0) rectangle (1.0,1.0);
-        \only<-4> \fill [white] (0.76,0.0) rectangle (1.0,1.0);
-        \only<-5> \fill [white] (1.0,1.0) rectangle (1.0,1.0);
+        \only<-2> \fill [white] (0.28,0.0) rectangle (1.0,1.0);%
+        \only<-3> \fill [white] (0.53,0.0) rectangle (1.0,1.0);%
+        \only<-4> \fill [white] (0.76,0.0) rectangle (1.0,1.0);%
+        \only<-5> \fill [white] (1.0 ,0.0) rectangle (1.0,1.0);%
     \end{scope}
 \end{tikzpicture}
-  \end{figure}
-}
-
+  \end{figure}}%
+\end{column}
+\end{columns}
 
 \end{frame}
 
