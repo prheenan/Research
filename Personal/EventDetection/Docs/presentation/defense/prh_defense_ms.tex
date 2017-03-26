@@ -120,7 +120,7 @@
 
 %\beamerdefaultoverlayspecification{<+->}
 
-\graphicspath{{../../paper/Figures/Finals/}}
+\graphicspath{{../../paper/Figures/Finals/},{../../paper/Figures/Finals_Presenation/}}
 \newcommand{\DefineTerm}[1]{\underline{#1}}
 \newcommand{\ErrorPct}[0]{P$_{85}$}
 
@@ -224,8 +224,44 @@
 
 \subsection{Detection of Rupture Events}
 
-\begin{frame}{Event detection is a hard problem}
+\begin{frame}{Past Work}
+
+
+\begin{columns}[T]
+\begin{column}{0.99\textwidth}
+% Your text here
+  \begin{itemize}
+  \item
+    Wavelet transforms
+  \item<2->
+    Contour length transform (Domain-Specific)
+  \item<3->
+    Classification
+ \end{itemize}
+\end{column}
+
+\begin{column}{0.01\textwidth}
+\end{column}
+\end{columns}
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{bentez_2017_edit.png}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{kuhn_2005.png}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{Andreopoulos_2011_edit}};
+\end{tikzpicture}
+\end{overlayarea}
+
 \end{frame}
+
+
+
+\begin{frame}{Other Scientific Domains}
+\end{frame}
+
 
 \section{Methods}
 
