@@ -50,7 +50,9 @@ cartoon_dir="${base_dir_rel}FigureCartoon/"
 timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
+pres_dir="${base_dir_rel}Presentation/"
 copy_pdfs "${base_dir_rel}FigurePerformance_FullSet_Only_FEATHER/" $out_path $pngs
+copy_pdfs "${pres_dir}bhattacharya"  $out_path $pngs
 copy_pdfs "${prep_dir}" $out_path $pngs
 copy_pdfs "${base_dir_rel}FigurePerformace_DistanceOnly/" $out_path $pngs
 copy_pdfs "${base_dir_rel}FigureAlgorithm/" $out_path $pngs

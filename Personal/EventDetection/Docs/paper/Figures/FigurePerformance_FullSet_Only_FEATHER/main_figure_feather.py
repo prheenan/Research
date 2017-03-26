@@ -38,6 +38,11 @@ def run(in_base="../FigurePerformance_CS/"):
         fig = PlotUtilities.figure((16,8))
         distance_histogram= Offline.event_error_kwargs(m,color_pred=color_pred)
         true,pred = m.true,m.pred
+        # make the rupture spectrum figure
+        fig = PlotUtilities.figure((16,6))
+        final_out_rupture = "{:s}{:s}_rupture.pdf".format(out_base,name)
+        Plotting.rupture_plot(true,pred,fig=fig)
+        PlotUtilities.savefig(fig,final_out_rupture)
         # plot the metric plot
         Plotting.rupture_plot(true,pred,use_legend=True,
                               distance_histogram=distance_histogram,

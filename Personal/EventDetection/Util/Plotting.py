@@ -575,8 +575,8 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     if (distance_histogram is None):
         n_rows = 2
         n_cols = 2
-        widths = [3,1]
-        heights = [3,1]
+        widths = [2,1]
+        heights = [2,1]
         offset=0
     else:
         n_rows = 2
