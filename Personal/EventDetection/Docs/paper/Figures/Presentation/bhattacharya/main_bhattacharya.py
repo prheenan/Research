@@ -46,11 +46,11 @@ def run():
     sigma = 1
     loc_arr = [-3,-1,0.5]
     n_bins = 50
-    ylim = [0,0.6]
+    ylim = [0,0.5]
     n_cols = 3+1
     xlim = [-12,12]
     bins = np.linspace(*xlim,endpoint=True,num=n_bins)
-    fig = PlotUtilities.figure((16,5))
+    fig = PlotUtilities.figure((16,7))
     plt.subplot(1,n_cols,1)
     bhattacharya = plot_bhattacharya(sigma,n_samples,bins=bins,
                                      loc=-9)
@@ -58,7 +58,7 @@ def run():
     PlotUtilities.tickAxisFont()
     PlotUtilities.xlabel("Distribution Value")
     PlotUtilities.ylabel("Probability")
-    PlotUtilities.legend(frameon=True)
+    PlotUtilities.legend(frameon=False)
     plt.ylim(ylim)
     title = (r"BCC of {:.3f}".format(1-bhattacharya))
     PlotUtilities.title(title)
@@ -72,7 +72,7 @@ def run():
         plt.ylim(ylim)
         PlotUtilities.tickAxisFont()
         PlotUtilities.no_y_label()
-        PlotUtilities.legend(frameon=True)
+        PlotUtilities.legend(frameon=False)
         PlotUtilities.xlabel("")
     PlotUtilities.savefig(fig,"bcc.pdf",subplots_adjust=dict(wspace=0.1))
     

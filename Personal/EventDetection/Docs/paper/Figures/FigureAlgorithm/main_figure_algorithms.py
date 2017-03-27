@@ -207,7 +207,28 @@ def run(base="./"):
     fig = PlotUtilities.figure((16,12))
     n_rows = 3
     n_cols = 2
-    # make just the approach figure
+    """
+    make just the retract figures
+    """
+    fig = PlotUtilities.figure((6,9))
+    plt.subplot(4,1,1)
+    plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
+                     force_filtered_plot,ylim_force)
+    # remove the title 
+    plt.title("")
+    plt.subplot(4,1,2)
+    plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
+                       ylim_diff)
+    plt.subplot(4,1,3)
+    plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
+                                epsilon_plot,sigma_plot,ylim_diff_filtered)
+    plt.subplot(4,1,4)
+    plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
+    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_retract.pdf"))
+    exit(1)
+    """
+    make just the approach figure
+    """
     fig = PlotUtilities.figure((6,7))
     plt.subplot(3,1,1)
     plot_fec(time_approach,force_approach,interp_approach,
@@ -224,8 +245,9 @@ def run(base="./"):
     # increase the y limits to more or less the distribution
     plt.ylim([ epsilon_plot-sigma_plot*10,epsilon_plot+sigma_plot*10])
     PlotUtilities.savefig(fig,out_fig.replace(".pdf","_approach.pdf"))
-    exit(1)
-    # make the plot for the paper
+    """
+    make the plot for the paper
+    """
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
     plot_fec(time_approach,force_approach,interp_approach,
