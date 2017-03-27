@@ -16,6 +16,52 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 
 import matplotlib.gridspec as gridspec
 
+# style keywords for this file only
+common = dict(rasterized=True)
+style_approach = dict(color='k', **common)
+style_raw = dict(alpha=0.3,**common)
+style_filtered = dict(linewidth=3,**common)
+retract_style = dict(color='g',**common)
+style_retract_error_dist = dict(linewidth=2,**common)
+label_s_t = r"s$_t$"
+label_r_t = r"r$_t$"
+lazy_kwargs = dict(loc='lower right',frameon=False)
+
+def tick_function():
+    tick_kwargs = dict(num_x_major=4,num_y_major=4)
+    PlotUtilities.tick_axis_number(**tick_kwargs)
+
+
+def plot_fec(time_approach,force_approach,interp_approach,
+             ylim_force,xlim_approach,label):
+    plt.plot(time_approach,force_approach,label=label,
+             alpha=0.3,**style_approach)
+    plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
+             **style_approach)
+    PlotUtilities.lazyLabel("","Force (pN)",
+                            "Estimating $\epsilon$ and $\sigma$",
+                            frameon=False)
+    plt.xlim(xlim_approach)
+    tick_function()
+    PlotUtilities.no_x_label()
+    plt.ylim(ylim_force)
+
+def plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
+                     force_filtered_plot,ylim_force):
+    Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
+                              style_raw,label="Raw (retract)")
+    Plotting.before_and_after(x_plot,force_filtered_plot,
+                              slice_before,slice_after,style_filtered,
+                              label="Spline ($g^{*}_t$)))")
+    title = "Calculating the no-event probability"
+    PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
+    tick_function()
+    PlotUtilities.no_x_label()
+    plt.ylim(ylim_force)
+
+
+
+
 def plot_epsilon(epsilon_plot,sigma_plot):
     epsilon_style = dict(color='b')
     plt.axhline(epsilon_plot,label="$\epsilon$")
@@ -33,7 +79,6 @@ def run(base="./"):
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=force,cache_directory=data_base)
     n_filter = 1000
-    markevery = 1000
     kw = dict(cache_directory=data_base,force=force)
     events = example.Events
     fec_split = Analysis.zero_and_split_force_extension_curve(example)
@@ -86,7 +131,6 @@ def run(base="./"):
     bool_final[mask_final] = 1
     prob_final = predict_info.probabilities[-1]
     # plot everything
-    lazy_kwargs = dict(loc='lower right',frameon=False)
     x_plot = time
     xlim_approach = [min(approach_time),min(time)]
     xlim_retract = [min(time),max(time)]
@@ -106,41 +150,14 @@ def run(base="./"):
     fig = PlotUtilities.figure((16,12))
     n_rows = 3
     n_cols = 2
-    tick_kwargs = dict(num_x_major=4,num_y_major=4)
-    tick_function = lambda: PlotUtilities.tick_axis_number(**tick_kwargs)
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
-    common = dict(markevery=markevery,rasterized=True)
-    style_approach = dict(color='k', **common)
-    style_raw = dict(alpha=0.3,**common)
-    style_filtered = dict(linewidth=3,**common)
-    retract_style = dict(color='g',**common)
-    style_retract_error_dist = dict(linewidth=2,**common)
-    label_s_t = r"s$_t$"
-    label_r_t = r"r$_t$"
-    plt.plot(time_approach,force_approach,label="Raw (approach)",
-             alpha=0.3,**style_approach)
-    plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
-             **style_approach)
-    PlotUtilities.lazyLabel("","Force (pN)",
-                            "Estimating $\epsilon$ and $\sigma$",
-                            frameon=False)
-    plt.xlim(xlim_approach)
-    tick_function()
-    PlotUtilities.no_x_label()
-    plt.ylim(ylim_force)
+    plot_fec(time_approach,force_approach,interp_approach,
+             ylim_force,xlim_approach,"Raw (approach)")
     plt.subplot(gs[0,1])
-    Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
-                              style_raw,label="Raw (retract)")
-    Plotting.before_and_after(x_plot,force_filtered_plot,
-                              slice_before,slice_after,style_filtered,
-                              label="Spline ($g^{*}_t$)))")
-    title = "Calculating the no-event probability"
-    PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
-    tick_function()
-    PlotUtilities.no_x_label()
-    plt.ylim(ylim_force)
     # plot the 'raw' error distribution for the approach
+    plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
+                     force_filtered_plot,ylim_force)
     plt.subplot(gs[1,0])
     plt.plot(time_approach_plot,approach_diff[slice_fit_approach],alpha=0.3,
              label=label_r_t,**style_approach)
