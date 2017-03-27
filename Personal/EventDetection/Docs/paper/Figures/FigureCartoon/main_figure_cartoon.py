@@ -28,6 +28,7 @@ def run(base="./"):
     """
     
     """
+    name = "cartoon.pdf"
     data_base = base + "data/"
     kw = dict(cache_directory=data_base,force=False)
     file_names = ["no","single","multiple"]
@@ -80,6 +81,11 @@ def run(base="./"):
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
         PlotUtilities.tick_axis_number(num_x_major=4)
+    # save without the labels for the presentation
+    subplots_adjust = dict(left=0.08,wspace=0.2,hspace=0.1)
+    PlotUtilities.savefig(fig,name.replace(".pdf","_pres.pdf"),
+                          subplots_adjust=subplots_adjust,close=False)
+    # save with the labels for the presentation
     n_subplots = 2
     n_categories = len(file_names)
     letters =  string.uppercase[:n_categories]
@@ -90,8 +96,7 @@ def run(base="./"):
     loc = [top for i in range(n_categories)] +  \
           [bottom for i in range(n_categories)] 
     PlotUtilities.label_tom(fig,letters,loc=loc)
-    PlotUtilities.savefig(fig,"cartoon.pdf",
-                          subplots_adjust=dict(left=0.08,wspace=0.2,hspace=0.1))
+    PlotUtilities.savefig(fig,name,subplots_adjust=subplots_adjust)
 
 if __name__ == "__main__":
     run()

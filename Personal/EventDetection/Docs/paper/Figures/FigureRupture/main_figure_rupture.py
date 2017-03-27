@@ -80,7 +80,7 @@ def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
     return c1, c2, bbox_patch1, bbox_patch2, p
 
 
-def run(base="./",increment=False):
+def run(base="./"):
     """
     
     """
@@ -211,13 +211,16 @@ def run(base="./",increment=False):
     PlotUtilities.scale_bar_x(get_bar_location(xlim_second_zoom),
                               0,s=string,width=scale_width)
     PlotUtilities.no_x_label()
-    PlotUtilities.label_tom(fig,loc=(-0.1,0.97))
-    if increment:
-        PlotUtilities.legend_and_save(fig,out_fig,ext=".pdf")
     # draw lines connecting the plots
     zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
     zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
-    PlotUtilities.savefig(fig,out_fig,subplots_adjust=dict(hspace=0.1))
+    subplots_adjust = dict(hspace=0.1)
+    # save out without the labels
+    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_pres.pdf"),
+                          subplots_adjust=subplots_adjust,close=False)
+    # save out with the labels
+    PlotUtilities.label_tom(fig,loc=(-0.1,0.97))
+    PlotUtilities.savefig(fig,out_fig,subplots_adjust=subplots_adjust)
     
 
 if __name__ == "__main__":

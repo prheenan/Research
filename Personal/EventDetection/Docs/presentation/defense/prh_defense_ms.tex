@@ -189,7 +189,7 @@
       \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{ruptures.pdf}};
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{ruptures_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.65);%
         \only<6> \fill [white] (0.0,0.0) rectangle (1.0,0.33);%
@@ -209,7 +209,7 @@
       \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon.pdf}};
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);%
         \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);%
@@ -277,7 +277,7 @@
 
 \section{Methods}
 
-\subsection{Sample Preparation and Data Acquisition}
+\subsection{Sample Prepation and Data Acquisition}
 
 \begin{frame}{Verifying sample purity}
 
@@ -298,7 +298,7 @@
   \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{prep.pdf}};
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{prep_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<-1> \fill [white] (0.4,0.0) rectangle (1.0,1.0);%
         \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
@@ -329,15 +329,15 @@
   \begin{tikzpicture}
     \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<-1> \fill [white] (0.0,0.0) rectangle (1.0,0.7);%
-      \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.4);%
+      \only<-1> \fill [white] (0.0,0.0) rectangle (1.0,0.6);%
+      \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.3);%
       \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
     \node<4-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{algorithm_retract.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.76);%
-      \only<4-5> \fill [white] (0.0,0.0) rectangle (1.0,0.53);%
-      \only<4-6> \fill [white] (0.0,0.0) rectangle (1.0,0.3);%
+      \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.70);%
+      \only<4-5> \fill [white] (0.0,0.0) rectangle (1.0,0.45);%
+      \only<4-6> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
       \only<4-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
 
