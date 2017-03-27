@@ -54,7 +54,7 @@ This section details the mathematics and choices behind the event-detection algo
 
 \section{Defining the no-event hypothesis}
 
-We define an event as when the time derivative of force applied to a molecule exhibits a discontinuity as the molecule passes over a free-energy barrier. We assume this event takes place on timescales much smaller than the response time of the probe. If this is not true, the data assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `t' and finds where the probability of a measurement is low. Hereafter, the definition of an event and the assumptions of no event at a given time will be referred to as the \emph{no-event hypothesis}. 
+We define an event as when the time derivative of force applied to a molecule exhibits a discontinuity as the molecule passes over a free-energy barrier. We assume this event takes place on timescales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `t' and finds where the probability of a measurement is low. Hereafter, the definition of an event and the assumptions of no event at a given time will be referred to as the \emph{no-event hypothesis}. 
 
 \section{Mathematical background for testing the no-event hypothesis}
 
@@ -80,7 +80,7 @@ In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by the aver
  (\frac{\sigma}{|r_t-\epsilon_t|})^2 }}{feather-probability}
 
 
-For \emph{any} noise distribution, this bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by \eRef{feather-epsilon} and \eRef{feather-sigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
+For \emph{any} noise distribution, \eRef{feather-probability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by \eRef{feather-epsilon} and \eRef{feather-sigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
 
 \section{Accurate estimators for hypothesis testing}
 
@@ -96,7 +96,7 @@ The quality of \name{}'s results are improved by multiplying the no-event probab
 
 
 \begin{figure}[htp]
-\caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample} Demonstrating how \name{} works. \subref{A,B} The approach and retract forces versus time, with spline fits overlaid. \subref{C,D} The approach and retract r$_t$ versus time, with s$_t$ overlaid, demonstrating the signal-to-noise benefit of using s$_t$. \subref{E,F} The approach and retract s$_t$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlaid. \subref{G} The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event.  }
+\caption[\name{} algorithmic pipeline]{\noindent\fLabel{FeatherExample} Demonstrating how \name{} works. \subref{A,B} The approach and retract forces versus time, with spline fits overlaid. \subref{C,D} The approach and retract r$_t$ versus time, with $\WindowStdev{}$ overlaid, demonstrating the signal-to-noise benefit of using $\WindowStdev{}$. \subref{E,F} The approach and retract $\WindowStdev{}$, with the estimates of $\epsilon$ and $\sigma$ from the approach overlaid. \subref{G} The probability of no event at each time has a sharp minima near the expected event location. For all subplots, the retract changes color at the location of a tagged event.  }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/algorithm.pdf}% Here is how to import EPS art
 \end{figure}
