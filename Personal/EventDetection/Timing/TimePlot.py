@@ -105,7 +105,7 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
     # d(1/f) = (1/f^2) * df
     plot_y_error = plot_y**2 * (np.array(time_per_point_error))
     N = len(time_per_point)
-    labels = [learner_name(l) for l in learners]
+    labels = [learner_name(l).replace(" ","\n") for l in learners]
     ind = np.arange(N)  # the x locations for the groups
     width = 0.4       # the width of the bars
     ax = plt.gca()
@@ -122,13 +122,13 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
                              for y,e in zip(plot_y,plot_y_error)]
     # add labels with the errors for each
     label_func = lambda i,r : formatted_with_errors[i]
-    fontsize=PlotUtilities.g_font_legend
+    fontsize=PlotUtilities.g_font_legend * 0.8
     for i,(x,y) in enumerate(zip(ind,plot_y)):
         ax.text(x,y*1.25,s=label_func(i,None),ha='center', va='bottom',
                 fontsize=fontsize,color=color[i])
     plt.yscale('log')
     PlotUtilities.lazyLabel("Event finding method",
-                            "Points classified per second","")
+                            "Points classified / second","")
     
         
 def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
@@ -181,7 +181,7 @@ def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
     ax.set_xscale('log')
     ax.set_yscale('log')
     # plot something just for the legend entry
-    plt.plot([],[],label=label_timing,marker=marker,
+    plt.plot([],[],label=label_timing.replace(" ","\n"),marker=marker,
              **style_timing)
     PlotUtilities.lazyLabel("N (points per curve)",
                             "Runtime per curve (s)",

@@ -94,21 +94,12 @@ def style_data_and_pred():
         style_pred.append(dict(color=colors[i],linestyle=linestyles[i]))
     return style_data,style_pred
     
-
-def make_main_figure(output_path,trials):
-    """
-    creates the 'main' timing figure (for use in the paper) 
-
-    Args:
-        output_path: where to save the file
-        trials: the pickled timing trials information
-    """
+def _main_figure(trials):
     xlim = [500,1e6]
     ylim=[1e-2,5e2]
     style_data,style_pred = style_data_and_pred()
     colors = algorithm_colors()
     # picturing 3x2, where we show the 'in the weeds' plots...
-    fig = PlotUtilities.figure(figsize=(16,6))
     plt.subplot(1,2,1)
     for i,learner_trials in enumerate(trials):
         TimePlot.\
@@ -124,6 +115,24 @@ def make_main_figure(output_path,trials):
     plt.ylim([1e3,3e6])
     PlotUtilities.legend(loc="lower right",frameon=False)
     PlotUtilities.title("")
+
+
+def make_main_figure(output_path,trials):
+    """
+    creates the 'main' timing figure (for use in the paper) 
+
+    Args:
+        output_path: where to save the file
+        trials: the pickled timing trials information
+    """
+    # make the figure for the presentation
+    fig = PlotUtilities.figure(figsize=(10,4.5))
+    _main_figure(trials)
+    plt.xlim([-1,3])
+    PlotUtilities.savefig(fig,output_path.replace(".pdf","_pres.pdf"))
+    # make the figure for the paper
+    fig = PlotUtilities.figure(figsize=(16,6))
+    _main_figure(trials)
     PlotUtilities.label_tom(fig,loc=(-0.05,1))
     PlotUtilities.savefig(fig,output_path)
 

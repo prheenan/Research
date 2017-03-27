@@ -383,7 +383,7 @@
   \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{timing.pdf}};
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{timing_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<-1> \fill [white] (0.51,0.0) rectangle (1.0,1.0);%
         \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
