@@ -209,7 +209,7 @@ def run(base="./"):
     """
     make just the retract figures
     """
-    fig = PlotUtilities.figure((8,10))
+    fig = PlotUtilities.figure((8,9))
     plt.subplot(4,1,1)
     plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                      force_filtered_plot,ylim_force)
@@ -217,7 +217,7 @@ def run(base="./"):
     plt.title("")
     PlotUtilities.xlabel("Time (s)")
     PlotUtilities.ylabel(force_label)
-    PlotUtilities.legend(frameon=True)
+    PlotUtilities.legend(frameon=True,loc='lower right')
     PlotUtilities.x_label_on_top()
     plt.subplot(4,1,2)
     plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
@@ -227,7 +227,7 @@ def run(base="./"):
     plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
                                 epsilon_plot,sigma_plot,ylim_diff_filtered)
     PlotUtilities.ylabel(filtered_error_label)
-    PlotUtilities.legend(frameon=True)
+    PlotUtilities.legend(frameon=True,loc='upper right')
     plt.subplot(4,1,4)
     plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
     PlotUtilities.no_x_label()
