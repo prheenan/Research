@@ -24,14 +24,8 @@ def fmt(remove_x_labels=True,remove_y_labels=True):
     plt.ylim([-30,60])
     plt.xlim([-30,700])
 
-def run(base="./"):
-    """
-    
-    """
-    name = "cartoon.pdf"
-    data_base = base + "data/"
+def plot_fec_cartoon(base,data_base,file_names,arrow_kwargs=dict()):
     kw = dict(cache_directory=data_base,force=False)
-    file_names = ["no","single","multiple"]
     file_paths = [data_base + f +".csv" for f in file_names]
     cases = [read_and_cache_file(f,**kw) for f in file_paths]
     n_cases = len(cases)
@@ -40,16 +34,13 @@ def run(base="./"):
     styles = [dict(colors=event_styles,use_events=False),
               dict(colors=event_styles),
               dict(colors=event_styles)]
-    fig_x_in = 16
-    fig_y_in = 8
     fudge_pN = [10,12,25]
     im_path = base + "/cartoon/SurfaceChemistry Dig10p3_pmod-0{:d}.png"
-    fig = PlotUtilities.figure((fig_x_in,fig_y_in))
     gs= gridspec.GridSpec(2,3)
     for i in range(3):
         plt.subplot(gs[0, i])
         image = plt.imread(im_path.format(i+1))
-        plt.imshow(image,interpolation="nearest",aspect='equal',extent=None)
+        plt.imshow(image,interpolation="bilinear",aspect='equal',extent=None)
         ax = plt.gca()
         ax.axis('off')
     for i,c in enumerate(cases):
@@ -67,7 +58,8 @@ def run(base="./"):
             # remove the last index (just te end of the FEC)
             event_idx = event_idx[:-1]
             fudge =fudge_pN[i]
-            Plotting.plot_arrows_above_events(event_idx,plot_x,plot_y,fudge)
+            Plotting.plot_arrows_above_events(event_idx,plot_x,plot_y,fudge,
+                                              **arrow_kwargs)
         not_first_plot = i != 0
         fmt(remove_y_labels=False,remove_x_labels=False)
         if (i == 0):
@@ -81,11 +73,26 @@ def run(base="./"):
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
         PlotUtilities.tick_axis_number(num_x_major=4)
+
+
+def run(base="./"):
+    """
+    
+    """
+    name = "cartoon.pdf"
+    data_base = base + "data/"
+    file_names = ["no","single","multiple"]
     # save without the labels for the presentation
-    subplots_adjust = dict(left=0.08,wspace=0.2,hspace=0.1)
+    subplots_adjust = dict(left=0.12,wspace=0.2,hspace=0.1)
+    fig = PlotUtilities.figure((8,4))
+    plot_fec_cartoon(base,data_base,file_names,
+                     arrow_kwargs=dict(markersize=8))
     PlotUtilities.savefig(fig,name.replace(".pdf","_pres.pdf"),
-                          subplots_adjust=subplots_adjust,close=False)
+                          subplots_adjust=subplots_adjust)
     # save with the labels for the presentation
+    fig = PlotUtilities.figure((16,8))
+    subplots_adjust = dict(left=0.08,wspace=0.2,hspace=0.1)
+    plot_fec_cartoon(base,data_base,file_names)
     n_subplots = 2
     n_categories = len(file_names)
     letters =  string.uppercase[:n_categories]
