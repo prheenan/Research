@@ -79,13 +79,7 @@ def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
 
     return c1, c2, bbox_patch1, bbox_patch2, p
 
-
-def run(base="./"):
-    """
-    
-    """
-    data_base = base + "data/"
-    out_fig = "ruptures.pdf"
+def rupture_plot(data_base):
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
@@ -130,7 +124,7 @@ def run(base="./"):
     x_zoom = x[slice_event_subplot]
     f_zoom = force[slice_event_subplot]
     ylim = [-30,max(force)*2]
-    xlim = [0,1.0]
+    xlim = [0,1.3]
     xlim_zoom = [min(x_zoom),max(x_zoom)]
     ylim_zoom = [min(f_zoom),max(f_zoom)]
     # get the second zoom
@@ -148,7 +142,6 @@ def run(base="./"):
     n_cols = 1
     fudge_y = 5
     ylabel = "Force (pN)"
-    fig = PlotUtilities.figure((8,12))
     ax1 = plt.subplot(n_rows,n_cols,1)
     style_data = dict(alpha=0.5,linewidth=1)
     style_filtered = dict(alpha=1.0,linewidth=3)
@@ -158,8 +151,9 @@ def run(base="./"):
     Plotting.before_and_after(x,force_filtered,slice_before_event,
                               slice_after_event,style_filtered,
                               label="Filtered (25Hz)")
-    PlotUtilities.lazyLabel("Time (s)",ylabel,"",loc="upper left",
-                            frameon=False)
+    legend_kwargs = dict(handlelength=1)
+    PlotUtilities.lazyLabel("Time (s)",ylabel,"",loc="upper right",
+                            frameon=False,legend_kwargs=legend_kwargs)
     plt.ylim(ylim)
     plt.xlim(xlim)
     ax1.xaxis.tick_top()
@@ -187,7 +181,8 @@ def run(base="./"):
     plot_rupture('Rupture')
     plot_line("Fit")
     PlotUtilities.lazyLabel("",ylabel,"",frameon=False,
-                            loc='upper right',legend_kwargs=dict(numpoints=1))
+                            loc='upper right',
+                            legend_kwargs=dict(numpoints=1,**legend_kwargs))
     plt.xlim(xlim_zoom)
     plt.ylim(ylim_zoom)
     # make a scale bar for this plot
@@ -195,7 +190,7 @@ def run(base="./"):
     string = "{:d} ms".format(int(scale_width*1000))
     get_bar_location = lambda _xlim: np.mean([np.mean(_xlim),min(_xlim)])
     PlotUtilities.scale_bar_x(get_bar_location(xlim_zoom),
-                              -10,s=string,width=scale_width)
+                              -12,s=string,width=scale_width)
     PlotUtilities.no_x_label()
     ax3 = plt.subplot(n_rows,n_cols,3)
     Plotting.before_and_after(x,force,zoom_second_before,zoom_second_after,
@@ -214,11 +209,23 @@ def run(base="./"):
     # draw lines connecting the plots
     zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
     zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
+
+
+def run(base="./"):
+    """
+    
+    """
+    data_base = base + "data/"
+    out_fig = "ruptures.pdf"
     subplots_adjust = dict(hspace=0.1)
     # save out without the labels
+    fig = PlotUtilities.figure((6,8))
+    rupture_plot(data_base)
     PlotUtilities.savefig(fig,out_fig.replace(".pdf","_pres.pdf"),
-                          subplots_adjust=subplots_adjust,close=False)
+                          subplots_adjust=subplots_adjust)
     # save out with the labels
+    fig = PlotUtilities.figure((8,12))
+    rupture_plot(data_base)
     PlotUtilities.label_tom(fig,loc=(-0.1,0.97))
     PlotUtilities.savefig(fig,out_fig,subplots_adjust=subplots_adjust)
     
