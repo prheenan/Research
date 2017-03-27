@@ -27,8 +27,8 @@ label_s_t = r"s$_t$"
 label_r_t = r"r$_t$"
 lazy_kwargs = dict(loc='lower right',frameon=False)
 
-error_label = "r$_\mathrm{t}$ or\ns$_\mathrm{t}$ (pN)"
-filtered_error_label = "s$_{\mathrm{t}}$$^{*}$ (pN)"
+error_label = "r$_\mathrm{t}$ or\n$\Sigma_\mathrm{t}$ (pN)"
+filtered_error_label = "$\Sigma_{\mathrm{t}}$ (pN)"
 force_label = "Force (pN)"
 
 def tick_function():
