@@ -59,6 +59,63 @@ def plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
     PlotUtilities.no_x_label()
     plt.ylim(ylim_force)
 
+def plot_approach_error(time_approach_plot,approach_diff,approach_stdev_plot,
+                        xlim_approach,ylim_diff):
+    plt.plot(time_approach_plot,approach_diff,alpha=0.3,
+             label=label_r_t,**style_approach)
+    plt.plot(time_approach_plot,approach_stdev_plot,label=label_s_t,
+             linestyle='--',**style_approach)
+    PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ (pN)",
+                            "",frameon=True,loc='upper right')
+    plt.xlim(xlim_approach)
+    PlotUtilities.no_x_label()
+    tick_function()
+    plt.ylim(*ylim_diff)
+
+def plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
+                       ylim_diff):
+    filted_stdev_style = dict(linestyle='--',**style_filtered)
+    Plotting.before_and_after(x_plot,diff_pN,slice_before,slice_after,
+                              style_raw,label=label_r_t)
+    Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
+                              filted_stdev_style,label=label_s_t)
+    PlotUtilities.lazyLabel("","","",frameon=True,loc='upper right')
+    PlotUtilities.no_x_label()
+    plt.ylim(*ylim_diff)
+    tick_function()
+
+
+def plot_filtered_stdev(time_approach_plot,approach_stdev_plot,
+                        epsilon_plot,sigma_plot,xlim_approach,
+                        ylim_diff_filtered):
+    plt.plot(time_approach_plot,approach_stdev_plot,**style_approach)
+    plot_epsilon(epsilon_plot,sigma_plot)
+    plt.xlim(xlim_approach)
+    plt.ylim(*ylim_diff_filtered)
+    tick_function()
+    PlotUtilities.lazyLabel("Time (s)","s$_{\mathrm{t}}$$^{*}$ (pN)","",
+                            frameon=False,loc='upper right')
+
+
+def plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
+                                epsilon_plot,sigma_plot,ylim_diff_filtered):
+    Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
+                              style_retract_error_dist)
+    plot_epsilon(epsilon_plot,sigma_plot)
+    PlotUtilities.lazyLabel("","","",frameon=False,
+                            loc="upper right")
+    PlotUtilities.no_x_label()
+    plt.ylim(*ylim_diff_filtered)
+    tick_function()
+
+def plot_probability(threshold,x_plot,prob_final,slice_before,slice_after):
+    plt.yscale('log')
+    plt.axhline(threshold,linewidth=3,linestyle='--',
+                label="threshold",color='k')
+    Plotting.before_and_after(x_plot,prob_final,slice_before,slice_after,
+                              style_retract_error_dist)
+    PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
+    plt.ylim([min(plt.ylim()),1.5])
 
 
 
@@ -67,7 +124,7 @@ def plot_epsilon(epsilon_plot,sigma_plot):
     plt.axhline(epsilon_plot,label="$\epsilon$")
     plt.axhline(epsilon_plot+sigma_plot,linestyle='--',
                 label="$\epsilon \pm \sigma$",**epsilon_style)
-    plt.axhline(epsilon_plot-sigma_plot,linestyle='--')
+    plt.axhline(epsilon_plot-sigma_plot,linestyle='--',**epsilon_style)
 
 def run(base="./"):
     """
@@ -150,6 +207,25 @@ def run(base="./"):
     fig = PlotUtilities.figure((16,12))
     n_rows = 3
     n_cols = 2
+    # make just the approach figure
+    fig = PlotUtilities.figure((6,7))
+    plt.subplot(3,1,1)
+    plot_fec(time_approach,force_approach,interp_approach,
+             ylim_force,xlim_approach,"Raw (approach)")
+    # remove the title 
+    plt.title("")
+    plt.subplot(3,1,2)
+    plot_approach_error(time_approach_plot,approach_diff[slice_fit_approach],
+                        approach_stdev_plot,xlim_approach,ylim_diff)
+    plt.subplot(3,1,3)
+    plot_filtered_stdev(time_approach_plot,approach_stdev_plot,
+                        epsilon_plot,sigma_plot,xlim_approach,
+                        ylim_diff_filtered)
+    # increase the y limits to more or less the distribution
+    plt.ylim([ epsilon_plot-sigma_plot*10,epsilon_plot+sigma_plot*10])
+    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_approach.pdf"))
+    exit(1)
+    # make the plot for the paper
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
     plot_fec(time_approach,force_approach,interp_approach,
@@ -159,59 +235,27 @@ def run(base="./"):
     plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                      force_filtered_plot,ylim_force)
     plt.subplot(gs[1,0])
-    plt.plot(time_approach_plot,approach_diff[slice_fit_approach],alpha=0.3,
-             label=label_r_t,**style_approach)
-    plt.plot(time_approach_plot,approach_stdev_plot,label=label_s_t,
-             linestyle='--',**style_approach)
-    PlotUtilities.lazyLabel("","r$_\mathrm{t}$ or\ns$_\mathrm{t}$ (pN)",
-                            "",frameon=True,loc='upper right')
-    plt.xlim(xlim_approach)
-    PlotUtilities.no_x_label()
-    tick_function()
-    plt.ylim(*ylim_diff)
-    # plot the 'raw error distribution for the retract
+    # plot the 'raw error distribution for the approach
+    plot_approach_error(time_approach_plot,approach_diff[slice_fit_approach],
+                        approach_stdev_plot,xlim_approach,ylim_diff)
     plt.subplot(gs[1,1])
-    filted_stdev_style = dict(linestyle='--',**style_filtered)
-    Plotting.before_and_after(x_plot,diff_pN,slice_before,slice_after,
-                              style_raw,label=label_r_t)
-    Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
-                              filted_stdev_style,label=label_s_t)
-    PlotUtilities.lazyLabel("","","",frameon=True,loc='upper right')
-    PlotUtilities.no_x_label()
-    plt.ylim(*ylim_diff)
-    tick_function()
-    # filtered error distribution for the approach
+    # filtered error distribution for the retract
+    plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
+                       ylim_diff)
     plt.subplot(gs[2,0])
-    plt.plot(time_approach_plot,approach_stdev_plot,**style_approach)
-    plot_epsilon(epsilon_plot,sigma_plot)
-    plt.xlim(xlim_approach)
-    plt.ylim(*ylim_diff_filtered)
-    tick_function()
-    PlotUtilities.lazyLabel("Time (s)","s$_{\mathrm{t}}$$^{*}$ (pN)","",
-                            frameon=False,loc='upper right')
+    plot_filtered_stdev(time_approach_plot,approach_stdev_plot,
+                        epsilon_plot,sigma_plot,xlim_approach,
+                        ylim_diff_filtered)
     # filtered error distribution for the retract
     plt.subplot(gs[2,1])
-    Plotting.before_and_after(x_plot,stdev_plot,slice_before,slice_after,
-                              style_retract_error_dist)
-    plot_epsilon(epsilon_plot,sigma_plot)
-    PlotUtilities.lazyLabel("","","",frameon=False,
-                            loc="upper right")
-    PlotUtilities.no_x_label()
-    plt.ylim(*ylim_diff_filtered)
-    tick_function()
+    plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
+                                epsilon_plot,sigma_plot,ylim_diff_filtered)
     # probability distribution for the retract
     plt.subplot(gs[3,1])
-    plt.yscale('log')
-    plt.axhline(threshold,linewidth=3,linestyle='--',
-                label="threshold",color='k')
-    Plotting.before_and_after(x_plot,prob_final,slice_before,slice_after,
-                              style_retract_error_dist)
-    PlotUtilities.lazyLabel("Time (s)","Probability","",**lazy_kwargs)
-    plt.ylim([min(plt.ylim()),1.5])
+    plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
     PlotUtilities.label_tom(fig,loc=(-0.15,1.0))
     PlotUtilities.savefig(fig,out_fig,
                           subplots_adjust=dict(hspace=0.2,wspace=0.2))
-    
 
 if __name__ == "__main__":
     run()
