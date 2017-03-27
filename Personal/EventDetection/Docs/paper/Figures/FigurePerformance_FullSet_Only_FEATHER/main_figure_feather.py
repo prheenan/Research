@@ -39,12 +39,12 @@ def run(in_base="../FigurePerformance_CS/"):
         distance_histogram= Offline.event_error_kwargs(m,color_pred=color_pred)
         true,pred = m.true,m.pred
         # make the 'just the distance' figures
-        fig = PlotUtilities.figure((16,6))
+        fig = PlotUtilities.figure((10,6))
         Plotting.histogram_event_distribution(**distance_histogram)
         final_out_dist = "{:s}{:s}_dist.pdf".format(out_base,safe_name)
         PlotUtilities.savefig(fig,final_out_dist)
         # make the rupture spectrum figure
-        fig = PlotUtilities.figure((16,8))
+        fig = PlotUtilities.figure((12,7))
         final_out_rupture = "{:s}{:s}_rupture.pdf".format(out_base,safe_name)
         Plotting.rupture_plot(true,pred,fig=fig)
         PlotUtilities.savefig(fig,final_out_rupture)
