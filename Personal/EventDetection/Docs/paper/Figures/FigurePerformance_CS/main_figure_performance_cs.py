@@ -113,7 +113,6 @@ def run(base="./"):
         out_learner_base = "{:s}{:s}".format(out_base,name)
         color_pred =  colors_pred[i]
         # define the styles for the histogram
-        use_legend = (i == 0)
         xlabel_histogram = r"Distance [x$_k$]" \
                            if (i == len(metric_list)-1) else ""
         # get the distance information we'll need
@@ -126,7 +125,7 @@ def run(base="./"):
                                               subplot_spec=entire_figure[i],
                                               wspace=0.4,hspace=0.5)
         # plot the metric plot
-        Plotting.rupture_plot(true,pred,use_legend=use_legend,
+        Plotting.rupture_plot(true,pred,
                               lim_plot_load=lim_load_max,
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,

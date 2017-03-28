@@ -310,33 +310,9 @@ def _plot_rupture_objects(to_plot,**kwargs):
     rupture_forces_pN,loading_rate_pN_per_s = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
-    # XXX debugging...
-    """
-    from FitUtil.EnergyLandscapes.Lifetime_Dudko2008.Python.Code import \
-        Dudko2008Lifetime
-    forces = rupture_forces_pN * 1e-12
-    loading_rates = loading_rate_pN_per_s *1e-12
-    range_tau0 = [1e-3,1e3]
-    range_x_tx = [10e-9,200e-9]
-    kbT = 4.1e-21
-    range_DeltaG_tx = [kbT,200*kbT]
-    good_idx = np.where(loading_rates > 0)
-    fit_dict = dict(ranges=[range_tau0,range_x_tx,range_DeltaG_tx],Ns=20)
-    good_forces = forces[good_idx]
-    fit = Dudko2008Lifetime.dudko_fit(good_forces,loading_rates[good_idx],
-                                      fit_dict=fit_dict)
-    space_forces = np.linspace(min(good_forces),max(good_forces))
-    pred_rates = 1e12 * fit.predict(space_forces)
-    plt.plot(pred_rates,space_forces*1e12,'r--',linewidth=3)
-    print(pred_rates)
-    plt.show()
-    print("res!")
-    print(fit.fit_result)
-    exit(1)
-    """
 
 def plot_true_and_predicted_ruptures(true,predicted,title="",
-                                     use_legend=True,loc='upper left',
+                                     loc='upper left',
                                      style_predicted=None,style_true=None):
     """
     given rupture objects, plots the true and predicted values of rupture
@@ -358,14 +334,20 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
                                **_style_pred_def('k'))
     if (style_true is None):
         style_true = dict(label="true",**_style_true_def('g'))
-    _plot_rupture_objects(true,marker='o',linewidth=0,linestyle='None',
-                          **style_true)
+    marker_size = 4
+    style_true_marker = dict(**style_true)
+    style_true_marker['alpha'] = 0.5
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle='None',
-                          **style_predicted)
+                          markersize=marker_size,color=style_predicted['color'],
+                          label=style_predicted['label'])
+    _plot_rupture_objects(true,marker='o',linewidth=4,markersize=marker_size,
+                          markerfacecolor="None",markeredgecolor='g',
+                          linestyle='None',**style_true_marker)
     PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
-                            title,frameon=False,legend_kwargs=dict(numpoints=1),
-                            useLegend=use_legend,loc=loc)
-
+                            title,frameon=True,
+                            legend_kwargs=dict(numpoints=1,markerscale=2),
+                            loc=loc)
+    PlotUtilities.set_legend_kwargs()
 
 
 def debugging_plots(id_string,example_split,info,plot_auto=False):
@@ -679,14 +661,11 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         ax_hist = plt.subplot(gs[:,0])
         histogram_event_distribution(**distance_histogram)
     ax0 = subplot_f(gs[0,offset])
-    plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
-                                     **scatter_kwargs)
+    plot_true_and_predicted_ruptures(true,pred,**scatter_kwargs)
     PlotUtilities.xlabel("")
     plt.xlim(lim_plot_load)
     plt.ylim(lim_plot_force)
     PlotUtilities.title(title)
-    PlotUtilities.legend(frameon=True)
-    PlotUtilities.set_legend_kwargs()
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 =subplot_f(gs[0,offset+1])
