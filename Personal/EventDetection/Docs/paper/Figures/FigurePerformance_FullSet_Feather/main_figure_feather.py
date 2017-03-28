@@ -36,7 +36,7 @@ def run(in_base="./"):
         name = titles[m.name.lower()]
         safe_name = name.replace(" ","")
         color_pred =  colors[i]
-        distance_histogram= Offline.event_error_kwargs(m,color_pred=color_pred)
+        distance_histogram= Plotting.event_error_kwargs(m,color_pred=color_pred)
         true,pred = m.true,m.pred
         # make the 'just the distance' figures
         fig = PlotUtilities.figure((10,6))

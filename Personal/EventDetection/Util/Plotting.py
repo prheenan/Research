@@ -13,6 +13,10 @@ import matplotlib.gridspec as gridspec
 
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
+color_pred_def = 'b'
+color_true_def = 'g'
+style_true_def = dict(color=color_true_def,alpha=0.7)
+style_pred_def = dict(color=color_pred_def,alpha=0.2)
 
 _fec_event_colors = ['k','r','b']
 
@@ -345,16 +349,14 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
     Returns:
          Nothing
     """
-    line_style = dict(linestyle="None")
     if (style_predicted is None):
-        style_predicted = dict(color='k',label="predicted",
-                                linewidth=2,**line_style)
+        style_predicted = dict(color='k',label="predicted",linewidth=2,
+                               **style_pred_def)
     if (style_true is None):
-        style_true = dict(markerfacecolor='w',markeredgecolor='g',
-                          label="true",alpha=0.5)
-    _plot_rupture_objects(true,marker='o',linewidth=0,linestyle="None",
+        style_true = dict(color='g',label="true",**style_true_def)
+    _plot_rupture_objects(true,marker='o',linewidth=0,linestyle='None',
                           **style_true)
-    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
+    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle='None',
                           **style_predicted)
     PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
                             title,frameon=False,legend_kwargs=dict(numpoints=1),
@@ -501,6 +503,46 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
                             "Event distributions for {:s}".format(name),
                             frameon=False)
 
+
+def _histogram_true_style(color_true=color_true_def,label="True"):
+    style_true = dict(color=color_true,label=label,edgecolor=color_true,
+                      histtype='stepfilled',fill=True,hatch= true_hatch(),
+                      facecolor=color_true,alpha=0.3)
+    return style_true
+
+def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
+    style_pred = dict(color=color_pred,label=label,fill=False,
+                      histtype='step',alpha=1,linewidth=3)
+    return style_pred
+
+def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
+                       xlabel="Relative Error [x$_\mathrm{k}$]",
+                       distance_limits=None):
+    """
+    Args:
+        see Plotting.histogram_event_distribution
+    Returns:
+        a dict with the event error kwargs, see 
+        Plotting.histogram_event_distribution
+    """
+    label_pred = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
+    label_true = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
+    style_pred = _histogram_predicted_style(color_pred=color_pred,
+                                            label=label_pred)
+    style_true = _histogram_true_style(color_true=color_true,label=label_pred)
+
+    to_true,to_pred = metric.to_true_and_pred_distances()
+    limit = metric.distance_limit(relative=True)
+    log_limit = np.log10(limit)
+    max_x_true,max_x_pred =  metric.max_x_distances_true_pred()
+    bins = np.logspace(*log_limit,num=n_bins)
+    if (distance_limits is None):
+        distance_limits = limit
+    return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
+                bins=bins,style_true=style_true,style_pred=style_pred,
+                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred)
+
+
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
                                  xlabel="Distance [m]"):
@@ -518,7 +560,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     # is colored by true
     if (to_pred.size > 0):
         plt.hist(to_pred/max_x_true,
-                 log=True,bins=bins,hatch= true_hatch(),**style_true)
+                 log=True,bins=bins,**style_true)
     if (to_true.size > 0):
         plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
@@ -593,13 +635,13 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     ruptures_pred,loading_pred = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)
     if (color_pred is None):
-        color_pred = 'k'
+        color_pred = color_pred_def
     if (color_true is None):
-        color_true = 'g'
+        color_true = color_true_def
     if (style_true is None):
-        style_true = dict(color=color_true,alpha=0.5)
+        style_true = style_true_def
     if (style_pred is None):
-        style_pred = dict(color=color_pred,alpha=0.3)
+        style_pred = style_pred_def
     if (scatter_kwargs is None):
         scatter_kwargs = dict(style_true=dict(label="true",**style_true),
                               style_predicted=dict(label="predicted",
