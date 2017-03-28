@@ -17,10 +17,10 @@ color_pred_def = 'b'
 color_true_def = 'g'
 
 def _style_true(color_true=color_true_def):
-    return dict(color=color_true,alpha=0.7)
+    return dict(color=color_true,alpha=0.9)
 
 def _style_pred(color_pred=color_pred_def):
-    return dict(color=color_pred,alpha=0.2)
+    return dict(color=color_pred,alpha=0.4)
 
 _fec_event_colors = ['k','r','b']
 
@@ -511,7 +511,7 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
 def _histogram_true_style(color_true=color_true_def,label="True"):
     style_true = dict(color=color_true,label=label,edgecolor=color_true,
                       histtype='stepfilled',fill=True,hatch= true_hatch(),
-                      facecolor=color_true,alpha=0.3)
+                      facecolor=color_true,alpha=0.4)
     return style_true
 
 def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
@@ -570,7 +570,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
-    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc='upper left')
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc='upper right')
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
