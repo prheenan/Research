@@ -35,8 +35,10 @@ class split_force_extension:
     def set_espilon_and_sigma(self,epsilon,sigma):
         self.epsilon =epsilon
         self.sigma = sigma
-    def _approach_stdevs_epsilon_and_sigma(self,n_points=None,
-                                           slice_fit_approach=None):
+    def set_approach_metrics(self,slice_to_fit,interpolator):
+        self.cached_approach_interpolator = interpolator
+        self.cached_approach_slice_to_fit = slice_to_fit
+    def _approach_metrics(self,n_points=None,slice_fit_approach=None):
         if (n_points is None):
             n_points = self.tau_num_points
         if (slice_fit_approach is None):
@@ -52,11 +54,7 @@ class split_force_extension:
         stdevs,epsilon,sigma = \
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
-        return stdevs,epsilon,sigma
-    def calculate_epsilon_and_sigma(self,*args,**kwargs):
-        stdevs,epsilon,sigma = self._approach_stdevs_epsilon_and_sigma(*args,
-                                                                       **kwargs)
-        return epsilon,sigma
+        return stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach
 
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
@@ -191,8 +189,19 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        above_med = \
-            np.where(self.retract.Force > np.median(self.retract.Force))[0]
+        approach_idx = self.get_predicted_approach_surface_index()
+        offset_points = self.approach.Force.size-approach_idx
+        offset_separation = abs(np.median(np.diff(self.approach.Separation))*\
+                                offset_points)
+        retr_min =  self.retract.Separation[0]   
+        offset = (retr_min+ offset_separation)
+        cond = (self.retract.Separation > offset)
+        retract_idx = np.where(cond)[0]
+        if (retract_idx.size == 0):
+            cond_force = self.retract.Force > np.median(self.retract.Force)
+            return np.where(cond_force)[0][0]
+        else:
+            return retract_idx[0]
         return above_med[0]
 
 def _index_surface_relative(x,offset_needed):

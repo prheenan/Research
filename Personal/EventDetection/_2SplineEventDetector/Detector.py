@@ -314,7 +314,15 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     median = np.median(interp_f)
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
+    # get the 
+    interpolator_approach = split_fec.cached_approach_interpolator
+    slice_approach = split_fec.cached_approach_slice_to_fit
+    approach_time = split_fec.approach.Time[slice_approach]
+    interpolator_approach_f = interpolator_approach(approach_time)
+    df_approach = Analysis.local_centered_diff(interpolator_approach_f,
+                                               n=min_points_between)
+    epsilon_approach,sigma_approach = np.median(df_approach),np.std(df_approach)
+    epsilon,sigma = split_fec.get_epsilon_and_sigma()    
     min_signal = (epsilon+sigma)
     if (negative_only):
         baseline = -min_signal
@@ -330,20 +338,37 @@ def delta_mask_function(split_fec,slice_to_use,
     probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
-    n_slice_region = interp_f.size
-    f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
-          for i in range(n_slice_region)]    
-    interp_f_minus_baseline = interp_f - f0
     if (negative_only):
         # XXX ?.... shouldnt this be minimum? (*dont* want positive)
-        value_cond = (np.abs(np.maximum(0,interp_f_minus_baseline))\
-                      < min_signal)
+        value_cond = (np.minimum(0,df_true) > baseline)
     else:
+        # XXX should *not* need to have two separate methods. determine why
+        # (probably adhesions)
+        n_slice_region = interp_f.size
+        f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
+          for i in range(n_slice_region)]            
+        interp_f_minus_baseline = interp_f - f0
         value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
+    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
+    pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
+                                        slice_to_use.start
+    zero_force = interp_f[pred_retract_surface_idx_in_slice]
+    diff = interp_f - np.maximum(0,df_true)
+    zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
+    """
+    plt.subplot(2,1,1)
+    plt.plot(diff)
+    plt.axhline(zero_force)
+    plt.subplot(2,1,2)    
+    plt.plot(diff)
+    plt.axhline(zero_force)
+    plt.show()
+    """
+    consistent_with_zero_cond = (diff <= zero_condition_baseline) 
     # find where the derivative is definitely not an event
     gt_condition = np.ones(boolean_ret.size)
-    gt_condition[slice_to_use] = ((value_cond) | 
-                                  (no_event_cond))
+    gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
+                                  (consistent_with_zero_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     # update the boolean array before we slice
@@ -355,8 +380,8 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """
     xlim = plt.xlim(min(x),max(x))
+    """
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
     invalid_idx = np.where(gt_condition)
@@ -365,7 +390,8 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
     plt.subplot(3,1,2)
-    plt.plot(x,boolean_ret)
+    plt.plot(x_sliced,value_cond)
+    plt.plot(x_sliced,no_event_cond+1.1)
     plt.xlim(xlim)
     plt.subplot(3,1,3)
     plt.semilogy(x,probability_updated,linestyle='--')
@@ -798,8 +824,10 @@ def _predict_helper(split_fec,threshold,**kwargs):
     split_fec.set_retract_knots(interp)
     # set the epsilon and tau by the approach
     min_points_between = _min_points_between(n_points)    
-    epsilon,sigma = split_fec.calculate_epsilon_and_sigma(n_points=n_points)
+    stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach =\
+        split_fec._approach_metrics()
     split_fec.set_espilon_and_sigma(epsilon,sigma)
+    split_fec.set_approach_metrics(slice_fit_approach,spline_fit_approach)
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**kwargs)
     to_ret = _predict(x=time,
                       y=force,
@@ -832,9 +860,8 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,
-              derivative_mask_function,integral_mask_function,
-              delta_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function,
+              derivative_mask_function,integral_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

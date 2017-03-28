@@ -273,8 +273,7 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=False,
                             loc="upper left")
 
-def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
-                             derivative_le_zero,to_ret):
+def debug_plot_adhesion_info(split_fec,min_idx,boolean_ret):
     """
     Used inside of Detector.adhesion_mask to tell wtf is happening
     
@@ -282,17 +281,18 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
         all: internal Detector.adhesion_mask, see that function
     Returns:
         nothing
-    """                             
+    """      
+    surface_index = split_fec.get_predicted_retract_surface_index()    
+    x = split_fec.retract.Time
+    force = split_fec.retract.Force
     plt.subplot(2,1,1)
-    plt.plot(time,force*1e12,color='k',alpha=0.3)
-    plt.plot(time,force_fit*1e12)
-    plt.axvline(time[min_idx])
+    plt.plot(x,force*1e12,color='k',alpha=0.3)
+    plt.axvline(x[min_idx],label="minimum")
+    plt.axvline(x[surface_index],label="surface",linestyle='--')
     PlotUtilities.lazyLabel("","Force","",loc="upper right",
                             frameon=True)     
     plt.subplot(2,1,2)
-    plt.plot(time,derivative_gt_zero,label="ge")
-    plt.plot(time,derivative_le_zero,label="le")
-    plt.plot(time,to_ret,color='k',linestyle='--')
+    plt.plot(x,boolean_ret,color='k',linestyle='--')
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
 
@@ -763,7 +763,7 @@ def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure(figsize=(16,8))
         rupture_plot(true,pred,fig,distance_histogram=distance_histogram)
-        out_path = "{:s}{:s}{:d}.pdf".format(out_file_stem,name,i)
+        out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
 def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):

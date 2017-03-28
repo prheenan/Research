@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 
 sys.path.append("../../../../")
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
-from Research.Personal.EventDetection.Util import Learning,InputOutput
+from Research.Personal.EventDetection.Util import Learning,InputOutput,Learners
 from Research.Personal.EventDetection.Timing import TimePlot
 
 class time_trials:
@@ -212,15 +212,16 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    learners = Learning.get_learners()
+    learners = Learners.get_learners()
     positives_directory = InputOutput.get_positives_directory()
     positive_categories = InputOutput.\
         get_categories(positives_directory=positives_directory,
                        use_simulated=True)
     curve_numbers = [1,2,5,10,30,50,100,150,200]
     cache_dir = "../_1ReadDataToCache/cache/"
+    GenUtilities.ensureDirExists(cache_dir)
     force = False
-    times = CheckpointUtilities.getCheckpoint(cache_dir + "all.pkl",
+    times = CheckpointUtilities.getCheckpoint(cache_dir + "all_timer.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
                                               curve_numbers,

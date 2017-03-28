@@ -25,7 +25,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 75
+    limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True
@@ -107,14 +107,17 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 1e-2
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
+        load_file_name = (os.path.basename(example.Meta.SourceFile) + \
+                          example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
-        debugging_file_path = debug_directory + load_files[i]
+        load_path = load_file_name
+        debugging_file_path = debug_directory + load_file_name
         if (copy_files):
-            copyfile(load_paths[i],debugging_file_path)
+            copyfile(cache_directory + load_file_name,debugging_file_path)
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
