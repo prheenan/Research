@@ -721,7 +721,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     labels_coeffs = [r"BCC"]
     # add in the relative distance metrics, if the are here
     if (distance_histogram is not None):
-        labels_coeffs.append(r"f$_{85}$")
+        labels_coeffs.append(r"P$_{85}$")
         _,_,cat_relative_median,cat_relative_q = \
             Offline.relative_and_absolute_median_and_q(**distance_histogram)
         coeffs.append(cat_relative_q)
@@ -1029,11 +1029,11 @@ def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
     
         others: see plt.plot()
     """
-    kw = dict(color=color,
+    kw = dict(facecolor=color,
               zorder=zorder,
               marker=marker,
-              markersize=markersize,
+              s=markersize,
               alpha=alpha,**kwargs)
     for start in event_idx:
-        plt.plot(plot_x[start],plot_y[start]+fudge_y,**kw)
+        plt.scatter(plot_x[start],plot_y[start]+fudge_y,**kw)
 

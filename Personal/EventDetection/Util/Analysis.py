@@ -165,6 +165,11 @@ class split_force_extension:
         ends = event_idx_retract + [None]
         slices = [slice(i,f,1) for i,f in zip(starts,ends)]
         return slices
+    def get_retract_event_starts(self):
+        """
+        get the start to all the events
+        """
+        return [ i.start for i in self.get_retract_event_idx()]
     def get_retract_event_centers(self):
         """
         Returns:
