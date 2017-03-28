@@ -37,9 +37,19 @@ def run(base="./"):
         marker_size = 30
         Plotting.plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_pN,
                                           markersize=marker_size,hatch='////')
-        predicted_event_idx = Detector.predict(c,threshold=1e-1)
-        for i in predicted_event_idx:
-            plt.axvline(plot_x[i])
+        predicted_event_idx = Detector.predict(c,threshold=1e-2)
+        before =  [0] + list(predicted_event_idx)
+        after =  list(predicted_event_idx) + [None]
+        slices = [slice(i,f,1) for i,f in zip(before,after)]
+        color_before = 'r'
+        color_after = 'b'
+        for i,(before_tmp,after_tmp) in enumerate(zip(slices[:-1],slices[1:])):
+            Plotting.before_and_after(plot_x,plot_y,before_tmp,after_tmp,
+                                      color_before=color_before,
+                                      color_after=color_after)
+            tmp = color_before
+            color_before = color_after
+            color_after = tmp
         PlotUtilities.lazyLabel("Time(s)","Force","")
     PlotUtilities.savefig(fig,name.replace(".pdf","_pres.pdf"))
 

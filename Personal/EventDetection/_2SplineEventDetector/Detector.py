@@ -380,8 +380,8 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    xlim = plt.xlim(min(x),max(x))
     """
+    xlim = plt.xlim(min(x),max(x))
     plt.subplot(3,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
     invalid_idx = np.where(gt_condition)
