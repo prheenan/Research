@@ -529,11 +529,16 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
         a dict with the event error kwargs, see 
         Plotting.histogram_event_distribution
     """
+    name = metric.name.lower()
+    if (name == "no event"):
+        loc = "upper right"
+    else:
+        loc = "upper left"
     label_pred = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
     label_true = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
     style_pred = _histogram_predicted_style(color_pred=color_pred,
                                             label=label_pred)
-    style_true = _histogram_true_style(color_true=color_true,label=label_pred)
+    style_true = _histogram_true_style(color_true=color_true,label=label_true)
 
     to_true,to_pred = metric.to_true_and_pred_distances()
     limit = metric.distance_limit(relative=True)
@@ -543,13 +548,13 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
     if (distance_limits is None):
         distance_limits = limit
     return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
-                bins=bins,style_true=style_true,style_pred=style_pred,
+                bins=bins,style_true=style_true,style_pred=style_pred,loc=loc,
                 xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred)
 
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
-                                 xlabel="Distance [m]"):
+                                 xlabel="Distance [m]",loc='best'):
     """
     plots the distribution of distances from true/predicted to counterparts
 
@@ -570,7 +575,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
-    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc='upper right')
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc=loc)
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """

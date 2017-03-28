@@ -1,4 +1,4 @@
-\chapter{\sLabel{SampleDetails}Sample and Cantilever Preparation}
+\chapter{\sLabel{SampleDetails}Sample and cantilever preparation}
 
 \section{\sLabel{Surface}Azide-functionalized surfaces}
 
@@ -42,19 +42,19 @@ v [nm/s] & N$_\mathrm{curves}$ & $\mu_{\mathrm{Curve Size}}$ & $\sigma_{\mathrm{
 
 
 
-\chapter{\sLabel{DesignDetails} Algorithm Design}
+\chapter{\sLabel{DesignDetails} Algorithm design}
 
 This section details the event-detection algorithm. The following conventions are followed:
 
 \begin{enumerate}
  \item All variables with uppercase letters are random variables.
  \item All variables with lowercase letters are either instances of the corresponding uppercase random variables (\textit{i.e.}, measurements) or pure functions.
- \item All variables with a hat (\textit{e.g.}, $\hat{\epsilon}_t$) are empirical measurements or estimates of an already-defined variable.
+ \item All variables with a hat (\textit{e.g.}, $\hat{\epsilon}_t$) are estimators of a variable.
 \end{enumerate}
 
 \section{Defining the no-event hypothesis}
 
-\name{} defines an event as when the time derivative of force applied to a molecule exhibits a discontinuity as the molecule passes over a free-energy barrier. We assume this event takes place on timescales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `t' and finds where the probability of a measurement is low. Hereafter, the definition of an event and these assumptions will be referred to as the \emph{no-event hypothesis}. 
+\name{} defines an event as when the time derivative of force applied to a molecule exhibits a discontinuity as the molecule passes over a free-energy barrier. We assume this event takes place on timescales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `$t$' and finds where the probability of a measurement is low. Hereafter, the definition of an event and these assumptions will be referred to as the \emph{no-event hypothesis}. 
 
 \section{Mathematical background for testing the no-event hypothesis}
 
@@ -84,13 +84,11 @@ For \emph{any} noise distribution, \eRef{feather-probability} bounds the probabi
 
 \section{Accurate estimators for hypothesis testing}
 
-To obtain an accurate estimator for $g_t$, the data must be smoothed. \name{} uses spline smoothing and the user-specified $\tau$ (see \tRef{Parameters}).  
-
-The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline\citePRH{dierckx_algorithm_1975} to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of $\tau$. \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{error}.
+To obtain an accurate estimator for $g_t$, the data must be smoothed. \name{} uses spline smoothing and the user-specified $\tau$ (see \tRef{Parameters}). The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline\citePRH{dierckx_algorithm_1975} to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of $\tau$. \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{error}.
 
 Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations `$\WindowStdev{}$'. $\WindowStdev{}$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$. Using $\WindowStdev{}$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  
 
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\WindowStdev{}$ on the region of the approach curve without the surface hard-contact. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\WindowStdev{}$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these psuedo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\WindowStdev{}$ on the region of the approach curve where the AFM ip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\WindowStdev{}$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these psuedo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
 
 The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, and the operation-specific probability is obtained.
 
@@ -140,7 +138,7 @@ def event_indices(approach,retract,threshold,$\tau$):
 
 
 \begin{figure}[htpb]
-\caption[Algorithm Performance]{\noindent\fLabel{Performance} Performance of \name{} compared to the baseline algorithms. This figure is the concatenation of \fRef{PerformanceFovea}, \fRef{PerformanceFEATHER}, and \fRef{PerformanceScipy}. }
+\caption[Algorithm performance]{\noindent\fLabel{Performance} Performance of \name{} compared to the baseline algorithms. This figure is the concatenation of \fRef{PerformanceFEATHER}, \fRef{PerformanceFovea}, and \fRef{PerformanceScipy}. }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
 \end{figure}
@@ -169,7 +167,7 @@ def event_indices(approach,retract,threshold,$\tau$):
 
 
 \begin{figure}
-\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details} The runtime of the three methods versus loading rate and number of points. \subref{A} \name{}'s total runtime versus number of curves analyzed for the curve sizes, N, listed. \subref{B} The runtime per curve versus number of points, N. The runtimes at each N are obtained by the slope of the relevant line in (A).  \subref{C,D} As (A,B), but for the Open Fovea method. \subref{E,F} As (A,B), but for the Scientific Python method.  }
+\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details} The runtime of the three methods versus loading rate and number of points. \subref{A} \name{}'s total runtime versus number of curves analyzed for the curve sizes, N, listed. \subref{B} The runtime per curve versus number of curve points, N. The runtimes at each N are obtained by the slope of the relevant line in (A).  \subref{C,D} As (A,B), but for the Open Fovea method. \subref{E,F} As (A,B), but for the Scientific Python method.  }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
 \end{figure}
