@@ -11,13 +11,13 @@ During an \singlemol{}-AFM experiment, a cantilever-bound tip with a nanometer-s
 \includegraphics[width=\figwidth]{../Figures/Finals/cartoon.pdf}% Here is how to import EPS art
 \end{figure}
 
-The analysis and interpretation of \singlemol{} experiments is limited by the attachment of the probe to the molecule of interest. Data acquisition is dependent on attachment between the probe and the molecule. In AFM, quality attachments between the tip and the sample may occur less than one curve in tens of thousands.\citePRH{bosshart_reference-free_2012} Strategies exist to improve attachment rates by coating the AFM tip with a molecule that binds readily to the sample of interest.\cite{walder_robert_rapid_nodate} However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting \singlemol{} data and locating possible events (see \fRef{Rupture}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in \singlemol{} data management and analysis.
+The analysis and interpretation of \singlemol{} experiments is dependent on the attachment of the probe to the molecule of interest. In AFM, quality attachments between the tip and the sample may occur less than one curve in tens of thousands.\citePRH{bosshart_reference-free_2012} Strategies exist to improve attachment rates by coating the AFM tip with a molecule that binds readily to the sample of interest.\cite{walder_robert_rapid_nodate} However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting \singlemol{} data and locating possible events (see \fRef{Rupture}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in \singlemol{} data management and analysis.
 
 Methods exist to automate manually sorting \singlemol{} data and detect events. Automation removes the burden of manual data filtering and improves scientific reproducibility. Techniques for automated event detection in \fec{}s include aligning by the contour length at each extension by applying polymer models;\citePRH{bosshart_reference-free_2012,kuhn_automated_2005} thresholding based on signal or noise characteristics;\citePRH{gergely_semi-automatized_2001,roduit_openfovea:_2012} and classification based on transformations of the data into frequency or derivative space \citePRH{kasas_fuzzy_2000,garcia-masso_automated_2016,benitez_searching_2017}. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization. In particular, contour-length alignment algorithms bias results towards dominant features and necessarily require a polymer model for the contour length as a function of force and extension. In \singlemol{} studies of molecules with no existing polymer model or which exhibit rare behavior, alignment algorithms will have limited use.  Thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As shown below, these methods do not generalize well to the typical range of \singlemol{} data (\fRef{Performance}).
 
 This paper describes a new method for detecting events in \singlemol{} force-extension curves.  The algorithm, named \name{} (\acronym{}), requires no \textit{a priori} knowledge of the polymer under study, does not bias data interpretation towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well to typical \singlemol{} data ranges. \name{} is designed to make few assumptions about the data, operate over a wide range of AFM data, and require a small time and memory footprint compared to existing techniques.
 
- The first part of the paper describes the sample preparation and data acquisition to measure the \fec{}s of functionalized double-stranded DNA pulled by functionalized AFM cantilevers (\fRef{Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. 
+ The first part of the paper describes the sample preparation and data acquisition used to measure the \fec{}s of functionalized double-stranded DNA pulled by functionalized AFM cantilevers (\fRef{Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of \name{} are described. 
 
 \chapter{\sLabel{Materials}Materials and methods}
 
@@ -27,7 +27,7 @@ Site-specific chemistry is used to improve the acquisition rate and quality of d
 
 \section{\sLabel{Surface}Atomic force microscopy}
 
-All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method.\citePRH{hutter_calibration_1993} All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, \ValUnit{25}{\textmu{}m} grids at points separated by 1\textmu{}m. The stage was translated to a new grid point after measuring three force-extension curves. 
+All atomic force microscopy measurements were carried out using an Asylum Cypher \supply{Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method.\citePRH{hutter_calibration_1993} All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, \ValUnit{25}{\textmu{}m} grids at points separated by \ValUnit{1}{\textmu{}m}. The stage was translated to a new grid point after measuring three force-extension curves. 
 
 \section{\sLabel{Annotation}Data annotation}
 
@@ -40,7 +40,7 @@ All atomic force microscopy measurements were carried out using an Asylum Cypher
 
 Two hundred \fec{}s with events were obtained at three different pulling velocities (\ValUnit{100}{nm/s}, \ValUnit{500}{nm/s}, \ValUnit{1000}{nm/s}). The start and end of each event in a curve were obtained through manual annotation. More statistical information on the data, including curve lengths and number of events per curve, is given in \tRef{statistics}.
 
-The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in \fRef{Rupture}. The region leading up to the event start was fit by a line, with the region length set to $\tau$ (see \tRef{Parameters}). The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line at the time value where the data in the region was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in \fRef{Performance}. 
+The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in \fRef{Rupture}. The region leading up to the event start was fit by a line, with the region length set to $\tau$ (see \tRef{Parameters}). The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line where the data in the region was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in \fRef{Performance}. 
 
 
 
@@ -74,7 +74,7 @@ threshold & Probability threshold above which to reject events  & Determined by 
 \end{table}
 
 
-\subsection{\sLabel{Compare}Choice of competing methods}
+\subsection{\sLabel{Compare}Choice of methods for comparison}
 
 The following two algorithms were chosen for comparison to \name{}: 
 
@@ -121,13 +121,13 @@ $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \n
 
 All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (\fRef{Tuning}). The parameter value minimizing the total number of missing and extra events for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
 
-Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=\ValUnit{1000}{nm/s}, N$\approx10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to a wide range of data sets sizes and experimental parameters.
+Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for \name{}, see \fRef{Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve \textemdash{} 200 curves with v=\ValUnit{1000}{nm/s}, N $\approx{}10^{5}$ (see \tRef{statistics}) \textemdash{} was used for results comparing \name{} to the baselines. \name{} was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (\fRef{LargeDataset}). This demonstrates that \name{} generalizes well to a wide range of data sets sizes and experimental parameters.
 
 \chapter{\sLabel{Results}Results}
 
 \section{\sLabel{Timing}Algorithmic time complexity}
 
-\fRef{Timing} compares the runtimes, T(N), of \name{} and the baselines. As expected, the runtime of each algorithm is linear with curve size in range tested (thousands to millions of points). \name{} has a roughly tenfold better asymptotic slope than the baselines.  
+\fRef{Timing} compares the runtimes, T(N), of \name{} and the baselines. As expected, the runtime of each algorithm is linear with curve size in range tested. \name{} has a roughly tenfold better asymptotic slope than the baselines.  
 
 \begin{figure}[htpb]
 \caption[Runtime versus length of curve]{\noindent\fLabel{Timing} Big-O runtime of each algorithm is approximately linear. \subref{A} The runtime per curve versus number of points in the curve, T(N), is reported for each algorithm. Lines around each algorithm show upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n, where a$_0$ and a$_1$ are coefficients to the least-squares fit of the runtime. \subref{B} This plot shows the asymptotic runtime per data point, a$_1$, for each algorithm from (A). }
@@ -182,7 +182,7 @@ Scientific Python & 0.349 & 0.514\e
 \chapter{\sLabel{Discussion}Discussion}
 
 
- \name{} provides order-of-magnitude improvements in both speed and physically-relevant metrics for algorithm performance, relative to the baselines presented. As shown in \fRef{LargeDataset}, \name{} also generalizes well to a wide range of \singlemol{} experimental conditions.  
+ \name{} provides order-of-magnitude improvements in physically-relevant metrics for algorithm performance, relative to the baselines presented. As shown in \fRef{LargeDataset}, \name{} also generalizes well to a wide range of \singlemol{} experimental conditions.  
 
 This work applies \name{} to unfolding in \singlemol{} data, but the algorithm could be generalized to a wider array of applications. A natural generalization to \name{} would search for refolding events. Refolding experiments relax an unfolded molecule back to its native state by reducing the applied force. In addition, domain-specific models could be combined with \name{} to further filter data, based on the specific experiment. Consider an experimenter attempting to measure the force-extension relationship of a DNA hairpin of contour length \ValUnit{100}{nm}. After first obtaining all rupture locations in the data via \name{}, the experimenter could fit a polymer model to each curve up to final rupture, obtain the contour length, and remove all data with contour lengths outside of \ValUnit{(100$\pm \epsilon$)}{nm}, where $\epsilon$ is a small number. By predicting where events occur without providing any domain-specific model of the event, \name{} is one tool in a longer \singlemol{} analysis pipeline.
 
