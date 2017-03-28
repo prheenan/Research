@@ -589,7 +589,7 @@ def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
     if len(to_bin) == 0:
         return
-    plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+    return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
     """
@@ -602,7 +602,7 @@ def rupture_force_histogram(objs,**kwargs):
         nothing
     """
     ruptures,_ = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
-    _gen_rupture_hist(ruptures,**kwargs)
+    return _gen_rupture_hist(ruptures,**kwargs)
 
 def loading_rate_histogram(objs,**kwargs):
     """
@@ -615,7 +615,7 @@ def loading_rate_histogram(objs,**kwargs):
         nothing
     """
     _,loading_rates = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
-    _gen_rupture_hist(loading_rates,**kwargs)
+    return _gen_rupture_hist(loading_rates,**kwargs)
 
 def rupture_plot(true,pred,fig,count_ticks=3,
                  scatter_kwargs=None,style_pred=None,
@@ -659,6 +659,10 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     _lim_force,_bins_rupture,_lim_load,_bins_load = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred)
+    _lim_force_plot,_,_lim_load_plot,_ = \
+        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                loading_true,loading_pred,
+                                                limit=True)
     if (lim_force is None):
         lim_force = _lim_force
     if (lim_load is None):
@@ -668,9 +672,9 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     if (bins_load is None):
         bins_load = _bins_load
     if (lim_plot_load is None):
-        lim_plot_load = lim_load
+        lim_plot_load = _lim_load_plot
     if (lim_plot_force is None):
-        lim_plot_force = lim_force
+        lim_plot_force = _lim_force_plot
     if (distance_histogram is not None):
         ax_hist = plt.subplot(gs[:,0])
         histogram_event_distribution(**distance_histogram)
@@ -681,6 +685,8 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.xlim(lim_plot_load)
     plt.ylim(lim_plot_force)
     PlotUtilities.title(title)
+    PlotUtilities.legend(frameon=True)
+    PlotUtilities.set_legend_kwargs()
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
     ax1 =subplot_f(gs[0,offset+1])
@@ -710,17 +716,19 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.ylim(lim_plot_force)
     plt.xscale('log')
     ax4 = subplot_f(gs[1,offset])
-    loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                           **pred_style_histogram)
-    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
-                           **true_style_histogram)
+    n_pred,_,_ = loading_rate_histogram(pred,orientation='vertical',
+                                        bins=bins_load,
+                                        **pred_style_histogram)
+    n_true,_,_, = loading_rate_histogram(true,orientation='vertical',
+                                         bins=bins_load,**true_style_histogram)
+    if (count_limit is None):
+        count_limit = [0.5,max([max(n_pred),max(n_true)])*10]
     PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')
     plt.yscale('log')
     plt.xlim(lim_plot_load)
-    if (count_limit is not None):
-        plt.ylim(count_limit)
+    plt.ylim(count_limit)
     ax3 = subplot_f(gs[1,offset+1])
     if (len(loading_pred) > 0):
         coeffs = Analysis.\
