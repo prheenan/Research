@@ -98,10 +98,12 @@ def run(base="./"):
     # make the distance histogram figure for the presenation
     fig = PlotUtilities.figure((10,5))
     make_distance_figure(l,data_file,fec_file)
+    PlotUtilities.legend(loc='upper right')
     PlotUtilities.savefig(fig,final_out_hist.replace(".pdf","_pres.pdf"))
     # make the distance histogram figure
     fig = PlotUtilities.figure((16,6))
     make_distance_figure(l,data_file,fec_file)
+    PlotUtilities.legend(loc='upper right')
     PlotUtilities.label_tom(fig,loc=(-0.1,1.0),fontsize=18)
     PlotUtilities.savefig(fig,final_out_hist)
 
