@@ -44,9 +44,11 @@ def run(in_base="../FigurePerformance_CS/"):
         final_out_dist = "{:s}{:s}_dist.pdf".format(out_base,safe_name)
         PlotUtilities.savefig(fig,final_out_dist)
         # make the rupture spectrum figure
-        fig = PlotUtilities.figure((12,7))
+        fig = PlotUtilities.figure((14,8))
         final_out_rupture = "{:s}{:s}_rupture.pdf".format(out_base,safe_name)
-        Plotting.rupture_plot(true,pred,fig=fig)
+        Plotting.rupture_plot(true,pred,fig=fig,
+                              distance_histogram=distance_histogram,
+                              color_pred=color_pred)
         PlotUtilities.savefig(fig,final_out_rupture)
         fig = PlotUtilities.figure((16,8))
         # plot the metric plot
@@ -59,7 +61,6 @@ def run(in_base="../FigurePerformance_CS/"):
         PlotUtilities.savefig(fig,final_out_path,
                               subplots_adjust=dict(wspace=0.2,hspace=0.1,
                                                    left=0.05,top=0.85))
-
 
 
 

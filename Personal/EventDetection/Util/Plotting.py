@@ -15,8 +15,12 @@ style_train = dict(color='r',marker='o',linestyle='--',label="Training")
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
 color_pred_def = 'b'
 color_true_def = 'g'
-style_true_def = dict(color=color_true_def,alpha=0.7)
-style_pred_def = dict(color=color_pred_def,alpha=0.2)
+
+def _style_true(color_true=color_true_def):
+    return dict(color=color_true,alpha=0.7)
+
+def _style_pred(color_pred=color_pred_def):
+    return dict(color=color_pred,alpha=0.2)
 
 _fec_event_colors = ['k','r','b']
 
@@ -350,10 +354,10 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
          Nothing
     """
     if (style_predicted is None):
-        style_predicted = dict(color='k',label="predicted",linewidth=2,
-                               **style_pred_def)
+        style_predicted = dict(label="predicted",linewidth=2,
+                               **_style_pred_def('k'))
     if (style_true is None):
-        style_true = dict(color='g',label="true",**style_true_def)
+        style_true = dict(label="true",**_style_true_def('g'))
     _plot_rupture_objects(true,marker='o',linewidth=0,linestyle='None',
                           **style_true)
     _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle='None',
@@ -564,9 +568,9 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     if (to_true.size > 0):
         plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
-    plt.xlim(distance_limits)
+    plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
-    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc='upper right')
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc='upper left')
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -640,9 +644,9 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     if (color_true is None):
         color_true = color_true_def
     if (style_true is None):
-        style_true = style_true_def
+        style_true = _style_true(color_true)
     if (style_pred is None):
-        style_pred = style_pred_def
+        style_pred = _style_pred(color_pred)
     if (scatter_kwargs is None):
         scatter_kwargs = dict(style_true=dict(label="true",**style_true),
                               style_predicted=dict(label="predicted",
@@ -678,12 +682,17 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     hatch_true = true_hatch()
     true_style_histogram = _histogram_true_style(color_true=color_true,
                                                  label="true")
-    pred_style_histogam = _histogram_predicted_style(color_pred=color_pred,
+    pred_style_histogram = _histogram_predicted_style(color_pred=color_pred,
                                                      label="predicted")
+    # for the rupture force, we dont add the label
+    rupture_force_true_style = dict(**true_style_histogram)
+    rupture_force_true_style['label'] = None
+    rupture_force_pred_style = dict(**pred_style_histogram)
+    rupture_force_pred_style['label'] = None
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
-                            **pred_style_histogam)
+                            **rupture_force_pred_style)
     rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
-                            **true_style_histogram)
+                            **rupture_force_true_style)
     PlotUtilities.lazyLabel("Count","","")
     ax = plt.gca()
     # push count to the top
@@ -697,7 +706,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.xscale('log')
     ax4 = subplot_f(gs[1,offset])
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                           **pred_style_histogam)
+                           **pred_style_histogram)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
                            **true_style_histogram)
     PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
