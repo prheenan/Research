@@ -77,7 +77,7 @@ def get_supplemental_figure(output_path,trials):
             PlotUtilities.xlabel("")
         PlotUtilities.ylabel(y_label_big_o)
         plt.ylim(ylim_big_o)
-    PlotUtilities.label_tom(fig,loc=(-0.15,1.05))
+    PlotUtilities.label_tom(fig,loc=(-0.05,1.05))
     PlotUtilities.savefig(fig, output_path)
 
 

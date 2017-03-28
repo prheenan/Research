@@ -260,7 +260,7 @@ def run(base="./"):
     """
     make the plot for the paper
     """
-    fig = PlotUtilities.figure((16,8))
+    fig = PlotUtilities.figure((16,10))
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
     plot_fec(time_approach,force_approach,interp_approach,

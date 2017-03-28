@@ -38,7 +38,7 @@ def algorithm_title_dict():
     returns a dicitonary mapping <description of algorithm> -> plot title
     """
     dict_v = {"no event":"FEATHER",
-              "open fovea":"Open Fovea",
+              "open fovea":"OpenFovea",
               "wavelet transform":"Scientific Python"}
     return dict_v
 
