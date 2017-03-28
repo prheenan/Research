@@ -565,7 +565,8 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
     plt.xlim(distance_limits)
-    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False)
+    plt.ylim(0.5,max(plt.ylim()))
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc='upper right')
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -675,8 +676,10 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         ax0.get_xaxis().set_ticklabels([])
     ax1 =subplot_f(gs[0,offset+1])
     hatch_true = true_hatch()
-    true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
-    pred_style_histogam = dict(zorder=1,**style_pred)
+    true_style_histogram = _histogram_true_style(color_true=color_true,
+                                                 label="true")
+    pred_style_histogam = _histogram_predicted_style(color_pred=color_pred,
+                                                     label="predicted")
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
                             **pred_style_histogam)
     rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
@@ -694,9 +697,9 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     plt.xscale('log')
     ax4 = subplot_f(gs[1,offset])
     loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                          label="predicted", **pred_style_histogam)
+                           **pred_style_histogam)
     loading_rate_histogram(true,orientation='vertical',bins=bins_load,
-                           label="true",**true_style_histogram)
+                           **true_style_histogram)
     PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')

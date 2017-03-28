@@ -117,7 +117,7 @@ def run(base="./"):
         xlabel_histogram = r"Distance [x$_k$]" \
                            if (i == len(metric_list)-1) else ""
         # get the distance information we'll need
-        distance_kw = Offline.\
+        distance_kw = Plotting.\
             event_error_kwargs(m,color_pred=color_pred,
                                distance_limits=distance_limits,
                                xlabel=xlabel_histogram)

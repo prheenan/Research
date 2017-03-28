@@ -19,7 +19,7 @@ def make_distance_figure(l,data_file,fec_file):
     multiple_fec = CheckpointUtilities.lazy_load(fec_file)
     split_fec = Analysis.zero_and_split_force_extension_curve(multiple_fec)
     m = Offline.best_metric_from_learner(l)
-    distance_histogram= Offline.event_error_kwargs(m)
+    distance_histogram= Plotting.event_error_kwargs(m)
     name,true,pred = m.name,m.true,m.pred
     event_starts = [i.start for i in split_fec.get_retract_event_slices()
                     if i.start is not 0]
