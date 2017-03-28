@@ -129,7 +129,7 @@ def run(base="./"):
                               lim_plot_load=lim_load_max,
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,
-                              count_limit=[0.5,count_max*2],
+                              count_limit=[0.5,count_max*5],use_legend=(i==0),
                               distance_histogram=distance_kw,gs=gs,
                               fig=fig)
         plt.title(title_dict[name],fontsize=25,x=-2,y=3.85,color=color_pred,

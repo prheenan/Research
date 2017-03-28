@@ -57,7 +57,7 @@ def run(base="./"):
     # plot everything
     fig = PlotUtilities.figure((16,8))
     n_cols = 3
-    parameters = ["FEATHER probability","Open Fovea sensitivity",
+    parameters = ["FEATHER probability","OpenFovea sensitivity",
                   "Scientific Python minimum SNR"]
     xlim = [None,[0.5,2],[10,200]]
     for i,(args,name) in enumerate(events_off):

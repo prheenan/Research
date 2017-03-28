@@ -701,7 +701,8 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     n_true,_,_, = loading_rate_histogram(true,orientation='vertical',
                                          bins=bins_load,**true_style_histogram)
     if (count_limit is None):
-        count_limit = [0.5,max([max(n_pred),max(n_true)])*10]
+        max_n = np.max([n_pred,n_true])
+        count_limit = [0.5,max_n*10]
     PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')
