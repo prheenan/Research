@@ -48,6 +48,8 @@ def run(base="./"):
     min_raw_diff_slices = [min(d) for d in diff_raw_slices]
     range_raw_diff_slices = np.array([min(min_raw_diff_slices),
                                       max(max_raw_diff_slices)])
+    range_raw_diff = np.array([min(diff_raw),max(diff_raw)])
+    range_plot_diff = f_plot_y(range_raw_diff*1.1)
     xlim_abs = [ [min(x),max(x)] for x in x_plot_slices]
     n_plots = len(x_plot_slices)
     # set up the plot styling
@@ -73,10 +75,11 @@ def run(base="./"):
     # highlight all the residual regions in their colors
     for style_tmp,slice_tmp in zip(style_regions,slices_abs):
         plt.plot(x_plot[slice_tmp],f_plot_y(diff_raw)[slice_tmp],**style_tmp)
+    plt.ylim(range_plot_diff)
     # plot all the subregions
     for i in range(n_plots):
         xlim_tmp = xlim_abs[i]
-        ylim_tmp = f_plot_y(range_raw_diff_slices)*1.5
+        ylim_tmp = range_plot_diff
         """
         plot the raw data
         """
