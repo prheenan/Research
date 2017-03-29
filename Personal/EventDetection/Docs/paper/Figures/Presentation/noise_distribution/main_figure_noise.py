@@ -49,13 +49,12 @@ def run(base="./"):
     range_raw_diff_slices = np.array([min(min_raw_diff_slices),
                                       max(max_raw_diff_slices)])
     xlim_abs = [ [min(x),max(x)] for x in x_plot_slices]
-
     n_plots = len(x_plot_slices)
     # set up the plot styling
     style_approach = dict(color='b')
     style_raw = dict(alpha=0.3,**style_approach)
     style_interp = dict(linewidth=3,**style_approach)
-    colors = ['r','b','k']
+    colors = ['r','m','k']
     style_regions = [] 
     for c in colors:
         style_tmp = dict(**style_raw)
@@ -70,8 +69,10 @@ def run(base="./"):
     ax_diff = plt.subplot(gs[1,:])
     plt.plot(x_plot,f_plot_y(diff_raw),**style_raw)
     PlotUtilities.lazyLabel("","Residual (pN)","")
-    # highlight all the residual regions in their colors
     PlotUtilities.no_x_label()
+    # highlight all the residual regions in their colors
+    for style_tmp,slice_tmp in zip(style_regions,slices_abs):
+        plt.plot(x_plot[slice_tmp],f_plot_y(diff_raw)[slice_tmp],**style_tmp)
     # plot all the subregions
     for i in range(n_plots):
         # plot the raw data
@@ -90,16 +91,24 @@ def run(base="./"):
         else:
             PlotUtilities.lazyLabel("","Force (pN)","")
         xlim_tmp = xlim_abs[i]
-        ylim_tmp = f_plot_y(range_raw_diff_slices)
+        ylim_tmp = f_plot_y(range_raw_diff_slices)*1.1
         plt.xlim(xlim_tmp)
+        plt.ylim(ylim_tmp)
         PlotUtilities.zoom_effect01(ax_diff, ax_tmp, *xlim_tmp)
         # plot the histogram
         plt.subplot(gs[-1,offset_idx+1])
+        if (i == 0):
+            PlotUtilities.xlabel("Count")
+        n,_,_ = plt.hist(diff_plot_tmp,orientation="horizontal",**style_tmp)
+        plt.boxplot(diff_plot_tmp,vert=True,positions=[np.max(1.1*n)],
+                    manage_xticks=False,widths=(40),
+                    medianprops=dict(linewidth=3),
+                    flierprops=dict(marker='o',markersize=2),
+                    boxprops=dict(linewidth=3,color='k',fillstyle='full'))
+        plt.ylim(ylim_tmp)
+        plt.xlim([0,max(n)*1.5])
         PlotUtilities.tickAxisFont()
         PlotUtilities.no_y_label()
-        PlotUtilities.xlabel("Count")
-        plt.hist(diff_plot_tmp,orientation="horizontal",**style_tmp)
-        plt.ylim(ylim_tmp)
     PlotUtilities.savefig(fig,"./out.png")
 
 
