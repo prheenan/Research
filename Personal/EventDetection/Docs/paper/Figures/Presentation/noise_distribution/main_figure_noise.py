@@ -75,7 +75,11 @@ def run(base="./"):
         plt.plot(x_plot[slice_tmp],f_plot_y(diff_raw)[slice_tmp],**style_tmp)
     # plot all the subregions
     for i in range(n_plots):
-        # plot the raw data
+        xlim_tmp = xlim_abs[i]
+        ylim_tmp = f_plot_y(range_raw_diff_slices)*1.5
+        """
+        plot the raw data
+        """
         offset_idx = 2*i
         ax_tmp = plt.subplot(gs[-1,offset_idx])
         diff_tmp = diff_raw_slices[i]
@@ -90,23 +94,32 @@ def run(base="./"):
             PlotUtilities.tickAxisFont()
         else:
             PlotUtilities.lazyLabel("","Force (pN)","")
-        xlim_tmp = xlim_abs[i]
-        ylim_tmp = f_plot_y(range_raw_diff_slices)*1.1
         plt.xlim(xlim_tmp)
         plt.ylim(ylim_tmp)
         PlotUtilities.zoom_effect01(ax_diff, ax_tmp, *xlim_tmp)
-        # plot the histogram
+        if (i == 0):
+            # make a scale bar for this plot
+            time = 25e-3
+            string = "{:d} ms".format(int(time*1000))
+            PlotUtilities.scale_bar_x(np.mean(xlim_tmp),0.8*max(ylim_tmp),
+                                      s=string,width=time,fontsize=15)
+        """
+        plot the histogram
+        """
         plt.subplot(gs[-1,offset_idx+1])
         if (i == 0):
             PlotUtilities.xlabel("Count")
+        color = style_tmp['color']
+        # overlay a box plot on top
         n,_,_ = plt.hist(diff_plot_tmp,orientation="horizontal",**style_tmp)
-        plt.boxplot(diff_plot_tmp,vert=True,positions=[np.max(1.1*n)],
+        plt.boxplot(diff_plot_tmp,vert=True,positions=[np.max(1.2*n)],
                     manage_xticks=False,widths=(40),
-                    medianprops=dict(linewidth=3),
-                    flierprops=dict(marker='o',markersize=2),
-                    boxprops=dict(linewidth=3,color='k',fillstyle='full'))
+                    medianprops=dict(linewidth=3,color='k'),
+                    whiskerprops=dict(linewidth=1,**style_tmp),
+                    flierprops=dict(marker='o',markersize=2,**style_tmp),
+                    boxprops=dict(linewidth=3,fillstyle='full',**style_tmp))
         plt.ylim(ylim_tmp)
-        plt.xlim([0,max(n)*1.5])
+        plt.xlim([0,max(n)*1.6])
         PlotUtilities.tickAxisFont()
         PlotUtilities.no_y_label()
     PlotUtilities.savefig(fig,"./out.png")
