@@ -6,11 +6,22 @@ import matplotlib.pyplot as plt
 import sys
 import Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.FEC_Util
 import GeneralUtil.python.PlotUtilities as PlotUtilities
-
+from GeneralUtil.python.IgorUtil import SavitskyFilter
 import copy
 
 def_conversion_opts =dict(ConvertX = lambda x: x*1e9,
                           ConvertY = lambda y: y*1e12)
+
+def _fec_base_plot(x,y,n_filter_points=100,style_data=dict(color='k',alpha=0.3),
+                   style_filtered=None):
+    if (style_filtered is None):
+        style_filtered = dict(**style_data)
+        style_filtered['alpha'] = 1
+    x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
+    y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
+    plt.plot(x,y,**style_data)
+    plt.plot(x_filtered,y_filtered,**style_filtered)
+    return x_filtered,y_filtered
 
 
 def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
@@ -30,12 +41,10 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
     # plot the separation and force, with their filtered counterparts
     ApprFiltered = FEC_Util.GetFilteredForce(Appr,NFilterPoints)
     RetrFiltered = FEC_Util.GetFilteredForce(Retr,NFilterPoints)
-    plt.plot(x_func(Appr),y_func(Appr),color='r',alpha=0.3)
-    plt.plot(x_func(ApprFiltered),y_func(ApprFiltered),color='r',
-             label=ApproachLabel)
-    plt.plot(x_func(Retr),y_func(Retr),color='b',alpha=0.3)
-    plt.plot(x_func(RetrFiltered),y_func(RetrFiltered),color='b',
-             label=RetractLabel)
+    _fec_base_plot(x_func(Appr),y_func(Appr),n_filter_points=NFilterPoints,
+                   style_data=dict(color='r',alpha=0.3,label=ApproachLabel))
+    _fec_base_plot(x_func(Retr),y_func(Retr),n_filter_points=NFilterPoints,
+                   style_data=dict(color='b',alpha=0.3,label=RetractLabel))
 
 def FEC_AlreadySplit(Appr,Retr,
                      XLabel = "Separation (nm)",
