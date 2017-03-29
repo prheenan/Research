@@ -15,29 +15,17 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 import matplotlib.gridspec as gridspec
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def run(base="./"):
-    """
-    
-    """
-    name = "examples.pdf"
-    data_base = base + "data/"
-    file_name = "fast_unfolding"
-    kw = dict(cache_directory=data_base,force=False)
-    file_path = data_base + file_name +".csv"
-    fec = read_and_cache_file(file_path,**kw)
-    split_fec = Analysis.zero_and_split_force_extension_curve(fec)
-    x_plot,y_plot = Plotting.plot_format(split_fec.approach)
-    interp = split_fec.approach_spline_interpolator()
+def f_plot_y(y):
+    lambda y: y*1e12
+
+def plotinterp,time_sep_force,xlim_rel_start,xlim_rel_delta):
+    x_plot,y_plot = Plotting.plot_format(time_sep_force)
     n_filter_points = 1000
-    x_raw = split_fec.approach.Time
-    y_raw = split_fec.approach.Force
+    x_raw = time_sep_force.Time
+    y_raw = time_sep_force.Force
     interp_raw = interp(x_raw)
     diff_raw = y_raw - interp_raw
     stdev = Analysis.local_stdev(diff_raw,n=split_fec.tau_num_points)
-    f_plot_y = lambda y: y*1e12
-    fig = PlotUtilities.figure((10,8))
-    xlim_rel_start = [0.1,0.4,0.8]
-    xlim_rel_delta = 0.02
     xlims_rel = [ [i,i+xlim_rel_delta] for i in  xlim_rel_start]
     # convert to plotting units
     n = x_plot.size
@@ -125,6 +113,24 @@ def run(base="./"):
         plt.xlim([0,max(n)*1.6])
         PlotUtilities.tickAxisFont()
         PlotUtilities.no_y_label()
+
+def run(base="./"):
+    """
+    
+    """
+    name = "examples.pdf"
+    data_base = base + "data/"
+    file_name = "fast_unfolding"
+    kw = dict(cache_directory=data_base,force=False)
+    file_path = data_base + file_name +".csv"
+    fec = read_and_cache_file(file_path,**kw)
+    split_fec = Analysis.zero_and_split_force_extension_curve(fec)
+    xlim_rel_start = [0.1,0.4,0.8]
+    xlim_rel_delta = 0.02
+    fig = PlotUtilities.figure((10,8))
+    time_sep_force = split_fec.approach
+    interp = split_fec.approach_spline_interpolator()
+    plot(interp,time_sep_force,xlim_rel_start,xlim_rel_delta)
     PlotUtilities.savefig(fig,"./out.png")
 
 
