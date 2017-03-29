@@ -16,9 +16,10 @@ import matplotlib.gridspec as gridspec
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
 def f_plot_y(y):
-    lambda y: y*1e12
+    return y*1e12
 
-def plotinterp,time_sep_force,xlim_rel_start,xlim_rel_delta):
+def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta):
+    time_sep_force = f(split_fec)
     x_plot,y_plot = Plotting.plot_format(time_sep_force)
     n_filter_points = 1000
     x_raw = time_sep_force.Time
@@ -128,9 +129,10 @@ def run(base="./"):
     xlim_rel_start = [0.1,0.4,0.8]
     xlim_rel_delta = 0.02
     fig = PlotUtilities.figure((10,8))
-    time_sep_force = split_fec.approach
     interp = split_fec.approach_spline_interpolator()
-    plot(interp,time_sep_force,xlim_rel_start,xlim_rel_delta)
+    f_appr = lambda x: x.approach
+    plot(interp,split_fec,f=f_appr,xlim_rel_start=xlim_rel_start,
+         xlim_rel_delta=xlim_rel_delta)
     PlotUtilities.savefig(fig,"./out.png")
 
 
