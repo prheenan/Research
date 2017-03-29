@@ -1036,3 +1036,8 @@ def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
     for start in event_idx:
         plt.scatter(plot_x[start],plot_y[start]+fudge_y,**kw)
 
+def plot_format(time_sep_force):
+    x_plot = time_sep_force.Time
+    x_plot -= min(x_plot)
+    y_plot = time_sep_force.Force * 1e12
+    return x_plot,y_plot

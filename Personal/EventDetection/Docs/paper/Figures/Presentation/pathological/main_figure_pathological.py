@@ -15,14 +15,8 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 import matplotlib.gridspec as gridspec
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def plot_format(time_sep_force):
-    x_plot = time_sep_force.Time
-    x_plot -= min(x_plot)
-    y_plot = time_sep_force.Force * 1e12
-    return x_plot,y_plot
-
 def plot_arrows(split_fec):
-    x_plot,y_plot = plot_format(split_fec.retract)
+    x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     marker_size = 30
     fudge_pN = 25
     event_idx = split_fec.get_retract_event_starts()
@@ -31,7 +25,7 @@ def plot_arrows(split_fec):
 
 def plot_retract_with_events(split_fec,fudge_pN=15,marker_size=30,
                              n_filter_points=1000):
-    x_plot,y_plot = plot_format(split_fec.retract)
+    x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     x_filtered,y_filtered = \
         FEC_Plot._fec_base_plot(x_plot,y_plot,n_filter_points=n_filter_points)
     plot_arrows(split_fec)
@@ -39,10 +33,10 @@ def plot_retract_with_events(split_fec,fudge_pN=15,marker_size=30,
 def plot_events_by_colors(split_fec,predicted_event_idx,n_points_filter=1000,
                           plot_filtered=False):
     start_idx = split_fec.get_retract_event_starts()
-    x_plot,y_plot = plot_format(split_fec.retract)
+    x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     retract_filtered = FEC_Util.GetFilteredForce(split_fec.retract,
                                                  n_points_filter)
-    x_filtered,y_filtered =plot_format(retract_filtered)
+    x_filtered,y_filtered = Plotting.plot_format(retract_filtered)
     fudge_negative = -30
     before =  [0] + list(predicted_event_idx)
     after =  list(predicted_event_idx) + [None]
