@@ -175,12 +175,12 @@
     \end{itemize}
   \invisible<1-3>{\item
     \DefineTerm{Rupture} ($\textcolor{OliveGreen}{\blacktriangledown}$): molecule unbinds}
-  \only<5->{
+  \only<4->{
   \item Linear fit $\rightarrow$ rupture properties 
     \begin{itemize}
-    \item<6->
+    \item<4->
       \DefineTerm{Loading rate}: slope of fit
-    \item<7->
+    \item<5->
       \DefineTerm{Rupture force}: fit value where data last above fit
     \end{itemize}
  }%
@@ -210,7 +210,7 @@
 
 
 
-\invisible<5->{ 
+\invisible<4->{ 
   \begin{figure}[ht]
     \centering
       \begin{tikzpicture}
@@ -357,34 +357,50 @@
 \begin{frame}{Algorithm Intuition}
 
 \begin{columns}[T]
-\begin{column}{0.4\textwidth}
+\begin{column}{0.5\textwidth}
 % Your text here
   \begin{itemize}
-  \item Noise distribution
+  \item Residual distribution $r_t$%
     \begin{itemize}
-    \item Unknown
-    \item Changes between curves
-    \item Without events 
+    \item Unknown%
+    \item Curve-dependent%
+    \invisible<-1>{\item $\approx$\textbf{Constant in eventless curve}}%
     \end{itemize}
-  \end{itemize}
+  \item FEATHER top-level%
+    \begin{itemize}
+      \item Fit \textit{no-event} model%
+        \begin{itemize}
+          \item Spline fit to approach%
+          \item Yields $\epsilon,\sigma$  for $r_t$%
+        \end{itemize}
+      \item Apply model to retract
+        \begin{itemize}
+          \item Probability of \emph{no-event} given point
+          \item Events: regions with `low' probability
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
 \end{column}
-\begin{column}{0.6\textwidth}
+\begin{column}{0.55\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr2.pdf}};
+    \node<5-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<-1> \fill [white] (0.0,0.0) rectangle (1.0,0.6);%
-      \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.3);%
-      \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+      \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.6);%
+      \only<5-6> \fill [white] (0.0,0.0) rectangle (1.0,0.3);%
+      \only<5-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
-    \node<4-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \node<8-11>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.70);%
-      \only<4-5> \fill [white] (0.0,0.0) rectangle (1.0,0.45);%
-      \only<4-6> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
-      \only<4-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+      \only<8> \fill [white] (0.0,0.0) rectangle (1.0,0.70);%
+      \only<8-9> \fill [white] (0.0,0.0) rectangle (1.0,0.45);%
+      \only<9-10> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
+      \only<10-11> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
-
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
