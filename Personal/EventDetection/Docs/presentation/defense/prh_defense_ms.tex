@@ -128,7 +128,7 @@
 \newcommand{\PlusOpt}[1]{\PlusColor{$\mathbf{+}$}}
 \newcommand{\MinusOpt}[1]{\MinusColor{$\mathbf{-}$}}
 % bibliography command
-\usepackage[superscript,biblabel]{cite}
+%\usepackage[super]{natbib}
 
 \begin{document}
 
@@ -238,11 +238,11 @@
 % Your text here
   \begin{itemize}
   \item
-    Contour length \cite{kuhn_automated_2005} alignment 
+    Contour length alignment%\cite{kuhn_automated_2005}%
   \item<2->
-    Threshholding
+    Threshholding%\cite{andreopoulos_efficient_2011}
   \item<3->
-    Transformations
+    Transformations%\cite{benitez_searching_2017-1}
  \end{itemize}
 \end{column}
 
@@ -511,7 +511,6 @@
 
 \end{frame}
 
-
 \section*{Summary}
 
 \begin{frame}{Summary}
@@ -539,10 +538,13 @@
   \end{itemize}
 \end{frame}
 
+% rest in appendix, see 
+% http://tex.stackexchange.com/questions/187877/how-to-hide-references-from-navigation-bar-in-beamer-class
 
-\begin{frame}[allowframebreaks]{Bilbiography}
-  \bibliographystyle{amsalpha}
-  \bibliography{../../paper/drafts/Masters.bib}
-\end{frame}
+%\begin{frame}[allowframebreaks]{Bilbiography}
+%  \bibliographystyle{unsrt}
+%  \bibliography{../../paper/drafts/Masters.bib}
+%\end{frame}
+
 
 \end{document}
