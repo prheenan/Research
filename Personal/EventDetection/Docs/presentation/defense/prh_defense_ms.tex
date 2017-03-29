@@ -259,7 +259,7 @@
     \MinusColor{%
       \only<1>{Requires polymer model}%
       \only<2>{Optimized parameters do not generalize}%
-      \only<3>{Positive triggered by local trendline}%
+      \only<3>{Influenced by local trend line}%
 }%
   \invisible<4->{\item[\MinusOpt{}]%
     \MinusColor{%
@@ -276,24 +276,29 @@
 \end{column}
 \end{columns}
 
-\only<4-5>{
+\only<4-6>{
 \begin{block}{}
   \begin{itemize}
-    \item We want to keep all the positives...%
+    \item We want an algorithm with all the positives...%
       \begin{itemize}
         \item Physically motivated, robust to noise%
         \item Simple, fast, and generic%
         \item Unbiased estimates for event locations%
       \end{itemize}
  \invisible<-4>{
-    \item ...and to improve all the negatives%
+    \item ... fixes all the negatives ... %
       \begin{itemize}
         \item Robust to local trendline%
         \item Robust to SMFS false positive %
         \item Generalizes well%
-      \end{itemize}
+      \end{itemize}}
+ \invisible<-5>{
+ \item ... and outperforms existing techniques %
+   \begin{itemize}
+      \item OpenFovea\cite{roduit_openfovea:_2012}: threshold technique%
+      \item Scientific Python\cite{jones_scipy:_2001}: transformation (wavelet) technique%
+   \end{itemize}}
   \end{itemize}
-    }
 \end{block}}
 
 
@@ -302,8 +307,8 @@
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{kuhn_2005.png}};
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{Andreopoulos_2011_edit}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{bentez_2017_edit.png}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{Andreopoulos_2011_edit}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{bentez_2017_edit.png}};
 \end{tikzpicture}
 \end{overlayarea}
 
@@ -388,9 +393,6 @@
 \end{frame}
 
 \begin{frame}{Algorithm Formalism}
-\end{frame}
-
-\begin{frame}{Choice of Baselines}
 \end{frame}
 
 
