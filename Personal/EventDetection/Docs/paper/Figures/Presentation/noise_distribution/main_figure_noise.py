@@ -18,7 +18,20 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 def f_plot_y(y):
     return y*1e12
 
+def plot_residual(x_plot,diff_raw,style_raw):
+    plt.plot(x_plot,f_plot_y(diff_raw),**style_raw)
+    PlotUtilities.lazyLabel("","Residual (pN)","")
+    PlotUtilities.no_x_label()
+
+def plot_force(x_plot,y_plot,interp_raw,style_raw,style_interp):
+    plt.plot(x_plot,y_plot,**style_raw)
+    plt.plot(x_plot,f_plot_y(interp_raw),**style_interp)
+    PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
+    PlotUtilities.x_label_on_top()
+
+
 def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta):
+    # calculate all the things we will neeed
     time_sep_force = f(split_fec)
     x_plot,y_plot = Plotting.plot_format(time_sep_force)
     n_filter_points = 1000
@@ -53,14 +66,9 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta):
         style_regions.append(style_tmp)
     gs = gridspec.GridSpec(3,2*n_plots)
     plt.subplot(gs[0,:])
-    plt.plot(x_plot,y_plot,**style_raw)
-    plt.plot(x_plot,f_plot_y(interp_raw),**style_interp)
-    PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
-    PlotUtilities.x_label_on_top()
+    plot_force(x_plot,y_plot,interp_raw,style_raw,style_interp)
     ax_diff = plt.subplot(gs[1,:])
-    plt.plot(x_plot,f_plot_y(diff_raw),**style_raw)
-    PlotUtilities.lazyLabel("","Residual (pN)","")
-    PlotUtilities.no_x_label()
+    plot_residual(x_plot,diff_raw,style_raw)
     # highlight all the residual regions in their colors
     for style_tmp,slice_tmp in zip(style_regions,slices_abs):
         plt.plot(x_plot[slice_tmp],f_plot_y(diff_raw)[slice_tmp],**style_tmp)
@@ -101,19 +109,24 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta):
         plt.subplot(gs[-1,offset_idx+1])
         if (i == 0):
             PlotUtilities.xlabel("Count")
+        n = plot_residual_histogram(diff_plot_tmp,style_tmp)
         color = style_tmp['color']
-        # overlay a box plot on top
-        n,_,_ = plt.hist(diff_plot_tmp,orientation="horizontal",**style_tmp)
-        plt.boxplot(diff_plot_tmp,vert=True,positions=[np.max(1.2*n)],
-                    manage_xticks=False,widths=(40),
-                    medianprops=dict(linewidth=3,color='k'),
-                    whiskerprops=dict(linewidth=1,**style_tmp),
-                    flierprops=dict(marker='o',markersize=2,**style_tmp),
-                    boxprops=dict(linewidth=3,fillstyle='full',**style_tmp))
         plt.ylim(ylim_tmp)
         plt.xlim([0,max(n)*1.6])
         PlotUtilities.tickAxisFont()
         PlotUtilities.no_y_label()
+
+def plot_residual_histogram(diff_plot_tmp,style_tmp):
+    # overlay a box plot on top
+    n,_,_ = plt.hist(diff_plot_tmp,orientation="horizontal",**style_tmp)
+    plt.boxplot(diff_plot_tmp,vert=True,positions=[np.max(1.2*n)],
+                manage_xticks=False,widths=(40),
+                medianprops=dict(linewidth=3,color='k'),
+                whiskerprops=dict(linewidth=1,**style_tmp),
+                flierprops=dict(marker='o',markersize=2,**style_tmp),
+                boxprops=dict(linewidth=3,fillstyle='full',**style_tmp))
+    return n
+
 
 def run(base="./"):
     """
