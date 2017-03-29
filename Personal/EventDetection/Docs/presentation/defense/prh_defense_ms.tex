@@ -190,7 +190,7 @@
 % rupture image column 
 \begin{column}{0.45\textwidth}  %%<--- here
 
-\only<5-7>{ 
+\only<4-6>{ 
   \begin{figure}[ht]
     \centering
       \begin{tikzpicture}
@@ -198,9 +198,9 @@
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.65);%
-        \only<6> \fill [white] (0.0,0.0) rectangle (1.0,0.33);%
-        \only<7> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
+        \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.65);%
+        \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.33);%
+        \only<6> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
     \end{scope}
 \end{tikzpicture}
   \end{figure}
@@ -360,25 +360,27 @@
 \begin{column}{0.5\textwidth}
 % Your text here
   \begin{itemize}
-  \item Residual distribution $r_t$%
+  \item Residual distribution %
     \begin{itemize}
     \item Unknown%
     \item Curve-dependent%
     \invisible<-1>{\item $\approx$\textbf{Constant in eventless curve}}%
     \end{itemize}
-  \item FEATHER top-level%
+  \invisible<-4>{\item FEATHER top-level%
     \begin{itemize}
-      \item Fit \textit{no-event} model%
-        \begin{itemize}
+      \invisible<-4>{\item Fit \textit{no-event} model%
+          \begin{itemize}
           \item Spline fit to approach%
-          \item Yields $\epsilon,\sigma$  for $r_t$%
-        \end{itemize}
+           \invisible<-5>{\item Get residuals $r_t$}%
+          \invisible<-6>{\item Yields $\epsilon,\sigma$  for $r_t$}%
+        \end{itemize}}
+      \invisible<-7>{
       \item Apply model to retract
         \begin{itemize}
           \item Probability of \emph{no-event} given point
           \item Events: regions with `low' probability
-        \end{itemize}
-    \end{itemize}
+        \end{itemize}}
+    \end{itemize}}
 \end{itemize}
 \end{column}
 \begin{column}{0.55\textwidth}
@@ -394,13 +396,7 @@
       \only<5-6> \fill [white] (0.0,0.0) rectangle (1.0,0.3);%
       \only<5-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
-    \node<8-11>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
-    \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<8> \fill [white] (0.0,0.0) rectangle (1.0,0.70);%
-      \only<8-9> \fill [white] (0.0,0.0) rectangle (1.0,0.45);%
-      \only<9-10> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
-      \only<10-11> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
-    \end{scope}
+    \node<8>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
