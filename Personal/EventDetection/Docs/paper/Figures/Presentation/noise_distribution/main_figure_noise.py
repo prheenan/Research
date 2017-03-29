@@ -126,14 +126,22 @@ def run(base="./"):
     file_path = data_base + file_name +".csv"
     fec = read_and_cache_file(file_path,**kw)
     split_fec = Analysis.zero_and_split_force_extension_curve(fec)
-    xlim_rel_start = [0.1,0.4,0.8]
+    xlim_rel_start_appr = [0.1,0.4,0.8]
+    xlim_rel_start_retr = [0.2,0.4,0.54]
     xlim_rel_delta = 0.02
-    fig = PlotUtilities.figure((10,8))
     interp = split_fec.approach_spline_interpolator()
+    interp_retract = split_fec.retract_spline_interpolator()
     f_appr = lambda x: x.approach
-    plot(interp,split_fec,f=f_appr,xlim_rel_start=xlim_rel_start,
+    f_retr = lambda x: x.retract
+    fig = PlotUtilities.figure((10,8))
+    plot(interp_retract,split_fec,f=f_retr,xlim_rel_start=xlim_rel_start_retr,
+         xlim_rel_delta=xlim_rel_delta)
+    PlotUtilities.savefig(fig,"./out_retr.png")
+    fig = PlotUtilities.figure((10,8))
+    plot(interp,split_fec,f=f_appr,xlim_rel_start=xlim_rel_start_appr,
          xlim_rel_delta=xlim_rel_delta)
     PlotUtilities.savefig(fig,"./out.png")
+
 
 
 if __name__ == "__main__":
