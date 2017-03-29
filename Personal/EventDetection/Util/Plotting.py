@@ -975,7 +975,6 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")
 
 
-
 def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
     """
     plots the given fec (*not* split)

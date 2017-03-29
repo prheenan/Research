@@ -21,13 +21,15 @@ def run(base="./"):
     """
     name = "examples.pdf"
     data_base = base + "data/"
-    file_names = ["fast_unfolding"]
+    file_names = ["fast_unfolding","low-snr"]
     kw = dict(cache_directory=data_base,force=False)
     file_paths = [data_base + f +".csv" for f in file_names]
     cases = [read_and_cache_file(f,**kw) for f in file_paths]
-    fig = PlotUtilities.figure((8,4))
     for c in cases:
-        split_fec = Plotting.plot_fec(c,use_events=False)
+        fig = PlotUtilities.figure((8,4))
+        split_fec = Analysis.zero_and_split_force_extension_curve(c)
+        retract_filtered = FEC_Util.GetFilteredForce(split_fec.retract,
+                                                     1000)
         plot_x = split_fec.retract.Separation * 1e9
         plot_y = split_fec.retract.Force * 1e12
         fudge_pN = 15
@@ -46,12 +48,13 @@ def run(base="./"):
         for i,(before_tmp,after_tmp) in enumerate(zip(slices[:-1],slices[1:])):
             Plotting.before_and_after(plot_x,plot_y,before_tmp,after_tmp,
                                       color_before=color_before,
-                                      color_after=color_after)
+                                      color_after=color_after,
+                                      style=dict(alpha=0.5))
             tmp = color_before
             color_before = color_after
             color_after = tmp
-        PlotUtilities.lazyLabel("Time(s)","Force","")
-    PlotUtilities.savefig(fig,name.replace(".pdf","_pres.pdf"))
+        PlotUtilities.lazyLabel("Time(ms)","Force","")
+        PlotUtilities.savefig(fig,c.Meta.Name + ".pdf","_pres.pdf")
 
 if __name__ == "__main__":
     run()
