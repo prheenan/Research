@@ -11,73 +11,6 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util.InputOutput import \
     read_and_cache_file
 from Research.Personal.EventDetection.Util import Analysis,Plotting
-from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
-
-from mpl_toolkits.axes_grid1.inset_locator import BboxPatch, BboxConnector,\
-    BboxConnectorPatch
-from matplotlib.transforms import Bbox, TransformedBbox, \
-    blended_transform_factory
-
-
-
-def connect_bbox(bbox1, bbox2,
-                 loc1a, loc2a, loc1b, loc2b,
-                 prop_lines, prop_patches=None):
-    if prop_patches is None:
-        prop_patches = prop_lines.copy()
-    c1 = BboxConnector(bbox1, bbox2, loc1=loc1a, loc2=loc2a, **prop_lines)
-    c1.set_clip_on(False)
-    c2 = BboxConnector(bbox1, bbox2, loc1=loc1b, loc2=loc2b, **prop_lines)
-    c2.set_clip_on(False)
-    bbox_patch1 = BboxPatch(bbox1, color='k',**prop_patches)
-    bbox_patch2 = BboxPatch(bbox2, color='w',**prop_patches)
-    p = BboxConnectorPatch(bbox1, bbox2,
-                           # loc1a=3, loc2a=2, loc1b=4, loc2b=1,
-                           loc1a=loc1a, loc2a=loc2a, loc1b=loc1b, loc2b=loc2b,
-                           **prop_patches)
-    p.set_clip_on(False)
-
-    return c1, c2, bbox_patch1, bbox_patch2, p
-
-
-def zoom_effect01(ax1, ax2, xmin, xmax, **kwargs):
-    """
-    ax1 : the main axes
-    ax1 : the zoomed axes
-    (xmin,xmax) : the limits of the colored area in both plot axes.
-
-    connect ax1 & ax2. The x-range of (xmin, xmax) in both axes will
-    be marked.  The keywords parameters will be used ti create
-    patches.
-
-    """
-
-    trans1 = blended_transform_factory(ax1.transData, ax1.transAxes)
-    trans2 = blended_transform_factory(ax2.transData, ax2.transAxes)
-
-    bbox = Bbox.from_extents(xmin, 0, xmax, 1)
-
-    mybbox1 = TransformedBbox(bbox, trans1)
-    mybbox2 = TransformedBbox(bbox, trans2)
-
-    prop_patches = kwargs.copy()
-    alpha = 0.2
-    prop_patches["ec"] = "none"
-    prop_patches["alpha"] = alpha
-    prop_lines = dict(color='k',alpha=alpha,**kwargs)
-    c1, c2, bbox_patch1, bbox_patch2, p = \
-        connect_bbox(mybbox1, mybbox2,
-                     loc1a=3, loc2a=2, loc1b=4, loc2b=1,
-                     prop_lines=prop_lines, prop_patches=prop_patches)
-
-    ax1.add_patch(bbox_patch1)
-    ax2.add_patch(bbox_patch2)
-    ax2.add_patch(c1)
-    ax2.add_patch(c2)
-    ax2.add_patch(p)
-
-    return c1, c2, bbox_patch1, bbox_patch2, p
 
 def rupture_plot(data_base):
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
@@ -207,8 +140,8 @@ def rupture_plot(data_base):
                               0,s=string,width=scale_width)
     PlotUtilities.no_x_label()
     # draw lines connecting the plots
-    zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
-    zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
+    PlotUtilities.zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
+    PlotUtilities.zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
 
 
 def run(base="./"):

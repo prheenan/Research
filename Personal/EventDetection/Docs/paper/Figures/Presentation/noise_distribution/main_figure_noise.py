@@ -35,24 +35,71 @@ def run(base="./"):
     diff_raw = y_raw - interp_raw
     stdev = Analysis.local_stdev(diff_raw,n=split_fec.tau_num_points)
     f_plot_y = lambda y: y*1e12
-    fig = PlotUtilities.figure((8,8))
-    gs = gridspec.GridSpec(3,3)
+    fig = PlotUtilities.figure((10,8))
+    xlim_rel_start = [0.1,0.4,0.8]
+    xlim_rel_delta = 0.02
+    xlims_rel = [ [i,i+xlim_rel_delta] for i in  xlim_rel_start]
+    # convert to plotting units
+    n = x_plot.size
+    slices_abs = [ slice(int(i*n),int(f*n),1) for i,f in xlims_rel ]
+    x_plot_slices = [ x_plot[s] for s in slices_abs ]
+    diff_raw_slices = [diff_raw[s] for s in slices_abs]
+    max_raw_diff_slices = [max(d) for d in diff_raw_slices]
+    min_raw_diff_slices = [min(d) for d in diff_raw_slices]
+    range_raw_diff_slices = np.array([min(min_raw_diff_slices),
+                                      max(max_raw_diff_slices)])
+    xlim_abs = [ [min(x),max(x)] for x in x_plot_slices]
+
+    n_plots = len(x_plot_slices)
+    # set up the plot styling
+    style_approach = dict(color='b')
+    style_raw = dict(alpha=0.3,**style_approach)
+    style_interp = dict(linewidth=3,**style_approach)
+    colors = ['r','b','k']
+    style_regions = [] 
+    for c in colors:
+        style_tmp = dict(**style_raw)
+        style_tmp['color'] = c
+        style_regions.append(style_tmp)
+    gs = gridspec.GridSpec(3,2*n_plots)
     plt.subplot(gs[0,:])
-    plt.plot(x_plot,y_plot,alpha=0.3,color='k')
-    plt.plot(x_plot,f_plot_y(interp_raw),color='k',linewidth=3)
+    plt.plot(x_plot,y_plot,**style_raw)
+    plt.plot(x_plot,f_plot_y(interp_raw),**style_interp)
     PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
     PlotUtilities.x_label_on_top()
-    plt.subplot(gs[1,:])
-    plt.plot(x_plot,f_plot_y(diff_raw),color='k',alpha=0.3)
-    plt.plot(x_plot,f_plot_y(stdev),color='k',linewidth=3)
-    PlotUtilities.lazyLabel("","Force (pN)","")
+    ax_diff = plt.subplot(gs[1,:])
+    plt.plot(x_plot,f_plot_y(diff_raw),**style_raw)
+    PlotUtilities.lazyLabel("","Residual (pN)","")
+    # highlight all the residual regions in their colors
     PlotUtilities.no_x_label()
-    plt.subplot(gs[2,0])
-    PlotUtilities.no_x_anything()
-    plt.subplot(gs[2,1])
-    PlotUtilities.no_x_anything()
-    plt.subplot(gs[2,2])
-    PlotUtilities.no_x_anything()
+    # plot all the subregions
+    for i in range(n_plots):
+        # plot the raw data
+        offset_idx = 2*i
+        ax_tmp = plt.subplot(gs[-1,offset_idx])
+        diff_tmp = diff_raw_slices[i]
+        # convert everything to plotting units
+        diff_plot_tmp =f_plot_y(diff_tmp) 
+        x_plot_tmp = x_plot_slices[i]
+        style_tmp = style_regions[i]
+        plt.plot(x_plot_tmp,diff_plot_tmp,**style_tmp)
+        PlotUtilities.no_x_anything()
+        if (i != 0):
+            PlotUtilities.no_y_label()
+            PlotUtilities.tickAxisFont()
+        else:
+            PlotUtilities.lazyLabel("","Force (pN)","")
+        xlim_tmp = xlim_abs[i]
+        ylim_tmp = f_plot_y(range_raw_diff_slices)
+        plt.xlim(xlim_tmp)
+        PlotUtilities.zoom_effect01(ax_diff, ax_tmp, *xlim_tmp)
+        # plot the histogram
+        plt.subplot(gs[-1,offset_idx+1])
+        PlotUtilities.tickAxisFont()
+        PlotUtilities.no_y_label()
+        PlotUtilities.xlabel("Count")
+        plt.hist(diff_plot_tmp,orientation="horizontal",**style_tmp)
+        plt.ylim(ylim_tmp)
     PlotUtilities.savefig(fig,"./out.png")
 
 
