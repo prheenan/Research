@@ -122,6 +122,13 @@
 \graphicspath{{../../paper/Figures/Finals/},{../../paper/Figures/Finals_Presenation/}}
 \newcommand{\DefineTerm}[1]{\underline{#1}}
 \newcommand{\ErrorPct}[0]{P$_{85}$}
+% define options for the plus and minus list
+\newcommand{\PlusColor}[1]{\textcolor{OliveGreen}{#1}}
+\newcommand{\MinusColor}[1]{\textcolor{Red}{#1}}
+\newcommand{\PlusOpt}[1]{\PlusColor{$\mathbf{+}$}}
+\newcommand{\MinusOpt}[1]{\MinusColor{$\mathbf{-}$}}
+% bibliography command
+\usepackage[superscript,biblabel]{cite}
 
 \begin{document}
 
@@ -231,40 +238,72 @@
 % Your text here
   \begin{itemize}
   \item
-    Wavelet transform
+    Contour length \cite{kuhn_automated_2005} alignment 
   \item<2->
-    Contour length transform
+    Threshholding
   \item<3->
-    Classification
+    Transformations
  \end{itemize}
 \end{column}
 
-\begin{column}{0.6\textwidth}
+\begin{column}{0.7\textwidth}
+\invisible<4->{
   \begin{itemize}
-  \item[\textcolor{OliveGreen}{$\mathbf{+}$}]
-    \textcolor{OliveGreen}{
-      \only<1>{Plus}%
-      \only<2>{Plus2}%
-      \only<3>{Plus3}%
-}
-  \item[\textcolor{Red}{$\mathbf{-}$}]
-    \textcolor{Red}{
-      \only<1>{Minus}%
-      \only<2>{Minus2}%
-      \only<3>{Minus3}%
-}
+  \item[\PlusOpt{}]%
+    \PlusColor{%
+      \only<1>{Physically-motivated, robust to noise}%
+      \only<2>{Simple and fast}%
+      \only<3>{Generic, robust to noise}%
+    }%
+  \item[\MinusOpt{}]%
+    \MinusColor{%
+      \only<1>{Requires polymer model}%
+      \only<2>{Optimized parameters do not generalize}%
+      \only<3>{Positive triggered by local trendline}%
+}%
+  \invisible<4->{\item[\MinusOpt{}]%
+    \MinusColor{%
+      \only<1>{Biased against rare behavior}%
+      \only<2>{Susceptible to noise}%
+      \only<3>{Susceptible to domain-specific false positives}%
+}}%
+  \invisible<2->{\item[\MinusOpt{}]%
+    \MinusColor{%
+      \only<1>{Slow ($\Theta(N^2)$)}%
+}}%
  \end{itemize}
+}
 \end{column}
 \end{columns}
+
+\only<4-5>{
+\begin{block}{}
+  \begin{itemize}
+    \item We want to keep all the positives...%
+      \begin{itemize}
+        \item Physically motivated, robust to noise%
+        \item Simple, fast, and generic%
+        \item Unbiased estimates for event locations%
+      \end{itemize}
+ \invisible<-4>{
+    \item ...and to improve all the negatives%
+      \begin{itemize}
+        \item Robust to local trendline%
+        \item Robust to SMFS false positive %
+        \item Generalizes well%
+      \end{itemize}
+  \end{itemize}
+    }
+\end{block}}
 
 
 \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{bentez_2017_edit.png}};
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{kuhn_2005.png}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{Andreopoulos_2011_edit}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{kuhn_2005.png}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{Andreopoulos_2011_edit}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{bentez_2017_edit.png}};
 \end{tikzpicture}
 \end{overlayarea}
 
@@ -476,7 +515,6 @@
 \section*{Summary}
 
 \begin{frame}{Summary}
-
   % Keep the summary *very short*.
   \begin{itemize}
   \item
@@ -501,5 +539,10 @@
   \end{itemize}
 \end{frame}
 
+
+\begin{frame}[allowframebreaks]{Bilbiography}
+  \bibliographystyle{amsalpha}
+  \bibliography{../../paper/drafts/Masters.bib}
+\end{frame}
 
 \end{document}
