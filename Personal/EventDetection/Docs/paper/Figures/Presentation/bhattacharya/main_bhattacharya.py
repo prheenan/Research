@@ -50,7 +50,7 @@ def run():
     n_cols = 3+1
     xlim = [-12,12]
     bins = np.linspace(*xlim,endpoint=True,num=n_bins)
-    fig = PlotUtilities.figure((12,5))
+    fig = PlotUtilities.figure((12,7))
     plt.subplot(1,n_cols,1)
     bhattacharya = plot_bhattacharya(sigma,n_samples,bins=bins,
                                      loc=-9)

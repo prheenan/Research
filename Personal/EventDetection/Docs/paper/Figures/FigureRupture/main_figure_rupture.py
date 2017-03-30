@@ -158,10 +158,9 @@ def run(base="./"):
     subplots_adjust = dict(hspace=0.1)
     # save out without the labels
     fig = PlotUtilities.figure((6,8))
-    opts = [ [False,False],[True,False],[True,True]]
     for i,opt_tmp in enumerate(opts):
         fig = PlotUtilities.figure((6,8))
-        rupture_plot(data_base,*opt_tmp)
+        rupture_plot(data_base,opt_tmp)
         PlotUtilities.savefig(fig,
                               out_fig.replace(".pdf","_pres{:d}.pdf".format(i)),
                               subplots_adjust=subplots_adjust)

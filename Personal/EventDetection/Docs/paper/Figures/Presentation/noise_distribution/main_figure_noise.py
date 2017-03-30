@@ -113,7 +113,7 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta,
             time = 20e-3
             string = "{:d} ms".format(int(time*1000))
             PlotUtilities.scale_bar_x(np.mean(xlim_tmp),0.8*max(ylim_tmp),
-                                      s=string,width=time,fontsize=12)
+                                      s=string,width=time,fontsize=15)
         """
         plot the histogram
         """
@@ -157,7 +157,7 @@ def plot_residual_histogram(diff_plot_tmp,style_tmp):
 def sequence_plots(out_base,*args,**kwargs):
     break_points = [_break_after_interp,_break_after_first_zoom,_dont_break]
     for i,break_point in enumerate(break_points):
-        fig = PlotUtilities.figure((8,8))
+        fig = PlotUtilities.figure((10,12))
         plot(*args,when_to_break=break_point,**kwargs)
         PlotUtilities.savefig(fig,out_base + "{:d}.pdf".format(i))
 

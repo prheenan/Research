@@ -129,8 +129,12 @@
 \newcommand{\MinusOpt}[1]{\MinusColor{$\mathbf{-}$}}
 % bibliography command
 \usepackage[super]{natbib}
+% for tables and math symbols
 \usepackage{tabularx}
 \usepackage{amsmath,amssymb}
+% move the bullets over, to give more space
+\setlength{\leftmargini}{1em}
+
 
 \begin{document}
 
@@ -234,7 +238,39 @@
 
 \subsection{Detection of Rupture Events}
 
-\begin{frame}{Past Work}
+\begin{frame}{Event Detection in Piecewise Constant Signals is Ubiquitous}
+
+\begin{columns}[T]
+\begin{column}{0.8\textwidth}
+% Your text here
+  \begin{itemize}
+  \item
+    Stock price fluctuations\cite{struzik_wavelet_2002}%
+  \item Atmospheric temperature\cite{turner_conditional_1994}%
+  \invisible<-2>{
+  \item Contaminants in water \cite{perelman_event_2012}%
+  }%
+ \end{itemize}
+\end{column}
+\begin{column}{0.2\textwidth}
+\end{column}
+\end{columns}
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{struzik_2002_price-vs-time_edit.png}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{turner_1994}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Perelman_2012.png}};
+
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
+
+\begin{frame}{Past Work in SMFS Event Detection}
 
 
 \begin{columns}[T]
@@ -319,44 +355,7 @@
 \end{frame}
 
 
-\begin{frame}{Other Scientific Domains}
-\end{frame}
-
-
-\section{Methods}
-
-\subsection{Sample Prepation and Data Acquisition}
-
-\begin{frame}{Verifying sample purity}
-
-\begin{columns}[T]
-\begin{column}{0.6\textwidth}
-% Your text here
-  \begin{itemize}
-  \item DNA purified by Agaorse gel 
-  \invisible<-1>{\item DNA imaged by AFM}
-  \end{itemize}
-\end{column}
-\begin{column}{0.4\textwidth}
-\end{column}
-\end{columns}
-
-
-\begin{overlayarea}{\textwidth}{\textheight}
-  \begin{tikzpicture}
-% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
-% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{prep_pres.pdf}};
-    \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<-1> \fill [white] (0.4,0.0) rectangle (1.0,1.0);%
-        \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
-    \end{scope}
-\end{tikzpicture}
-\end{overlayarea}
-
-\end{frame}
-
-\subsection{Algorithm Design, Theory, and Baselines}
+\section{Algorithm Design}
 
 \begin{frame}{Algorithm Intuition}
 
@@ -364,43 +363,21 @@
 \begin{column}{0.5\textwidth}
 % Your text here
   \begin{itemize}
-  \item Residual distribution %
+  \item Residual distribution%
     \begin{itemize}
     \item Unknown%
     \item Curve-dependent%
     \invisible<-1>{\item $\approx$\textbf{Constant in eventless curve}}%
     \end{itemize}
-  \invisible<-4>{\item FEATHER top-level%
-    \begin{itemize}
-      \invisible<-4>{\item Fit \textit{no-event} model%
-          \begin{itemize}
-          \item Spline fit to approach%
-           \invisible<-5>{\item Get residuals $r_t$}%
-          \invisible<-6>{\item Yields $\epsilon,\sigma$  for $r_t$}%
-        \end{itemize}}
-      \invisible<-7>{
-      \item Apply model to retract
-        \begin{itemize}
-          \item Probability of \emph{no-event} given point
-          \item Events: regions with `low' probability
-        \end{itemize}}
-    \end{itemize}}
 \end{itemize}
 \end{column}
-\begin{column}{0.55\textwidth}
+\begin{column}{0.6\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
     \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr0.pdf}};
     \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr1.pdf}};
     \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr2.pdf}};
     \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr2.pdf}};
-    \node<5-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
-    \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
-      \only<5-6> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
-      \only<5-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
-    \end{scope}
-    \node<8>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -409,6 +386,41 @@
 \end{frame}
 
 \begin{frame}{Algorithm Formalism}
+
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item Fit \textit{no-event} model%
+  \begin{itemize}
+    \item Spline fit to approach%
+      \invisible<-3>{\item Residuals $r_t$}%
+      \invisible<-3>{\item Yields $\epsilon,\sigma$}%
+   \end{itemize}
+\invisible<-4>{
+  \item Apply to retract
+  \begin{itemize}
+    \item Probability of \emph{no-event} given point
+    \item Events: regions with `low' probability
+  \end{itemize}}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
+      \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
+      \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+    \end{scope}
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+\end{column}
+\end{columns}
+
+
 \end{frame}
 
 
@@ -528,7 +540,7 @@
 \end{overlayarea}
 \end{frame}
 
-\begin{frame}{Metric}
+\begin{frame}{Comparison of Metrics}
 \begin{table}
 \input{../../paper/Figures/Finals/metric_table}
 \end{table}
@@ -576,6 +588,36 @@
 \end{frame}
 
 \section{Backup Slides}
+
+
+\begin{frame}{Verifying sample purity}
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+% Your text here
+  \begin{itemize}
+  \item DNA purified by Agaorse gel 
+  \invisible<-1>{\item DNA imaged by AFM}
+  \end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+\end{column}
+\end{columns}
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{prep_pres.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<-1> \fill [white] (0.4,0.0) rectangle (1.0,1.0);%
+        \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
+    \end{scope}
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
 
 \begin{frame}
 \end{frame}

@@ -14,7 +14,7 @@ from IgorUtil.PythonAdapter import PxpLoader
 from Research.Perkins.AnalysisUtil.Images import ImageUtil
 
 def m_colorbar(im,fig):
-    cbar_ax = fig.add_axes([0.80, 0.25, 0.03, 0.5])
+    cbar_ax = fig.add_axes([0.80, 0.32, 0.03, 0.35])
     PlotUtilities.colorbar(label="Height (nm)",
                            bar_kwargs=dict(mappable=im,cax=cbar_ax))
 
@@ -77,7 +77,7 @@ def run():
                     "3mMNickel-Image0003.ibw"
     subplots_adjust = dict(left=0.07,right=0.7,hspace=0.0,bottom=0.0,top=1.0)
     # make the figure for the presentaiton, without subplot labels and larger
-    fig = PlotUtilities.figure((12,9))
+    fig = PlotUtilities.figure((12,11))
     im = prep_figure(src_gel_photo,src_dna_image)
     plt.subplots_adjust(**subplots_adjust)
     m_colorbar(im,fig)
