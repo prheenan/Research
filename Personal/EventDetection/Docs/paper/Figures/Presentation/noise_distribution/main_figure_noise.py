@@ -72,6 +72,15 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta,
     gs = gridspec.GridSpec(3,2*n_plots)
     plt.subplot(gs[0,:])
     plot_force(x_plot,y_plot,interp_raw,style_raw,style_interp)
+    # highlight all the residual regions in their colors
+    for style_tmp,slice_tmp in zip(style_regions,slices_abs):
+        if (when_to_break == _break_after_interp):
+            break
+        plt.plot(x_plot[slice_tmp],y_plot[slice_tmp],**style_raw)
+        plt.plot(x_plot[slice_tmp],interp_raw[slice_tmp],
+                 **style_interp)
+        if (when_to_break == _break_after_first_zoom):
+            break
     ax_diff = plt.subplot(gs[1,:])
     plot_residual(x_plot,diff_raw,style_raw)
     # highlight all the residual regions in their colors
