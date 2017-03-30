@@ -55,7 +55,10 @@ class split_force_extension:
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
         return stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach
-
+    def stdevs_epsilon_and_sigma(self,**kwargs):
+        stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach = \
+           self._approach_metrics(**kwargs)
+        return stdevs,epsilon,sigma
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau

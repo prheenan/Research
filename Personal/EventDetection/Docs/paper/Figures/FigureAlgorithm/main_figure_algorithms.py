@@ -23,12 +23,12 @@ style_raw = dict(alpha=0.3,**common)
 style_filtered = dict(linewidth=3,**common)
 retract_style = dict(color='g',**common)
 style_retract_error_dist = dict(linewidth=2,**common)
-label_s_t = r"s$_t$"
+label_s_t = r"$\Sigma_\mathrm{t}$"
 label_r_t = r"r$_t$"
 lazy_kwargs = dict(loc='lower right',frameon=False)
 
-error_label = "r$_\mathrm{t}$ or\n$\Sigma_\mathrm{t}$ (pN)"
-filtered_error_label = "$\Sigma_{\mathrm{t}}$ (pN)"
+error_label = "r$_\mathrm{t}$ or\n" + label_s_t + " (pN)"
+filtered_error_label = label_s_t + " (pN)"
 force_label = "Force (pN)"
 
 def tick_function():
@@ -40,7 +40,7 @@ def plot_fec(time_approach,force_approach,interp_approach,
              ylim_force,xlim_approach,label):
     plt.plot(time_approach,force_approach,label=label,
              alpha=0.3,**style_approach)
-    plt.plot(time_approach,interp_approach,label="Spline ($g^{*}_t$)))",
+    plt.plot(time_approach,interp_approach,label="Spline",
              **style_approach)
     PlotUtilities.lazyLabel("",force_label,
                             "Estimating $\epsilon$ and $\sigma$",
@@ -54,7 +54,7 @@ def plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                               style_raw,label="Raw (retract)")
     Plotting.before_and_after(x_plot,force_filtered_plot,
                               slice_before,slice_after,style_filtered,
-                              label="Spline ($g^{*}_t$)))")
+                              label="Spline")
     title = "Calculating the no-event probability"
     plt.ylim(ylim_force)
     PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
@@ -162,7 +162,7 @@ def run(base="./"):
     interp_approach = y_plot_f(interpolator_approach(approach_time))
     approach_diff = force_approach-interp_approach
     approach_stdev,_,_ =  fec_split.\
-    _approach_stdevs_epsilon_and_sigma(slice_fit_approach=slice_fit_approach)
+            stdevs_epsilon_and_sigma(slice_fit_approach=slice_fit_approach)
     # get the retract 
     interpolator = fec_split.retract_spline_interpolator()
     force_filtered = interpolator(time)
@@ -171,8 +171,9 @@ def run(base="./"):
     diff_pN = y_plot_f(diff)
     stdev,_,_ = Analysis.stdevs_epsilon_sigma(force,force_filtered,
                                               n_points)
-    epsilon,sigma = fec_split.calculate_epsilon_and_sigma(n_points=n_points,\
-                                    slice_fit_approach=slice_fit_approach)
+    _,epsilon,sigma = fec_split.\
+        stdevs_epsilon_and_sigma(n_points=n_points,
+                                slice_fit_approach=slice_fit_approach)
     # get the probability
     prob,_= Detector._no_event_probability(time,interp=interpolator,
                                            y=force,
