@@ -360,14 +360,24 @@
 \begin{frame}{Algorithm Intuition}
 
 \begin{columns}[T]
-\begin{column}{0.5\textwidth}
+\begin{column}{0.55\textwidth}
 % Your text here
   \begin{itemize}
-  \item Residual distribution%
+  \item Approach residual distribution%
     \begin{itemize}
     \item Unknown%
     \item Curve-dependent%
-    \invisible<-1>{\item $\approx$\textbf{Constant in eventless curve}}%
+    \invisible<-1>{\item $\approx$\textbf{Constant in time}}%
+    \end{itemize}
+ \invisible<-3>{\item Retract residual distribution}
+    \begin{itemize}
+    \invisible<-3>{\item Calculate as approach}%
+    \invisible<-4>{\item $\approx$Identical, except at events}%
+    \end{itemize}
+ \invisible<-6>{\item Hypothesis testing}
+    \begin{itemize}
+    \invisible<-6>{\item Approach $\rightarrow$ \textit{no event} model }%
+    \invisible<-7>{\item Probability(retract|model)}%
     \end{itemize}
 \end{itemize}
 \end{column}
@@ -377,7 +387,9 @@
     \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr0.pdf}};
     \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr1.pdf}};
     \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr2.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr0.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr1.pdf}};
+    \node<6-8>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr2.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -393,14 +405,29 @@
 \item Fit \textit{no-event} model%
   \begin{itemize}
     \item Spline fit to approach%
-      \invisible<-3>{\item Residuals $r_t$}%
-      \invisible<-3>{\item Yields $\epsilon,\sigma$}%
+      \invisible<-1>{\item Residuals $r_t$%
+        \begin{itemize}
+          \item Use local variance: $\Sigma_t^2$
+          \item Improves SNR 50x%
+        \end{itemize}
+      }%
+      \invisible<-2>{\item Mean, variance: $\epsilon,\sigma^2$}%
    \end{itemize}
-\invisible<-4>{
+\invisible<-3>{
   \item Apply to retract
   \begin{itemize}
-    \item Probability of \emph{no-event} given point
-    \item Events: regions with `low' probability
+    \item Probability by Chebyshev
+        \begin{itemize}
+          \item P($\frac{|\Sigma_t-\epsilon|}{\sigma}\ge k$)$\le \frac{1}{k^2}$%
+          \item \textbf{Independent} of noise distribution!%
+        \end{itemize}
+  \item Repeat for transformations
+    \begin{itemize}
+      \item Spline integral
+      \item Spline differentiation
+      \item Spline difference
+    \end{itemize}
+  \item Multiply all probabilities
   \end{itemize}}
 \end{itemize}
 \end{column}
@@ -408,7 +435,7 @@
 \begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
+    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
       \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
       \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
@@ -420,6 +447,29 @@
 \end{column}
 \end{columns}
 
+\end{frame}
+
+\begin{frame}{Domain-Specific Modifications}
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+
+\begin{itemize}
+  \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
+    \begin{itemize}
+      \item \underline{un}folding and \underline{un}binding
+    \end{itemize}
+  \item Remove false positive `adhesions'
+    \begin{itemize}
+      \item Locate surface by approach 
+      \item Remove events containing surface
+    \end{itemize}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.4\textwidth}
+\end{column}
+\end{columns}
 
 \end{frame}
 
