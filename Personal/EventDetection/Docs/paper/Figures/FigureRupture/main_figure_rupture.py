@@ -12,7 +12,7 @@ from Research.Personal.EventDetection.Util.InputOutput import \
     read_and_cache_file
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 
-def rupture_plot(data_base):
+def rupture_plot(data_base,ax1_labels=True,ax2_labels=True):
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=False,cache_directory=data_base)
     n_filter = 1000
@@ -91,8 +91,10 @@ def rupture_plot(data_base):
     plt.xlim(xlim)
     ax1.xaxis.tick_top()
     ax1.xaxis.set_label_position('top') 
+    marker_size=75
     Plotting.plot_arrows_above_events([index_absolute],x,force_filtered,
-                                      fudge_y=fudge_y*4.5)
+                                      fudge_y=fudge_y*4.5,
+                                      markersize=marker_size)
     # plot the rupture
     # These are in unitless percentages of the figure size. (0,0 is bottom left)
     # zoom-factor: 2.5, location: upper-left
@@ -106,7 +108,8 @@ def rupture_plot(data_base):
                               style_data_post_zoom)
     plot_rupture = lambda l: Plotting.\
         plot_arrows_above_events([index_after_event],x_event_both,
-                                 predicted_both,fudge_y=fudge_y)
+                                 predicted_both,fudge_y=fudge_y,
+                                 markersize=marker_size)
     plot_line = lambda l :  plt.plot(x_event_both[:index_after_event+1],
                                      predicted_both[:index_after_event+1],
                                      color='m',
@@ -140,8 +143,10 @@ def rupture_plot(data_base):
                               0,s=string,width=scale_width)
     PlotUtilities.no_x_label()
     # draw lines connecting the plots
-    PlotUtilities.zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
-    PlotUtilities.zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
+    if (ax1_labels):
+        PlotUtilities.zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
+    if (ax2_labels):
+        PlotUtilities.zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
 
 
 def run(base="./"):
@@ -153,9 +158,13 @@ def run(base="./"):
     subplots_adjust = dict(hspace=0.1)
     # save out without the labels
     fig = PlotUtilities.figure((6,8))
-    rupture_plot(data_base)
-    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_pres.pdf"),
-                          subplots_adjust=subplots_adjust)
+    opts = [ [False,False],[True,False],[True,True]]
+    for i,opt_tmp in enumerate(opts):
+        fig = PlotUtilities.figure((6,8))
+        rupture_plot(data_base,*opt_tmp)
+        PlotUtilities.savefig(fig,
+                              out_fig.replace(".pdf","_pres{:d}.pdf".format(i)),
+                              subplots_adjust=subplots_adjust)
     # save out with the labels
     fig = PlotUtilities.figure((8,12))
     rupture_plot(data_base)
