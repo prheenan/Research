@@ -24,7 +24,7 @@ def make_plot(retract,pred_info,event,interp_raw,probability_idx,
     style_raw = dict(color='k',alpha=0.3)
     style_interp = dict(color='k',alpha=1)
     x_plot,y_plot = Plotting.plot_format(retract)
-    min_x,max_x = min(x_plot),max(x_plot)
+    min_x,max_x = min(x_plot),max(x_plot)/3
     fudge_x = abs(max_x-min_x) * 0.05
     xlim = np.array([min_x-fudge_x,max_x+fudge_x])
     probabilities = pred_info.probabilities

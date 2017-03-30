@@ -266,7 +266,6 @@
     \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{struzik_2002_price-vs-time_edit.png}};
     \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{turner_1994}};
     \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Perelman_2012.png}};
-
 \end{tikzpicture}
 \end{overlayarea}
 
@@ -417,19 +416,22 @@
    \end{itemize}
 \invisible<-3>{
   \item Apply to retract
+\invisible<-4>{
   \begin{itemize}
     \item Probability by Chebyshev
         \begin{itemize}
           \item P($\frac{|\Sigma_t-\epsilon|}{\sigma}\ge k$)$\le \frac{1}{k^2}$%
           \item \textbf{Independent} of noise distribution!%
         \end{itemize}
+}
+\invisible<-5>{
   \item Repeat for transformations
     \begin{itemize}
       \item Spline integral
       \item Spline differentiation
       \item Spline difference
     \end{itemize}
-  \item Multiply all probabilities
+  \item Multiply all probabilities}
   \end{itemize}}
 \end{itemize}
 \end{column}
@@ -443,7 +445,11 @@
       \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
       \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \node<4-6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
+      \only<4-5> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+    \end{scope}
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -457,21 +463,25 @@
 \begin{column}{0.7\textwidth}
 
 \begin{itemize}
-\item Adhesions
+\item Adhesions (events near at the surface)
+\invisible<-1>{
   \begin{itemize}
     \item Locate surface by approach 
     \item Remove events at surface
-  \end{itemize}
+  \end{itemize}}
+\invisible<-2>{
 \item Re-folding or stretching
   \begin{itemize}
     \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
   \end{itemize}
+}
+\invisible<-3>{
 \item `Mask' by spline transform (tx) 
   \begin{itemize}
     \item Require tx signal $\ge$ noise
     \item \emph{i.e.} $|\Sigma_{t,\mathrm{tx}}-\epsilon_{\mathrm{tx}}| \ge \sigma_{\mathrm{tx}}$
     \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
-  \end{itemize}
+  \end{itemize}}
 \end{itemize}
 \end{column}
 
@@ -503,7 +513,7 @@
 \begin{column}{0.99\textwidth}
 % column about BCC
   \begin{itemize}
-  \item Algorithm's runtime are linear with curve size
+  \item Algorithms runtime are linear with curve size
   \invisible<-1>{\item FEATHER has significantly better coefficients}
   \begin{itemize}
     \invisible<-1>{\item Minutes to analyze `realistic' dataset (hundreds of curves)}
@@ -537,11 +547,19 @@
 
 \begin{columns}[T]
 \begin{column}{0.99\textwidth}
+\begin{overlayarea}{\textwidth}{\textheight}
 % column about BCC
   \begin{itemize}
-  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (meters) from true to predicted%
-  \invisible<-1>{\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (meters) from predicted to true}%
+  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
+  \invisible<-1>{\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true}%
+  \invisible<-2>{%
+\item%
+\only<3>{FEATHER}%
+\only<4>{OpenFovea}%
+\only<5>{Scientific Python}%
+}
   \end{itemize}
+\end{overlayarea}
 \end{column}
 
 \begin{column}{0.01\textwidth}
@@ -621,23 +639,23 @@
   % Keep the summary *very short*.
   \begin{itemize}
   \item
-    The \alert{first main message} of your talk in one or two lines.
+    Developed an algorithm for detecting events SMFS data
   \item
-    The \alert{second main message} of your talk in one or two lines.
+    100-fold decrease in relative event error
   \item
-    Perhaps a \alert{third message}, but not more than that.
+    Generalizes well to SMFS data ranges
   \end{itemize}
   
   % The following outlook is optional.
   \vskip0pt plus.5fill
   \begin{itemize}
   \item
-    Outlook
+    Next steps
     \begin{itemize}
     \item
-      Something you haven't solved.
+      Apply to (more interesting) protein dataset
     \item
-      Something else you haven't solved.
+      Publish results
     \end{itemize}
   \end{itemize}
 \end{frame}
