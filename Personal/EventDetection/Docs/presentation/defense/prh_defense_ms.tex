@@ -129,6 +129,8 @@
 \newcommand{\MinusOpt}[1]{\MinusColor{$\mathbf{-}$}}
 % bibliography command
 \usepackage[super]{natbib}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
 
 \begin{document}
 
@@ -522,7 +524,12 @@
     \node<7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_rupture.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
+\end{frame}
 
+\begin{frame}{Metric}
+\begin{table}
+\input{../../paper/Figures/Finals/metric_table}
+\end{table}
 \end{frame}
 
 \section*{Summary}
