@@ -48,7 +48,8 @@ def make_plot(retract,pred_info,event,interp_raw,probability_idx,
     if (use_previous and (probability_idx != 0)):
         plt.semilogy(x_plot,probabilities[probability_idx-1],color='k',
                      alpha=0.3,linestyle='--',label="Previous")
-    plt.semilogy(x_plot,probabilities[probability_idx],label="Probability")
+    plt.semilogy(x_plot,probabilities[probability_idx],label="Probability",
+                 color='k')
     plt.xlim(xlim)
     plt.ylim([probability_min/2,2])
     if (use_surface_shading):

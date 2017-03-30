@@ -144,9 +144,9 @@ def rupture_plot(data_base,ax1_labels=True,ax2_labels=True):
     PlotUtilities.no_x_label()
     # draw lines connecting the plots
     if (ax1_labels):
-        PlotUtilities.zoom_effect01(ax1, ax2, *xlim_zoom,linewidth=3)
+        PlotUtilities.zoom_effect01(ax1, ax2, *xlim_zoom)
     if (ax2_labels):
-        PlotUtilities.zoom_effect01(ax2, ax3, *xlim_second_zoom,linewidth=3)
+        PlotUtilities.zoom_effect01(ax2, ax3, *xlim_second_zoom)
 
 
 def run(base="./"):
@@ -158,9 +158,12 @@ def run(base="./"):
     subplots_adjust = dict(hspace=0.1)
     # save out without the labels
     fig = PlotUtilities.figure((6,8))
+    opts = [ [False,False],
+             [True,False],
+             [True,True]]
     for i,opt_tmp in enumerate(opts):
         fig = PlotUtilities.figure((6,8))
-        rupture_plot(data_base,opt_tmp)
+        rupture_plot(data_base,*opt_tmp)
         PlotUtilities.savefig(fig,
                               out_fig.replace(".pdf","_pres{:d}.pdf".format(i)),
                               subplots_adjust=subplots_adjust)
