@@ -18,7 +18,7 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 def f_plot_y(y):
     return 1e12 * y
 
-def make_plot(retract,pred_info,interp_raw,probability_idx,
+def make_plot(retract,pred_info,event,interp_raw,probability_idx,
               surface_idx,use_previous=True,use_surface_shading=True):
     # get the plotting information
     style_raw = dict(color='k',alpha=0.3)
@@ -29,14 +29,18 @@ def make_plot(retract,pred_info,interp_raw,probability_idx,
     xlim = np.array([min_x-fudge_x,max_x+fudge_x])
     probabilities = pred_info.probabilities
     probability_min = np.min([min(p) for p in probabilities])
+    before_slice = event
+    after_slice = slice(event.stop,None,1)
     surface_plot = lambda label : \
-        plt.axvspan(min(xlim),x_plot[surface_idx],alpha=0.2,color='r',
+        plt.axvspan(min(x_plot),x_plot[surface_idx],alpha=0.2,color='k',
                     label=label)
+    color_plot = lambda x,y,**kw : \
+                 Plotting.before_and_after(x,y,before_slice,after_slice,**kw)
     plt.subplot(2,1,1)
-    plt.plot(x_plot,y_plot,**style_raw)
-    plt.plot(x_plot,f_plot_y(interp_raw),**style_interp)
+    color_plot(x_plot,y_plot,style=dict(alpha=0.3))
+    color_plot(x_plot,f_plot_y(interp_raw))
     if (use_surface_shading):
-        surface_plot("Surface Contact")
+        surface_plot(None)
     PlotUtilities.x_label_on_top()
     PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
     plt.xlim(xlim)
@@ -48,7 +52,7 @@ def make_plot(retract,pred_info,interp_raw,probability_idx,
     plt.xlim(xlim)
     plt.ylim([probability_min/2,2])
     if (use_surface_shading):
-        surface_plot(None)
+        surface_plot("Surface")
     PlotUtilities.no_x_label()
     PlotUtilities.lazyLabel("","Probability","",loc="lower right")
 
@@ -68,23 +72,26 @@ def run(base="./"):
     retract = split_fec.retract
     interp_raw = interp(retract.Time)
     surface_idx = split_fec.get_predicted_retract_surface_index()
+    events = split_fec.get_retract_event_slices()[0]
     # get the full prediction information
     _,pred_info = Detector._predict_full(fec)
     n_pred = 3
-    base = "./pathway/"
+    base = "./pathway"
     # make the initial figure, without shading
-    fig = PlotUtilities.figure((6,10))
-    make_plot(retract,pred_info,interp_raw,0,surface_idx,
+    figsize=(5,8)
+    fig = PlotUtilities.figure(figsize)
+    make_plot(retract,pred_info,events,interp_raw,0,surface_idx,
               use_surface_shading=False)
     PlotUtilities.savefig(fig,base + "_initial.pdf")
     # make the intermediate figures
     for i in range(n_pred):
-        fig = PlotUtilities.figure((6,10))
-        make_plot(retract,pred_info,interp_raw,i,surface_idx)
+        fig = PlotUtilities.figure(figsize)
+        make_plot(retract,pred_info,events,interp_raw,i,surface_idx)
         PlotUtilities.savefig(fig,base + "{:d}.pdf".format(i))
     # make the final figure
-    fig = PlotUtilities.figure((6,10))
-    make_plot(retract,pred_info,interp_raw,i,surface_idx,use_previous=False)
+    fig = PlotUtilities.figure(figsize)
+    make_plot(retract,pred_info,events,interp_raw,i,surface_idx,
+              use_previous=False)
     PlotUtilities.savefig(fig,base + "{:d}.pdf".format(i+1))
 
 

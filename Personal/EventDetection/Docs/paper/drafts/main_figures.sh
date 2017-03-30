@@ -53,6 +53,7 @@ rupture_dir="${base_dir_rel}FigureRupture/"
 pres_dir="${base_dir_rel}Presentation/"
 copy_pdfs "${pres_dir}bhattacharya"  $out_path $pngs
 copy_pdfs "${pres_dir}noise_distribution/" $out_path $pngs
+copy_pdfs "${pres_dir}domain-specific-path/" $out_path $pngs 
 copy_pdfs "${base_dir_rel}FigurePerformance_FullSet_FEATHER/" $out_path $pngs
 copy_pdfs "${base_dir_rel}FigurePerformance_DistanceOnly/" $out_path $pngs
 copy_pdfs "${base_dir_rel}FigurePerformance_per_algorithm/" $out_path $pngs

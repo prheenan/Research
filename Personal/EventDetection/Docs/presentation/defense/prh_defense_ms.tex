@@ -451,25 +451,42 @@
 
 \end{frame}
 
-\begin{frame}{Domain-Specific Modifications}
+\begin{frame}{Removing Domain-Specific False Positives}
 
 \begin{columns}[T]
-\begin{column}{0.6\textwidth}
+\begin{column}{0.7\textwidth}
 
 \begin{itemize}
-  \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
-    \begin{itemize}
-      \item \underline{un}folding and \underline{un}binding
-    \end{itemize}
-  \item Remove false positive `adhesions'
-    \begin{itemize}
-      \item Locate surface by approach 
-      \item Remove events containing surface
-    \end{itemize}
+\item Adhesions
+  \begin{itemize}
+    \item Locate surface by approach 
+    \item Remove events at surface
+  \end{itemize}
+\item Re-folding or stretching
+  \begin{itemize}
+    \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
+  \end{itemize}
+\item `Mask' by spline transform (tx) 
+  \begin{itemize}
+    \item Require tx signal $\ge$ noise
+    \item \emph{i.e.} $|\Sigma_{t,\mathrm{tx}}-\epsilon_{\mathrm{tx}}| \ge \sigma_{\mathrm{tx}}$
+    \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
+  \end{itemize}
 \end{itemize}
 \end{column}
 
 \begin{column}{0.4\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway0.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.47);%
+    \end{scope}
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway3.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
 \end{column}
 \end{columns}
 
