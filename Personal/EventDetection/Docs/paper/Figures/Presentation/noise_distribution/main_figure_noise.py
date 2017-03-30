@@ -76,9 +76,11 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta,
     for style_tmp,slice_tmp in zip(style_regions,slices_abs):
         if (when_to_break == _break_after_interp):
             break
-        plt.plot(x_plot[slice_tmp],y_plot[slice_tmp],**style_raw)
-        plt.plot(x_plot[slice_tmp],interp_raw[slice_tmp],
-                 **style_interp)
+        style_interp_tmp = dict(**style_tmp)
+        style_interp_tmp['alpha'] = 1
+        plt.plot(x_plot[slice_tmp],y_plot[slice_tmp],**style_tmp)
+        plt.plot(x_plot[slice_tmp],f_plot_y(interp_raw[slice_tmp]),linewidth=3,
+                 **style_interp_tmp)
         if (when_to_break == _break_after_first_zoom):
             break
     ax_diff = plt.subplot(gs[1,:])
