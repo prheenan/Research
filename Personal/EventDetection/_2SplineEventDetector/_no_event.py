@@ -134,12 +134,8 @@ def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
     y = y[slice_fit]
     # get the interpolated function
     interpolated_y = interp(x)
-    stdev_masked,epsilon_def,sigma_def = Analysis.\
+    stdev_masked,_,_ = Analysis.\
         stdevs_epsilon_sigma(y,interpolated_y,n_points)
-    if epsilon is None:
-        epsilon = epsilon_def
-    if sigma is None:
-        sigma = sigma_def
     # note: chebyshev is like
     # P(|X - mu| >=  k * sigma) <= 1/k^2
     # we write k = (s(q) - epsilon)/scale
