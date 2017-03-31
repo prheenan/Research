@@ -49,7 +49,8 @@ class no_event_parameters:
     def __init__(self,epsilon,sigma,threshold,
                  delta_epsilon=None,delta_sigma=None,
                  derivative_epsilon=None,derivative_sigma=None,
-                 integral_epsilon=None,integral_sigma=None):
+                 integral_epsilon=None,integral_sigma=None,
+                 valid_delta=True,valid_derivative=True,valid_integral=True):
         self.epsilon = epsilon
         self.sigma = sigma
         self.threshold = threshold
@@ -63,12 +64,18 @@ class no_event_parameters:
         self.integral_epsilon=integral_epsilon
         self.integral_sigma=integral_sigma
         # determine what we can actuallly run
-        self.valid_delta = (self.delta_epsilon is not None and
-                            self.delta_sigma is not None)
-        self.valid_derivative = (self.derivative_epsilon is not None and
-                                 self.derivative_sigma is not None)
-        self.valid_integral = (self.integral_epsilon is not None and
-                               self.integral_sigma is not None)
+        self._set_valid_delta(valid_delta)
+        self._set_valid_derivative(valid_derivative)
+        self._set_valid_integral(valid_integral)
+    def _set_valid_delta(self,flag):
+        self.valid_delta = ((self.delta_epsilon is not None and
+                            self.delta_sigma is not None) and flag)
+    def _set_valid_integral(self,flag):
+        self.valid_integral = (((self.integral_epsilon is not None) and
+                                (self.integral_sigma is not None)) and flag)
+    def _set_valid_derivative(self,flag):
+        self.valid_derivative = (((self.derivative_epsilon is not None) and
+                                  (self.derivative_sigma is not None)) and flag)
 
 
 
@@ -247,11 +254,12 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     probability_distribution = np.ones(y.size)
     # get the probability for all the non edge cases
     probability_distribution = chebyshev
+    print(no_event_parameters_object.valid_delta)
     if (no_event_parameters_object.valid_delta):
         df = _delta(x,interpolated_y,n_points)
         p_delta = _delta_probability(df,no_event_parameters_object,
                                      negative_only=negative_only)
-        #probability_distribution *= p_delta
+        probability_distribution *= p_delta
     if (no_event_parameters_object.valid_derivative):
         p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
                                           negative_only=negative_only)

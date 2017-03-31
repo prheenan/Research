@@ -385,6 +385,8 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     y = split_fec.retract.Force[slice_update]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_update)
     split_fec.set_retract_knots(interp)
+    # enable calculating the delta
+    no_event_parameters_object._set_valid_delta(True)
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
@@ -497,12 +499,15 @@ def _predict_helper(split_fec,threshold,**kwargs):
     derivative_epsilon = np.median(approach_interp_deriv)
     derivative_sigma = np.std(approach_interp_deriv)
     # get the remainder of the approach metrics needed
+    # note: to start, we do *not* use delta; this is calculated
+    # after the adhesion
     approach_dict = dict(integral_sigma   = 2*sigma*min_points_between,
                          integral_epsilon = epsilon,
                          delta_epsilon = delta_epsilon,
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,
-                         derivative_sigma   = derivative_sigma,**kwargs)
+                         derivative_sigma   = derivative_sigma,
+                         valid_delta = False,**kwargs)
     # call the predict function
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
     to_ret = _predict(x=time,
