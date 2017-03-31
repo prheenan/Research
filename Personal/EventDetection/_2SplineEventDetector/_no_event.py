@@ -158,7 +158,6 @@ def _delta_probability(df,no_event_parameters,negative_only=False):
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
-        df = np.abs(df)
     df_relative = df-baseline
     # get the pratio probability
     if negative_only:
@@ -200,14 +199,15 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
                                                integral_sigma)
     return probability_integral
 
-def _derivative_probability(interp,x,no_event_parameters_object):
+def _derivative_probability(interp,x,no_event_parameters_object,
+                            negative_only=False):
     derivative = _spline_derivative(x,interp)
     deriv_epsilon = no_event_parameters_object.derivative_epsilon
     deriv_sigma = no_event_parameters_object.derivative_sigma
-    kwargs_derivative = dict(g=derivative,
-                             epsilon=deriv_epsilon,sigma=deriv_sigma)
-    return _no_event_chebyshev(**kwargs_derivative)
-
+    k = (derivative-deriv_epsilon)/deriv_sigma
+    if (negative_only):
+        k = np.minimum(1,k)
+    return _probability_by_cheby_k(k)
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                           slice_fit=None):

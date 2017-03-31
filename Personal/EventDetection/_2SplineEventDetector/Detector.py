@@ -218,7 +218,6 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
-        df_true = np.abs(df_true)
     if (negative_only):
         # XXX ?.... shouldnt this be minimum? (*dont* want positive)
         value_cond = (np.minimum(0,df_true) > baseline)
@@ -234,9 +233,6 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
 
 def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
                              interp_f,pred_retract_surface_idx, slice_to_use):
-    if (not negative_only):
-        # considering __all__ signal. XXX need absolute value df?
-        df_true = np.abs(df_true)
     epsilon_approach = no_event_parameters_object.delta_epsilon
     sigma_approach = no_event_parameters_object.delta_sigma
     pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
