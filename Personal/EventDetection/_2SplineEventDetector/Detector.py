@@ -10,51 +10,9 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 from GeneralUtil.python import PlotUtilities,GenUtilities
 # XXX reduce import size below
 from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
-    _min_points_between,_predict,safe_cheby_probability,\
+    _min_points_between,_predict,\
     _probability_by_cheby_k,_no_event_chebyshev,_event_slices_from_mask
 from Research.Personal.EventDetection._2SplineEventDetector import _no_event
-
-
-def spline_derivative_probability(split_fec):
-    """
-    see mask_spline_derivative, except this returns the probability 
-    distribution of each point p, P(deriv to be less than p) by chebyshev
-    
-    Args:
-        split_fec: the split_force_extension object we want to mask the 
-        adhesions of 
-    Returns:
-        array, 1 where we are within a stdev of the median, otherwise
-        (stdev/(p-std))**2
-    """
-    retract = split_fec.retract
-    time = retract.Time 
-    interpolator = split_fec.retract_spline_interpolator()
-    return _spline_derivative_probability_generic(time,interpolator)
-
-def _spline_derivative_probability_generic(x,interpolator,scale=None,loc=None,
-                                           negative_only=False):
-    """
-    see  spline_derivative_probability, except a genertic method
-    
-    Args:
-        x: x values
-        interpolator: to interpolate along
-        negative_only: if true, everything above loc-scale gets a 1
-    Returns:
-        see spline_derivative_probability
-    """ 
-    derivative_force = interpolator.derivative()(x)
-    if (loc is None):
-        loc = np.median(derivative_force)
-    if (scale is None):
-        std_iqr = np.std(derivative_force)
-        scale = std_iqr
-    k_cheby = (derivative_force-loc)/scale
-    if (negative_only):
-        k_cheby = np.minimum(1,k_cheby)
-    probability = _probability_by_cheby_k(k_cheby)
-    return probability 
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
     value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
@@ -212,22 +170,11 @@ def derivative_mask_function(split_fec,slice_to_use,
     boolean_ret[absolute_max_index:] = 0
     slice_to_use = slice(absolute_min_idx,absolute_max_index,1)
     x_sliced =  time[slice_to_use]
-    offset = slice_to_use.start    
-    force_sliced = force[slice_to_use]
-    interp_sliced = interp(x_sliced)
-    interp_slice_deriv = interp(x_sliced,1)
-    diff_sliced = interp_sliced - force_sliced
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    # get the median and sigma of the derivative
-    med_deriv_appr = no_event_parameters_object.derivative_epsilon
-    std_deriv_appr = no_event_parameters_object.derivative_sigma
-    kwargs_approach_deriv = dict(loc=med_deriv_appr,
-                                 scale=std_deriv_appr,
-                                 negative_only=negative_only)
-    # modulate the probabilities by the approach
+    # get the derivative probability
     probability_deriv = \
-            _spline_derivative_probability_generic(x_sliced,interp,
-                                                   **kwargs_approach_deriv)
+        _no_event._derivative_probability(interp,x_sliced,
+                                          no_event_parameters_object)
+    # modulate the probabilities by the approach
     probability_updated[slice_to_use] *= probability_deriv
     boolean_ret[slice_to_use] = probability_updated[slice_to_use] < threshold
     return slice_to_use,boolean_ret,probability

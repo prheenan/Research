@@ -149,6 +149,22 @@ def _delta(x,interp_f,n_points_diff):
     df_true = Analysis.local_centered_diff(interp_f,n=n_points_diff)
     return df_true
 
+
+def _spline_derivative(x,interpolator):
+    """
+    see mask_spline_derivative, except this returns the probability 
+    distribution of each point p, P(deriv to be less than p) by chebyshev
+    
+    Args:
+        split_fec: the split_force_extension object we want to mask the 
+        adhesions of 
+    Returns:
+        array, 1 where we are within a stdev of the median, otherwise
+        (stdev/(p-std))**2
+    """
+    return interpolator.derivative()(x)
+
+
 def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     min_points_between = _min_points_between(n_points)
     diff = f-interp_f
@@ -165,8 +181,13 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
                                                integral_sigma)
     return probability_integral
 
-
-    
+def _derivative_probability(interp,x,no_event_parameters_object):
+    derivative = _spline_derivative(x,interp)
+    deriv_epsilon = no_event_parameters_object.derivative_epsilon
+    deriv_sigma = no_event_parameters_object.derivative_sigma
+    kwargs_derivative = dict(g=derivative,
+                             epsilon=deriv_epsilon,sigma=deriv_sigma)
+    return _no_event_chebyshev(**kwargs_derivative)
 
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
@@ -356,19 +377,3 @@ def join_contiguous_slices(slices, offset=0):
         c += label
         if c == 0:
             yield slice(x, value - offset,1)   
-
-def safe_cheby_probability(y,loc,scale):
-    """
-    return the chebyshev probability bound, with a ceiling at 1
-
-    Args:
-        y: whatever we are looking for
-        loc,scale: mean and standard deviation of the cheyshev
-    Returns:
-        y: minimum of 1 and ((y-loc)/sigma)**2
-    """
-    to_ret = np.ones(y)
-    k = (possible_deriv-loc)/scale
-    possible_idx = np.where(k > 1)
-    to_ret[possible_idx] = 1/k[possible_idx]**2
-    return to_ret
