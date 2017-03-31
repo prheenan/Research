@@ -45,6 +45,30 @@ class prediction_info:
         self.condition_results = condition_results
         self.probabilities= probabilities
 
+class no_event_parameters:
+    def __init__(self,epsilon,sigma,
+                 delta_epsilon=None,delta_sigma=None,
+                 derivative_epsilon=None,derivative_sigma=None,
+                 integral_epsilon=None,integral_sigma=None):
+        self.epsilon = epsilon
+        self.sigma = sigma
+        # delta parameters
+        self.delta_epsilon=delta_epsilon,
+        self.delta_sigma=delta_sigma
+        # derivative parameters
+        self.derivative_epsilon=derivative_epsilon
+        self.derivative_sigma=derivative_sigma
+        # integral parameters
+        self.integral_epsilon=integral_epsilon
+        self.integral_sigma=integral_sigma
+        # determine what we can actuallly run
+        self.valid_delta = (self.delta_epsilon is not None and
+                            self.delta_sigma is not None)
+        self.valid_derivative = (self.derivative_epsilon is not None and
+                                 self.derivative_sigma is not None)
+        self.valid_integral = (self.integral_epsilon is not None and
+                               self.integral_sigma is not None)
+
 
 
 def _min_points_between(autocorrelation_tau_num_points):
@@ -110,7 +134,7 @@ def _no_event_chebyshev(g,epsilon,sigma):
     return _probability_by_cheby_k(k)
 
 
-def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
+def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                           slice_fit=None):
     """
     returns the no-event probability at each point in y
@@ -121,8 +145,7 @@ def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
         interp: see _event_probabilities
         n_points: number of points to use in estimating r(q)=g-g* by the 
         local standard deviaiton of y-interp(x)
-        epsilon: the mean error parameter
-        sigma: the stdev of the error parameter
+        no_event_params_obj: the no-event parameters object to use
         slice_fit: an optional slice to use to compute the probabilities
     Returns:
         tuple of <probability, local stdevs>
@@ -136,6 +159,8 @@ def _no_event_probability(x,interp,y,n_points,epsilon=None,sigma=None,
     interpolated_y = interp(x)
     stdev_masked,_,_ = Analysis.\
         stdevs_epsilon_sigma(y,interpolated_y,n_points)
+    sigma = no_event_parameters_object.sigma
+    epsilon = no_event_parameters_object.epsilon
     # note: chebyshev is like
     # P(|X - mu| >=  k * sigma) <= 1/k^2
     # we write k = (s(q) - epsilon)/scale
@@ -168,9 +193,10 @@ def _event_probabilities(x,y,interp,n_points,threshold,**kwargs):
     min_points_between = _min_points_between(n_points)
     slice_fit = slice(min_points_between,-min_points_between,1)
     probability_distribution = np.ones(x.size)
+    params = no_event_parameters(**kwargs)
     probability_distribution_slice,stdevs = \
         _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit,
-                              **kwargs)
+                              no_event_parameters_object=params)
     probability_distribution[slice_fit] = probability_distribution_slice 
     return probability_distribution,slice_fit,stdevs
 
