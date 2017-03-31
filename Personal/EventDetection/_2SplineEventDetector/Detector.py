@@ -240,26 +240,14 @@ def integral_mask_function(split_fec,slice_to_use,
     x = split_fec.retract.Time
     x_sliced = x[slice_to_use]
     n_points = split_fec.tau_num_points
-    min_points_between = _min_points_between(n_points)
     force_sliced = split_fec.retract.Force[slice_to_use]
     boolean_ret = boolean_array.copy()
     probability_updated = probability.copy()
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
-    diff = force_sliced-interp_f
-    stdev = Analysis.local_stdev(diff,n_points)
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    # essentially: when is the interpolated value 
-    # at least one (local) standard deviation above the median
-    # we admit an event might be possible
-    thresh = sigma
-    local_integral = Analysis.local_integral(stdev,min_points_between)
-    # the threshold is the noise sigma times  the number of points 
-    # (2*min_points_between) in the window
-    integral_epsilon = no_event_parameters_object.integral_epsilon
-    integral_sigma   = no_event_parameters_object.integral_sigma
-    probability_integral = _no_event_chebyshev(local_integral,integral_epsilon,
-                                               integral_sigma)
+    probability_integral = _no_event.\
+        _integral_probability(force_sliced,interp_f,n_points,
+                              no_event_parameters_object)
     probability_updated[slice_to_use] *= probability_integral
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # zero out all the previous ones ie: no new points from this mask, just

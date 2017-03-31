@@ -149,6 +149,25 @@ def _delta(x,interp_f,n_points_diff):
     df_true = Analysis.local_centered_diff(interp_f,n=n_points_diff)
     return df_true
 
+def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
+    min_points_between = _min_points_between(n_points)
+    diff = f-interp_f
+    stdev = Analysis.local_stdev(diff,n_points)
+    # essentially: when is the interpolated value 
+    # at least one (local) standard deviation above the median
+    # we admit an event might be possible
+    local_integral = Analysis.local_integral(stdev,min_points_between)
+    # the threshold is the noise sigma times  the number of points 
+    # (2*min_points_between) in the window
+    integral_epsilon = no_event_parameters_object.integral_epsilon
+    integral_sigma   = no_event_parameters_object.integral_sigma
+    probability_integral = _no_event_chebyshev(local_integral,integral_epsilon,
+                                               integral_sigma)
+    return probability_integral
+
+
+    
+
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                           slice_fit=None):
