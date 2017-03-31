@@ -190,12 +190,12 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     # essentially: when is the interpolated value 
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
-    local_integral = Analysis.local_integral(stdev,min_points_between)
-    # the threshold is the noise sigma times  the number of points 
-    # (2*min_points_between) in the window
     integral_epsilon = no_event_parameters_object.integral_epsilon
     integral_sigma   = no_event_parameters_object.integral_sigma
-    probability_integral = _no_event_chebyshev(local_integral,integral_epsilon,
+    local_integral = Analysis.local_integral(stdev-integral_epsilon,
+                                             min_points_between)
+    # get the propr probability
+    probability_integral = _no_event_chebyshev(local_integral,0,
                                                integral_sigma)
     return probability_integral
 
@@ -207,7 +207,18 @@ def _derivative_probability(interp,x,no_event_parameters_object,
     k = (derivative-deriv_epsilon)/deriv_sigma
     if (negative_only):
         k = np.minimum(1,k)
-    return _probability_by_cheby_k(k)
+    to_ret = _probability_by_cheby_k(k)
+    plt.subplot(3,1,1)
+    plt.plot(x,interp(x))
+    plt.subplot(3,1,2)
+    plt.plot(x,derivative)
+    plt.axhline(deriv_epsilon-deriv_sigma)
+    plt.axhline(deriv_epsilon+deriv_sigma)
+    plt.subplot(3,1,3)
+    plt.plot(to_ret)
+    plt.show()
+    return to_ret
+
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                           slice_fit=None):
@@ -244,6 +255,26 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     probability_distribution = np.ones(y.size)
     # get the probability for all the non edge cases
     probability_distribution = chebyshev
+    if (no_event_parameters_object.valid_delta):
+        df = _delta(x,interpolated_y,n_points)
+        p_delta = _delta_probability(df,no_event_parameters_object,
+                                     negative_only=False)
+        probability_distribution *= p_delta
+    if (no_event_parameters_object.valid_integral):
+        p_int = _integral_probability(y,interpolated_y,n_points,
+                                      no_event_parameters_object)
+        probability_distribution *= p_int
+    if (no_event_parameters_object.valid_derivative):
+        p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
+                                          negative_only=False)
+        probability_distribution *= p_deriv
+    plt.subplot(3,1,1)
+    plt.plot(p_delta)
+    plt.subplot(3,1,2)
+    plt.plot(p_int)
+    plt.subplot(3,1,3)
+    plt.plot(p_deriv)
+    plt.show()
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,

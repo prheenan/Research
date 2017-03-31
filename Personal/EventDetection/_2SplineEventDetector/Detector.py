@@ -275,7 +275,6 @@ def delta_mask_function(split_fec,slice_to_use,
                            negative_only=negative_only)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
-    probability_updated[slice_to_use] *= ratio_probability
     # find where the derivative is definitely not an event
     value_cond = \
         _condition_no_delta_significance(no_event_parameters_object,df_true,
@@ -324,7 +323,8 @@ def delta_mask_function(split_fec,slice_to_use,
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
-                                         probability,threshold,**kwargs):
+                                         probability,threshold,
+                                         no_event_parameters_object):
     """
    returns the funciton adhesion_mask, with surface_index set to whatever
     the surface index of split_fec is predicted to be by the approach
@@ -339,9 +339,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     """
     n_points = split_fec.tau_num_points
     probability_functions_and_kw = \
-        [ [derivative_mask_function,dict(negative_only=False,**kwargs)],
-          [integral_mask_function,dict(**kwargs)],
-          [delta_mask_function,dict(negative_only=False,**kwargs)]]
+        [[delta_mask_function,dict(negative_only=False)]]
     probability_updated = probability.copy()      
     boolean_ret = boolean_array.copy()
     slice_updated = slice_to_use
@@ -351,9 +349,13 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                   slice_to_use=slice_updated,
                   threshold=threshold,
                   boolean_array=boolean_ret,
+                  no_event_parameters_object=no_event_parameters_object,
                   probability=probability_updated,**kw_tmp)
         slice_update,boolean_ret,probability_tmp = f(**kw)
-        probability_updated = probability_tmp*probability_updated
+        where_impossible = np.where(np.logical_not(boolean_ret))[0]
+        if (where_impossible.size > 0):
+            probability_updated[where_impossible] = 1
+    # determine where the surface is 
     non_events = probability_updated > threshold
     min_points_between = _min_points_between(n_points)
     min_idx = surface_index + min_points_between
@@ -390,9 +392,17 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
     slice_update = slice(min_idx,slice_update.stop,1)
+    # set the interpolator for the non-adhesion region; need to re-calculate
+    # since adhesion (probably) really screws everything up
+    x = split_fec.retract.Time[slice_update]
+    y = split_fec.retract.Force[slice_update]
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_update)
+    split_fec.set_retract_knots(interp)
+    probability_in_slice = _no_event.\
+        _no_event_probability(x,interp,y,n_points,no_event_parameters_object)
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
-    probability_updated[slice_update.stop:] = 1
+    probability_updated[slice_update] = probability_in_slice
     return slice_update,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event):
@@ -472,10 +482,10 @@ def _predict_helper(split_fec,threshold,**kwargs):
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
     # N degree b-spline has continuous (N-1) derivative
-    interp = split_fec.retract_spline_interpolator()
+    interp_retract = split_fec.retract_spline_interpolator()
     # set the knots based on the initial interpolator, so that
     # any time we make a new splining object, we use the same knots
-    split_fec.set_retract_knots(interp)
+    split_fec.set_retract_knots(interp_retract)
     # set the epsilon and tau by the approach
     min_points_between = _min_points_between(n_points)    
     stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach =\
@@ -493,12 +503,13 @@ def _predict_helper(split_fec,threshold,**kwargs):
     """
     get the interpolate derivative in the slice
     """
-    approach_interp_deriv = interp.derivative()(interpolator_approach_x)
+    approach_interp_deriv = \
+            spline_fit_approach.derivative()(interpolator_approach_x)
     derivative_epsilon = np.median(approach_interp_deriv)
     derivative_sigma = np.std(approach_interp_deriv)
     # get the remainder of the approach metrics needed
-    approach_dict = dict(integral_sigma   = epsilon,
-                         integral_epsilon = 2*sigma*min_points_between,
+    approach_dict = dict(integral_sigma   = 2*sigma*min_points_between,
+                         integral_epsilon = epsilon,
                          delta_epsilon = delta_epsilon,
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,
@@ -508,7 +519,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
-                      interp=interp,
+                      interp=interp_retract,
                       threshold=threshold,
                       local_event_idx_function=event_by_loading_rate,
                       **final_kwargs)
@@ -536,8 +547,7 @@ def _predict_full(example,threshold=1e-2):
     see predict, example returns tuple of <split FEC,prediction_info>
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function,
-              derivative_mask_function,integral_mask_function]
+    f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)
