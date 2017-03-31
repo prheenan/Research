@@ -389,7 +389,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                               negative_only=True)
-    print(slice_update,probability_in_slice.size)
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_update] = probability_in_slice

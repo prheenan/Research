@@ -46,12 +46,13 @@ class prediction_info:
         self.probabilities= probabilities
 
 class no_event_parameters:
-    def __init__(self,epsilon,sigma,
+    def __init__(self,epsilon,sigma,threshold,
                  delta_epsilon=None,delta_sigma=None,
                  derivative_epsilon=None,derivative_sigma=None,
                  integral_epsilon=None,integral_sigma=None):
         self.epsilon = epsilon
         self.sigma = sigma
+        self.threshold = threshold
         # delta parameters
         self.delta_epsilon=delta_epsilon
         self.delta_sigma=delta_sigma
@@ -251,15 +252,19 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
         p_delta = _delta_probability(df,no_event_parameters_object,
                                      negative_only=negative_only)
         #probability_distribution *= p_delta
-    if (no_event_parameters_object.valid_integral):
-        p_int = _integral_probability(y,interpolated_y,n_points,
-                                      no_event_parameters_object)
-        probability_distribution *= p_int
     if (no_event_parameters_object.valid_derivative):
         p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
                                           negative_only=negative_only)
         probability_distribution *= p_deriv
-    print("Acqui")
+    if (no_event_parameters_object.valid_integral):
+        p_int = _integral_probability(y,interpolated_y,n_points,
+                                      no_event_parameters_object)
+        threshold = no_event_parameters_object.threshold
+        boolean_tmp = (probability_distribution  < threshold)
+        probability_distribution *= p_int
+        where_not_already = np.where(np.logical_not(boolean_tmp))[0]    
+        if (where_not_already.size > 0):
+            probability_distribution[where_not_already] = 1
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
@@ -340,7 +345,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         list of event slices
     """
     min_points_between = _min_points_between(n_points)
-    no_event_parameters_object = no_event_parameters(**kwargs)
+    no_event_parameters_object = no_event_parameters(threshold=threshold,
+                                                     **kwargs)
     probability_distribution,slice_fit,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold,\
                         no_event_parameters_object=no_event_parameters_object)
