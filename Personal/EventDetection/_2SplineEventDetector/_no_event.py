@@ -53,7 +53,7 @@ class no_event_parameters:
         self.epsilon = epsilon
         self.sigma = sigma
         # delta parameters
-        self.delta_epsilon=delta_epsilon,
+        self.delta_epsilon=delta_epsilon
         self.delta_sigma=delta_sigma
         # derivative parameters
         self.derivative_epsilon=derivative_epsilon

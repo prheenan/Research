@@ -535,7 +535,29 @@ def _predict_helper(split_fec,threshold,**kwargs):
         split_fec._approach_metrics()
     split_fec.set_espilon_and_sigma(epsilon,sigma)
     split_fec.set_approach_metrics(slice_fit_approach,spline_fit_approach)
-    final_kwargs = dict(epsilon=epsilon,sigma=sigma,**kwargs)
+    """
+    get the interpolator delta in the slice
+    """
+    interpolator_approach_x = split_fec.approach.Time[slice_fit_approach]
+    interpolator_approach_f = spline_fit_approach(interpolator_approach_x)
+    df_approach = Analysis.local_centered_diff(interpolator_approach_f,
+                                               n=min_points_between)
+    delta_epsilon,delta_sigma = np.median(df_approach),np.std(df_approach)
+    """
+    get the interpolate derivative in the slice
+    """
+    approach_interp_deriv = interp.derivative()(interpolator_approach_x)
+    derivative_epsilon = np.median(approach_interp_deriv)
+    derivative_sigma = np.std(approach_interp_deriv)
+    # get the remainder of the approach metrics needed
+    approach_dict = dict(integral_sigma   = epsilon,
+                         integral_epsilon = 2*sigma*min_points_between,
+                         delta_epsilon = delta_epsilon,
+                         delta_sigma   = delta_sigma,
+                         derivative_epsilon = derivative_epsilon,
+                         derivative_sigma   = derivative_sigma,**kwargs)
+    # call the predict function
+    final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
