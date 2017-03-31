@@ -158,12 +158,12 @@ def _delta_probability(df,no_event_parameters,negative_only=False):
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
+        df = np.abs(df)
     df_relative = df-baseline
     # get the pratio probability
+    k_cheby_ratio = df_relative/sigma
     if negative_only:
         k_cheby_ratio = np.minimum(df_relative/sigma,1)
-    else:
-        k_cheby_ratio = np.abs(df_relative/sigma)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     return ratio_probability
 
@@ -208,20 +208,11 @@ def _derivative_probability(interp,x,no_event_parameters_object,
     if (negative_only):
         k = np.minimum(1,k)
     to_ret = _probability_by_cheby_k(k)
-    plt.subplot(3,1,1)
-    plt.plot(x,interp(x))
-    plt.subplot(3,1,2)
-    plt.plot(x,derivative)
-    plt.axhline(deriv_epsilon-deriv_sigma)
-    plt.axhline(deriv_epsilon+deriv_sigma)
-    plt.subplot(3,1,3)
-    plt.plot(to_ret)
-    plt.show()
     return to_ret
 
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
-                          slice_fit=None):
+                          slice_fit=None,negative_only=False):
     """
     returns the no-event probability at each point in y
 
@@ -258,23 +249,17 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     if (no_event_parameters_object.valid_delta):
         df = _delta(x,interpolated_y,n_points)
         p_delta = _delta_probability(df,no_event_parameters_object,
-                                     negative_only=False)
-        probability_distribution *= p_delta
+                                     negative_only=negative_only)
+        #probability_distribution *= p_delta
     if (no_event_parameters_object.valid_integral):
         p_int = _integral_probability(y,interpolated_y,n_points,
                                       no_event_parameters_object)
         probability_distribution *= p_int
     if (no_event_parameters_object.valid_derivative):
         p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
-                                          negative_only=False)
+                                          negative_only=negative_only)
         probability_distribution *= p_deriv
-    plt.subplot(3,1,1)
-    plt.plot(p_delta)
-    plt.subplot(3,1,2)
-    plt.plot(p_int)
-    plt.subplot(3,1,3)
-    plt.plot(p_deriv)
-    plt.show()
+    print("Acqui")
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,

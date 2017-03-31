@@ -338,23 +338,10 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
         new mask and probability distribution
     """
     n_points = split_fec.tau_num_points
-    probability_functions_and_kw = \
-        [[delta_mask_function,dict(negative_only=False)]]
     probability_updated = probability.copy()      
     boolean_ret = boolean_array.copy()
     slice_updated = slice_to_use
     surface_index = split_fec.get_predicted_retract_surface_index()    
-    for f,kw_tmp in probability_functions_and_kw:
-        kw = dict(split_fec=split_fec,
-                  slice_to_use=slice_updated,
-                  threshold=threshold,
-                  boolean_array=boolean_ret,
-                  no_event_parameters_object=no_event_parameters_object,
-                  probability=probability_updated,**kw_tmp)
-        slice_update,boolean_ret,probability_tmp = f(**kw)
-        where_impossible = np.where(np.logical_not(boolean_ret))[0]
-        if (where_impossible.size > 0):
-            probability_updated[where_impossible] = 1
     # determine where the surface is 
     non_events = probability_updated > threshold
     min_points_between = _min_points_between(n_points)
@@ -398,8 +385,11 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     y = split_fec.retract.Force[slice_update]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_update)
     split_fec.set_retract_knots(interp)
-    probability_in_slice = _no_event.\
-        _no_event_probability(x,interp,y,n_points,no_event_parameters_object)
+    # get the probability of only the negative regions
+    probability_in_slice,_ = _no_event.\
+        _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
+                              negative_only=True)
+    print(slice_update,probability_in_slice.size)
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_update] = probability_in_slice
