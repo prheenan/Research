@@ -171,7 +171,8 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     probability_distribution = chebyshev
     return probability_distribution,stdev_masked
         
-def _event_probabilities(x,y,interp,n_points,threshold,**kwargs):
+def _event_probabilities(x,y,interp,n_points,threshold,
+                         no_event_parameters_object):
     """
     determines the mask (and associated event detection information)
     
@@ -183,7 +184,7 @@ def _event_probabilities(x,y,interp,n_points,threshold,**kwargs):
         threshold: maximum probability that a given datapoint fits the 
         model
     
-        **kwargs; passed to no_event_probability
+        no_event_parameters_object: instance of no_event_parameters
     Returns:
         tuple of :
             probability_distribution : no-event probability for each point in y
@@ -193,10 +194,9 @@ def _event_probabilities(x,y,interp,n_points,threshold,**kwargs):
     min_points_between = _min_points_between(n_points)
     slice_fit = slice(min_points_between,-min_points_between,1)
     probability_distribution = np.ones(x.size)
-    params = no_event_parameters(**kwargs)
     probability_distribution_slice,stdevs = \
-        _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit,
-                              no_event_parameters_object=params)
+        _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit,\
+                        no_event_parameters_object=no_event_parameters_object)
     probability_distribution[slice_fit] = probability_distribution_slice 
     return probability_distribution,slice_fit,stdevs
 
@@ -244,13 +244,15 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         probability, and threshold and return update values for all except
         threshold
     
-        kwargs: passed to _event_probabilities
+        kwargs: passed to  no_event_parameters
     Returns:
         list of event slices
     """
     min_points_between = _min_points_between(n_points)
+    no_event_parameters_object = no_event_parameters(**kwargs)
     probability_distribution,slice_fit,stdevs = \
-        _event_probabilities(x,y,interp,n_points,threshold,**kwargs)
+        _event_probabilities(x,y,interp,n_points,threshold,\
+                        no_event_parameters_object=no_event_parameters_object)
     bool_array = probability_distribution < threshold
     masks = [np.where(bool_array)[0]]
     probabilities = [probability_distribution.copy()]
@@ -260,7 +262,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
             res = f(slice_to_use=slice_to_use,
                     boolean_array=bool_array,
                     probability=probability_distribution,
-                    threshold=threshold)
+                    threshold=threshold)                      
             slice_to_use,bool_array, probability_distribution = res
             # mask on probability distribution, to keep things consistent
             probabilities.append(probability_distribution)
