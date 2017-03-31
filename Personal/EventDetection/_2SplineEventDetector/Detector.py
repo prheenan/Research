@@ -8,8 +8,12 @@ from scipy import signal,stats
 
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 from GeneralUtil.python import PlotUtilities,GenUtilities
-from _no_event import _min_points_between,_predict,safe_cheby_probability,\
+# XXX reduce import size below
+from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
+    _min_points_between,_predict,safe_cheby_probability,\
     _probability_by_cheby_k,_no_event_chebyshev,_event_slices_from_mask
+from Research.Personal.EventDetection._2SplineEventDetector import _no_event
+
 
 def spline_derivative_probability(split_fec):
     """
@@ -280,8 +284,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # get the retract df spectrum
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
-    median = np.median(interp_f)
-    df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
+    df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
     # get the baselin results
     delta_epsilon = no_event_parameters_object.delta_epsilon
     delta_sigma = no_event_parameters_object.delta_sigma

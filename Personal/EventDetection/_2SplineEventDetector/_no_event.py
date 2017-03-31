@@ -133,6 +133,22 @@ def _no_event_chebyshev(g,epsilon,sigma):
     k = denom/sigma
     return _probability_by_cheby_k(k)
 
+def _delta(x,interp_f,n_points_diff):
+    """
+    gets the local centered change of interpolator, with a window of 
+    n_points_diff arond each other
+
+    Args:
+        x: x values to interpolate along
+        interp_f: the smoothed / interpolated value to use
+        n_points_diff: number of points
+    Returns :
+        df, same size as x
+    """
+    # get the retract df spectrum
+    df_true = Analysis.local_centered_diff(interp_f,n=n_points_diff)
+    return df_true
+
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                           slice_fit=None):
