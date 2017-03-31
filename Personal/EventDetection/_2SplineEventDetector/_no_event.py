@@ -262,7 +262,8 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
             res = f(slice_to_use=slice_to_use,
                     boolean_array=bool_array,
                     probability=probability_distribution,
-                    threshold=threshold)                      
+                    threshold=threshold,
+                    no_event_parameters_object=no_event_parameters_object)
             slice_to_use,bool_array, probability_distribution = res
             # mask on probability distribution, to keep things consistent
             probabilities.append(probability_distribution)

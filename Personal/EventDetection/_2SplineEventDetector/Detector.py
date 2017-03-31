@@ -161,6 +161,7 @@ def safe_reslice(original_boolean,original_probability,condition,
 
 def derivative_mask_function(split_fec,slice_to_use,
                              boolean_array,probability,threshold,
+                             no_event_parameters_object,
                              negative_only=True,
                              *args,**kwargs):
     """
@@ -213,19 +214,9 @@ def derivative_mask_function(split_fec,slice_to_use,
     interp_slice_deriv = interp(x_sliced,1)
     diff_sliced = interp_sliced - force_sliced
     epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    # XXX debuugging...
-    idx_offset_approach = split_fec.get_predicted_approach_surface_index()           
-    slice_approach = slice(0,idx_offset_approach,1)
-    approach_interp = split_fec.\
-        approach_spline_interpolator(slice_to_fit=slice_approach)
-    approach = split_fec.approach
-    approach_force = approach.Force[slice_approach]
-    approach_time = approach.Time[slice_approach]
-    approach_interp_sliced = approach_interp(approach_time)
-    approach_interp_deriv = approach_interp(approach_time,1)
-    min_deriv = np.min(approach_interp_deriv)
-    med_deriv_appr = np.median(approach_interp_deriv)
-    std_deriv_appr = np.std(approach_interp_deriv)
+    # get the median and sigma of the derivative
+    med_deriv_appr = no_event_parameters_object.derivative_epsilon
+    std_deriv_appr = no_event_parameters_object.derivative_sigma
     kwargs_approach_deriv = dict(loc=med_deriv_appr,
                                  scale=std_deriv_appr,
                                  negative_only=negative_only)
@@ -239,7 +230,8 @@ def derivative_mask_function(split_fec,slice_to_use,
 
 
 def integral_mask_function(split_fec,slice_to_use,
-                           boolean_array,probability,threshold):
+                           boolean_array,probability,threshold,
+                           no_event_parameters_object):
     # modify again, based on the integal noise
     x = split_fec.retract.Time
     x_sliced = x[slice_to_use]
@@ -257,11 +249,13 @@ def integral_mask_function(split_fec,slice_to_use,
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
     thresh = sigma
-    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
+    local_integral = Analysis.local_integral(stdev,min_points_between)
     # the threshold is the noise sigma times  the number of points 
     # (2*min_points_between) in the window
-    thresh_integral = 2 * sigma * min_points_between
-    probability_integral = _no_event_chebyshev(local_integral,0,thresh_integral)
+    integral_epsilon = no_event_parameters_object.integral_epsilon
+    integral_sigma   = no_event_parameters_object.integral_sigma
+    probability_integral = _no_event_chebyshev(local_integral,integral_epsilon,
+                                               integral_sigma)
     probability_updated[slice_to_use] *= probability_integral
     boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
     # zero out all the previous ones ie: no new points from this mask, just
@@ -273,7 +267,8 @@ def integral_mask_function(split_fec,slice_to_use,
     return slice_to_use,boolean_ret,probability_updated
 
 def delta_mask_function(split_fec,slice_to_use,
-                        boolean_array,probability,threshold,negative_only=True):
+                        boolean_array,probability,threshold,
+                        no_event_parameters_object,negative_only=True):
     x = split_fec.retract.Time
     force = split_fec.retract.Force
     x_sliced = x[slice_to_use]
@@ -287,14 +282,10 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     median = np.median(interp_f)
     df_true = Analysis.local_centered_diff(interp_f,n=min_points_between)
-    # get the 
-    interpolator_approach = split_fec.cached_approach_interpolator
-    slice_approach = split_fec.cached_approach_slice_to_fit
-    approach_time = split_fec.approach.Time[slice_approach]
-    interpolator_approach_f = interpolator_approach(approach_time)
-    df_approach = Analysis.local_centered_diff(interpolator_approach_f,
-                                               n=min_points_between)
-    epsilon_approach,sigma_approach = np.median(df_approach),np.std(df_approach)
+    # get the baselin results
+    delta_epsilon = no_event_parameters_object.delta_epsilon
+    delta_sigma = no_event_parameters_object.delta_sigma
+    epsilon_approach,sigma_approach = delta_epsilon,delta_sigma
     epsilon,sigma = split_fec.get_epsilon_and_sigma()    
     min_signal = (epsilon+sigma)
     if (negative_only):
@@ -377,7 +368,7 @@ def delta_mask_function(split_fec,slice_to_use,
     return slice_to_use,boolean_ret,probability_updated
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
-                                         probability,threshold):
+                                         probability,threshold,**kwargs):
     """
    returns the funciton adhesion_mask, with surface_index set to whatever
     the surface index of split_fec is predicted to be by the approach
@@ -392,9 +383,9 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     """
     n_points = split_fec.tau_num_points
     probability_functions_and_kw = \
-        [ [derivative_mask_function,dict(negative_only=False)],
-          [integral_mask_function,dict()],
-          [delta_mask_function,dict(negative_only=False)]]
+        [ [derivative_mask_function,dict(negative_only=False,**kwargs)],
+          [integral_mask_function,dict(**kwargs)],
+          [delta_mask_function,dict(negative_only=False,**kwargs)]]
     probability_updated = probability.copy()      
     boolean_ret = boolean_array.copy()
     slice_updated = slice_to_use
