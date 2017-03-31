@@ -149,6 +149,25 @@ def _delta(x,interp_f,n_points_diff):
     df_true = Analysis.local_centered_diff(interp_f,n=n_points_diff)
     return df_true
 
+def _delta_probability(df,no_event_parameters,negative_only=False):
+    epsilon = no_event_parameters.epsilon
+    sigma = no_event_parameters.sigma
+    min_signal = (epsilon+sigma)
+    if (negative_only):
+        baseline = -min_signal
+    else:
+        # considering __all__ signal. XXX need absolute value df?
+        baseline = min_signal
+        df = np.abs(df)
+    df_relative = df-baseline
+    # get the pratio probability
+    if negative_only:
+        k_cheby_ratio = np.minimum(df_relative/sigma,1)
+    else:
+        k_cheby_ratio = np.abs(df_relative/sigma)
+    ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
+    return ratio_probability
+
 
 def _spline_derivative(x,interpolator):
     """

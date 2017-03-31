@@ -220,24 +220,24 @@ def delta_mask_function(split_fec,slice_to_use,
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
-    # get the baselin results
-    delta_epsilon = no_event_parameters_object.delta_epsilon
-    delta_sigma = no_event_parameters_object.delta_sigma
-    epsilon_approach,sigma_approach = delta_epsilon,delta_sigma
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()    
+    # get the baseline results
+    ratio_probability = _no_event.\
+        _delta_probability(df=df_true,
+                           no_event_parameters=no_event_parameters_object,
+                           negative_only=negative_only)
+    probability_updated[slice_to_use] *= ratio_probability
+    # XXX move to utility
+    epsilon = no_event_parameters_object.epsilon
+    sigma = no_event_parameters_object.sigma
     min_signal = (epsilon+sigma)
+    epsilon_approach = no_event_parameters_object.delta_epsilon
+    sigma_approach = no_event_parameters_object.delta_sigma
     if (negative_only):
         baseline = -min_signal
     else:
+        # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
-    df_relative = df_true-baseline
-    # finally, modulate by the ratio 
-    if negative_only:
-        k_cheby_ratio = np.minimum(df_relative/sigma,1)
-    else:
-        k_cheby_ratio = np.abs(df_relative/sigma)
-    ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
-    probability_updated[slice_to_use] *= ratio_probability
+        df_true = np.abs(df_true)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     if (negative_only):
