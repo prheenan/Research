@@ -233,13 +233,12 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     return value_cond
 
 def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
-                             interp_f,split_fec, slice_to_use):
+                             interp_f,pred_retract_surface_idx, slice_to_use):
     if (not negative_only):
         # considering __all__ signal. XXX need absolute value df?
         df_true = np.abs(df_true)
     epsilon_approach = no_event_parameters_object.delta_epsilon
     sigma_approach = no_event_parameters_object.delta_sigma
-    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
     pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
                                         slice_to_use.start
     zero_force = interp_f[pred_retract_surface_idx_in_slice]
@@ -286,9 +285,11 @@ def delta_mask_function(split_fec,slice_to_use,
         _condition_no_delta_significance(no_event_parameters_object,df_true,
                                          negative_only,interp_f,
                                          n_points)
+    # find where we are consistent with zero
+    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
     consistent_with_zero_cond = \
     _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
-                             interp_f,split_fec, slice_to_use)
+                             interp_f,pred_retract_surface_idx,slice_to_use)
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
                                   (consistent_with_zero_cond))
