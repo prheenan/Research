@@ -205,6 +205,59 @@ def integral_mask_function(split_fec,slice_to_use,
         boolean_ret = (probability_updated < threshold)
     return slice_to_use,boolean_ret,probability_updated
 
+def _condition_no_delta_significance(no_event_parameters_object,df_true,
+                                     negative_only,interp_f,n_points):
+    # XXX move to utility
+    epsilon = no_event_parameters_object.epsilon
+    sigma = no_event_parameters_object.sigma
+    min_signal = (epsilon+sigma)
+    epsilon_approach = no_event_parameters_object.delta_epsilon
+    sigma_approach = no_event_parameters_object.delta_sigma
+    if (negative_only):
+        baseline = -min_signal
+    else:
+        # considering __all__ signal. XXX need absolute value df?
+        baseline = min_signal
+        df_true = np.abs(df_true)
+    if (negative_only):
+        # XXX ?.... shouldnt this be minimum? (*dont* want positive)
+        value_cond = (np.minimum(0,df_true) > baseline)
+    else:
+        # XXX should *not* need to have two separate methods. determine why
+        # (probably adhesions)
+        n_slice_region = df_true.size
+        f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
+          for i in range(n_slice_region)]            
+        interp_f_minus_baseline = interp_f - f0
+        value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
+    return value_cond
+
+def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
+                             interp_f,split_fec, slice_to_use):
+    if (not negative_only):
+        # considering __all__ signal. XXX need absolute value df?
+        df_true = np.abs(df_true)
+    epsilon_approach = no_event_parameters_object.delta_epsilon
+    sigma_approach = no_event_parameters_object.delta_sigma
+    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
+    pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
+                                        slice_to_use.start
+    zero_force = interp_f[pred_retract_surface_idx_in_slice]
+    diff = interp_f - np.maximum(0,df_true)
+    zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
+    """
+    plt.subplot(2,1,1)
+    plt.plot(diff)
+    plt.axhline(zero_force)
+    plt.subplot(2,1,2)    
+    plt.plot(diff)
+    plt.axhline(zero_force)
+    plt.show()
+    """
+    return (diff <= zero_condition_baseline) 
+
+
+
 def delta_mask_function(split_fec,slice_to_use,
                         boolean_array,probability,threshold,
                         no_event_parameters_object,negative_only=True):
@@ -225,49 +278,17 @@ def delta_mask_function(split_fec,slice_to_use,
         _delta_probability(df=df_true,
                            no_event_parameters=no_event_parameters_object,
                            negative_only=negative_only)
-    probability_updated[slice_to_use] *= ratio_probability
-    # XXX move to utility
-    epsilon = no_event_parameters_object.epsilon
-    sigma = no_event_parameters_object.sigma
-    min_signal = (epsilon+sigma)
-    epsilon_approach = no_event_parameters_object.delta_epsilon
-    sigma_approach = no_event_parameters_object.delta_sigma
-    if (negative_only):
-        baseline = -min_signal
-    else:
-        # considering __all__ signal. XXX need absolute value df?
-        baseline = min_signal
-        df_true = np.abs(df_true)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
-    if (negative_only):
-        # XXX ?.... shouldnt this be minimum? (*dont* want positive)
-        value_cond = (np.minimum(0,df_true) > baseline)
-    else:
-        # XXX should *not* need to have two separate methods. determine why
-        # (probably adhesions)
-        n_slice_region = interp_f.size
-        f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
-          for i in range(n_slice_region)]            
-        interp_f_minus_baseline = interp_f - f0
-        value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
-    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
-    pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
-                                        slice_to_use.start
-    zero_force = interp_f[pred_retract_surface_idx_in_slice]
-    diff = interp_f - np.maximum(0,df_true)
-    zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
-    """
-    plt.subplot(2,1,1)
-    plt.plot(diff)
-    plt.axhline(zero_force)
-    plt.subplot(2,1,2)    
-    plt.plot(diff)
-    plt.axhline(zero_force)
-    plt.show()
-    """
-    consistent_with_zero_cond = (diff <= zero_condition_baseline) 
+    probability_updated[slice_to_use] *= ratio_probability
     # find where the derivative is definitely not an event
+    value_cond = \
+        _condition_no_delta_significance(no_event_parameters_object,df_true,
+                                         negative_only,interp_f,
+                                         n_points)
+    consistent_with_zero_cond = \
+    _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
+                             interp_f,split_fec, slice_to_use)
     gt_condition = np.ones(boolean_ret.size)
     gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
                                   (consistent_with_zero_cond))
