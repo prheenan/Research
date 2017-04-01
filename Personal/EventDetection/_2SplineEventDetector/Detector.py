@@ -273,6 +273,7 @@ def delta_mask_function(split_fec,slice_to_use,
         _delta_probability(df=df_true,
                            no_event_parameters=no_event_parameters_object,
                            negative_only=negative_only)
+    probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     # find where the derivative is definitely not an event
@@ -338,10 +339,23 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
         new mask and probability distribution
     """
     n_points = split_fec.tau_num_points
+    probability_functions_and_kw = \
+        [ [derivative_mask_function,dict(negative_only=False)],
+          [integral_mask_function,dict()],
+          [delta_mask_function,dict(negative_only=False)]]
     probability_updated = probability.copy()      
     boolean_ret = boolean_array.copy()
     slice_updated = slice_to_use
-    surface_index = split_fec.get_predicted_retract_surface_index()    
+    surface_index = split_fec.get_predicted_retract_surface_index()   
+    for f,kw_tmp in probability_functions_and_kw:
+        kw = dict(split_fec=split_fec,
+                  slice_to_use=slice_updated,
+                  threshold=threshold,
+                  boolean_array=boolean_ret,
+                  no_event_parameters_object=no_event_parameters_object,
+                  probability=probability_updated,**kw_tmp)
+        slice_update,boolean_ret,probability_tmp = f(**kw)
+        probability_updated = probability_tmp*probability_updated 
     # determine where the surface is 
     non_events = probability_updated > threshold
     min_points_between = _min_points_between(n_points)
@@ -352,14 +366,14 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     boolean_ret[-min_points_between:] = 0
     probability_updated[:min_idx] = 1
     probability_updated[-min_points_between:] = 1
-    slice_update = slice(min_idx,n-min_points_between,1)
+    slice_updated = slice(min_idx,n-min_points_between,1)
     # note: need to offset events
     no_event_mask = np.where(non_events)[0] 
     # XXX finish current event, keep consuming events until startd/end
     # are beyond threshold
     event_mask = np.where(~non_events)[0]
     if (event_mask.size ==0 or no_event_mask.size == 0):
-        return slice_update,boolean_ret,probability_updated
+        return slice_updated,boolean_ret,probability_updated
     # POST: we have at least one event and one non-event
     # (could be some adhesion!)
     # determine events that contain the surface index
@@ -369,7 +383,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                  if (e.start <= surface_index)]     
     n_events_surface = len(events_containing_surface)
     if (n_events_surface == 0):
-        return slice_update,boolean_ret,probability_updated
+        return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)
@@ -378,23 +392,24 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
-    slice_update = slice(min_idx,slice_update.stop,1)
+    slice_updated = slice(min_idx,slice_updated.stop,1)
+    """
     # set the interpolator for the non-adhesion region; need to re-calculate
     # since adhesion (probably) really screws everything up
-    x = split_fec.retract.Time[slice_update]
-    y = split_fec.retract.Force[slice_update]
-    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_update)
+    x = split_fec.retract.Time[slice_updated]
+    y = split_fec.retract.Force[slice_updated]
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_updated)
     split_fec.set_retract_knots(interp)
     # enable calculating the delta
-    no_event_parameters_object._set_valid_delta(True)
+    #no_event_parameters_object._set_valid_delta(True)
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                               negative_only=True)
+    """
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
-    probability_updated[slice_update] = probability_in_slice
-    return slice_update,boolean_ret,probability_updated
+    return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event):
     """
@@ -507,7 +522,10 @@ def _predict_helper(split_fec,threshold,**kwargs):
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,
                          derivative_sigma   = derivative_sigma,
-                         valid_delta = False,**kwargs)
+                         valid_delta = False,
+                         valid_integral = False,
+                         valid_derivative = False,
+                         **kwargs)
     # call the predict function
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
     to_ret = _predict(x=time,
