@@ -18,6 +18,7 @@ import matplotlib.gridspec as gridspec
 from scipy.stats import norm
 import matplotlib
 from matplotlib_scalebar.scalebar import ScaleBar
+from matplotlib.ticker import AutoMinorLocator
 
 
     
@@ -42,12 +43,17 @@ def run():
         cache_file = "./{:d}.pkl".format(i)
         tmp = CheckpointUtilities.getCheckpoint(cache_file,func,False,f)
         images.append(tmp)
-    pcts = [np.percentile(i.height_nm_rel(),[75,99]) for i in images]
+    # rotate the first image
+    example = images[0]
+    example.rotate(angle_degrees=140,reshape=False)
+    pcts = [np.percentile(i.height_nm_rel(),[60,100]) for i in images]
     vmin = np.min(pcts)
     vmax = np.max(pcts)
     n_plots = len(images)
-    fig,axes = plt.subplots(figsize=(4*n_plots,3),nrows=1,ncols=n_plots)        
+    width = 3.5*n_plots
+    fig,axes = plt.subplots(figsize=(width,3),nrows=1,ncols=n_plots)        
     ax = []
+    font_common=dict(fontname="Arial")
     for i,image in enumerate(images):  
         ax = axes.flat[i]
         range_plot_nanometers = 1000 * image.range_microns()   
@@ -55,23 +61,32 @@ def run():
         im = ImageUtil.PlotImage(image,cmap=plt.cm.afmhot,fix_extent=False,
                                  ax=ax,range_plot=range_plot_nanometers,
                                  **vmin_dict)
-        PlotUtilities.FormatImageAxis()
-    fig.colorbar(im,ax=list(axes),label="Height (nm)")
+    cax = fig.add_axes([0.91,0.1,0.03,0.80])
+    cbar = fig.colorbar(im,ax=list(axes),label="Height (nm)",cax=cax,
+                        ticks=[0,1,2,3])
+    cbar.ax.minorticks_on()              
+    cbar.ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+    common_tick = dict(direction='in')
+    ax.tick_params(which='minor',length=8,width=2,**common_tick)
+    ax.tick_params(which='major',length=15,width=4,**common_tick)
     # for some reason, need to reformat
-    for ax,image in zip(axes,images):
+    for i,(ax,image )in enumerate(zip(axes,images)):
         PlotUtilities.FormatImageAxis(ax=ax)   
         pixel_size_meters = image.pixel_size_meters
         pixel_size_nanometers = pixel_size_meters * 1e9
-        scalebar = ScaleBar(pixel_size_nanometers,'nm',box_alpha=0.7)
-        ax.add_artist(scalebar)     
-    fudge_x = 0.1
-    fudge_y = 0.02
+        scalebar = ScaleBar(pixel_size_nanometers,'nm',box_alpha=0,
+                            location=(1),color='w',length_fraction=0.3)
+        ax.add_artist(scalebar)   
+    fudge_x = 0.01
+    fudge_y = 0.005
     subplots_adjust=dict(top=1-fudge_y,bottom=fudge_y,
-                         left=fudge_y,right=1-fudge_y,
+                         left=fudge_y,right=0.9,
                          hspace=fudge_y,wspace=fudge_x)    
-    PlotUtilities.savefig(fig,"{:d}.png".format(i),tight=False,
-                          subplots_adjust=subplots_adjust)
-    
+    axis_func = lambda x: x[:-1]                             
+    PlotUtilities.label_tom(fig,loc=(0.05,0.93),color='w',fontsize=15,
+                            axis_func=axis_func,**font_common)                        
+    PlotUtilities.savefig(fig,"{:d}.png".format(i),tight=True,
+                          subplots_adjust=subplots_adjust)    
 
         
 if __name__ == "__main__":
