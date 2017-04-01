@@ -395,17 +395,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
-    probability_functions_and_kw = \
-        [ [delta_mask_function,dict(negative_only=False)]]
-    for f,kw_tmp in probability_functions_and_kw:
-        kw = dict(split_fec=split_fec,
-                  slice_to_use=slice_updated,
-                  threshold=threshold,
-                  boolean_array=boolean_ret,
-                  no_event_parameters_object=no_event_parameters_object,
-                  probability=probability_updated,**kw_tmp)
-        slice_update,boolean_ret,probability_tmp = f(**kw)
-        probability_updated = probability_tmp*probability_updated 
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event):
