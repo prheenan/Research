@@ -64,14 +64,13 @@ def run():
         pixel_size_nanometers = pixel_size_meters * 1e9
         scalebar = ScaleBar(pixel_size_nanometers,'nm',box_alpha=0.7)
         ax.add_artist(scalebar)     
-    """                           
     fudge_x = 0.1
     fudge_y = 0.02
     subplots_adjust=dict(top=1-fudge_y,bottom=fudge_y,
                          left=fudge_y,right=1-fudge_y,
                          hspace=fudge_y,wspace=fudge_x)    
-    """                      
-    PlotUtilities.savefig(fig,"{:d}.png".format(i),tight=False)
+    PlotUtilities.savefig(fig,"{:d}.png".format(i),tight=False,
+                          subplots_adjust=subplots_adjust)
     
 
         
