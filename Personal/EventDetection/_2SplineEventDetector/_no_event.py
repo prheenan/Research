@@ -256,7 +256,7 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     probability_distribution = chebyshev
     if (no_event_parameters_object.valid_derivative):
         p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
-                                          negative_only=negative_only)
+                                          negative_only=True)
         probability_distribution *= p_deriv
     if (no_event_parameters_object.valid_integral):
         p_int = _integral_probability(y,interpolated_y,n_points,
@@ -272,6 +272,7 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
         p_delta = _delta_probability(df,no_event_parameters_object,
                                      negative_only=negative_only)
         probability_distribution *= p_delta
+
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
