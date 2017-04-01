@@ -396,8 +396,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
     probability_functions_and_kw = \
-        [ [integral_mask_function,dict()],
-          [delta_mask_function,dict(negative_only=False)]]
+        [ [delta_mask_function,dict(negative_only=False)]]
     for f,kw_tmp in probability_functions_and_kw:
         kw = dict(split_fec=split_fec,
                   slice_to_use=slice_updated,
@@ -521,8 +520,6 @@ def _predict_helper(split_fec,threshold,**kwargs):
                          derivative_epsilon = derivative_epsilon,
                          derivative_sigma   = derivative_sigma,
                          valid_delta = False,
-                         valid_integral = False,
-                         valid_derivative = False,
                          **kwargs)
     # call the predict function
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
