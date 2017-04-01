@@ -32,7 +32,7 @@ def run():
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
-    threshold = 1e-3
+    threshold = 1e-2
     fractional_error_tolerance = 0.01    
     for i,f in enumerate(load_paths):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 

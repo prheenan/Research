@@ -339,22 +339,10 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
         new mask and probability distribution
     """
     n_points = split_fec.tau_num_points
-    probability_functions_and_kw = \
-        [ [integral_mask_function,dict()],
-          [delta_mask_function,dict(negative_only=False)]]
     probability_updated = probability.copy()      
     boolean_ret = boolean_array.copy()
     slice_updated = slice_to_use
     surface_index = split_fec.get_predicted_retract_surface_index()   
-    for f,kw_tmp in probability_functions_and_kw:
-        kw = dict(split_fec=split_fec,
-                  slice_to_use=slice_updated,
-                  threshold=threshold,
-                  boolean_array=boolean_ret,
-                  no_event_parameters_object=no_event_parameters_object,
-                  probability=probability_updated,**kw_tmp)
-        slice_update,boolean_ret,probability_tmp = f(**kw)
-        probability_updated = probability_tmp*probability_updated 
     # determine where the surface is 
     non_events = probability_updated > threshold
     min_points_between = _min_points_between(n_points)
@@ -392,7 +380,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
     slice_updated = slice(min_idx,slice_updated.stop,1)
-    """
     # set the interpolator for the non-adhesion region; need to re-calculate
     # since adhesion (probably) really screws everything up
     x = split_fec.retract.Time[slice_updated]
@@ -405,9 +392,21 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
                               negative_only=True)
-    """
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
+    probability_updated[slice_updated] = probability_in_slice
+    probability_functions_and_kw = \
+        [ [integral_mask_function,dict()],
+          [delta_mask_function,dict(negative_only=False)]]
+    for f,kw_tmp in probability_functions_and_kw:
+        kw = dict(split_fec=split_fec,
+                  slice_to_use=slice_updated,
+                  threshold=threshold,
+                  boolean_array=boolean_ret,
+                  no_event_parameters_object=no_event_parameters_object,
+                  probability=probability_updated,**kw_tmp)
+        slice_update,boolean_ret,probability_tmp = f(**kw)
+        probability_updated = probability_tmp*probability_updated 
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event):
@@ -523,6 +522,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
                          derivative_sigma   = derivative_sigma,
                          valid_delta = False,
                          valid_integral = False,
+                         valid_derivative = False,
                          **kwargs)
     # call the predict function
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
