@@ -254,11 +254,6 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     probability_distribution = np.ones(y.size)
     # get the probability for all the non edge cases
     probability_distribution = chebyshev
-    if (no_event_parameters_object.valid_delta):
-        df = _delta(x,interpolated_y,n_points)
-        p_delta = _delta_probability(df,no_event_parameters_object,
-                                     negative_only=negative_only)
-        probability_distribution *= p_delta
     if (no_event_parameters_object.valid_derivative):
         p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
                                           negative_only=negative_only)
@@ -272,6 +267,11 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
         where_not_already = np.where(np.logical_not(boolean_tmp))[0]    
         if (where_not_already.size > 0):
             probability_distribution[where_not_already] = 1
+    if (no_event_parameters_object.valid_delta):
+        df = _delta(x,interpolated_y,n_points)
+        p_delta = _delta_probability(df,no_event_parameters_object,
+                                     negative_only=negative_only)
+        probability_distribution *= p_delta
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
