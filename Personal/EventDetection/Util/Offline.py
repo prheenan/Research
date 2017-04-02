@@ -36,6 +36,7 @@ class plotting_metrics:
         best_idx_rel = int(np.round(np.argmax(coeffs_safe)))
         best_idx = idx_arr_safe[best_idx_rel]
         # get the best coefficient
+        self._bc_coeffs = coeffs
         self.best_param_idx = best_idx
         self.lim_force = ret[self.best_param_idx][1]
         self.lim_load = ret[self.best_param_idx][2]

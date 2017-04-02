@@ -29,7 +29,7 @@ def run():
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
-    copy_files = False
+    copy_files = True
     force_read = False
     force_relearn = False
     force_learn = False
@@ -54,7 +54,7 @@ def run():
                              force_read,force_learn,cache_directory,limit,
                              n_folds,pool_size=pool_size,
                              learners=learners)
-    for l in learners:
+    for l in [learners[0]]:
         if debugging:
             break
         # XXX determine where things went wrong (load/look at specific examples)
@@ -67,14 +67,10 @@ def run():
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
-    x_values = learner.param_values()
-    x_tmp,score_tmp,error_tmp = Learning.median_dist_metric(x_values,
-                                                            valid_scores)
+    best_metric = Offline.best_metric_from_learner(learner)
+    best_param_idx = best_metric.best_param_idx
     # get all the scores in the distance ('best case')
-    best_x = x_tmp[np.argmin(score_tmp)]
-    # find what that means in the real values, if something was invalid
-    # (assumes no duplicated params...)
-    best_param_idx = np.argmin(np.abs(best_x-x_values))
+    best_x = best_metric.x_values[best_param_idx]
     # get the lowest mediancorresponding validation folds
     folds = [f for f in learner.validation_folds[best_param_idx]]
     # get the  folds for the best parameters
@@ -109,7 +105,7 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 1e-2
+    threshold = best_x
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
