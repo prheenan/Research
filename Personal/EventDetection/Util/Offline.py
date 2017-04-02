@@ -110,19 +110,17 @@ class plotting_metrics:
                                                ruptures_pred,bins_rupture)
         to_true,to_pred = self.to_true_and_pred_distances()
         max_x_true,max_x_pred = self.max_x_distances_true_pred()
-        q=85
         cat_median,cat_q,cat_relative_median,cat_relative_q = \
                 relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,
-                                                   max_x_pred,q=85)
+                                                   max_x_pred)
         return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,q=q,
                       cat_relative_median=cat_relative_median,
                       cat_relative_q=cat_relative_q)
 
 def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
-                                       q=85,**kwargs):
+                                       q=95,**kwargs):
     to_true_relative = to_true/max_x_pred
     to_pred_relative = to_pred/max_x_true
-    q = 85
     if (len(to_true) > 0):
         cat = np.concatenate([to_true,to_pred])
         cat_rel = np.concatenate([to_true_relative,to_pred_relative])
@@ -133,7 +131,7 @@ def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
     cat_q = np.percentile(cat,q)
     # get the relative metrics
     cat_relative_median = np.median(cat_rel)
-    cat_relative_q = np.percentile(cat_rel,85)
+    cat_relative_q = np.percentile(cat_rel,q)
     return cat_median,cat_q,cat_relative_median,cat_relative_q
 
 def metrics(true,pred):

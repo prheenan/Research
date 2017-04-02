@@ -168,7 +168,7 @@ def rupture_objects(scores,get_true):
 
 
 def limits_and_bins_force_and_load(ruptures_true,ruptures_pred,
-                                   loading_true,loading_pred,n=20,limit=False):
+                                   loading_true,loading_pred,n=15,limit=False):
     """
     Return a 4-tuple of limit,bins  for rupture force and loading rate
 

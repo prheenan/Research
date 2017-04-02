@@ -82,7 +82,7 @@ def plot_autocorrelation_log(x,*args):
     plt.plot(x_plot,log_norm,**style_auto)
     plt.plot(x_plot,np.polyval(coeffs,x=x),**style_fit)
     plt.xlim(xlim_zoomed)
-    plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
+    plt.ylim([np.percentilepercentile(log_norm,0.5),max(log_norm)])
     PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
 
          
@@ -503,7 +503,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
                        xlabel="Relative Error [x$_\mathrm{k}$]",
-                       distance_limits=None):
+                       distance_limits=None,clip_limits=True):
     """
     Args:
         see Plotting.histogram_event_distribution
@@ -605,7 +605,8 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  color_pred=None,color_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
-                 title="",distance_histogram=None,gs=None):
+                 title="",distance_histogram=None,gs=None,
+                 limit_percentile=True):
     if (distance_histogram is None):
         n_rows = 2
         n_cols = 2
@@ -644,7 +645,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     _lim_force_plot,_,_lim_load_plot,_ = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred,
-                                                limit=True)
+                                                limit=limit_percentile)
     if (lim_force is None):
         lim_force = _lim_force
     if (lim_load is None):
@@ -721,7 +722,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     labels_coeffs = [r"BCC"]
     # add in the relative distance metrics, if the are here
     if (distance_histogram is not None):
-        labels_coeffs.append(r"P$_{85}$")
+        labels_coeffs.append(r"P$_{95}$")
         _,_,cat_relative_median,cat_relative_q = \
             Offline.relative_and_absolute_median_and_q(**distance_histogram)
         coeffs.append(cat_relative_q)
@@ -762,7 +763,8 @@ def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure(figsize=(16,8))
-        rupture_plot(true,pred,fig,distance_histogram=distance_histogram)
+        rupture_plot(true,pred,fig,distance_histogram=distance_histogram,
+                    limit_percentile=False)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
