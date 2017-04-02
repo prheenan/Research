@@ -140,7 +140,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # get the retract df spectrum
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
-    df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
+    df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
     # get the baseline results
     ratio_probability = _no_event.\
         _delta_probability(df=df_true,

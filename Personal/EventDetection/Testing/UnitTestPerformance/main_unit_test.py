@@ -13,10 +13,6 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-class test_info:
-    def __init__(self,file_name):
-        self.file_name = file_name + "Concat.csv.pkl"
-
 def run():
     """
     <Description>
