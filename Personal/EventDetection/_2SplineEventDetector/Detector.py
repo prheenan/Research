@@ -201,6 +201,16 @@ def delta_mask_function(split_fec,slice_to_use,
     """
     return slice_to_use,boolean_ret,probability_updated
 
+def get_events_before_marker(marker_idx,event_mask,min_points_between):
+    if (event_mask.size == 0):
+        return []
+    # determine events that contain the surface index
+    event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
+    # get a list of the events with a starting point below the surface
+    events_containing_surface = [e for e in event_boundaries
+                                 if (e.start <= marker_idx)]     
+    return events_containing_surface
+    
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          no_event_parameters_object):
@@ -231,25 +241,16 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated[:min_idx] = 1
     probability_updated[-min_points_between:] = 1
     slice_updated = slice(min_idx,n-min_points_between,1)
-    no_event_mask = np.where(non_events)[0] 
     event_mask = np.where(~non_events)[0]
-    if (event_mask.size ==0 or no_event_mask.size == 0):
-        return slice_updated,boolean_ret,probability_updated
     # POST: we have at least one event and one non-event
     # (could be some adhesion!)
-    # determine events that contain the surface index
-    event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
-    # get a list of the events with a starting point below the surface
-    events_containing_surface = [e for e in event_boundaries
-                                 if (e.start <= min_idx)]     
-    n_events_surface = len(events_containing_surface)
-    if (n_events_surface == 0):
+    events_containing_surface = get_events_before_marker(min_idx,event_mask,
+                                                         min_points_between)
+    if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)
-    n = probability.size-1
-    min_idx = min(n-(n_points+1),min_idx)       
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
@@ -260,7 +261,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     y = split_fec.retract.Force[slice_updated]
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_updated)
     split_fec.set_retract_knots(interp)
-    # enable calculating the delta
     no_event_parameters_object._set_valid_delta(True)
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
@@ -269,6 +269,19 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
+    boolean_ret =  probability_updated < threshold
+    # make sure we aren't at an event right now (due to the delta)
+    event_mask_post_delta = np.where(boolean_ret)[0]
+    events_containing_surface = get_events_before_marker(min_idx,
+                                                         event_mask_post_delta,
+                                                         min_points_between)
+    if (len(events_containing_surface) == 0):
+        return slice_updated,boolean_ret,probability_updated
+    last_event_containing_surface_end = \
+        events_containing_surface[-1].stop + min_points_between
+    min_idx = max(min_idx,last_event_containing_surface_end)
+    slice_updated = slice(min_idx,slice_updated.stop,1)
+    probability_updated[:min_idx] = 1
     boolean_ret =  probability_updated < threshold
     return slice_updated,boolean_ret,probability_updated
 
