@@ -19,45 +19,6 @@ def get_slice_by_max_value(interp_sliced,offset,slice_list):
                  for e in slice_list]
     return np.argmax(value_max)
 
-def force_value_mask_function(split_fec,slice_to_use,
-                              boolean_array,probability,threshold,
-                              *args,**kwargs):
-    """
-    masks the interpolated force to be at least one r(q) above the median
-
-    Args:
-         see adhesion_mask_function_for_split_fec 
-    Returns:
-         see adhesion_mask_function_for_split_fec, except tuples are dealing
-         with the force value mask.
-    """
-    retract = split_fec.retract
-    n_points = split_fec.tau_num_points
-    min_points_between = _min_points_between(n_points)
-    f = retract.Force[slice_to_use]
-    x = retract.Time[slice_to_use]
-    boolean_ret = boolean_array.copy()
-    probability_updated = probability.copy()
-    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
-    interp_f = interpolator(x)
-    diff = f-interp_f
-    stdev = Analysis.local_stdev(diff,n_points)
-    med = np.median(interp_f)
-    epsilon,sigma = split_fec.get_epsilon_and_sigma()
-    # essentially: when is the interpolated value 
-    # at least one (local) standard deviation above the median
-    # we admit an event might be possible
-    thresh = sigma
-    local_integral = Analysis.local_integral(stdev-epsilon,min_points_between)
-    # the threshold is the noise sigma times  the number of points 
-    # (2*num_between)
-    thresh_integral = 2 * sigma * min_points_between
-    probability_updated[slice_to_use] *= \
-            _no_event_chebyshev(local_integral,0,thresh_integral)
-    boolean_ret[slice_to_use] *= (probability_updated[slice_to_use] < threshold)
-    boolean_updated,probability_updated = ret
-    return slice_to_use,boolean_updated,probability_updated
-
 def safe_reslice(original_boolean,original_probability,condition,
                  min_points_between,get_best_slice_func):
     """
@@ -121,90 +82,6 @@ def safe_reslice(original_boolean,original_probability,condition,
         # pick out the minimum derivative slice within each previous slice
     return new_boolean,new_probability
 
-def derivative_mask_function(split_fec,slice_to_use,
-                             boolean_array,probability,threshold,
-                             no_event_parameters_object,
-                             negative_only=True,
-                             *args,**kwargs):
-    """
-    returns : see adhesion_mask_function_for_split_fec 
-    
-    Args:
-        split_fec: the split_force_extension object we want to mask the 
-        derivative of 
-    
-        other arguments: see adhesion_mask
-        *args,**kwargs: ignored
-    Returns:
-        see adhesion_mask_function_for_split_fec, except derivative mask
-    """
-    offset = slice_to_use.start    
-    n_points = split_fec.tau_num_points
-    min_points_between = _min_points_between(n_points)    
-    # if we dont have any points, return
-    boolean_ret = boolean_array.copy()
-    probability_updated = probability.copy()
-    n_full_force = split_fec.retract.Force.size
-    n_full_force = split_fec.retract.Force.size
-    stop = n_full_force if (slice_to_use.stop) is None else slice_to_use.stop
-    if ((stop - offset) < min_points_between):
-        return slice_to_use,boolean_ret,probability_updated
-    # POST: something to look at. find the spline-interpolated derivative
-    # probability
-    retract = split_fec.retract
-    time = retract.Time
-    force = retract.Force
-    x_sliced =  time[slice_to_use]
-    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_to_use)
-    interp_deriv = interp.derivative()(x_sliced) 
-    # POST: start looking at other points
-    median = np.median(interp_deriv)
-    # get rid of final outlying derivative points 
-    where_above = np.where(interp_deriv < median)[0]
-    where_below = np.where(interp_deriv > median)[0]
-    last_index = offset + min(where_above[-1],where_below[-1])
-    absolute_min_idx = offset +min_points_between
-    absolute_max_index = min(slice_to_use.stop,last_index)
-    # remove the bad points
-    boolean_ret[:absolute_min_idx] = 0
-    boolean_ret[absolute_max_index:] = 0
-    slice_to_use = slice(absolute_min_idx,absolute_max_index,1)
-    x_sliced =  time[slice_to_use]
-    # get the derivative probability
-    probability_deriv = \
-        _no_event._derivative_probability(interp,x_sliced,
-                                          no_event_parameters_object)
-    # modulate the probabilities by the approach
-    probability_updated[slice_to_use] *= probability_deriv
-    boolean_ret[slice_to_use] = probability_updated[slice_to_use] < threshold
-    return slice_to_use,boolean_ret,probability
-
-
-def integral_mask_function(split_fec,slice_to_use,
-                           boolean_array,probability,threshold,
-                           no_event_parameters_object):
-    # modify again, based on the integal noise
-    x = split_fec.retract.Time
-    x_sliced = x[slice_to_use]
-    n_points = split_fec.tau_num_points
-    force_sliced = split_fec.retract.Force[slice_to_use]
-    boolean_ret = boolean_array.copy()
-    probability_updated = probability.copy()
-    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
-    interp_f = interpolator(x_sliced)
-    probability_integral = _no_event.\
-        _integral_probability(force_sliced,interp_f,n_points,
-                              no_event_parameters_object)
-    probability_updated[slice_to_use] *= probability_integral
-    boolean_ret[slice_to_use] = (probability_updated[slice_to_use] < threshold)
-    # zero out all the previous ones ie: no new points from this mask, just
-    # better signal. XXX: not quite working right?
-    where_not_already = np.where(np.logical_not(boolean_array))[0]    
-    if (where_not_already.size > 0):
-        probability_updated[where_not_already] = 1
-        boolean_ret = (probability_updated < threshold)
-    return slice_to_use,boolean_ret,probability_updated
-
 def _condition_no_delta_significance(no_event_parameters_object,df_true,
                                      negative_only,interp_f,n_points):
     # XXX move to utility
@@ -250,8 +127,6 @@ def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
     plt.show()
     """
     return (diff <= zero_condition_baseline) 
-
-
 
 def delta_mask_function(split_fec,slice_to_use,
                         boolean_array,probability,threshold,
