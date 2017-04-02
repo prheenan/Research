@@ -226,7 +226,7 @@ def get_categories(positives_directory,use_simulated=False,only_lowest=False):
     # tuple of <relative directory,sample,velocity> for FEC with events
     max_load = 1000
     positive_meta = \
-    [[positives_directory + "1000-nanometers-per-second/","650nm DNA",max_load]]
+    [[positives_directory + "1000-nanometers-per-second/","650nm DNA",max_load],
      [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
      [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
     if (only_lowest):
