@@ -315,10 +315,13 @@ def _loading_rate_helper(x,y,slice_event,slice_fit=None):
     pred = np.polyval(coeffs,x=x_event)
     # determine where the data *in the __original__ slice* is __last__
     # above the fit (after that, it is consistently below it)
-    idx_above_predicted_rel = np.where(y_event > pred)[0]
+    idx_above_predicted_rel = np.where(y_event > pred)[0]    
+    idx_below_predicted_rel = np.where(y_event <= pred)[0]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
-    return fit_x,fit_y,pred,idx_above_predicted,local_max_idx
+    idx_below_predicted = [offset + i for i in idx_below_predicted_rel]
+    return fit_x,fit_y,pred,idx_above_predicted,idx_below_predicted,\
+        local_max_idx
     
 def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     """
@@ -347,8 +350,18 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     slice_fit = slice(abs_median_change_idx-delta,abs_median_change_idx,1)
     # *search* in the entire place before the maximum derivative
     start_idx_abs = max(0,abs_max_change_idx-delta)
-    slice_event_effective = slice(start_idx_abs,abs_max_change_idx,1)
-    fit_x,fit_y,pred,idx_above_predicted,local_max_idx = \
+    # fit a line to the 'post event', to reduce false positives
+    post_slice_fit = slice(abs_max_change_idx,slice_event.stop,1)
+    post_slice_event = slice(abs_median_change_idx,slice_event.stop,1)
+    final_event_idx = abs_max_change_idx
+    if (post_slice_fit.stop - post_slice_fit.start >= 3):
+        fit_x_rev,fit_y_rev,pred_rev,_,idx_below_predicted,_ = \
+                _loading_rate_helper(x,y,slice_event=post_slice_event,
+                                     slice_fit=post_slice_fit)
+        if (len(idx_below_predicted) > 0):
+            final_event_idx = idx_below_predicted[0]
+    slice_event_effective = slice(start_idx_abs,final_event_idx,1)
+    fit_x,fit_y,pred,idx_above_predicted,_,local_max_idx = \
             _loading_rate_helper(x,y,slice_event=slice_event_effective,
                                  slice_fit=slice_fit)
     # XXX debugging
@@ -370,6 +383,8 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     plt.plot(fit_x,fit_y,color='g',alpha=0.3)
     plt.plot(x_event,interp_slice)
     plt.plot(x[slice_event_effective],pred,linewidth=2,color='r')
+    plt.plot(fit_x_rev,fit_y_rev)
+    plt.plot(x[post_slice_event],pred_rev)
     plt.axvline(x[idx_above_predicted[-1]])
     plt.xlim(xlim_zoom)
     plt.show()
