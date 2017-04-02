@@ -45,7 +45,7 @@ def run():
         images.append(tmp)
     # rotate the first image
     example = images[0]
-    example.rotate(angle_degrees=140,reshape=False)
+    example.rotate(angle_degrees=-40,reshape=False)
     pcts = [np.percentile(i.height_nm_rel(),[60,100]) for i in images]
     vmin = np.min(pcts)
     vmax = np.max(pcts)
@@ -61,24 +61,33 @@ def run():
         im = ImageUtil.PlotImage(image,cmap=plt.cm.afmhot,fix_extent=False,
                                  ax=ax,range_plot=range_plot_nanometers,
                                  **vmin_dict)
-    cax = fig.add_axes([0.91,0.1,0.03,0.80])
-    cbar = fig.colorbar(im,ax=list(axes),label="Height (nm)",cax=cax,
-                        ticks=[0,1,2,3])
+    fudge_x = 0.01
+    fudge_y = 0.005                          
+    bar_offset = 0.2
+    cax = fig.add_axes([0.91,bar_offset,0.03,(1-(bar_offset+fudge_y))])
+    cbar = fig.colorbar(im,ax=list(axes),cax=cax,ticks=[0,1,2,3])
+    label_prop = dict(size=14,family='sans-serif',weight="bold")
+    cbar.set_label(label="Height (nm)",**label_prop)
     cbar.ax.minorticks_on()              
     cbar.ax.yaxis.set_minor_locator(AutoMinorLocator(2))
     common_tick = dict(direction='in')
-    ax.tick_params(which='minor',length=8,width=2,**common_tick)
-    ax.tick_params(which='major',length=15,width=4,**common_tick)
-    # for some reason, need to reformat
+    cbar.ax.tick_params(which='minor',length=5,width=1,**common_tick)
+    cbar.ax.tick_params(which='major',length=8,width=1.5,**common_tick)
+    # for some reason, need to reformat after the color bar
+    # get the region we want to crop (in pixels)
+    xlim = [ [100,400],[450,600]]
+    ylim = [ [50,350],[550,700]]
     for i,(ax,image )in enumerate(zip(axes,images)):
         PlotUtilities.FormatImageAxis(ax=ax)   
         pixel_size_meters = image.pixel_size_meters
         pixel_size_nanometers = pixel_size_meters * 1e9
         scalebar = ScaleBar(pixel_size_nanometers,'nm',box_alpha=0,
-                            location=(1),color='w',length_fraction=0.3)
+                            location=(1),color='w',length_fraction=0.3,
+                            font_properties=label_prop)
         ax.add_artist(scalebar)   
-    fudge_x = 0.01
-    fudge_y = 0.005
+        ax.set_xlim(xlim[i])
+        ax.set_ylim(ylim[i])
+
     subplots_adjust=dict(top=1-fudge_y,bottom=fudge_y,
                          left=fudge_y,right=0.9,
                          hspace=fudge_y,wspace=fudge_x)    
@@ -86,8 +95,9 @@ def run():
     PlotUtilities.label_tom(fig,loc=(0.05,0.93),color='w',fontsize=15,
                             axis_func=axis_func,**font_common)                        
     PlotUtilities.savefig(fig,"{:d}.png".format(i),tight=True,
-                          subplots_adjust=subplots_adjust)    
-
+                          subplots_adjust=subplots_adjust,close=False)    
+    PlotUtilities.savefig(fig,"{:d}.svg".format(i),tight=True,
+                          subplots_adjust=subplots_adjust)   
         
 if __name__ == "__main__":
     run()
