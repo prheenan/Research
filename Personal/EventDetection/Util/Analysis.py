@@ -267,7 +267,6 @@ def local_centered_diff(f,n):
                       for i in range(n_pts)])
     return diff
 
-
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 
@@ -287,8 +286,8 @@ def local_stdev(f,n):
     improving-code-efficiency-standard-deviation-on-sliding-windows
     """
     mode = 'reflect'
-    c1 = uniform_filter1d(f, size=n*2, mode=mode, origin=0)
-    c2 = uniform_filter1d(f*f, size=n*2, mode=mode, origin=0)
+    c1 = uniform_filter1d(f, size=2*n, mode=mode, origin=0)
+    c2 = uniform_filter1d(f*f, size=2*n, mode=mode, origin=0)
     # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
     safe_variance = np.maximum(0,c2 - c1*c1)
     stdev = (safe_variance**.5)

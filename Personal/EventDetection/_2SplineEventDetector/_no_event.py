@@ -220,7 +220,7 @@ def _derivative_probability(interp,x,no_event_parameters_object,
 
 
 def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
-                          slice_fit=None,negative_only=False):
+                          negative_only=False):
     """
     returns the no-event probability at each point in y
 
@@ -235,15 +235,13 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     Returns:
         tuple of <probability, local stdevs>
     """
-    if (slice_fit is None):
-        slice_fit = slice(0,None,1)
     n_original = x.size
-    x = x[slice_fit]
-    y = y[slice_fit]
+    x_s = x
+    y_s = y
     # get the interpolated function
-    interpolated_y = interp(x)
+    interpolated_y = interp(x_s)
     stdev_masked,_,_ = Analysis.\
-        stdevs_epsilon_sigma(y,interpolated_y,n_points)
+        stdevs_epsilon_sigma(y_s,interpolated_y,n_points)
     sigma = no_event_parameters_object.sigma
     epsilon = no_event_parameters_object.epsilon
     # note: chebyshev is like
@@ -255,11 +253,11 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
     # get the probability for all the non edge cases
     probability_distribution = chebyshev
     if (no_event_parameters_object.valid_derivative):
-        p_deriv = _derivative_probability(interp,x,no_event_parameters_object,
+        p_deriv = _derivative_probability(interp,x_s,no_event_parameters_object,
                                           negative_only=negative_only)
         probability_distribution *= p_deriv
     if (no_event_parameters_object.valid_integral):
-        p_int = _integral_probability(y,interpolated_y,n_points,
+        p_int = _integral_probability(y_s,interpolated_y,n_points,
                                       no_event_parameters_object)
         threshold = no_event_parameters_object.threshold
         boolean_tmp = (probability_distribution  < threshold)
@@ -268,11 +266,10 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
         if (where_not_already.size > 0):
             probability_distribution[where_not_already] = 1
     if (no_event_parameters_object.valid_delta):
-        df = _delta(x,interpolated_y,n_points)
+        df = _delta(x_s,interpolated_y,_min_points_between(n_points))
         p_delta = _delta_probability(df,no_event_parameters_object,
                                      negative_only=negative_only)
         probability_distribution *= p_delta
-
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
@@ -292,17 +289,14 @@ def _event_probabilities(x,y,interp,n_points,threshold,
     Returns:
         tuple of :
             probability_distribution : no-event probability for each point in y
-            slice_fit : the part of x and y that mask is valid for
             stdevs: the local, windowed standard deviation, s(q)
     """
     min_points_between = _min_points_between(n_points)
-    slice_fit = slice(min_points_between,-min_points_between,1)
     probability_distribution = np.ones(x.size)
-    probability_distribution_slice,stdevs = \
-        _no_event_probability(x,interp,y,n_points=n_points,slice_fit=slice_fit,\
+    probability_distribution,stdevs = \
+        _no_event_probability(x,interp,y,n_points=n_points,
                         no_event_parameters_object=no_event_parameters_object)
-    probability_distribution[slice_fit] = probability_distribution_slice 
-    return probability_distribution,slice_fit,stdevs
+    return probability_distribution,stdevs
 
 def _event_slices_from_mask(mask,min_points_between):
     """
@@ -355,7 +349,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     min_points_between = _min_points_between(n_points)
     no_event_parameters_object = no_event_parameters(threshold=threshold,
                                                      **kwargs)
-    probability_distribution,slice_fit,stdevs = \
+    probability_distribution,stdevs = \
         _event_probabilities(x,y,interp,n_points,threshold,\
                         no_event_parameters_object=no_event_parameters_object)
     bool_array = probability_distribution < threshold
@@ -401,7 +395,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                              interp = interp,
                              mask = mask,
                              cdf=probability_distribution,
-                             slice_fit=slice_fit,
+                             slice_fit=slice_to_use,
                              threshold=threshold,
                              condition_results=masks,
                              probabilities=probabilities)

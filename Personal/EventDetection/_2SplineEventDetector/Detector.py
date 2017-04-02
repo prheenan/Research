@@ -262,8 +262,6 @@ def delta_mask_function(split_fec,slice_to_use,
     force_sliced = force[slice_to_use]
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)
-    boolean_ret = boolean_array.copy()
-    probability_updated = probability.copy()
     # get the retract df spectrum
     interpolator = split_fec.retract_spline_interpolator(slice_to_use)
     interp_f = interpolator(x_sliced)
@@ -273,7 +271,6 @@ def delta_mask_function(split_fec,slice_to_use,
         _delta_probability(df=df_true,
                            no_event_parameters=no_event_parameters_object,
                            negative_only=negative_only)
-    probability_updated[slice_to_use] *= ratio_probability
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     # find where the derivative is definitely not an event
@@ -286,34 +283,40 @@ def delta_mask_function(split_fec,slice_to_use,
     consistent_with_zero_cond = \
     _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
                              interp_f,pred_retract_surface_idx,slice_to_use)
-    gt_condition = np.ones(boolean_ret.size)
+    gt_condition = np.ones(boolean_array.size)
     gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
                                   (consistent_with_zero_cond))
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     # update the boolean array before we slice
-    boolean_ret = probability_updated < threshold
     boolean_ret,probability_updated = \
-            safe_reslice(original_boolean=boolean_ret,
-                         original_probability=probability_updated,
+            safe_reslice(original_boolean=boolean_array,
+                         original_probability=probability,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
     """
     xlim = plt.xlim(min(x),max(x))
-    plt.subplot(3,1,1)
+    plt.subplot(4,1,1)
     valid_idx = np.where(np.logical_not(gt_condition))
     invalid_idx = np.where(gt_condition)
     plt.plot(x[invalid_idx],force[invalid_idx],color='k',alpha=0.3)
     plt.plot(x[valid_idx],force[valid_idx],color='g')    
     plt.plot(x_sliced,interp_f,color='b')
     plt.xlim(xlim)
-    plt.subplot(3,1,2)
-    plt.plot(x_sliced,value_cond)
+    plt.subplot(4,1,2)
+    plt.plot(x,boolean_array+2.1)
     plt.plot(x_sliced,no_event_cond+1.1)
+    plt.plot(x_sliced,value_cond)
+    plt.plot(x,gt_condition-1.1)
+    plt.plot(x,boolean_ret-2.1,linestyle='--')
     plt.xlim(xlim)
-    plt.subplot(3,1,3)
+    plt.subplot(4,1,3)
+    plt.plot(x,boolean_array+1.1)
+    plt.plot(x,boolean_ret+2.1,linestyle='--')
+    plt.xlim(xlim)
+    plt.subplot(4,1,4)
     plt.semilogy(x,probability_updated,linestyle='--')
     plt.semilogy(x,probability)
     plt.xlim(xlim)
@@ -341,7 +344,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     n_points = split_fec.tau_num_points
     probability_updated = probability.copy()      
     boolean_ret = boolean_array.copy()
-    slice_updated = slice_to_use
     surface_index = split_fec.get_predicted_retract_surface_index()   
     # determine where the surface is 
     non_events = probability_updated > threshold
@@ -354,10 +356,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated[:min_idx] = 1
     probability_updated[-min_points_between:] = 1
     slice_updated = slice(min_idx,n-min_points_between,1)
-    # note: need to offset events
     no_event_mask = np.where(non_events)[0] 
-    # XXX finish current event, keep consuming events until startd/end
-    # are beyond threshold
     event_mask = np.where(~non_events)[0]
     if (event_mask.size ==0 or no_event_mask.size == 0):
         return slice_updated,boolean_ret,probability_updated
@@ -395,6 +394,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
+    boolean_ret =  probability_updated < threshold
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event):
