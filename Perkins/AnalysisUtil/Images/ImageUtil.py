@@ -7,7 +7,7 @@ import sys
 
 
 def PlotImage(Image,height_to_plot=None,fix_extent=False,aspect='auto',
-              cmap=plt.cm.Greys,range_plot=None,**kwargs):
+              cmap=plt.cm.Greys,range_plot=None,ax=None,**kwargs):
     """
     Plots SurfaceImage as a greyscale map
     
@@ -21,14 +21,18 @@ def PlotImage(Image,height_to_plot=None,fix_extent=False,aspect='auto',
     if (height_to_plot is None):
         height_to_plot =Image.height_nm_rel()
     if (fix_extent):
-        extent=[0,range_plot,0,range_plot]
+        extent=[0,0,range_plot,range_plot]
     else:
         extent = None
-    plt.imshow( height_to_plot,extent=None,
-                cmap=cmap,aspect=aspect,**kwargs)
+    if (ax is None):
+        ax = plt.gca()
+    im = ax.imshow(height_to_plot,extent=extent,
+                   cmap=cmap,aspect=aspect,**kwargs)
+    ax.invert_yaxis()
     # remove the ticks
     plt.tick_params(axis='both', which='both', bottom='off', top='off',
                     right='off', left='off')
+    return im
 
 def PlotImageDistribution(Image,pct=95,bins=100,PlotLines=True,AddSigmas=True,
                           **kwargs):
