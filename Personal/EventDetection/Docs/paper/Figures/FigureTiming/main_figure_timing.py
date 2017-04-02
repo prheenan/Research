@@ -77,7 +77,7 @@ def get_supplemental_figure(output_path,trials):
             PlotUtilities.xlabel("")
         PlotUtilities.ylabel(y_label_big_o)
         plt.ylim(ylim_big_o)
-    PlotUtilities.label_tom(fig,loc=(-0.15,1.05))
+    PlotUtilities.label_tom(fig,loc=(-0.05,1.05))
     PlotUtilities.savefig(fig, output_path)
 
 
@@ -94,6 +94,28 @@ def style_data_and_pred():
         style_pred.append(dict(color=colors[i],linestyle=linestyles[i]))
     return style_data,style_pred
     
+def _main_figure(trials):
+    xlim = [500,1e6]
+    ylim=[1e-2,5e2]
+    style_data,style_pred = style_data_and_pred()
+    colors = algorithm_colors()
+    # picturing 3x2, where we show the 'in the weeds' plots...
+    plt.subplot(1,2,1)
+    for i,learner_trials in enumerate(trials):
+        TimePlot.\
+            plot_learner_slope_versus_loading_rate(learner_trials,
+                                                   style_data=style_data[i],
+                                                   style_pred=style_pred[i])
+    PlotUtilities.legend(loc="upper left",frameon=False)
+    PlotUtilities.title("")
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.subplot(1,2,2)
+    TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
+    plt.ylim([1e3,3e6])
+    PlotUtilities.legend(loc="lower right",frameon=False)
+    PlotUtilities.title("")
+
 
 def make_main_figure(output_path,trials):
     """
@@ -103,27 +125,15 @@ def make_main_figure(output_path,trials):
         output_path: where to save the file
         trials: the pickled timing trials information
     """
-    xlim = [500,1e6]
-    ylim=[1e-2,5e2]
-    style_data,style_pred = style_data_and_pred()
-    colors = algorithm_colors()
-    # picturing 3x2, where we show the 'in the weeds' plots...
+    # make the figure for the presentation
+    fig = PlotUtilities.figure(figsize=(10,4.5))
+    _main_figure(trials)
+    plt.xlim([-1,3])
+    PlotUtilities.savefig(fig,output_path.replace(".pdf","_pres.pdf"))
+    # make the figure for the paper
     fig = PlotUtilities.figure(figsize=(16,6))
-    plt.subplot(1,2,1)
-    for i,learner_trials in enumerate(trials):
-        TimePlot.\
-            plot_learner_slope_versus_loading_rate(learner_trials,
-                                                   style_data=style_data[i],
-                                                   style_pred=style_pred[i])
-    PlotUtilities.legend(loc="upper left",frameon=True)
-    plt.xlim(xlim)
-    plt.ylim(ylim)
-    plt.subplot(1,2,2)
-    TimePlot.plot_learner_prediction_time_comparison(trials,color=colors)
-    plt.ylim([1e3,3e6])
-    PlotUtilities.legend(loc="lower right",frameon=True)
-    PlotUtilities.title(r"FEATHER asymptotic T(N) is $\geq$10x faster")
-    PlotUtilities.label_tom(fig,loc=(-0.15,1))
+    _main_figure(trials)
+    PlotUtilities.label_tom(fig,loc=(-0.05,1))
     PlotUtilities.savefig(fig,output_path)
 
 def run(base="./"):

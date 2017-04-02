@@ -8,6 +8,8 @@ from timeit import default_timer as timer
 from GeneralUtil.python import GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting
 
+from Research.Personal.EventDetection.Util.Plotting \
+    import algorithm_colors,algorithm_markers,algorithm_linestyles
 
 class timing_info:
     def __init__(self,learner_trials):
@@ -75,7 +77,7 @@ def get_linear_runtime(x,times,fudge=1):
     y_pred = np.array(times)[sort_idx]
     params,params_std,_ = GenUtilities.GenFit(x=x_pred,y=y_pred)
     log_bounds = np.log10([min(x_pred)/fudge,max(x_pred)*fudge])
-    x_pred_plot = np.logspace(*log_bounds,base=10,endpoint=True)
+    x_pred_plot = np.logspace(*log_bounds,base=10,endpoint=True,num=100)
     y_pred_plot = np.polyval(params,x=x_pred_plot)
     return params,params_std,x_pred_plot,y_pred_plot
 
@@ -98,32 +100,35 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
         coeffs,coeffs_err,_,_ = get_linear_runtime(x,params)
         time_per_point.append(coeffs[0])
         time_per_point_error.append(coeffs_err[0])
+    markers = [m for m in algorithm_markers()]
     plot_y = 1/np.array(time_per_point)
     # d(1/f) = (1/f^2) * df
     plot_y_error = plot_y**2 * (np.array(time_per_point_error))
     N = len(time_per_point)
-    labels = [learner_name(l) for l in learners]
+    labels = [learner_name(l).replace(" ","\n") for l in learners]
     ind = np.arange(N)  # the x locations for the groups
     width = 0.4       # the width of the bars
     ax = plt.gca()
-    rects = ax.bar(ind , plot_y, width,color=color,alpha=0.4,linewidth=0,
-                   yerr=plot_y_error,log=True,
-                   error_kw=dict(ecolor='k',linewidth=2,capsize=15))
+    for x,y,c,m in zip(ind,plot_y,color,markers):
+        plt.scatter(x=x,y=y,c=c,marker=m,linewidth=0,s=100)
     # add some text for labels, title and axes ticks
     ax.set_xticks(ind)
     ax.set_xticklabels(labels)
     xlim = plt.xlim()
-    fudge = width/2
+    fudge = width
     xlim = [min(xlim)-fudge,max(xlim) + fudge]
     plt.xlim(xlim)
-    formatted_with_errors = [pretty_exp_with_error(r.get_height(),e) \
-                             for r,e in zip(rects,plot_y_error)]
+    formatted_with_errors = [pretty_exp_with_error(y,e) \
+                             for y,e in zip(plot_y,plot_y_error)]
     # add labels with the errors for each
     label_func = lambda i,r : formatted_with_errors[i]
-    kwargs = dict(fontsize=PlotUtilities.g_font_legend)
-    PlotUtilities.autolabel(rects,label_func,fontdict=kwargs)
+    fontsize=PlotUtilities.g_font_legend * 0.8
+    for i,(x,y) in enumerate(zip(ind,plot_y)):
+        ax.text(x,y*1.25,s=label_func(i,None),ha='center', va='bottom',
+                fontsize=fontsize,color=color[i])
+    plt.yscale('log')
     PlotUtilities.lazyLabel("Event finding method",
-                            "Points classified per second","")
+                            "Points classified / second","")
     
         
 def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
@@ -143,6 +148,7 @@ def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
     if (style_pred is None):
         style_pred = dict(color='b',linestyle="--")
     inf = timing_info(learner_trials)
+    marker =style_data['marker']
     params,params_std = get_loading_rate_slopes_and_errors(inf)
     # the slope is the time per force extension curve (less an offset; get that
     # per loading rate
@@ -150,24 +156,32 @@ def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
     x,xerr = _timing_plot_pts_and_pts_error(inf)
     coeffs,coeffs_err,x_pred,y_pred = get_linear_runtime(x,params)
     # fit a linear model to the runtime
-    fudge = 1.75
+    fudge = 2
     plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,**style_data)
     slope = coeffs[0]
     lower_label = r"{:.2f}$ c_0 N \leq $".format(fudge)
     upper_label = r"$\leq \frac{c_0}{" + "{:.2f}".format(fudge) + "} N$"
     label_timing = learner_name(learner_trials)
     style_timing = style_pred
-    idx_good  = np.where(y_pred > min_pred)
+    condition = y_pred > 1e-2
+    idx_good  = np.where(condition)[0]
+    idx_bad = np.where(~condition)[0]
     x_pred_plot = x_pred[idx_good]
     y_pred_plot = y_pred[idx_good]
     # only plot where the prediction is reasonable
     plt.plot(x_pred_plot,y_pred_plot/fudge,**style_timing)
     plt.plot(x_pred_plot,y_pred_plot*fudge,**style_timing)
+    # plot where _not _reasonable_
+    style_not_reasonable = dict(**style_timing)
+    style_not_reasonable['color']='k'
+    style_not_reasonable['alpha']=0.3
+    plt.plot(x_pred[idx_bad],y_pred[idx_bad]/fudge,**style_not_reasonable)
+    plt.plot(x_pred[idx_bad],y_pred[idx_bad]*fudge,**style_not_reasonable)
     ax = plt.gca()
     ax.set_xscale('log')
     ax.set_yscale('log')
     # plot something just for the legend entry
-    plt.plot([],[],label=label_timing,marker=style_data['marker'],
+    plt.plot([],[],label=label_timing.replace(" ","\n"),marker=marker,
              **style_timing)
     PlotUtilities.lazyLabel("N (points per curve)",
                             "Runtime per curve (s)",

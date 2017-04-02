@@ -1,0 +1,713 @@
+% $Header$
+
+% for options rationale, see:
+% en.wikibooks.org/wiki/LaTeX/Colors#The_68_standard_colors_known_to_dvips
+\documentclass[usenames,dvipsnames]{beamer}
+
+% This file is a solution template for:
+
+% - Giving a talk on some subject.
+% - The talk is between 15min and 45min long.
+% - Style is ornate.
+
+
+
+% Copyright 2004 by Till Tantau <tantau@users.sourceforge.net>.
+%
+% In principle, this file can be redistributed and/or modified under
+% the terms of the GNU Public License, version 2.
+%
+% However, this file is supposed to be a template to be modified
+% for your own needs. For this reason, if you use this file as a
+% template and not specifically distribute it as part of a another
+% package/program, I grant the extra permission to freely copy and
+% modify this file as you see fit and even to delete this copyright
+% notice. 
+
+
+\mode<presentation>
+{
+  \usetheme{Warsaw}
+  % or ...
+  \setbeamercovered{transparent}
+  % or whatever (possibly just delete it)
+}
+
+
+\usepackage[english]{babel}
+% or whatever
+
+\usepackage[latin1]{inputenc}
+% or whatever
+
+\usepackage{times}
+\usepackage[T1]{fontenc}
+% Or whatever. Note that the encoding and the font should match. If T1
+% does not look nice, try deleting the line with the fontenc.
+
+
+\title[] % (optional, use only with long paper titles)
+{Detecting Molecular Unbinding Events in Force Spectroscopy Data via a Bayesian Algorithm}
+
+\subtitle
+{} % (optional)
+
+\author[] % (optional, use only with lots of authors)
+{P.~Heenan\inst{1}}
+% - Use the \inst{?} command only if the authors have different
+%   affiliation.
+
+\institute[University of Colorado at Boulder] % (optional, but mostly needed)
+{
+  \inst{1}%
+  Department of Computer Science\\
+  University of Colorado at Boulder
+}
+% - Use the \inst command only if there are several affiliations.
+% - Keep it simple, no one is interested in your street address.
+
+\date[M.S. Thesis Defense] % (optional)
+{April 11 / M.S. Thesis Defense}
+
+\subject{Talks}
+% This is only inserted into the PDF information catalog. Can be left
+% out. 
+
+% styling, see:
+% github.com/josephwright/beamer/blob/master/examples/a-conference-talk/beamerexample-conference-talk.tex
+\usetheme{Darmstadt}
+\usefonttheme[onlylarge]{structurebold}
+\setbeamerfont*{frametitle}{size=\normalsize,series=\bfseries}
+\setbeamertemplate{navigation symbols}{}
+% remove footline, get more space. See:
+% tex.stackexchange.com/questions/223200/how-to-completely-remove-footer-in-beamer
+\setbeamertemplate{footline}[page number]
+% remove the top subsection bar
+% tex.stackexchange.com/questions/89748/beamer-remove-subsection-bar-in-header
+\useoutertheme[subsection=false]{miniframes}
+% If you have a file called "university-logo-filename.xxx", where xxx
+% is a graphic format that can be processed by latex or pdflatex,
+% resp., then you can add a logo as follows:
+
+% \pgfdeclareimage[height=0.5cm]{university-logo}{university-logo-filename}
+% \logo{\pgfuseimage{university-logo}}
+
+% for drawing rectangles on parts of the plot 
+% tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+\usepackage{tikz}
+% set the itemize colors, subcolors, etc
+% colors: 
+% tex.stackexchange.com/questions/84958/changing-the-colour-of-the-text-with-itemize
+\setbeamercolor{itemize/enumerate body}{fg=black}
+\setbeamercolor{itemize/enumerate subbody}{fg=MidnightBlue}
+\setbeamercolor{itemize/enumerate subsubbody}{fg=RedOrange}
+% need bracket
+\usepackage{braket}
+
+% Delete this, if you do not want the table of contents to pop up at
+% the beginning of each subsection:
+\AtBeginSubsection[]
+{
+  \begin{frame}<beamer>{Outline}
+    \tableofcontents[currentsection,currentsubsection]
+  \end{frame}
+}
+
+
+% If you wish to uncover everything in a step-wise fashion, uncomment
+% the following command: 
+
+%\beamerdefaultoverlayspecification{<+->}
+
+\graphicspath{{../../paper/Figures/Finals/},{../../paper/Figures/Finals_Presentation/}}
+\newcommand{\DefineTerm}[1]{\underline{#1}}
+\newcommand{\ErrorPct}[0]{P$_{85}$}
+% define options for the plus and minus list
+\newcommand{\PlusColor}[1]{\textcolor{OliveGreen}{#1}}
+\newcommand{\MinusColor}[1]{\textcolor{Red}{#1}}
+\newcommand{\PlusOpt}[1]{\PlusColor{$\mathbf{+}$}}
+\newcommand{\MinusOpt}[1]{\MinusColor{$\mathbf{-}$}}
+% bibliography command
+\usepackage[super]{natbib}
+% for tables and math symbols
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+% move the bullets over, to give more space
+\setlength{\leftmargini}{1em}
+
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents[pausesections]
+  % You might wish to add the option [pausesections]
+\end{frame}
+
+
+% Since this a solution template for a generic talk, very little can
+% be said about how it should be structured. However, the talk length
+% of between 15min and 45min and the theme suggest that you stick to
+% the following rules:  
+
+% - Exactly two or three sections (other than the summary).
+% - At *most* three subsections per section.
+% - Talk about 30s to 2min per frame. So there should be between about
+%   15 and 30 frames, all told.
+
+\section{Introduction to Force Spectroscopy}
+
+\subsection[Physical Background]{Physical Background}
+
+
+\begin{frame}{Applying Forces by Atomic Force Microscopy (AFM)}
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+% Your text here
+  \begin{itemize}
+  \item
+    Tip pulls surface-bound sample.
+    \begin{itemize}
+    \item
+      No attachment
+    \item<2->
+      Single attachment
+    \item<3->
+      Multiple attachments
+    \end{itemize}
+  \invisible<1-3>{\item
+    \DefineTerm{Rupture} ($\textcolor{OliveGreen}{\blacktriangledown}$): molecule unbinds}
+  \only<4->{
+  \item Linear fit $\rightarrow$ rupture properties 
+    \begin{itemize}
+    \item<4->
+      \DefineTerm{Loading rate}: slope of fit
+    \item<5->
+      \DefineTerm{Rupture force}: fit value where data last above fit
+    \end{itemize}
+ }%
+  \end{itemize}
+\end{column}
+
+% rupture image column 
+\begin{column}{0.45\textwidth}  %%<--- here
+
+\only<4-6>{ 
+  \begin{figure}[ht]
+    \centering
+      \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres0.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres1.pdf}};
+    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres2.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
+        \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
+        \only<6> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
+    \end{scope}
+\end{tikzpicture}
+  \end{figure}
+}%
+\end{column}
+\end{columns}
+
+
+
+\invisible<4->{ 
+  \begin{figure}[ht]
+    \centering
+      \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon_pres.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);%
+        \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);%
+        \only<3-4> \fill [white] (1.0,0) rectangle (1.0,1.0);%
+    \end{scope}
+\end{tikzpicture}
+  \end{figure}
+}%
+\end{frame}
+
+
+\subsection{Detection of Rupture Events}
+
+\begin{frame}{Event Detection in Piecewise Constant Signals is Ubiquitous}
+
+\begin{columns}[T]
+\begin{column}{0.8\textwidth}
+% Your text here
+  \begin{itemize}
+  \item
+    Stock price fluctuations\cite{struzik_wavelet_2002}%
+  \invisible<-1>{
+  \item Atmospheric temperature\cite{turner_conditional_1994}%
+  }%
+  \invisible<-2>{
+  \item Contaminants in water \cite{perelman_event_2012}%
+  }%
+ \end{itemize}
+\end{column}
+\begin{column}{0.2\textwidth}
+\end{column}
+\end{columns}
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{struzik_2002_price-vs-time_edit.png}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{turner_1994}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Perelman_2012.png}};
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
+
+\begin{frame}{Past Work in SMFS Event Detection}
+
+
+\begin{columns}[T]
+\begin{column}{0.4\textwidth}
+% Your text here
+  \begin{itemize}
+  \item
+    Contour length alignment\cite{kuhn_automated_2005}%
+  \item<2->
+    Threshholding\cite{andreopoulos_efficient_2011}%
+  \item<3->
+    Transformations\cite{benitez_searching_2017-1}%
+ \end{itemize}
+\end{column}
+
+\begin{column}{0.7\textwidth}
+\invisible<4->{
+  \begin{itemize}
+  \item[\PlusOpt{}]%
+    \PlusColor{%
+      \only<1>{Physically-motivated, robust to noise}%
+      \only<2>{Simple and fast}%
+      \only<3>{Generic, robust to noise}%
+    }%
+  \item[\MinusOpt{}]%
+    \MinusColor{%
+      \only<1>{Requires polymer model}%
+      \only<2>{Optimized parameters do not generalize}%
+      \only<3>{Influenced by local trend line}%
+}%
+  \invisible<4->{\item[\MinusOpt{}]%
+    \MinusColor{%
+      \only<1>{Biased against rare behavior}%
+      \only<2>{Susceptible to noise}%
+      \only<3>{Susceptible to SMFS false positives}%
+}}%
+  \invisible<2->{\item[\MinusOpt{}]%
+    \MinusColor{%
+      \only<1>{Slow ($\Theta(N^2)$)}%
+}}%
+ \end{itemize}
+}
+\end{column}
+\end{columns}
+
+\only<4-6>{
+\begin{block}{}
+  \begin{itemize}
+    \item We want an algorithm with all the positives...%
+      \begin{itemize}
+        \item Physically motivated, robust to noise%
+        \item Simple, fast, and generic%
+        \item Unbiased estimates for event locations%
+      \end{itemize}
+ \invisible<-4>{
+    \item ... fixes all the negatives ... %
+      \begin{itemize}
+        \item Robust to local trendline%
+        \item Robust to SMFS false positive %
+        \item Generalizes well%
+      \end{itemize}}
+ \invisible<-5>{
+ \item ... and outperforms existing techniques %
+   \begin{itemize}
+      \item OpenFovea\cite{roduit_openfovea:_2012}: threshold technique%
+      \item Scientific Python\cite{jones_scipy:_2001}: transformation (wavelet) technique%
+   \end{itemize}}
+  \end{itemize}
+\end{block}}
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{kuhn_2005.png}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{Andreopoulos_2011_edit}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{bentez_2017_edit.png}};
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
+
+
+\section{Algorithm Design}
+
+\begin{frame}{Algorithm Intuition}
+
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+% Your text here
+  \begin{itemize}
+  \item Approach residual distribution%
+    \begin{itemize}
+    \item Unknown%
+    \item Curve-dependent%
+    \invisible<-1>{\item $\approx$\textbf{Constant in time}}%
+    \end{itemize}
+ \invisible<-3>{\item Retract residual distribution}
+    \begin{itemize}
+    \invisible<-3>{\item Calculate as approach}%
+    \invisible<-4>{\item $\approx$Identical, except at events}%
+    \end{itemize}
+ \invisible<-6>{\item Hypothesis testing}
+    \begin{itemize}
+    \invisible<-6>{\item Approach $\rightarrow$ \textit{no event} model }%
+    \invisible<-7>{\item Probability(retract|model)}%
+    \end{itemize}
+\end{itemize}
+\end{column}
+\begin{column}{0.6\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_appr2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr0.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr1.pdf}};
+    \node<6-8>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{noise_retr2.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{Algorithm Formalism}
+
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item Fit \textit{no-event} model%
+  \begin{itemize}
+    \item Spline fit to approach%
+      \invisible<-1>{\item Residuals $r_t$%
+        \begin{itemize}
+          \item Use local variance: $\Sigma_t^2$
+          \item Improves SNR 50x%
+        \end{itemize}
+      }%
+      \invisible<-2>{\item Mean, variance: $\epsilon,\sigma^2$}%
+   \end{itemize}
+\invisible<-3>{
+  \item Apply to retract
+\invisible<-4>{
+  \begin{itemize}
+    \item Probability by Chebyshev
+        \begin{itemize}
+          \item P($\frac{|\Sigma_t-\epsilon|}{\sigma}\ge k$)$\le \frac{1}{k^2}$%
+          \item \textbf{Independent} of noise distribution!%
+        \end{itemize}
+}
+\invisible<-5>{
+  \item Repeat for transformations
+    \begin{itemize}
+      \item Spline integral
+      \item Spline differentiation
+      \item Spline difference
+    \end{itemize}
+  \item Multiply all probabilities}
+  \end{itemize}}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.5\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_approach.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
+      \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
+      \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+    \end{scope}
+    \node<4-6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
+      \only<4-5> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+    \end{scope}
+\end{tikzpicture}
+\end{overlayarea}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+\begin{frame}{Removing Domain-Specific False Positives}
+
+\begin{columns}[T]
+\begin{column}{0.7\textwidth}
+
+\begin{itemize}
+\item Adhesions (events near at the surface)
+\invisible<-1>{
+  \begin{itemize}
+    \item Locate surface by approach 
+    \item Remove events at surface
+  \end{itemize}}
+\invisible<-2>{
+\item Re-folding or stretching
+  \begin{itemize}
+    \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
+  \end{itemize}
+}
+\invisible<-3>{
+\item `Mask' by spline transform (tx) 
+  \begin{itemize}
+    \item Require tx signal $\ge$ noise
+    \item \emph{i.e.} $|\Sigma_{t,\mathrm{tx}}-\epsilon_{\mathrm{tx}}| \ge \sigma_{\mathrm{tx}}$
+    \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
+  \end{itemize}}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.4\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway0.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.47);%
+    \end{scope}
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway3.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+\end{column}
+\end{columns}
+
+\end{frame}
+
+
+\section{Algorithm Results}
+
+\subsection{Timing}
+
+\begin{frame}{Algorithm runtimes are linear}
+
+\begin{columns}[T]
+\begin{column}{0.99\textwidth}
+% column about BCC
+  \begin{itemize}
+  \item Algorithms runtime are linear with curve size
+  \invisible<-1>{\item FEATHER has significantly better coefficients}
+  \begin{itemize}
+    \invisible<-1>{\item Minutes to analyze `realistic' dataset (hundreds of curves)}
+  \end{itemize}
+  \end{itemize}
+
+\end{column}
+
+\begin{column}{0.01\textwidth}
+\end{column}
+
+\end{columns}
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{timing_pres.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<-1> \fill [white] (0.51,0.0) rectangle (1.0,1.0);%
+        \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
+    \end{scope}
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
+
+\subsection{Performance}
+
+\begin{frame}{Distance Metric: Error Percentile \ErrorPct{} }
+
+\begin{columns}[T]
+\begin{column}{0.99\textwidth}
+\begin{overlayarea}{\textwidth}{\textheight}
+% column about BCC
+  \begin{itemize}
+  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
+  \invisible<-1>{\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true}%
+  \invisible<-2>{%
+\item%
+\only<3>{FEATHER}%
+\only<4>{OpenFovea}%
+\only<5>{Scientific Python}%
+}
+  \end{itemize}
+\end{overlayarea}
+\end{column}
+
+\begin{column}{0.01\textwidth}
+\end{column}
+
+\end{columns}
+
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_distances_pres.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<-2> \fill [white] (0.5,0.0) rectangle (1.0,1.0);%
+        \only<-3> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
+    \end{scope}
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_dist.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{OpenFovea_dist.pdf}};
+    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_dist.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
+
+\begin{frame}{Rupture Metric: Bhattacharya Coefficient's Complement (BCC)}
+
+\begin{columns}[T]
+\begin{column}{0.99\textwidth}
+% column about BCC
+  \begin{itemize}
+  \item \DefineTerm{BCC}: disagreement between distributions (X,Y)
+    \begin{itemize}
+    \item
+      Mathematically: $1-\braket{X^{\frac{1}{2}}|Y^{\frac{1}{2}}}$
+    \item 
+      Informally: probability mass difference
+    \end{itemize}
+  \end{itemize}
+\end{column}
+
+\begin{column}{0.01\textwidth}
+\end{column}
+\end{columns}
+
+%
+% % bcc description
+%
+\begin{overlayarea}{\textwidth}{\textheight}
+\begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1-4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{bcc.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<-1> \fill [white] (0.3,0.0) rectangle (1.0,1.0);%
+        \only<-2> \fill [white] (0.53,0.0) rectangle (1.0,1.0);%
+        \only<-3> \fill [white] (0.76,0.0) rectangle (1.0,1.0);%
+        \only<-4> \fill [white] (1.0 ,0.0) rectangle (1.0,1.0);%
+    \end{scope}
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_rupture.pdf}};
+    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{OpenFovea_rupture.pdf}};
+    \node<7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_rupture.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+\end{frame}
+
+\begin{frame}{Comparison of Metrics}
+\begin{table}
+\input{../../paper/Figures/Finals_Presentation/metric_table.tex}
+\end{table}
+\end{frame}
+
+\section*{Summary}
+
+\begin{frame}{Summary}
+  % Keep the summary *very short*.
+  \begin{itemize}
+  \item
+    Developed an algorithm for detecting events SMFS data
+  \item
+    100-fold decrease in relative event error
+  \item
+    Generalizes well to SMFS data ranges
+  \end{itemize}
+  
+  % The following outlook is optional.
+  \vskip0pt plus.5fill
+  \begin{itemize}
+  \item
+    Next steps
+    \begin{itemize}
+    \item
+      Apply to (more interesting) protein dataset
+    \item
+      Publish results
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+% rest in appendix, see 
+% http://tex.stackexchange.com/questions/187877/how-to-hide-references-from-navigation-bar-in-beamer-class
+
+\appendix
+
+\section{Acknowledgements}
+
+\section{Bibliography}
+
+\begin{frame}[allowframebreaks]{Bilbiography}
+  \bibliographystyle{unsrt}
+  \bibliography{../../paper/drafts/Masters.bib}
+\end{frame}
+
+\section{Backup Slides}
+
+
+\begin{frame}{Verifying sample purity}
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+% Your text here
+  \begin{itemize}
+  \item DNA purified by Agaorse gel 
+  \invisible<-1>{\item DNA imaged by AFM}
+  \end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+\end{column}
+\end{columns}
+
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{prep_pres.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<-1> \fill [white] (0.4,0.0) rectangle (1.0,1.0);%
+        \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
+    \end{scope}
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{frame}
+
+\begin{frame}
+\end{frame}
+
+
+\end{document}

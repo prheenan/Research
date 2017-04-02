@@ -27,11 +27,9 @@ def write_coeffs_file(out_file,coeffs):
     opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
-        tmp =[ [opt_high,r"Rupture BC ($\uparrow$)",
-                c.bc_2d],
-               [opt_low,r"Absolute event error [nm]($\downarrow$)",
-                c.cat_q*1e9],
-               [opt_low,r"Relative event error ($\downarrow$)",
+        tmp =[ [opt_low,r"Rupture BCC ($\downarrow$)",
+                1-c.bc_2d],
+               [opt_low,r"Relative event error P$_{85}$ ($\downarrow$)",
                 c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
@@ -108,8 +106,6 @@ def run(base="./"):
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,18))
     entire_figure = gridspec.GridSpec(3,1)
-    import matplotlib as mpl
-    mpl.rcParams['hatch.linewidth'] = 4
     title_dict = Plotting.algorithm_title_dict()
     for i,m in enumerate(metric_list):
         x,name,true,pred = m.x_values,m.name,m.true,m.pred
@@ -117,11 +113,10 @@ def run(base="./"):
         out_learner_base = "{:s}{:s}".format(out_base,name)
         color_pred =  colors_pred[i]
         # define the styles for the histogram
-        use_legend = (i == 0)
         xlabel_histogram = r"Distance [x$_k$]" \
                            if (i == len(metric_list)-1) else ""
         # get the distance information we'll need
-        distance_kw = Offline.\
+        distance_kw = Plotting.\
             event_error_kwargs(m,color_pred=color_pred,
                                distance_limits=distance_limits,
                                xlabel=xlabel_histogram)
@@ -130,11 +125,11 @@ def run(base="./"):
                                               subplot_spec=entire_figure[i],
                                               wspace=0.4,hspace=0.5)
         # plot the metric plot
-        Plotting.rupture_plot(true,pred,use_legend=use_legend,
+        Plotting.rupture_plot(true,pred,
                               lim_plot_load=lim_load_max,
                               lim_plot_force=lim_force_max,
                               color_pred=color_pred,
-                              count_limit=[0.5,count_max*2],
+                              count_limit=[0.5,count_max*5],use_legend=(i==0),
                               distance_histogram=distance_kw,gs=gs,
                               fig=fig)
         plt.title(title_dict[name],fontsize=25,x=-2,y=3.85,color=color_pred,
@@ -142,8 +137,8 @@ def run(base="./"):
     # individual plot labels
     n_subplots = 5
     n_categories = len(metric_list)
-    letters =  string.lowercase[:n_categories]
-    letters = [ ["({:s}{:d})".format(s,n+1) for n in range(n_subplots)]
+    letters =  string.uppercase[:n_categories]
+    letters = [ ["{:s}{:d}".format(s,n+1) for n in range(n_subplots)]
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
     PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.14),fontsize=18)

@@ -11,19 +11,23 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
 function copy_pdfs()
 {
+    png=${3}
     cd ${1}
     for i in *.py; do
 	# try to run the pdf; ignore errors
 	python2 "$i" || true
     done
     abs=$PWD
-    for i in *.pdf; do
-	out="${2}/_$i.png"
-	inkscape "${abs}/$i" -z --export-dpi=100 --export-area-drawing \
-	    --export-png="${out}" 
-    done
+    cp *.pdf ${2}
+    if [ $3 -eq 1 ] 
+	then
+	for i in *.pdf; do
+	    out="${2}/_$i.png"
+	    inkscape "${abs}/$i" -z --export-dpi=100 --export-area-drawing \
+		--export-png="${out}" 
+	done
+    fi
     cd -
-    cp ${1}*.pdf ${2}
 }
 
 # Description:
@@ -40,19 +44,26 @@ cd $out_dir
 out_path=$PWD
 # go back and get the input directory absolute
 cd - 
+pngs=0
 base_dir_rel="../Figures/"
 cartoon_dir="${base_dir_rel}FigureCartoon/"
 timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
-copy_pdfs ${base_dir_rel}FigurePerformance_FullSet_Only_FEATHER/ $out_path 
-copy_pdfs ${prep_dir} $out_path 
-copy_pdfs "${base_dir_rel}FigureAlgorithm/" $out_path 
-copy_pdfs "${base_dir_rel}FigureTuning/" $out_path 
-copy_pdfs "${timing_dir}" $out_path 
-copy_pdfs "${cartoon_dir}" $out_path 
-copy_pdfs "${rupture_dir}" $out_path 
-copy_pdfs "${base_dir_rel}FigurePerformance_CS/" $out_path 
+pres_dir="${base_dir_rel}Presentation/"
+copy_pdfs "${pres_dir}bhattacharya"  $out_path $pngs
+copy_pdfs "${pres_dir}noise_distribution/" $out_path $pngs
+copy_pdfs "${pres_dir}domain-specific-path/" $out_path $pngs 
+copy_pdfs "${base_dir_rel}FigurePerformance_FullSet_FEATHER/" $out_path $pngs
+copy_pdfs "${base_dir_rel}FigurePerformance_DistanceOnly/" $out_path $pngs
+copy_pdfs "${base_dir_rel}FigurePerformance_per_algorithm/" $out_path $pngs
+copy_pdfs "${prep_dir}" $out_path $pngs
+copy_pdfs "${base_dir_rel}FigureAlgorithm/" $out_path $pngs
+copy_pdfs "${base_dir_rel}FigureTuning/" $out_path $pngs
+copy_pdfs "${timing_dir}" $out_path $pngs
+copy_pdfs "${cartoon_dir}" $out_path $pngs
+copy_pdfs "${rupture_dir}" $out_path $pngs
+copy_pdfs "${base_dir_rel}FigurePerformance_CS/" $out_path $pngs
 
 
 

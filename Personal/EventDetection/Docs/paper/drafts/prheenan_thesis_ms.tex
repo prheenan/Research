@@ -1,0 +1,79 @@
+\documentclass[defaultstyle,11pt]{thesis}
+
+\usepackage{amssymb}		% to get all AMS symbols
+\usepackage{graphicx}		% to insert figures
+\usepackage{hyperref}		% PDF hyperreferences??
+
+%%%%%%%%%%%%   All the preamble material:   %%%%%%%%%%%%
+
+\title{\TitleName{}}
+
+\author{Patrick Raymond}{Heenan}
+
+\otherdegrees{B.A. Computer Science, University of North Carolina at Chapel Hill, 2013 \\
+B.S. Physics, University of North Carolina at Chapel Hill, 2013}
+
+\degree{Master of Science}		%  #1 {long descr.}
+	{M.S., Computer Science}		%  #2 {short descr.}
+
+\dept{Department of}			%  #1 {designation}
+	{Computer Science}		%  #2 {name}
+
+\advisor{Professor}				%  #1 {title}
+	{Rafael Frongillo}			%  #2 {name}
+
+\reader{Professor Jordan Boyd-Graber}		%  2nd person to sign thesis
+\readerThree{Professor Tom Perkins}		%  3rd person to sign thesis
+
+\abstract{  \OnePageChapter	% because it is very short
+
+In single-molecule force spectroscopy (\singlemol{}) experiments, mechanical forces are applied to individual biomolecules via a probe such as a bead or cantilever. Experiments which mechanically dissociate the secondary or tertiary structures of molecules are known as unfolding experiments. In unfolding experiments, a molecule binds to the probe, is pulled and possibly unfolded, and finally unbinds from the probe. The force and its time derivative just before an unfolding or unbinding event are known as the event's rupture force and loading rate, respectively. The rupture force and loading rate at each event are required for common \singlemol{} analyses. Identifying events in \singlemol{} data is hindered by the presence of noise. This paper introduces a new algorithm, \name{} (\acronym), to identify the locations of events in \singlemol{} data. \name{} features a relative event location error of 0.005, a 100-fold improvement relative to the best baseline, and a \BccLong{} for the distribution of loading rates and rupture forces of 0.04, a factor of eight improvement relative to the best baseline. As a linear-time algorithm for reproducible event identification, \name{} improves the quality of analysis of \singlemol{} data.}
+
+\dedication[Dedication]{	% NEVER use \OnePageChapter here.
+To my family.
+}
+
+\acknowledgements{	\OnePageChapter	% *MUST* BE ONLY ONE PAGE!
+
+  The author would like to extend special thanks to the following people: 
+
+  \begin{enumerate}
+  \item His three advisors for providing insight and encouragement into the computational and biophysical aspects of the thesis.
+  \item Chase Bergeson, Dr. Devin Edwards, and Stephen Okoniewski for valuable feedback on drafts of this text.
+  \item Dr. Devin Edwards, for assistance with troubleshooting surface chemistry. 
+  \item Lyle Uyetake and William Van Patten for technical advice on the preparation of samples, surfaces, and cantilevers. 
+  \end{enumerate}
+
+}
+
+% \IRBprotocol{E927F29.001X}	% optional!
+
+\ToCisShort	% use this only for 1-page Table of Contents
+
+\LoFisShort	% use this only for 1-page Table of Figures
+% \emptyLoF	% use this if there is no List of Figures
+
+\LoTisShort	% use this only for 1-page Table of Tables
+% \emptyLoT	% use this if there is no List of Tables
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%       BEGIN DOCUMENT...         %%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input macros.tex
+
+\begin{document}
+
+\input heenan_2017_ms.tex 
+
+%%%%%%%%%   then the Bibliography, if any   %%%%%%%%%
+\bibliographystyle{unsrt}
+\bibliography{Masters}		% Bib database in "refs.bib"
+
+%%%%%%%%%   then the Appendices, if any   %%%%%%%%%
+\appendix
+\input heenan_2017_ms_appendix.tex 
+
+
+\end{document}
+

@@ -14,36 +14,6 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 # /!\ note the 'SVG' function also in svgutils.compose
 import matplotlib.gridspec as gridspec
 
-def plot_fec(example,colors=['r','g','b'],n_filter=1000,use_events=True,):
-    fec_split = Analysis.zero_and_split_force_extension_curve(example)
-    retract = fec_split.retract
-    retract.Force -= np.median(retract.Force)
-    retract_filtered = FEC_Util.GetFilteredForce(retract,n_filter)
-    # get everything in terms of ploting variables
-    x_plot = lambda x: x * 1e9
-    y_plot = lambda y: y * 1e12
-    sep = x_plot(retract.Separation)
-    force = y_plot(retract.Force)
-    sep_filtered = x_plot(retract_filtered.Separation)
-    force_filtered = y_plot(retract_filtered.Force)
-    if fec_split.has_events() and use_events:
-        slices = fec_split.get_retract_event_slices()
-        colors_before = colors
-        colors_after = colors
-        for i in range(len(slices)-1):
-            before_kwargs = dict(before_slice=slices[i],after_slice=slices[i+1],
-                                 color_before=colors_before[i],
-                                 color_after=colors_after[i+1])
-            Plotting.before_and_after(x=sep,y=force,style=dict(alpha=0.3),
-                                      **before_kwargs)
-            Plotting.before_and_after(x=sep_filtered,y=force_filtered,
-                                      style=dict(alpha=1),**before_kwargs)
-    else:
-        style = dict(color=colors[0])
-        plt.plot(sep,force,alpha=0.3,**style)
-        plt.plot(sep_filtered,force_filtered,**style)
-    plt.tight_layout()
-
 def fmt(remove_x_labels=True,remove_y_labels=True):
     ax = plt.gca()
     if (remove_x_labels):
@@ -54,62 +24,86 @@ def fmt(remove_x_labels=True,remove_y_labels=True):
     plt.ylim([-30,60])
     plt.xlim([-30,700])
 
-def run(base="./"):
-    """
-    
-    """
-    data_base = base + "data/"
+def plot_fec_cartoon(base,data_base,file_names,arrow_kwargs=dict()):
     kw = dict(cache_directory=data_base,force=False)
-    file_names = ["no","single","multiple"]
     file_paths = [data_base + f +".csv" for f in file_names]
     cases = [read_and_cache_file(f,**kw) for f in file_paths]
     n_cases = len(cases)
     out_names = []
-    styles = [dict(colors='r',use_events=False),
-              dict(colors=['r','b']),
-              dict(colors=['r','b','k'])]
-    fig_x_in = 16
-    fig_y_in = 8
+    event_styles = Plotting._fec_event_colors
+    styles = [dict(colors=event_styles,use_events=False),
+              dict(colors=event_styles),
+              dict(colors=event_styles)]
+    fudge_pN = [10,12,25]
     im_path = base + "/cartoon/SurfaceChemistry Dig10p3_pmod-0{:d}.png"
-    fig = PlotUtilities.figure((fig_x_in,fig_y_in))
     gs= gridspec.GridSpec(2,3)
     for i in range(3):
         plt.subplot(gs[0, i])
         image = plt.imread(im_path.format(i+1))
-        plt.imshow(image,interpolation="nearest",aspect='equal',extent=None)
+        plt.imshow(image,interpolation="bilinear",aspect='equal',extent=None)
         ax = plt.gca()
         ax.axis('off')
     for i,c in enumerate(cases):
         plt.subplot(gs[1, i])
         style = styles[i]
-        plot_fec(c,**style)
+        fec_split = Plotting.plot_fec(c,**style)
+        plt.xlim([-30,650])
+        # decorate the plot to make it easier to read
+        plot_x = fec_split.retract.Separation * 1e9
+        plot_y = fec_split.retract.Force *1e12
+        slices = fec_split.get_retract_event_slices()
+        Plotting.top_bars(plot_x,plot_x,slices,colors=style['colors'])
+        event_idx = [slice_v.stop for slice_v in slices]
+        if (len(event_idx) > 0):
+            # remove the last index (just te end of the FEC)
+            event_idx = event_idx[:-1]
+            fudge =fudge_pN[i]
+            Plotting.plot_arrows_above_events(event_idx,plot_x,plot_y,fudge,
+                                              **arrow_kwargs)
         not_first_plot = i != 0
         fmt(remove_y_labels=False,remove_x_labels=False)
         if (i == 0):
-            y_label = r"Force [pN]"
-            x_label = "Separation [nm]"
+            y_label = r"Force (pN)"
+            x_label = "Separation (nm)"
         else:
             y_label = ""
             x_label = ""
             ax = plt.gca()
-            PlotUtilities.no_y_ticks(ax=ax)
+            PlotUtilities.no_y_label(ax=ax)
         PlotUtilities.ylabel(y_label)
         PlotUtilities.xlabel(x_label)
-        plt.xlim([-30,650])
         PlotUtilities.tick_axis_number(num_x_major=4)
+
+
+def run(base="./"):
+    """
+    
+    """
+    name = "cartoon.pdf"
+    data_base = base + "data/"
+    file_names = ["no","single","multiple"]
+    # save without the labels for the presentation
+    subplots_adjust = dict(left=0.12,wspace=0.2,hspace=0.1)
+    fig = PlotUtilities.figure((8,4))
+    plot_fec_cartoon(base,data_base,file_names,
+                     arrow_kwargs=dict(markersize=8))
+    PlotUtilities.savefig(fig,name.replace(".pdf","_pres.pdf"),
+                          subplots_adjust=subplots_adjust)
+    # save with the labels for the presentation
+    fig = PlotUtilities.figure((16,8))
+    subplots_adjust = dict(left=0.08,wspace=0.2,hspace=0.1)
+    plot_fec_cartoon(base,data_base,file_names)
     n_subplots = 2
     n_categories = len(file_names)
-    letters =  string.lowercase[:n_categories]
-    letters = [ [r"({:s}{:d})".format(s,n+1) for s in letters]
-                for n in range(n_categories)]
-    flat_letters = [v for list_of_v in letters for v in list_of_v]
+    letters =  string.uppercase[:n_categories]
+    letters = ([r"{:s}".format(s) for s in letters] + \
+               ["" for _ in range(n_categories)])
     bottom = (-0.25,1)
     top = (-0.60,1)
     loc = [top for i in range(n_categories)] +  \
           [bottom for i in range(n_categories)] 
-    PlotUtilities.label_tom(fig,flat_letters,loc=loc)
-    PlotUtilities.savefig(fig,"cartoon.pdf",
-                          subplots_adjust=dict(left=0.1,wspace=0.4,hspace=0.1))
+    PlotUtilities.label_tom(fig,letters,loc=loc)
+    PlotUtilities.savefig(fig,name,subplots_adjust=subplots_adjust)
 
 if __name__ == "__main__":
     run()
