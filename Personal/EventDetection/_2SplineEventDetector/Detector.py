@@ -285,7 +285,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     boolean_ret =  probability_updated < threshold
     return slice_updated,boolean_ret,probability_updated
 
-def _loading_rate_helper(x,y,slice_event):
+def _loading_rate_helper(x,y,slice_event,slice_fit=None):
     """
     Determine where a (single, local) event is occuring in the slice_event
     (of length N) part of x,y by:
@@ -296,46 +296,99 @@ def _loading_rate_helper(x,y,slice_event):
 
     Args:
         x, y: x and y values. we assume an event is from high to low in y
-        slice_event: where to fit
+        slice_event: where to search for the crossing
+        slice_fit: where to fit for the line. If none, assumes = slice_event
     Returns:
         tuple of <fit_x,fit_y,predicted y based on fit, idx_above_predicted>
     """
+    if (slice_fit is None):
+        slice_fit = slice_event
     # determine the local maximum
     offset = slice_event.start
     n_points = int(np.ceil((slice_event.stop-offset+1)/2))
     y_event = y[slice_event]
     x_event = x[slice_event]
     local_max_idx = offset + np.argmax(y_event)
-    n = x.size
-    # end our fit at the midpoint of the event; start offset from 
-    end_fit_idx = local_max_idx
-    start_fit_idx  = max(0,end_fit_idx-n_points)
-    fit_slice = slice(start_fit_idx,end_fit_idx,1)
-    # fit 1-D until the local max
-    fit_x = x[fit_slice]
-    fit_y = y[fit_slice]
+    fit_x = x[slice_fit]
+    fit_y = y[slice_fit]
     coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
     pred = np.polyval(coeffs,x=x_event)
     # determine where the data *in the __original__ slice* is __last__
     # above the fit (after that, it is consistently below it)
-    idx_above_predicted_rel = np.where(y_event > pred)[0]
+    idx_above_predicted_rel = np.where(y_event > pred)[0]    
+    idx_below_predicted_rel = np.where(y_event <= pred)[0]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
-    return fit_x,fit_y,pred,idx_above_predicted,local_max_idx
+    idx_below_predicted = [offset + i for i in idx_below_predicted_rel]
+    return fit_x,fit_y,pred,idx_above_predicted,idx_below_predicted,\
+        local_max_idx
     
-def event_by_loading_rate(x,y,slice_event):
+def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     """
     see _loading_rate_helper 
 
     Args:
-        see _loading_rate_helper
+        interpolator: to use for getting the smoothed maximum negative deriv
+        n_points: number of points in the window
+        others: see _loading_rate_helper
     Returns:
         predicted index (absolute) in x,y where we think the event is happening
     """    
-    fit_x,fit_y,pred,idx_above_predicted,local_max_idx = \
-            _loading_rate_helper(x,y,slice_event)
+    # determine where the derivative is maximum
     x_event = x[slice_event]
-    y_event = y[slice_event]
+    interp_deriv_slice = interpolator.derivative()(x_event)
+    abs_max_change_idx = slice_event.start + np.argmin(interp_deriv_slice)
+    median_deriv = np.median(interp_deriv_slice)
+    where_le_median_rel = np.where(interp_deriv_slice <= median_deriv)[0]
+    if (where_le_median_rel.size == 0):
+        # then just fit the whole thing
+        abs_median_change_idx = abs_max_change_idx
+    else:
+        abs_median_change_idx = slice_event.start + where_le_median_rel[0]
+    delta = n_points + 1
+    # only *fit* up until the median derivatice
+    slice_fit = slice(abs_median_change_idx-delta,abs_median_change_idx,1)
+    # *search* in the entire place before the maximum derivative
+    start_idx_abs = max(0,abs_max_change_idx-delta)
+    # fit a line to the 'post event', to reduce false positives
+    post_slice_fit = slice(abs_max_change_idx,slice_event.stop,1)
+    post_slice_event = slice(abs_median_change_idx,slice_event.stop,1)
+    final_event_idx = abs_max_change_idx
+    if (post_slice_fit.stop - post_slice_fit.start >= 3):
+        fit_x_rev,fit_y_rev,pred_rev,_,idx_below_predicted,_ = \
+                _loading_rate_helper(x,y,slice_event=post_slice_event,
+                                     slice_fit=post_slice_fit)
+        if (len(idx_below_predicted) > 0):
+            final_event_idx = idx_below_predicted[0]
+    slice_event_effective = slice(start_idx_abs,final_event_idx,1)
+    fit_x,fit_y,pred,idx_above_predicted,_,local_max_idx = \
+            _loading_rate_helper(x,y,slice_event=slice_event_effective,
+                                 slice_fit=slice_fit)
+    # XXX debugging
+    """
+    interp_slice = interpolator(x_event)
+    xlim_zoom = [min(x_event),max(x_event)]
+    plt.subplot(3,1,1)
+    plt.plot(x,y,color='k',alpha=0.3)
+    plt.plot(fit_x,fit_y)
+    plt.axvline(x[slice_event.start])
+    plt.axvline(x[slice_event.stop])
+    plt.plot(x[slice_event_effective],pred,linewidth=2,color='r')
+    plt.subplot(3,1,2)
+    plt.plot(x_event,interp_deriv_slice)
+    plt.axhline(np.median(interp_deriv_slice))
+    plt.xlim(xlim_zoom)
+    plt.subplot(3,1,3)
+    plt.plot(x[slice_event],y[slice_event],color='k',alpha=0.3)
+    plt.plot(fit_x,fit_y,color='g',alpha=0.3)
+    plt.plot(x_event,interp_slice)
+    plt.plot(x[slice_event_effective],pred,linewidth=2,color='r')
+    plt.plot(fit_x_rev,fit_y_rev)
+    plt.plot(x[post_slice_event],pred_rev)
+    plt.axvline(x[idx_above_predicted[-1]])
+    plt.xlim(xlim_zoom)
+    plt.show()
+    """
     # POST: have a proper max, return the last time we are above
     # the linear prediction
     if (len(idx_above_predicted) == 0):
@@ -398,6 +451,11 @@ def _predict_helper(split_fec,threshold,**kwargs):
                          derivative_sigma   = derivative_sigma,
                          valid_delta = False,
                          **kwargs)
+    local_fitter = lambda *_args,**_kwargs: \
+                   event_by_loading_rate(*_args,
+                                         interpolator=interp_retract,
+                                         n_points=n_points,
+                                         **_kwargs)
     # call the predict function
     final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
     to_ret = _predict(x=time,
@@ -405,7 +463,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
                       n_points=n_points,
                       interp=interp_retract,
                       threshold=threshold,
-                      local_event_idx_function=event_by_loading_rate,
+                      local_event_idx_function=local_fitter,
                       **final_kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface

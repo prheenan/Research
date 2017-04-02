@@ -49,11 +49,15 @@ def run():
         assert n_found == n_expected , err_str   
         # POST: number of events match. check that the locations match (within
         # fractional_error_tolerance * number of points)
-        predicted_centers = sorted(pred_info.event_idx)
-        actual_centers = sorted(example_split.get_retract_event_centers())
+        predicted_centers = np.array(sorted(pred_info.event_idx))
+        actual_centers = \
+            np.array(sorted(example_split.get_retract_event_centers()))
+        errors = abs(predicted_centers-actual_centers)
         n = example_split.retract.Force.size
-        for pred,actual in zip(predicted_centers,actual_centers):
-            assert abs(pred-actual) <= fractional_error_tolerance * n
+        for e in errors:
+            assert e <= fractional_error_tolerance * n
+        print(("Fractional Error(s): " + \
+               ",".join(["{:.3g}".format(_/n) for _ in errors])))
 
 if __name__ == "__main__":
     run()
