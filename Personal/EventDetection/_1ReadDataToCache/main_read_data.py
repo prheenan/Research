@@ -28,7 +28,7 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     copy_files = False
     force_read = False
     force_relearn = False
@@ -58,7 +58,7 @@ def run():
         # XXX determine where things went wrong (load/look at specific examples)
         # plot everything
         best_metric = Offline.best_metric_from_learner(l)
-        distance_histogram= Offline.event_error_kwargs(best_metric)
+        distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
     num_to_plot = 30
