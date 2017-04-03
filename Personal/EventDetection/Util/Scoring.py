@@ -104,7 +104,7 @@ class score:
         X = all_tuples(self.ruptures_true)
         Y = all_tuples(self.ruptures_predicted) 
         # get the distances from x to y and from y to x
-        if (len(Y) == 0):
+        if (len(Y) == 0 or len(X) == 0):
             dist_1 = []
             dist_2 = [sum(x**2) for x in X]
         else:

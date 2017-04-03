@@ -29,7 +29,7 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = False
+    debugging = True
     copy_files = False
     force_read = False
     force_relearn = False
@@ -81,14 +81,14 @@ def run():
     median_dist = [s.minimum_distance_median() for s in scores]
     rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
                           for s in scores]
-    rupture_dist = [max(s) for s in rupture_dist_hists]
+    good_idx = [i for i,s in enumerate(rupture_dist_hists) if len(s)>0]
     number_relative = [int(abs(t-p)) for t,p in true_pred]
     # get the worst (largest) distances where we arent none
     # XXX note: None is smaller than everything, seems like, so argsort is OK
-    sort_idx = np.arange(0,len(scores),1)
+    sort_idx = good_idx
     # sort from high to low, first elements are most missed and farest off...
     sort_idx = sorted(sort_idx,reverse=True,
-                      key=lambda i:(rupture_dist[i]))
+                      key=lambda i:(max(rupture_dist_hists[i])))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
     debugging_str = ""
@@ -142,10 +142,15 @@ def run():
     PlotUtilities.figure()
     bins = np.logspace(np.log10(min(cat_rupture_dist)),
                        np.log10(max(cat_rupture_dist)),num=10)
-    print(cat_rupture_dist,np.percentile(cat_rupture_dist,[25,50,90,95,100]))
+    line = (cat_rupture_dist,np.percentile(cat_rupture_dist,
+                                           [25,50,75,90,95,97,100]))
+    with open("tmp.csv","w") as f:                       
+        f.write("\n".join(["{:s}".format(l) for l in line]))
+    print(line)
     fig = PlotUtilities.figure()
     plt.hist(cat_rupture_dist,log=True,bins=bins)
     plt.xscale('log')
+    PlotUtilities.lazyLabel("RSQ Spectrum Error","Count","")
     PlotUtilities.savefig(fig,"./out.png")
 
     # load the worst n back into memory
