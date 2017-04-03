@@ -166,7 +166,6 @@ def metrics(true,pred):
     coeffs = Analysis.\
         bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                                 ruptures_true,ruptures_pred,bins_rupture)
-    print(coeffs)
     counts = max(len(ruptures_true),len(ruptures_pred))
     return coeffs,lim_force,lim_load,counts
 
