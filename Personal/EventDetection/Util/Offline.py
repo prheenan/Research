@@ -118,7 +118,7 @@ class plotting_metrics:
                       cat_relative_q=cat_relative_q)
 
 def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
-                                       q=95,**kwargs):
+                                       q=90,**kwargs):
     to_true_relative = to_true/max_x_pred
     to_pred_relative = to_pred/max_x_true
     if (len(to_true) > 0):

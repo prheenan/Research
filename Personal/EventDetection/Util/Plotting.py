@@ -570,7 +570,7 @@ def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
         nothing
     """
     if len(to_bin) == 0:
-        return
+        return [],[],[]
     return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
@@ -701,9 +701,12 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                                         **pred_style_histogram)
     n_true,_,_, = loading_rate_histogram(true,orientation='vertical',
                                          bins=bins_load,**true_style_histogram)
-    if (count_limit is None):
+                                         
+    if (count_limit is None and (len(n_pred) * len(n_true) > 0)):
         max_n = np.max([n_pred,n_true])
         count_limit = [0.5,max_n*10]
+    else:
+        count_limit = plt.ylim()
     PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')
@@ -722,7 +725,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     labels_coeffs = [r"BCC"]
     # add in the relative distance metrics, if the are here
     if (distance_histogram is not None):
-        labels_coeffs.append(r"P$_{95}$")
+        labels_coeffs.append(r"P$_{90}$")
         _,_,cat_relative_median,cat_relative_q = \
             Offline.relative_and_absolute_median_and_q(**distance_histogram)
         coeffs.append(cat_relative_q)
