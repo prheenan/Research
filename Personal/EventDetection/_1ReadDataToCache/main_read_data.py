@@ -64,7 +64,6 @@ def run():
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-        break                                                
     num_to_plot = limit
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
@@ -110,7 +109,7 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 0.002094
+    threshold = best_x_value
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
     scores = []
