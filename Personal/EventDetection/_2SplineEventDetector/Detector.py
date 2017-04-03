@@ -13,6 +13,7 @@ from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
     _min_points_between,_predict,\
     _probability_by_cheby_k,_no_event_chebyshev,_event_slices_from_mask
 from Research.Personal.EventDetection._2SplineEventDetector import _no_event
+from Research.Personal.EventDetection._2SplineEventDetector import old_detector
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
     value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
@@ -465,6 +466,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
                                          interpolator=interp_retract,
                                          n_points=n_points,
                                          **_kwargs)
+    fit_func = old_detector.event_by_loading_rate
     # call the predict function
     final_kwargs = dict(**approach_dict)
     to_ret = _predict(x=time,
@@ -472,7 +474,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
                       n_points=n_points,
                       interp=interp_retract,
                       threshold=threshold,
-                      local_event_idx_function=local_fitter,
+                      local_event_idx_function=fit_func,
                       **final_kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface

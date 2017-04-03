@@ -8,7 +8,8 @@ from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from Research.Personal.EventDetection.Util import Learning,Learners,Offline
+from Research.Personal.EventDetection.Util import Learning,Learners,Offline,\
+    Scoring
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -78,8 +79,9 @@ def run():
     # get all the distances
     true_pred = [s.n_true_and_predicted_events() for s in scores]
     median_dist = [s.minimum_distance_median() for s in scores]
-    rupture_dist = [np.max(s.euclidean_rupture_spectrum_distance())
-                    for s in scores]
+    rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
+                          for s in scores]
+    rupture_dist = [max(s) for s in rupture_dist_hists]
     number_relative = [int(abs(t-p)) for t,p in true_pred]
     # get the worst (largest) distances where we arent none
     # XXX note: None is smaller than everything, seems like, so argsort is OK
@@ -110,6 +112,7 @@ def run():
     threshold = best_x
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
+    scores = []
     for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
@@ -121,6 +124,10 @@ def run():
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
+        score_tmp = Scoring.get_scoring_info(example_split,pred_info.event_idx)
+        scores.append(score_tmp)
+        # XXX remove...
+        continue
         meta = example.Meta
         GenUtilities.ensureDirExists(cache_directory)
         id_data = "{:d}{:s}{:.1f}p={:s}".format(i,meta.Name,meta.Velocity,
@@ -128,6 +135,13 @@ def run():
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
+    rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
+                          for s in scores]
+    cat_rupture_dist = np.concatenate(rupture_dist_hists)
+    print(cat_rupture_dist)
+    plt.hist(cat_rupture_dist,log=True)
+    plt.show()
+
     # load the worst n back into memory
     # redo the prediction for the worst N, saving to the debug directory
 

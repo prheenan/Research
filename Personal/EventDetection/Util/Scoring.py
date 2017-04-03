@@ -104,7 +104,7 @@ class score:
         # get the distances from x to y and from y to x
         if (len(Y) == 0):
             dist_1 = []
-            dist_2 = [self. max_displacement for x in X]
+            dist_2 = [self.max_displacement() for x in X]
         else:
             _,dist_1 = metrics.pairwise_distances_argmin_min(X=X,Y=Y)
             _,dist_2 = metrics.pairwise_distances_argmin_min(X=Y,Y=X)
