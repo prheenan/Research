@@ -8,21 +8,39 @@ from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import PlotUtilities
 from scipy.stats import norm
-import Analysis,Learning
+from Research.Personal.EventDetection.Util import Analysis,Learning,Offline
 import matplotlib.gridspec as gridspec
 
 style_train = dict(color='r',marker='o',linestyle='--',label="Training") 
 style_valid = dict(color='g',marker='v',linestyle='-',label="Validation")
+color_pred_def = 'b'
+color_true_def = 'g'
 
+def _style_true(color_true=color_true_def):
+    return dict(color=color_true,alpha=0.9)
+
+def _style_pred(color_pred=color_pred_def):
+    return dict(color=color_pred,alpha=0.4)
+
+_fec_event_colors = ['k','r','b']
 
 def algorithm_colors():
-    return ['b','k','y']
+    return ['b','k','r']
 
 def algorithm_markers():
     return ['s','o','v']
 
 def algorithm_linestyles():
     return ['--','-.','-']    
+
+def algorithm_title_dict():
+    """
+    returns a dicitonary mapping <description of algorithm> -> plot title
+    """
+    dict_v = {"no event":"FEATHER",
+              "open fovea":"OpenFovea",
+              "wavelet transform":"Scientific Python"}
+    return dict_v
 
 def true_hatch():
     return "//"
@@ -64,7 +82,7 @@ def plot_autocorrelation_log(x,*args):
     plt.plot(x_plot,log_norm,**style_auto)
     plt.plot(x_plot,np.polyval(coeffs,x=x),**style_fit)
     plt.xlim(xlim_zoomed)
-    plt.ylim([np.percentile(log_norm,0.5),max(log_norm)])
+    plt.ylim([np.percentilepercentile(log_norm,0.5),max(log_norm)])
     PlotUtilities.lazyLabel("time","log of normalized autocorrelation","")
 
          
@@ -135,7 +153,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     x = x_func(retract)
     surface_index = ex.get_predicted_retract_surface_index()
     min_x,max_x = min(x),max(x)
-    ylabel = "Force [pN]"
+    ylabel = "Force (pN)"
     x_range = max_x - min_x
     fudge = x_range * 0.05
     x_limits = [min_x - fudge,max_x + fudge]
@@ -150,7 +168,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     masked_cdf *= boolean_mask
     n_rows = 3
     n_cols = 1
-    lazy_kwargs = dict(frameon=True,loc="best")
+    lazy_kwargs = dict(frameon=False,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
@@ -162,10 +180,11 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # plot the autocorrelation time along the plot
     min_x_auto = min(x) * 1.1
     auto_correlation_x = [min_x_auto,min_x_auto+tau]
-    styles = [dict(color='k',linestyle=':',alpha=0.3),
-              dict(color='k',linestyle='-.',alpha=0.3),
+    styles = [dict(color='k',linestyle='-',alpha=0.3),
+              dict(color='b',linestyle='-.',alpha=0.3),
+              dict(color='y',linestyle=':',alpha=1),
               dict(color='g',linestyle='-',alpha=0.7),
-              dict(color='m',linestyle='--')]
+              dict(color='m',linestyle='--'),]
     for i,c in enumerate(info.probabilities):
         sty = styles[i % len(styles)]
         plt.semilogy(x,c,label="cdf{:d}".format(i),**sty)
@@ -174,7 +193,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     mask_boolean = np.zeros(x.size)
     mask_boolean[mask] = 1
     PlotUtilities.lazyLabel("","No-Event CDF ","",loc='upper right',
-                            frameon=True)
+                            frameon=False)
     plt.xlim(x_limits)
     plt.ylim([min_cdf/2,3])
     mask_styles = styles
@@ -244,18 +263,17 @@ def debug_plot_event(x,y,fit_x,fit_y,x_event,y_event,pred,idx_above_predicted):
     plt.subplot(2,1,1)
     plt.plot(x_plot(x),y_plot(y),alpha=0.3,color='k',label="raw")
     plt.plot(x_plot(fit_x),y_plot(fit_y),label="fit")
-    PlotUtilities.lazyLabel("","Force (pN)","",frameon=True)
+    PlotUtilities.lazyLabel("","Force (pN)","",frameon=False)
     plt.subplot(2,1,2)
     plt.plot(x_plot(fit_x),y_plot(fit_y))
     plt.plot(x_plot(x_event),y_plot(y_event),color='r',alpha=0.3,label="event")
     plt.plot(x_plot(x_event),y_plot(pred),label="prediction")
     if (len(idx_above_predicted) > 0):
         plt.axvline(x_plot(x[idx_above_predicted[-1]]))
-    PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=True,
+    PlotUtilities.lazyLabel("Time","Force (pN)","",frameon=False,
                             loc="upper left")
 
-def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
-                             derivative_le_zero,to_ret):
+def debug_plot_adhesion_info(split_fec,min_idx,boolean_ret):
     """
     Used inside of Detector.adhesion_mask to tell wtf is happening
     
@@ -263,17 +281,18 @@ def debug_plot_adhesion_info(time,force,force_fit,min_idx,derivative_gt_zero,
         all: internal Detector.adhesion_mask, see that function
     Returns:
         nothing
-    """                             
+    """      
+    surface_index = split_fec.get_predicted_retract_surface_index()    
+    x = split_fec.retract.Time
+    force = split_fec.retract.Force
     plt.subplot(2,1,1)
-    plt.plot(time,force*1e12,color='k',alpha=0.3)
-    plt.plot(time,force_fit*1e12)
-    plt.axvline(time[min_idx])
+    plt.plot(x,force*1e12,color='k',alpha=0.3)
+    plt.axvline(x[min_idx],label="minimum")
+    plt.axvline(x[surface_index],label="surface",linestyle='--')
     PlotUtilities.lazyLabel("","Force","",loc="upper right",
                             frameon=True)     
     plt.subplot(2,1,2)
-    plt.plot(time,derivative_gt_zero,label="ge")
-    plt.plot(time,derivative_le_zero,label="le")
-    plt.plot(time,to_ret,color='k',linestyle='--')
+    plt.plot(x,boolean_ret,color='k',linestyle='--')
     PlotUtilities.lazyLabel("Time","mask","",loc="upper right",
                             frameon=True)   
 
@@ -291,33 +310,9 @@ def _plot_rupture_objects(to_plot,**kwargs):
     rupture_forces_pN,loading_rate_pN_per_s = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(to_plot)
     plt.semilogx(loading_rate_pN_per_s,rupture_forces_pN,**kwargs)
-    # XXX debugging...
-    """
-    from FitUtil.EnergyLandscapes.Lifetime_Dudko2008.Python.Code import \
-        Dudko2008Lifetime
-    forces = rupture_forces_pN * 1e-12
-    loading_rates = loading_rate_pN_per_s *1e-12
-    range_tau0 = [1e-3,1e3]
-    range_x_tx = [10e-9,200e-9]
-    kbT = 4.1e-21
-    range_DeltaG_tx = [kbT,200*kbT]
-    good_idx = np.where(loading_rates > 0)
-    fit_dict = dict(ranges=[range_tau0,range_x_tx,range_DeltaG_tx],Ns=20)
-    good_forces = forces[good_idx]
-    fit = Dudko2008Lifetime.dudko_fit(good_forces,loading_rates[good_idx],
-                                      fit_dict=fit_dict)
-    space_forces = np.linspace(min(good_forces),max(good_forces))
-    pred_rates = 1e12 * fit.predict(space_forces)
-    plt.plot(pred_rates,space_forces*1e12,'r--',linewidth=3)
-    print(pred_rates)
-    plt.show()
-    print("res!")
-    print(fit.fit_result)
-    exit(1)
-    """
 
 def plot_true_and_predicted_ruptures(true,predicted,title="",
-                                     use_legend=True,loc='upper left',
+                                     loc='upper left',
                                      style_predicted=None,style_true=None):
     """
     given rupture objects, plots the true and predicted values of rupture
@@ -334,20 +329,25 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
     Returns:
          Nothing
     """
-    line_style = dict(linestyle="None")
     if (style_predicted is None):
-        style_predicted = dict(color='k',label="predicted",
-                                linewidth=2,**line_style)
+        style_predicted = dict(label="predicted",linewidth=2,
+                               **_style_pred_def('k'))
     if (style_true is None):
-        style_true = dict(color='g',label="true",alpha=0.5,**line_style)
-    _plot_rupture_objects(true,marker='o',linewidth=0,linestyle="None",
-                          **style_true)
-    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle="None",
-                          **style_predicted)
-    PlotUtilities.lazyLabel("Loading Rate [pN/s]","Rupture Force [pN]",title,
-                            frameon=True,legend_kwargs=dict(numpoints=1),
-                            useLegend=use_legend,loc=loc)
-
+        style_true = dict(label="true",**_style_true_def('g'))
+    marker_size = 4
+    style_true_marker = dict(**style_true)
+    style_true_marker['alpha'] = 0.5
+    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle='None',
+                          markersize=marker_size,color=style_predicted['color'],
+                          label=style_predicted['label'])
+    _plot_rupture_objects(true,marker='o',linewidth=4,markersize=marker_size,
+                          markerfacecolor="None",markeredgecolor='g',
+                          linestyle='None',**style_true_marker)
+    PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
+                            title,frameon=True,
+                            legend_kwargs=dict(numpoints=1,markerscale=2),
+                            loc=loc)
+    PlotUtilities.set_legend_kwargs()
 
 
 def debugging_plots(id_string,example_split,info,plot_auto=False):
@@ -413,11 +413,18 @@ def cross_validation_distance_metric(x_values,train_scores,valid_scores,
     plt.xscale('log')
     plt.yscale('log')
     PlotUtilities.lazyLabel("Tuning Parameter","Median event distance (nm)","",
-                            frameon=True)
+                            frameon=False)
     
+def get_train_test_n_off_and_error(x_values,train_scores,valid_scores):
+    x_train,train_dist,train_dist_std = \
+        Learning.number_events_off_per_param(x_values,train_scores)
+    x_valid,valid_dist,valid_dist_std = \
+        Learning.number_events_off_per_param(x_values,valid_scores)
+    return x_train,train_dist,train_dist_std,x_valid,valid_dist,valid_dist_std
+
 def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     """
-    Plots the number of 
+    Plots the number of extra or missing events (irrespective of where they are0
 
     Args:
         cache_directory: where to save the plots
@@ -425,22 +432,33 @@ def plot_num_events_off(x_values,train_scores,valid_scores,ylim=None):
     Returns:
         nothing
     """
-    x_train,train_dist,train_dist_std = \
-        Learning.number_events_off_per_param(x_values,train_scores)
-    x_valid,valid_dist,valid_dist_std = \
-        Learning.number_events_off_per_param(x_values,train_scores)
-    train_dist_plot,train_error_plot = train_dist,train_dist_std
-    valid_dist_plot,valid_error_plot = valid_dist,valid_dist_std
-    plt.errorbar(x=x_train,y=train_dist_plot,yerr=train_error_plot,
-                 **style_train)
-    plt.errorbar(x=x_valid,y=valid_dist_plot,yerr=valid_error_plot,
-                 **style_valid)
-    PlotUtilities.lazyLabel("Tuning parameter",
-                            "Relative number of missing or incorrect events",
-                            "")
+    x_train,train_dist,train_dist_std,x_valid,valid_dist,valid_dist_std = \
+        get_train_test_n_off_and_error(x_values,train_scores,valid_scores)
+    _plot_num_events_off(x_train,train_dist,train_dist_std,
+                         x_valid,valid_dist,valid_dist_std)
     if ylim is None:
-        ylim = [1e-2,1]
+        ylim = [1e-2,max(train_dist+train_dist_std)]
     plt.ylim(ylim)
+
+def _plot_num_events_off(x_train,train_dist,train_error,
+                          x_valid,valid_dist,valid_error,ylim=None,
+                         xlabel=None,ylabel=None,lazy_kwargs=dict()):
+    """
+    see plot_num_events off
+
+    Args;
+        x_<y> : the x values for data type y (valid or train)
+        <y>_dist: the distribution of values of y (ie: graphical y values)
+        <y>_error: the error of the graphical y values
+        others: plotting
+    """
+    if (xlabel is None):
+        xlabel = "Tuning parameter"
+    if (ylabel is None):
+        ylabel = "Relative number of missing or incorrect events"
+    plt.errorbar(x=x_train,y=train_dist,yerr=train_error,**style_train)
+    plt.errorbar(x=x_valid,y=valid_dist,yerr=valid_error,**style_valid)
+    PlotUtilities.lazyLabel(xlabel,ylabel,"",**lazy_kwargs)
     plt.xscale('log')    
     plt.yscale('log')    
 
@@ -469,18 +487,77 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     plt.gca().set_yscale('log')
     PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
                             "Event distributions for {:s}".format(name),
-                            frameon=True)
+                            frameon=False)
+
+
+def _histogram_true_style(color_true=color_true_def,label="True"):
+    style_true = dict(color=color_true,label=label,edgecolor=color_true,
+                      histtype='stepfilled',fill=True,hatch= true_hatch(),
+                      facecolor=color_true,alpha=0.4)
+    return style_true
+
+def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
+    style_pred = dict(color=color_pred,label=label,fill=False,
+                      histtype='step',alpha=1,linewidth=3)
+    return style_pred
+
+def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
+                       xlabel="Relative Error [x$_\mathrm{k}$]",
+                       distance_limits=None,clip_limits=True):
+    """
+    Args:
+        see Plotting.histogram_event_distribution
+    Returns:
+        a dict with the event error kwargs, see 
+        Plotting.histogram_event_distribution
+    """
+    name = metric.name.lower()
+    if (name == "no event"):
+        loc = "upper right"
+    else:
+        loc = "upper left"
+    label_pred = r"d$_{\mathrm{p}\rightarrow\mathrm{t}}$"
+    label_true = r"d$_{\mathrm{t}\rightarrow\mathrm{p}}$"
+    style_pred = _histogram_predicted_style(color_pred=color_pred,
+                                            label=label_pred)
+    style_true = _histogram_true_style(color_true=color_true,label=label_true)
+
+    to_true,to_pred = metric.to_true_and_pred_distances()
+    limit = metric.distance_limit(relative=True)
+    log_limit = np.log10(limit)
+    max_x_true,max_x_pred =  metric.max_x_distances_true_pred()
+    bins = np.logspace(*log_limit,num=n_bins)
+    if (distance_limits is None):
+        distance_limits = limit
+    return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
+                bins=bins,style_true=style_true,style_pred=style_pred,loc=loc,
+                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred)
+
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
-                                 style_true,style_pred):
+                                 style_true,style_pred,max_x_true,max_x_pred,
+                                 xlabel="Distance [m]",loc='best'):
+    """
+    plots the distribution of distances from true/predicted to counterparts
+
+    Args:
+        to_<y> : list of distances to y from its counterpart
+        distance_limits: x limits
+        bins: fed to plt.hist
+        style_<x>:  the histogram style for x
+        xlabel: label for the x axis 
+    """
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
-    plt.hist(to_pred,log=True,bins=bins,hatch= true_hatch(),**style_true)
+    if (to_pred.size > 0):
+        plt.hist(to_pred/max_x_true,
+                 log=True,bins=bins,**style_true)
     if (to_true.size > 0):
-        plt.hist(to_true,log=True,bins=bins,**style_pred)
+        plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
     plt.xscale('log')
-    plt.xlim(distance_limits)
-    PlotUtilities.lazyLabel("Distance [nm]","Count","",frameon=True)
+    plt.xlim([min(distance_limits),2])
+    plt.ylim(0.5,max(plt.ylim()))
+    PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc=loc)
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -493,8 +570,8 @@ def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
         nothing
     """
     if len(to_bin) == 0:
-        return
-    plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+        return [],[],[]
+    return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
 
 def rupture_force_histogram(objs,**kwargs):
     """
@@ -507,7 +584,7 @@ def rupture_force_histogram(objs,**kwargs):
         nothing
     """
     ruptures,_ = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
-    _gen_rupture_hist(ruptures,**kwargs)
+    return _gen_rupture_hist(ruptures,**kwargs)
 
 def loading_rate_histogram(objs,**kwargs):
     """
@@ -520,7 +597,7 @@ def loading_rate_histogram(objs,**kwargs):
         nothing
     """
     _,loading_rates = Learning.get_rupture_in_pN_and_loading_in_pN_per_s(objs)
-    _gen_rupture_hist(loading_rates,**kwargs)
+    return _gen_rupture_hist(loading_rates,**kwargs)
 
 def rupture_plot(true,pred,fig,count_ticks=3,
                  scatter_kwargs=None,style_pred=None,
@@ -528,23 +605,36 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  color_pred=None,color_true=None,
                  lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
-                 title="",distance_histogram=None,gs=None):
+                 title="",distance_histogram=None,gs=None,
+                 limit_percentile=True):
+    if (distance_histogram is None):
+        n_rows = 2
+        n_cols = 2
+        widths = [2,1]
+        heights = [2,1]
+        offset=0
+    else:
+        n_rows = 2
+        n_cols = 3
+        widths = [2,2,1]
+        heights = [2,2]
+        offset=1
     if (gs is None):
-        gs = gridspec.GridSpec(2,3,width_ratios=[2,2,1],
-                               height_ratios=[2,2])
+        gs = gridspec.GridSpec(n_rows,n_cols,width_ratios=widths,
+                               height_ratios=heights)
     subplot_f = lambda x: plt.subplot(x)
     ruptures_true,loading_true = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
     ruptures_pred,loading_pred = \
         Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)
     if (color_pred is None):
-        color_pred = 'k'
+        color_pred = color_pred_def
     if (color_true is None):
-        color_true = 'g'
+        color_true = color_true_def
     if (style_true is None):
-        style_true = dict(color=color_true,alpha=0.5)
+        style_true = _style_true(color_true)
     if (style_pred is None):
-        style_pred = dict(color=color_pred,alpha=0.3)
+        style_pred = _style_pred(color_pred)
     if (scatter_kwargs is None):
         scatter_kwargs = dict(style_true=dict(label="true",**style_true),
                               style_predicted=dict(label="predicted",
@@ -552,6 +642,10 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     _lim_force,_bins_rupture,_lim_load,_bins_load = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred)
+    _lim_force_plot,_,_lim_load_plot,_ = \
+        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                loading_true,loading_pred,
+                                                limit=limit_percentile)
     if (lim_force is None):
         lim_force = _lim_force
     if (lim_load is None):
@@ -561,71 +655,100 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     if (bins_load is None):
         bins_load = _bins_load
     if (lim_plot_load is None):
-        lim_plot_load = lim_load
+        lim_plot_load = _lim_load_plot
     if (lim_plot_force is None):
-        lim_plot_force = lim_force
+        lim_plot_force = _lim_force_plot
     if (distance_histogram is not None):
         ax_hist = plt.subplot(gs[:,0])
         histogram_event_distribution(**distance_histogram)
-    ax0 = subplot_f(gs[0,1])
-    plot_true_and_predicted_ruptures(true,pred,use_legend=use_legend,
-                                     **scatter_kwargs)
+    ax0 = subplot_f(gs[0,offset])
+    plot_true_and_predicted_ruptures(true,pred,**scatter_kwargs)
     PlotUtilities.xlabel("")
     plt.xlim(lim_plot_load)
     plt.ylim(lim_plot_force)
     PlotUtilities.title(title)
     if (remove_ticks):
         ax0.get_xaxis().set_ticklabels([])
-    ax1 =subplot_f(gs[0,2])
+    ax1 =subplot_f(gs[0,offset+1])
     hatch_true = true_hatch()
-    true_style_histogram = dict(hatch=hatch_true,zorder=10,**style_true)
-    pred_style_histogam = dict(zorder=1,**style_pred)
+    true_style_histogram = _histogram_true_style(color_true=color_true,
+                                                 label="true")
+    pred_style_histogram = _histogram_predicted_style(color_pred=color_pred,
+                                                     label="predicted")
+    # for the rupture force, we dont add the label
+    rupture_force_true_style = dict(**true_style_histogram)
+    rupture_force_true_style['label'] = None
+    rupture_force_pred_style = dict(**pred_style_histogram)
+    rupture_force_pred_style['label'] = None
     rupture_force_histogram(pred,orientation='horizontal',bins=bins_rupture,
-                            **pred_style_histogam)
+                            **rupture_force_pred_style)
     rupture_force_histogram(true,orientation='horizontal',bins=bins_rupture,
-                            **true_style_histogram)
+                            **rupture_force_true_style)
     PlotUtilities.lazyLabel("Count","","")
+    ax = plt.gca()
+    # push count to the top
+    ax.xaxis.tick_top()
+    ax.xaxis.set_label_position('top') 
     if (remove_ticks):
         ax1.get_yaxis().set_ticklabels([])
     if (count_limit is not None):
         plt.xlim(count_limit)
     plt.ylim(lim_plot_force)
     plt.xscale('log')
-    ax4 = subplot_f(gs[1,1])
-    loading_rate_histogram(pred,orientation='vertical',bins=bins_load,
-                          label="predicted", **pred_style_histogam)
-    loading_rate_histogram(true,orientation='vertical',bins=bins_load,
-                           label="true",**true_style_histogram)
-    PlotUtilities.lazyLabel("loading rate [pN/s]","Count","",frameon=True,
+    ax4 = subplot_f(gs[1,offset])
+    n_pred,_,_ = loading_rate_histogram(pred,orientation='vertical',
+                                        bins=bins_load,
+                                        **pred_style_histogram)
+    n_true,_,_, = loading_rate_histogram(true,orientation='vertical',
+                                         bins=bins_load,**true_style_histogram)
+                                         
+    if (count_limit is None and (len(n_pred) * len(n_true) > 0)):
+        max_n = np.max([n_pred,n_true])
+        count_limit = [0.5,max_n*10]
+    else:
+        count_limit = plt.ylim()
+    PlotUtilities.lazyLabel("loading rate (pN/s)","Count","",frameon=False,
                             loc='upper left',useLegend=use_legend)
     plt.xscale('log')
     plt.yscale('log')
     plt.xlim(lim_plot_load)
-    if (count_limit is not None):
-        plt.ylim(count_limit)
-    ax3 = subplot_f(gs[1,2])
+    plt.ylim(count_limit)
+    ax3 = subplot_f(gs[1,offset+1])
     if (len(loading_pred) > 0):
         coeffs = Analysis.\
             bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                                     ruptures_true,ruptures_pred,bins_rupture)
+        # just get the 2d (last one
+        coeffs = [1-coeffs[-1]]
     else:
-        coeffs = [0,0,0]
-    labels_coeffs = [r"$\nu$",r"$F_r$",r"$\nu$,$F_r$"]
+        coeffs = [0]
+    labels_coeffs = [r"BCC"]
+    # add in the relative distance metrics, if the are here
+    if (distance_histogram is not None):
+        labels_coeffs.append(r"P$_{90}$")
+        _,_,cat_relative_median,cat_relative_q = \
+            Offline.relative_and_absolute_median_and_q(**distance_histogram)
+        coeffs.append(cat_relative_q)
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
-    label_func = lambda i,r: "{:.2f}".format(r.get_height())
+    label_func = lambda i,r: "{:.3f}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
     PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func,
                             fontsize=PlotUtilities.g_font_legend,
                             fontweight='bold')
-    plt.xticks(index + bar_width / 2, labels_coeffs,
+    plt.xticks(index, labels_coeffs,
                rotation=30,fontsize=PlotUtilities.g_font_label)
-    PlotUtilities.ylabel("BC value")
+    PlotUtilities.ylabel("Metric")
+    PlotUtilities.tickAxisFont()
+    # push metric to the right
+    ax = plt.gca()
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position('right') 
+    ax.tick_params(axis=u'x', which=u'both',length=0)
     plt.ylim([0,1])
-    # just empty :-(
 
-def rupture_distribution_plot(learner,out_file_stem):
+def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
     """
     plots *and saves* the distributions of ruptures in *all* validation folds
     (ie: the entire sample) 
@@ -634,7 +757,7 @@ def rupture_distribution_plot(learner,out_file_stem):
         learner: see plot_individual_learner
         out_file_stem: base to save
     Returns:
-        nothingS
+        nothing
     """
     name = learner.description.lower()
     x_values = learner.param_values()
@@ -642,13 +765,13 @@ def rupture_distribution_plot(learner,out_file_stem):
         Learning.get_true_and_predicted_ruptures_per_param(learner)
     for i,(param,true,pred) in enumerate(zip(x_values,ruptures_valid_true,
                                              ruptures_valid_pred)):
-        fig = PlotUtilities.figure(figsize=(12,12))
-        rupture_plot(true,pred,fig)
+        fig = PlotUtilities.figure(figsize=(16,8))
+        rupture_plot(true,pred,fig,distance_histogram=distance_histogram,
+                    limit_percentile=False)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 
-
-def plot_individual_learner(cache_directory,learner):
+def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
     """
     Plots the results for a single, individual learner
 
@@ -664,7 +787,8 @@ def plot_individual_learner(cache_directory,learner):
     train_scores = learner._scores_by_params(train=True)
     valid_scores = learner._scores_by_params(train=False)
     x_values = learner.param_values()
-    rupture_distribution_plot(learner,out_file_stem)
+    rupture_distribution_plot(learner,out_file_stem,
+                              distance_histogram=rupture_kwargs)
     fig = PlotUtilities.figure()
     distance_distribution_plot(learner,to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "histogram_to_true.png")
@@ -776,7 +900,30 @@ def debug_plot_derivs(approach_time,approach_force,
     PlotUtilities.lazyLabel("time","Deriv","")
     
 
-def before_and_after(x,y,before_slice,after_slice,style,label=None):
+def top_bars(x,y,slices,colors,ymin=None,ymax=None):
+    """
+    adds bars to show when each slice changes (by color) from ymin to ymax
+
+    Args:
+        x,y: plot units
+        slices: array of slices: same size as colors
+        colors: given to axvspan
+        ymin/ymax: how thick the bar should be in y
+    Returns:
+        nothing
+    """
+    ylim = plt.ylim()
+    if (ymin is None):
+        ymin = 0.8
+    if (ymax is None):
+        ymax = 0.90
+    for s,c in zip(slices,colors):
+        x_sliced = x[s]
+        plt.axvspan(xmin=x_sliced[0],xmax=x_sliced[-1],ymin=ymin,ymax=ymax,
+                    color=c,alpha=0.3,linewidth=0)
+
+def before_and_after(x,y,before_slice,after_slice,style=dict(),
+                     color_before='r',color_after='b',label=None):
     """
     plots x and y two before and after slices
 
@@ -787,8 +934,7 @@ def before_and_after(x,y,before_slice,after_slice,style,label=None):
         style; for each of them
         label: for one of them
     """
-    color_before = 'b'
-    color_after = 'r'
+    before_slice = slice(before_slice.start,before_slice.stop+1,1)
     tuples = [ [x,y,before_slice,color_before,style,label],
                [x,y,after_slice,color_after,style,None]]
     for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:
@@ -832,3 +978,71 @@ def debug_plot_derivative(retract,slice_to_use,probability_updated,
     plt.yscale('log')
     plt.ylim([min(probability_updated)/5,2])
     PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")
+
+
+def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
+    """
+    plots the given fec (*not* split)
+
+    Args:
+        example: TimeSepForce to split 
+        colors: if use_events, one color per event on the fec (we switch)
+        n_filter: how many points to use while filtering
+    Returns:
+        None
+    """
+    fec_split = Analysis.zero_and_split_force_extension_curve(example)
+    retract = fec_split.retract
+    retract.Force -= np.median(retract.Force)
+    retract_filtered = FEC_Util.GetFilteredForce(retract,n_filter)
+    # get everything in terms of ploting variables
+    x_plot = lambda x: x * 1e9
+    y_plot = lambda y: y * 1e12
+    sep = x_plot(retract.Separation)
+    force = y_plot(retract.Force)
+    sep_filtered = x_plot(retract_filtered.Separation)
+    force_filtered = y_plot(retract_filtered.Force)
+    if fec_split.has_events() and use_events:
+        slices = fec_split.get_retract_event_slices()
+        colors_before = colors
+        colors_after = colors
+        for i in range(len(slices)-1):
+            before_kwargs = dict(before_slice=slices[i],after_slice=slices[i+1],
+                                 color_before=colors_before[i],
+                                 color_after=colors_after[i+1])
+            before_and_after(x=sep,y=force,style=dict(alpha=0.3),
+                             **before_kwargs)
+            before_and_after(x=sep_filtered,y=force_filtered,
+                             style=dict(alpha=1),**before_kwargs)
+    else:
+        style = dict(color=colors[0])
+        plt.plot(sep,force,alpha=0.3,**style)
+        plt.plot(sep_filtered,force_filtered,**style)
+    return fec_split
+
+def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
+                             marker='v',markersize=15,alpha=1,zorder=10,
+                             **kwargs):
+    """
+    plots arrows at the given indices, signifying an event
+
+    Args:
+        event_idx: where to put the arrow as indices into plot_<x/y>
+        fudge_y: array of offsets (ie: for moving the arrow up to prevent 
+        obscuring data)
+    
+        others: see plt.plot()
+    """
+    kw = dict(facecolor=color,
+              zorder=zorder,
+              marker=marker,
+              s=markersize,
+              alpha=alpha,**kwargs)
+    for start in event_idx:
+        plt.scatter(plot_x[start],plot_y[start]+fudge_y,**kw)
+
+def plot_format(time_sep_force):
+    x_plot = time_sep_force.Time.copy()
+    x_plot -= min(x_plot)
+    y_plot = time_sep_force.Force.copy() * 1e12
+    return x_plot,y_plot
