@@ -54,7 +54,7 @@ def run():
                              force_read,force_learn,cache_directory,limit,
                              n_folds,pool_size=pool_size,
                              learners=learners)
-    for l in learners[1:]:
+    for l in learners:
         if debugging:
             break
         # XXX determine where things went wrong (load/look at specific examples)
