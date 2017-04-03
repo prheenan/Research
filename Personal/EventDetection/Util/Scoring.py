@@ -95,6 +95,22 @@ class score:
             print("{:s} (N_retract={:d}), bad events (true/pred): {:s}/{:s}".\
                    format(fec_name,int(n),true_ev,pred_ev))
             print(e)
+    def euclidean_rupture_spectrum_distance(self):
+        spectrum_tuple = lambda x: (x.loading_rate,x.rupture_force)
+        all_tuples = lambda list_v: np.array([spectrum_tuple(x) 
+                                              for x in list_v])
+        X = all_tuples(self.ruptures_true)
+        Y = all_tuples(self.ruptures_predicted) 
+        # get the distances from x to y and from y to x
+        if (len(Y) == 0):
+            dist_1 = []
+            dist_2 = [self. max_displacement for x in X]
+        else:
+            _,dist_1 = metrics.pairwise_distances_argmin_min(X=X,Y=Y)
+            _,dist_2 = metrics.pairwise_distances_argmin_min(X=Y,Y=X)
+        all_distances = list(dist_1) + list(dist_2)
+        return all_distances
+        
     def n_true_and_predicted_events(self):
         """
         returns te
