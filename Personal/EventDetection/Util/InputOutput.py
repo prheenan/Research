@@ -212,14 +212,12 @@ def read_categories(categories,force_read,cache_directory,limit):
 
     
     
-def get_categories(positives_directory,use_simulated=False,only_lowest=False):
+def get_categories(positives_directory,use_simulated=False):
     """
     get all the categories associated with the loading rates we will use
 
     Args:
         positives_directory: base directory where things live
-        use_simualted: for timing experiments, create down-sampled data
-        only_lowest: if true, return only the lowest category
     Returns:
         list of ForceExtensionCategory
     """
@@ -229,8 +227,6 @@ def get_categories(positives_directory,use_simulated=False,only_lowest=False):
     [[positives_directory + "1000-nanometers-per-second/","650nm DNA",max_load],
      [positives_directory + "500-nanometers-per-second/","650nm DNA",500], 
      [positives_directory + "100-nanometers-per-second/","650nm DNA",100]]
-    if (only_lowest):
-        positive_meta = [positive_meta[0]]
     # create objects to represent our data categories
     positive_categories = [ForceExtensionCategory(i,*r,has_events=True) 
                            for i,r in enumerate(positive_meta)]

@@ -168,7 +168,7 @@ def rupture_objects(scores,get_true):
 
 
 def limits_and_bins_force_and_load(ruptures_true,ruptures_pred,
-                                   loading_true,loading_pred,n=20,limit=False):
+                                   loading_true,loading_pred,n=20):
     """
     Return a 4-tuple of limit,bins  for rupture force and loading rate
 
@@ -224,24 +224,6 @@ def get_true_and_predicted_ruptures_per_param(learner):
     ruptures_valid_pred = rupture_objects(valid_scores,get_true=False)
     return ruptures_valid_true,ruptures_valid_pred
 
-def concatenate_all(x):
-    return np.concatenate([list(np.array(v).flatten())
-                           for v in x if len(v) > 0])
-    
-def lambda_distribution(scores,f_lambda):
-    """
-    gets the distribution of distances at each paramter value
-
-    Args:
-         scores: learner._scores_by_params object
-         **kwargs: passed to minimum_distance_distribution
-    Returns:
-         concatenates distributions at each parameter value
-    """
-    func_fold = lambda x: [f_lambda(v) for v in x]
-    func_param = concatenate_all
-    return _walk_scores(scores,func_fold = func_fold,
-                        func_param=func_param,func_top=np.array)
 
 def event_distance_distribution(scores,**kwargs):
     """

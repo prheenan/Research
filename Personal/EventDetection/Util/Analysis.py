@@ -35,12 +35,8 @@ class split_force_extension:
     def set_espilon_and_sigma(self,epsilon,sigma):
         self.epsilon =epsilon
         self.sigma = sigma
-    def set_approach_metrics(self,slice_to_fit,interpolator):
-        self.cached_approach_interpolator = interpolator
-        self.cached_approach_slice_to_fit = slice_to_fit
-    def _approach_metrics(self,n_points=None,slice_fit_approach=None):
-        if (n_points is None):
-            n_points = self.tau_num_points
+    def calculate_epsilon_and_sigma(self,n_points=None,
+                                    slice_fit_approach=None):
         if (slice_fit_approach is None):
             approach_surface_idx = self.get_predicted_approach_surface_index()
             slice_fit_approach= slice(0,approach_surface_idx,1)
@@ -54,7 +50,8 @@ class split_force_extension:
         stdevs,epsilon,sigma = \
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
-        return stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach
+        return epsilon,sigma
+
 
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
@@ -155,14 +152,6 @@ class split_force_extension:
         idx = [ slice(min(ev)-offset,max(ev)-offset,1) 
                 for ev in self.retract.Events]
         return idx
-    def has_events(self):
-        return len(self.retract.Events) > 0 
-    def get_retract_event_slices(self):
-        event_idx_retract = self.get_retract_event_centers()
-        starts = [0] + event_idx_retract
-        ends = event_idx_retract + [None]
-        slices = [slice(i,f,1) for i,f in zip(starts,ends)]
-        return slices
     def get_retract_event_centers(self):
         """
         Returns:
@@ -184,20 +173,9 @@ class split_force_extension:
         """
         Assuming this have been zeroed, get the predicted retract surface index
         """
-        approach_idx = self.get_predicted_approach_surface_index()
-        offset_points = self.approach.Force.size-approach_idx
-        offset_separation = abs(np.median(np.diff(self.approach.Separation))*\
-                                offset_points)
-        retr_min =  self.retract.Separation[0]   
-        offset = (retr_min+ offset_separation)
-        cond = (self.retract.Separation > offset)
-        retract_idx = np.where(cond)[0]
-        if (retract_idx.size == 0):
-            cond_force = self.retract.Force > np.median(self.retract.Force)
-            return np.where(cond_force)[0][0]
-        else:
-            return retract_idx[0]
-        return above_med[0]
+        n_points = _index_surface_relative(self.retract.Separation,
+                                           self.surface_distance_from_trigger())
+        return n_points
 
 def _index_surface_relative(x,offset_needed):
     """
@@ -239,7 +217,7 @@ def local_integral(y,n,mode='reflect'):
 
     Args:
         y: to integrate
-        n: window size (in either direction)
+        n: window wize
         mode: see cumtrapz
     Returns:
         array, same size as y, of the centered integral (edges are 
@@ -248,8 +226,8 @@ def local_integral(y,n,mode='reflect'):
     cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
     size = y.size
     # get the centered integral difference. 
-    diff = np.array([cumulative_integral[min(size-1,i+n)]-\
-                     cumulative_integral[max(0,i-n)]
+    diff = np.array([cumulative_integral[min(size-1,i+n/2)]-\
+                     cumulative_integral[max(0,i-n/2)]
                      for i in range(size)])
     return diff
 
