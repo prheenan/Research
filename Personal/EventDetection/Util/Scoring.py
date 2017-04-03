@@ -96,7 +96,9 @@ class score:
                    format(fec_name,int(n),true_ev,pred_ev))
             print(e)
     def euclidean_rupture_spectrum_distance(self):
-        spectrum_tuple = lambda x: (x.loading_rate,x.rupture_force)
+        safe_log = lambda x : np.log10(x) if x > 0 else -10
+        spectrum_tuple = lambda x: [safe_log(x.loading_rate*1e12),
+                                    x.rupture_force*1e12]
         all_tuples = lambda list_v: np.array([spectrum_tuple(x) 
                                               for x in list_v])
         X = all_tuples(self.ruptures_true)
@@ -104,7 +106,7 @@ class score:
         # get the distances from x to y and from y to x
         if (len(Y) == 0):
             dist_1 = []
-            dist_2 = [self.max_displacement() for x in X]
+            dist_2 = [sum(x**2) for x in X]
         else:
             _,dist_1 = metrics.pairwise_distances_argmin_min(X=X,Y=Y)
             _,dist_2 = metrics.pairwise_distances_argmin_min(X=Y,Y=X)

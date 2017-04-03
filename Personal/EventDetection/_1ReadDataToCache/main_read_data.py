@@ -135,12 +135,18 @@ def run():
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
+    # XXX Debugging
     rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
                           for s in scores]
     cat_rupture_dist = np.concatenate(rupture_dist_hists)
-    print(cat_rupture_dist)
-    plt.hist(cat_rupture_dist,log=True)
-    plt.show()
+    PlotUtilities.figure()
+    bins = np.logspace(np.log10(min(cat_rupture_dist)),
+                       np.log10(max(cat_rupture_dist)),num=10)
+    print(cat_rupture_dist,np.percentile(cat_rupture_dist,[25,50,90,95,100]))
+    fig = PlotUtilities.figure()
+    plt.hist(cat_rupture_dist,log=True,bins=bins)
+    plt.xscale('log')
+    PlotUtilities.savefig(fig,"./out.png")
 
     # load the worst n back into memory
     # redo the prediction for the worst N, saving to the debug directory
