@@ -170,7 +170,6 @@ def run():
                                                   [25,50,75,90,95,97,100]))
     with open("tmp.csv","w") as f:                       
         f.write("\n".join(["{:s}".format(str(l)) for l in line]))
-    print(line)
     fig = PlotUtilities.figure()
     plt.hist(cat_rupture_dist,log=True,bins=bins)
     plt.xscale('log')

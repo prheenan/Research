@@ -168,12 +168,13 @@ def rupture_objects(scores,get_true):
 
 
 def limits_and_bins_force_and_load(ruptures_true,ruptures_pred,
-                                   loading_true,loading_pred,n=15,limit=False):
+                                   loading_true,loading_pred,n=10,limit=False):
     """
     Return a 4-tuple of limit,bins  for rupture force and loading rate
 
     Args:
         <x>_<true/pred> : llist of true/predicted x
+        limit: if true, limite each axis to the 98 percentle of the data        
         n: number of bins
     Returns:
        limits force,bins force,limits loaidng,bins loading

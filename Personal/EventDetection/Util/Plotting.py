@@ -603,7 +603,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  scatter_kwargs=None,style_pred=None,
                  style_true=None,use_legend=True,count_limit=None,
                  color_pred=None,color_true=None,
-                 lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
+                 bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
                  title="",distance_histogram=None,gs=None,
                  limit_percentile=True):
@@ -643,19 +643,14 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred,
                                                 limit=False)
-    _lim_force_plot,_,_lim_load_plot,_ = \
+    _lim_force_plot,_bins_rupture_plot,_lim_load_plot,_bins_load_plot = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred,
                                                 limit=limit_percentile)
-    print(limit_percentile)                                                
-    if (lim_force is None):
-        lim_force = _lim_force
-    if (lim_load is None):
-        bins_rupture = _bins_rupture
     if (bins_rupture is None):
-        bins_rupture = _bins_rupture
+        bins_rupture = _bins_rupture_plot
     if (bins_load is None):
-        bins_load = _bins_load
+        bins_load = _bins_load_plot
     if (lim_plot_load is None):
         lim_plot_load = _lim_load_plot
     if (lim_plot_force is None):
