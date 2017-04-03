@@ -46,7 +46,7 @@ def run(base="./"):
     label_sep = "Separation (nm)"
     label_none = ""
     label_force = "Force (pN)"
-    def_fig = [6,7.5]
+    def_fig = [6,4]
     # write down the figures, the x and y labels and x,y limits for each subplot
     figures = [ 
         # get the classificaiton figure
@@ -56,7 +56,7 @@ def run(base="./"):
         # get the wavelet figure
         [def_fig,
          [["bentez_2017_edit_1",label_none,label_force,[0,550],[0,3000],True],
-          ["bentez_2017_edit_2",label_sep,"Wavelet Energy (au)",[0,550],
+          ["bentez_2017_edit_2",label_sep,"Wavelet\nEnergy (au)",[0,550],
            [0,1],False]]],
         # get the contour length figure
         [def_fig,
@@ -73,7 +73,7 @@ def run(base="./"):
         # get the atmospheric figure
         [def_fig,
          [["turner_1994_edit",
-           "Time (seconds)","Atmospheric Temperature (Celcius)",
+           "Time (seconds)","Temperature\n(Celcius)",
            [0,500],[-1,2],False]]],
     ]
     for figsize,subplots in figures:

@@ -41,14 +41,18 @@ def write_coeffs_file(out_file,coeffs):
     coeffs = [[f[2] for f in coeff_tmp] for coeff_tmp in funcs_names_values ]
     coeffs_array = np.array(coeffs)
     join_str = " & "
-    str_v = join_str + join_str.join(coeff_names) + "\e\\hline \n"
+    str_v = join_str + join_str.join(coeff_names) + "\\\\ \hline \\hline \n"
     for i,(name,c) in enumerate(zip(method_names,coeffs)): 
         str_v += "{:s}{:s}".format(name,join_str)
         str_v += join_str.join([coeff_str(i,j,c_tmp,coeffs_array,funcs[j]) 
                                 for j,c_tmp in enumerate(c)])
-        str_v += "\\e\n"
+        str_v += "\\\\ \\hline\n"
+    # add the preamble...
+    final = (r"\begin{tabularx}{\textwidth}{ l | l | l  }" + \
+             "\n{:s}\n".format(str_v) + \
+             r"\end{tabularx}")
     with open(out_file,'w') as f:
-        f.write(str_v)
+        f.write(final)
 
 def run(base="./"):
     """
@@ -74,7 +78,7 @@ def run(base="./"):
         count_max = max(m.counts,count_max)
         distance_limits.append(m.distance_limit(True))
         coeffs_compare.append(m.coefficients())
-    write_coeffs_file(out_base + "coeffs.txt",coeffs_compare)
+    write_coeffs_file(out_base + "metric_table.tex",coeffs_compare)
     distance_limits = [np.min(distance_limits),np.max(distance_limits)]
     # POST: have limits...
     # plot the best fold for each
