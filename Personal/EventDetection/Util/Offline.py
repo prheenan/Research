@@ -129,7 +129,7 @@ class plotting_metrics:
                       cat_relative_q=cat_relative_q)
 
 def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
-                                       q=90,**kwargs):
+                                       q=85,**kwargs):
     to_true_relative = to_true/max_x_pred
     to_pred_relative = to_pred/max_x_true
     if (len(to_true) > 0):
@@ -143,7 +143,7 @@ def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
     # get the relative metrics
     cat_relative_median = np.median(cat_rel)
     cat_relative_q = np.percentile(cat_rel,q)
-    return cat_median,cat_q,cat_relative_median,cat_relative_q
+    return cat_median,cat_q,cat_relative_median,cat_relative_q,q
 
 def metrics(true,pred):
     """
