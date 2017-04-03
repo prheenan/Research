@@ -55,10 +55,7 @@ class split_force_extension:
             stdevs_epsilon_sigma(approach_force_sliced,
                                  approach_force_interp_sliced,n_points)
         return stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach
-    def stdevs_epsilon_and_sigma(self,**kwargs):
-        stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach = \
-           self._approach_metrics(**kwargs)
-        return stdevs,epsilon,sigma
+
     def retract_spline_interpolator(self,slice_to_fit=None,knots=None,**kwargs):
         """
         returns an interpolator for force based on the stored time constant tau
@@ -166,11 +163,6 @@ class split_force_extension:
         ends = event_idx_retract + [None]
         slices = [slice(i,f,1) for i,f in zip(starts,ends)]
         return slices
-    def get_retract_event_starts(self):
-        """
-        get the start to all the events
-        """
-        return [ i.start for i in self.get_retract_event_idx()]
     def get_retract_event_centers(self):
         """
         Returns:
@@ -267,6 +259,7 @@ def local_centered_diff(f,n):
                       for i in range(n_pts)])
     return diff
 
+
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 
@@ -286,8 +279,8 @@ def local_stdev(f,n):
     improving-code-efficiency-standard-deviation-on-sliding-windows
     """
     mode = 'reflect'
-    c1 = uniform_filter1d(f, size=2*n, mode=mode, origin=-n)
-    c2 = uniform_filter1d(f*f, size=2*n, mode=mode, origin=-n)
+    c1 = uniform_filter1d(f, size=n*2, mode=mode, origin=-n)
+    c2 = uniform_filter1d(f*f, size=n*2, mode=mode, origin=-n)
     # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
     safe_variance = np.maximum(0,c2 - c1*c1)
     stdev = (safe_variance**.5)

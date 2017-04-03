@@ -9,7 +9,7 @@ from shutil import copyfile
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util import Learning,Learners,Offline,\
-    Scoring
+    Scoring,Analysis
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -71,7 +71,7 @@ def run():
     best_metric = Offline.best_metric_from_learner(learner)
     best_param_idx = best_metric.best_param_idx
     # get all the scores in the distance ('best case')
-    best_x = best_metric.x_values[best_param_idx]
+    best_x_value = best_metric.x_values[best_param_idx]
     # get the lowest mediancorresponding validation folds
     folds = [f for f in learner.validation_folds[best_param_idx]]
     # get the  folds for the best parameters
@@ -109,7 +109,7 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 0.002094
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
     scores = []
@@ -136,21 +136,42 @@ def run():
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
     # XXX Debugging
+    # get the bcc
+    ruptures_valid_true,ruptures_valid_pred = \
+        Learning.get_true_and_predicted_ruptures_per_param(learner)  
+    true = ruptures_valid_true[best_param_idx]
+    pred = ruptures_valid_pred[best_param_idx]
+    ruptures_true,loading_true = \
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
+    ruptures_pred,loading_pred = \
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)    
+    _,bins_rupture,_,bins_load = \
+        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                loading_true,loading_pred,
+                                                limit=False)                                                     
+    coeffs = Analysis.bc_coeffs_load_force_2d(loading_true,loading_pred,
+                                              bins_load,ruptures_true,
+                                              ruptures_pred,bins_rupture)
+    # just get the 2d (last one
+    bcc = 1-coeffs[-1]                                                
+    # get the rupture force spectrum stuff
     rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
                           for s in scores]
     cat_rupture_dist = np.concatenate(rupture_dist_hists)
+    cat_dist_safe = cat_rupture_dist[np.where(cat_rupture_dist > 0)]
     PlotUtilities.figure()
-    bins = np.logspace(np.log10(min(cat_rupture_dist)),
-                       np.log10(max(cat_rupture_dist)),num=10)
-    line = (cat_rupture_dist,np.percentile(cat_rupture_dist,
-                                           [25,50,75,90,95,97,100]))
+    bins = np.logspace(np.log10(min(cat_dist_safe)),
+                       np.log10(max(cat_dist_safe)),num=10)
+    line = (cat_rupture_dist,bcc,np.percentile(cat_rupture_dist,
+                                                  [25,50,75,90,95,97,100]))
     with open("tmp.csv","w") as f:                       
-        f.write("\n".join(["{:s}".format(l) for l in line]))
+        f.write("\n".join(["{:s}".format(str(l)) for l in line]))
     print(line)
     fig = PlotUtilities.figure()
     plt.hist(cat_rupture_dist,log=True,bins=bins)
     plt.xscale('log')
-    PlotUtilities.lazyLabel("RSQ Spectrum Error","Count","")
+    PlotUtilities.lazyLabel("RSQ Spectrum Error","Count",
+                            "bcc={:.3g}".format(bcc))
     PlotUtilities.savefig(fig,"./out.png")
 
     # load the worst n back into memory
