@@ -26,10 +26,10 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 200
+    limit = 50
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     copy_files = False
     force_read = False
     force_relearn = False
@@ -64,7 +64,8 @@ def run():
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-    num_to_plot = 200
+        break                                                
+    num_to_plot = limit
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)

@@ -60,11 +60,23 @@ class plotting_metrics:
     def _lambda(self,f):
         ret= Learning.lambda_distribution([self.valid_scores],f)[0]        
         return ret 
+    def safe_concat(self,x):
+        flat = []
+        for v in x:
+            if (isinstance(v,float)):
+                flat.append([v])
+            else:
+                flat.append(list(v))
+        to_ret = np.concatenate(flat)
+        return to_ret
     def max_x_distances_true_pred(self):
         f_max_pred = lambda x: [x.max_displacement() for _ in range(x.n_pred())]
         f_max_true = lambda x: [x.max_displacement() for _ in range(x.n_true())]
-        true = np.concatenate(self._lambda(f_max_true))
-        pred = np.concatenate(self._lambda(f_max_pred))
+        true_raw = self._lambda(f_max_true)
+        pred_raw = self._lambda(f_max_pred)
+        print(true_raw,pred_raw)
+        true = self.safe_concat(true_raw)
+        pred = self.safe_concat(pred_raw)
         return true,pred
     def n_true(self):
         f_true = lambda x: x.n_true()
