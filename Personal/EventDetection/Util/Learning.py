@@ -168,30 +168,35 @@ def rupture_objects(scores,get_true):
 
 
 def limits_and_bins_force_and_load(ruptures_true,ruptures_pred,
-                                   loading_true,loading_pred,n=15,limit=False):
+                                   loading_true,loading_pred,n=10,limit=False):
     """
     Return a 4-tuple of limit,bins  for rupture force and loading rate
 
     Args:
         <x>_<true/pred> : llist of true/predicted x
+        limit: if true, limite each axis to the 98 percentle of the data        
         n: number of bins
     Returns:
        limits force,bins force,limits loaidng,bins loading
     """
-    double_f = lambda f1,f2,*args: f2([f2(f1(x)) for x in args if len(x) > 0])
+    double_f = lambda f1,f2,*args: f2(f1([data
+                                          for f_type in args 
+                                          for data in f_type]))
     # determine the limits on the rupture force
     if limit:
-        get_limited_data = lambda x: np.array(x)[((x >= np.percentile(x,1)) & 
+        get_limited_data = lambda x: np.array(x)[((x >= np.percentile(x,1)) &
                                                   (x <= np.percentile(x,99)))]
     else:
         get_limited_data = lambda x: x
-    min_y = double_f(get_limited_data,min,ruptures_pred,ruptures_true)
-    max_y = double_f(get_limited_data,max,ruptures_pred,ruptures_true)
+    min_y = double_f(get_limited_data,np.min,ruptures_pred,ruptures_true)
+    max_y = double_f(get_limited_data,np.max,ruptures_pred,ruptures_true)
     lim_force = [min_y,max_y]
     # determine the limits on the loading rate
     safe = lambda x: [x[i] for i in np.where(np.array(x)>0)[0]]
-    min_x = double_f(get_limited_data,min,safe(loading_pred),safe(loading_true))
-    max_x = double_f(get_limited_data,max,safe(loading_pred),safe(loading_true))
+    min_x = double_f(get_limited_data,np.min,safe(loading_pred),
+                                             safe(loading_true))
+    max_x = double_f(get_limited_data,np.max,safe(loading_pred),
+                                             safe(loading_true))
     lim_load = [min_x,max_x]
     bins_rupture= np.linspace(*lim_force,num=n)
     min_y = max(min(lim_load),1e-2)
@@ -229,6 +234,10 @@ def get_true_and_predicted_ruptures_per_param(learner):
     ruptures_valid_pred = rupture_objects(valid_scores,get_true=False)
     return ruptures_valid_true,ruptures_valid_pred
 
+def concatenate_all(x):
+    return np.concatenate([list(np.array(v).flatten())
+                           for v in x if len(v) > 0])
+    
 def lambda_distribution(scores,f_lambda):
     """
     gets the distribution of distances at each paramter value
@@ -240,8 +249,9 @@ def lambda_distribution(scores,f_lambda):
          concatenates distributions at each parameter value
     """
     func_fold = lambda x: [f_lambda(v) for v in x]
+    func_param = concatenate_all
     return _walk_scores(scores,func_fold = func_fold,
-                        func_param=np.concatenate,func_top=np.array)
+                        func_param=func_param,func_top=np.array)
 
 def event_distance_distribution(scores,**kwargs):
     """

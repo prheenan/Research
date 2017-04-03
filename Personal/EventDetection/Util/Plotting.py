@@ -503,7 +503,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
                        xlabel="Relative Error [x$_\mathrm{k}$]",
-                       distance_limits=None,clip_limits=True):
+                       distance_limits=None,clip_limits=False):
     """
     Args:
         see Plotting.histogram_event_distribution
@@ -603,7 +603,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                  scatter_kwargs=None,style_pred=None,
                  style_true=None,use_legend=True,count_limit=None,
                  color_pred=None,color_true=None,
-                 lim_load=None,lim_force=None,bins_load=None,bins_rupture=None,
+                 bins_load=None,bins_rupture=None,
                  remove_ticks=True,lim_plot_load=None,lim_plot_force=None,
                  title="",distance_histogram=None,gs=None,
                  limit_percentile=True):
@@ -641,19 +641,16 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                                                    **style_pred))
     _lim_force,_bins_rupture,_lim_load,_bins_load = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
-                                                loading_true,loading_pred)
-    _lim_force_plot,_,_lim_load_plot,_ = \
+                                                loading_true,loading_pred,
+                                                limit=False)
+    _lim_force_plot,_bins_rupture_plot,_lim_load_plot,_bins_load_plot = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred,
                                                 limit=limit_percentile)
-    if (lim_force is None):
-        lim_force = _lim_force
-    if (lim_load is None):
-        bins_rupture = _bins_rupture
     if (bins_rupture is None):
-        bins_rupture = _bins_rupture
+        bins_rupture = _bins_rupture_plot
     if (bins_load is None):
-        bins_load = _bins_load
+        bins_load = _bins_load_plot
     if (lim_plot_load is None):
         lim_plot_load = _lim_load_plot
     if (lim_plot_force is None):
@@ -725,10 +722,11 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     labels_coeffs = [r"BCC"]
     # add in the relative distance metrics, if the are here
     if (distance_histogram is not None):
-        labels_coeffs.append(r"P$_{90}$")
-        _,_,cat_relative_median,cat_relative_q = \
+        _,_,cat_relative_median,cat_relative_q,q = \
             Offline.relative_and_absolute_median_and_q(**distance_histogram)
         coeffs.append(cat_relative_q)
+        q_fmt = str(int(q))
+        labels_coeffs.append(r"P$_{" + q_fmt + "}$")
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
@@ -767,7 +765,7 @@ def rupture_distribution_plot(learner,out_file_stem,distance_histogram=dict()):
                                              ruptures_valid_pred)):
         fig = PlotUtilities.figure(figsize=(16,8))
         rupture_plot(true,pred,fig,distance_histogram=distance_histogram,
-                    limit_percentile=False)
+                     limit_percentile=True)
         out_path = "{:s}{:s}{:d}.png".format(out_file_stem,name,i)
         PlotUtilities.savefig(fig,out_path)
 

@@ -8,7 +8,8 @@ from shutil import copyfile
 
 sys.path.append("../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from Research.Personal.EventDetection.Util import Learning,Learners,Offline
+from Research.Personal.EventDetection.Util import Learning,Learners,Offline,\
+    Scoring,Analysis
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -29,7 +30,7 @@ def run():
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
-    copy_files = True
+    copy_files = False
     force_read = False
     force_relearn = False
     force_learn = False
@@ -63,14 +64,15 @@ def run():
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-    num_to_plot = 30
+        break                                                
+    num_to_plot = limit
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
     best_metric = Offline.best_metric_from_learner(learner)
     best_param_idx = best_metric.best_param_idx
     # get all the scores in the distance ('best case')
-    best_x = best_metric.x_values[best_param_idx]
+    best_x_value = best_metric.x_values[best_param_idx]
     # get the lowest mediancorresponding validation folds
     folds = [f for f in learner.validation_folds[best_param_idx]]
     # get the  folds for the best parameters
@@ -78,13 +80,16 @@ def run():
     # get all the distances
     true_pred = [s.n_true_and_predicted_events() for s in scores]
     median_dist = [s.minimum_distance_median() for s in scores]
+    rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
+                          for s in scores]
+    good_idx = [i for i,s in enumerate(rupture_dist_hists) if len(s)>0]
     number_relative = [int(abs(t-p)) for t,p in true_pred]
     # get the worst (largest) distances where we arent none
     # XXX note: None is smaller than everything, seems like, so argsort is OK
-    sort_idx = np.arange(0,len(scores),1)
+    sort_idx = good_idx
     # sort from high to low, first elements are most missed and farest off...
     sort_idx = sorted(sort_idx,reverse=True,
-                      key=lambda i:(number_relative[i],median_dist[i]))
+                      key=lambda i:(max(rupture_dist_hists[i])))
     worst_n_idx =  sort_idx[:num_to_plot]
     # csv file names are formatted differently 
     debugging_str = ""
@@ -105,9 +110,10 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = best_x
+    threshold = 0.002094
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
+    scores = []
     for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
@@ -119,6 +125,10 @@ def run():
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
+        score_tmp = Scoring.get_scoring_info(example_split,pred_info.event_idx)
+        scores.append(score_tmp)
+        # XXX remove...
+        continue
         meta = example.Meta
         GenUtilities.ensureDirExists(cache_directory)
         id_data = "{:d}{:s}{:.1f}p={:s}".format(i,meta.Name,meta.Velocity,
@@ -126,6 +136,47 @@ def run():
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
+    # XXX Debugging
+    # get the bcc
+    ruptures_valid_true,ruptures_valid_pred = \
+        Learning.get_true_and_predicted_ruptures_per_param(learner)  
+    true = ruptures_valid_true[best_param_idx]
+    pred = ruptures_valid_pred[best_param_idx]
+    ruptures_true,loading_true = \
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
+    ruptures_pred,loading_pred = \
+        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)    
+    _,bins_rupture,_,bins_load = \
+        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
+                                                loading_true,loading_pred,
+                                                limit=False)   
+    # XXX fix?
+    bins_rupture = np.linspace(-10,400,num=15) 
+    bins_load = np.linspace(0,np.log10(2e3),num=15)   
+    coeffs = Analysis.bc_coeffs_load_force_2d(loading_true,loading_pred,
+                                              bins_load,ruptures_true,
+                                              ruptures_pred,bins_rupture)
+    # just get the 2d (last one
+    bcc = 1-coeffs[-1]                                                
+    # get the rupture force spectrum stuff
+    rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
+                          for s in scores]
+    cat_rupture_dist = np.concatenate(rupture_dist_hists)
+    cat_dist_safe = cat_rupture_dist[np.where(cat_rupture_dist > 0)]
+    PlotUtilities.figure()
+    bins = np.logspace(np.log10(min(cat_dist_safe)),
+                       np.log10(max(cat_dist_safe)),num=10)
+    line = (cat_rupture_dist,bcc,np.percentile(cat_rupture_dist,
+                                                  [25,50,75,90,95,97,100]))
+    with open("tmp.csv","w") as f:                       
+        f.write("\n".join(["{:s}".format(str(l)) for l in line]))
+    fig = PlotUtilities.figure()
+    plt.hist(cat_rupture_dist,log=True,bins=bins)
+    plt.xscale('log')
+    PlotUtilities.lazyLabel("RSQ Spectrum Error","Count",
+                            "bcc={:.3g}".format(bcc))
+    PlotUtilities.savefig(fig,"./out.png")
+
     # load the worst n back into memory
     # redo the prediction for the worst N, saving to the debug directory
 

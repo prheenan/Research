@@ -11,9 +11,8 @@ from Research.Personal.EventDetection.Util import \
 
 class coeffs:
     def __init__(self,bc_loading,bc_rupture,bc_2d,cat_median,cat_q,
-                 cat_relative_median,cat_relative_q,name,q):
+                 cat_relative_median,cat_relative_q,name):
         self.name = name
-        self.q = q
         self.bc_loading = bc_loading
         self.bc_rupture = bc_rupture
         self.bc_2d = bc_2d
@@ -61,11 +60,23 @@ class plotting_metrics:
     def _lambda(self,f):
         ret= Learning.lambda_distribution([self.valid_scores],f)[0]        
         return ret 
+    def safe_concat(self,x):
+        flat = []
+        for v in x:
+            if (isinstance(v,float)):
+                flat.append([v])
+            else:
+                flat.append(list(v))
+        to_ret = np.concatenate(flat)
+        return to_ret
     def max_x_distances_true_pred(self):
         f_max_pred = lambda x: [x.max_displacement() for _ in range(x.n_pred())]
         f_max_true = lambda x: [x.max_displacement() for _ in range(x.n_true())]
-        true = np.concatenate(self._lambda(f_max_true))
-        pred = np.concatenate(self._lambda(f_max_pred))
+        true_raw = self._lambda(f_max_true)
+        pred_raw = self._lambda(f_max_pred)
+        print(true_raw,pred_raw)
+        true = self.safe_concat(true_raw)
+        pred = self.safe_concat(pred_raw)
         return true,pred
     def n_true(self):
         f_true = lambda x: x.n_true()
@@ -113,7 +124,7 @@ class plotting_metrics:
         cat_median,cat_q,cat_relative_median,cat_relative_q = \
                 relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,
                                                    max_x_pred)
-        return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,q=q,
+        return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,
                       cat_relative_median=cat_relative_median,
                       cat_relative_q=cat_relative_q)
 
@@ -132,7 +143,7 @@ def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
     # get the relative metrics
     cat_relative_median = np.median(cat_rel)
     cat_relative_q = np.percentile(cat_rel,q)
-    return cat_median,cat_q,cat_relative_median,cat_relative_q
+    return cat_median,cat_q,cat_relative_median,cat_relative_q,q
 
 def metrics(true,pred):
     """
@@ -150,10 +161,12 @@ def metrics(true,pred):
                                  get_rupture_in_pN_and_loading_in_pN_per_s(pred)
     lim_force,bins_rupture,lim_load,bins_load = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
-                                                loading_true,loading_pred)
+                                                loading_true,loading_pred,
+                                                limit=True)
     coeffs = Analysis.\
         bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                                 ruptures_true,ruptures_pred,bins_rupture)
+    print(coeffs)
     counts = max(len(ruptures_true),len(ruptures_pred))
     return coeffs,lim_force,lim_load,counts
 
