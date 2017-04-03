@@ -26,7 +26,7 @@ def run():
     """
     cache_directory = "./cache/"
     # limit (per category)
-    limit = 50
+    limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = False
@@ -149,7 +149,10 @@ def run():
     _,bins_rupture,_,bins_load = \
         Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                 loading_true,loading_pred,
-                                                limit=False)                                                     
+                                                limit=False)   
+    # XXX fix?
+    bins_rupture = np.linspace(-10,400,num=15) 
+    bins_load = np.linspace(0,np.log10(2e3),num=15)   
     coeffs = Analysis.bc_coeffs_load_force_2d(loading_true,loading_pred,
                                               bins_load,ruptures_true,
                                               ruptures_pred,bins_rupture)
