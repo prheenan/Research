@@ -23,9 +23,12 @@ def plot_subplot(subplots,base):
             origin= 'upper'
         else:
             origin = 'lower'
-        plt.imshow(im,extent=extent,aspect="auto",origin=origin)
+        plt.imshow(im,extent=extent,aspect="auto",origin=origin,
+                   interpolation='bilinear')
         if (reversed_flag):
             plt.ylim
+        if (i != n_subplots-1):
+            PlotUtilities.no_x_label()
         PlotUtilities.lazyLabel(x,y,"")
 
 def run(base="./"):
@@ -39,25 +42,44 @@ def run(base="./"):
         This is a description of what is returned.
     """
     src = base + "src/"
+    out_dir = base
     label_sep = "Separation (nm)"
     label_none = ""
     label_force = "Force (pN)"
+    def_fig = [6,7.5]
     # write down the figures, the x and y labels and x,y limits for each subplot
     figures = [ 
         # get the classificaiton figure
-        [[8,8],
+        [def_fig,
          [["Andreopoulos_2011_edit",label_sep,label_force,[0,70],[-10,275],
            False]]],
         # get the wavelet figure
-        [[12,10],
+        [def_fig,
          [["bentez_2017_edit_1",label_none,label_force,[0,550],[0,3000],True],
           ["bentez_2017_edit_2",label_sep,"Wavelet Energy (au)",[0,550],
            [0,1],False]]],
+        # get the contour length figure
+        [def_fig,
+         [["kuhn_2005_edit",label_sep,label_force,[-5,80],[-50,150],False]]],
+        # get the water quality figure
+        [def_fig,
+         [["Perelman_2012_edit","Time (s)","Contaminants (mg/mL)",
+           [0,4],[1.4,2.25],False]]],
+        # get the stock price figure
+        [def_fig,
+         [["struzik_2002_price-vs-time_edit",
+           "Time (seconds)","Stock price",
+           [0,500],[116.4,118.2],False]]],
+        # get the atmospheric figure
+        [def_fig,
+         [["turner_1994_edit",
+           "Time (seconds)","Atmospheric Temperature (Celcius)",
+           [0,500],[-1,2],False]]],
     ]
     for figsize,subplots in figures:
         fig = PlotUtilities.figure((figsize))
         plot_subplot(subplots,src)
-        name = str(subplots[0][0]) + ".png"
+        name =out_dir + str(subplots[0][0]) + ".pdf"
         PlotUtilities.savefig(fig,name)
     
 

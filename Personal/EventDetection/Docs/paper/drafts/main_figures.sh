@@ -18,7 +18,9 @@ function copy_pdfs()
 	python2 "$i" || true
     done
     abs=$PWD
-    cp *.pdf ${2}
+    for i in *.pdf; do
+	cp "$i" ${2}
+    done
     if [ $3 -eq 1 ] 
 	then
 	for i in *.pdf; do
@@ -51,9 +53,15 @@ timing_dir="${base_dir_rel}FigureTiming/"
 prep_dir="${base_dir_rel}FigurePrep/"
 rupture_dir="${base_dir_rel}FigureRupture/"
 pres_dir="${base_dir_rel}Presentation/"
-copy_pdfs "${pres_dir}bhattacharya"  $out_path $pngs
+prev_dir="${base_dir_rel}FiguresPreviousWork/"
+out_previous="../Finals_Presentation/"
+# copt the previous results/other relevant work paper 
+copy_pdfs "$prev_dir" "$out_previous" $pngs
+# copy the presenatation figures
+copy_pdfs "${pres_dir}bhattacharya/"  $out_path $pngs
 copy_pdfs "${pres_dir}noise_distribution/" $out_path $pngs
 copy_pdfs "${pres_dir}domain-specific-path/" $out_path $pngs 
+# copy the paper figures
 copy_pdfs "${base_dir_rel}FigurePerformance_FullSet_FEATHER/" $out_path $pngs
 copy_pdfs "${base_dir_rel}FigurePerformance_DistanceOnly/" $out_path $pngs
 copy_pdfs "${base_dir_rel}FigurePerformance_per_algorithm/" $out_path $pngs
