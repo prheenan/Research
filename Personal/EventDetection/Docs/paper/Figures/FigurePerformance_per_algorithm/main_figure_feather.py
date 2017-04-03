@@ -36,6 +36,8 @@ def run(in_base="../FigurePerformance_CS/"):
         name = titles[m.name.lower()]
         safe_name = name.replace(" ","")
         color_pred =  colors[i]
+        print("The best parameter for {:s} was {:.4g}".\
+              format(name,m.x_values[m.best_param_idx]))
         distance_histogram= Plotting.event_error_kwargs(m,color_pred=color_pred)
         true,pred = m.true,m.pred
         # make the 'just the distance' figures
