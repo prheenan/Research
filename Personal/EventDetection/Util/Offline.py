@@ -11,9 +11,8 @@ from Research.Personal.EventDetection.Util import \
 
 class coeffs:
     def __init__(self,bc_loading,bc_rupture,bc_2d,cat_median,cat_q,
-                 cat_relative_median,cat_relative_q,name,q):
+                 cat_relative_median,cat_relative_q,name):
         self.name = name
-        self.q = q
         self.bc_loading = bc_loading
         self.bc_rupture = bc_rupture
         self.bc_2d = bc_2d
@@ -113,7 +112,7 @@ class plotting_metrics:
         cat_median,cat_q,cat_relative_median,cat_relative_q = \
                 relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,
                                                    max_x_pred)
-        return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,q=q,
+        return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,
                       cat_relative_median=cat_relative_median,
                       cat_relative_q=cat_relative_q)
 

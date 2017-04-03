@@ -10,7 +10,8 @@ from GeneralUtil.python import PlotUtilities
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Personal.EventDetection.Util.InputOutput import \
     read_and_cache_file
-from Research.Personal.EventDetection._2SplineEventDetector import Detector
+from Research.Personal.EventDetection._2SplineEventDetector import Detector,\
+    _no_event
 
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 
@@ -175,12 +176,14 @@ def run(base="./"):
         stdevs_epsilon_and_sigma(n_points=n_points,
                                 slice_fit_approach=slice_fit_approach)
     # get the probability
-    prob,_= Detector._no_event_probability(time,interp=interpolator,
-                                           y=force,
-                                           n_points=n_points,epsilon=epsilon,
-                                           sigma=sigma)
-    # get the prediction info
     threshold = 0.1
+    approach_kwargs = Detector.make_event_parameters_from_split_fec(fec_split)
+    obj = _no_event.no_event_parameters(threshold=threshold,**approach_kwargs)
+    prob,_= _no_event._no_event_probability(time,interp=interpolator,
+                                            y=force,
+                                            n_points=n_points,
+                                            no_event_parameters_object=obj)
+    # get the prediction info
     _,predict_info = Detector._predict_full(example,threshold=threshold)
     # get the final masks
     mask_final = predict_info.condition_results[-1]

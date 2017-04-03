@@ -13,6 +13,7 @@ from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
     _min_points_between,_predict,\
     _probability_by_cheby_k,_no_event_chebyshev,_event_slices_from_mask
 from Research.Personal.EventDetection._2SplineEventDetector import _no_event
+from Research.Personal.EventDetection._2SplineEventDetector import old_detector
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
     value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
@@ -395,30 +396,8 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
         return local_max_idx
     return idx_above_predicted[-1]
 
-def _predict_helper(split_fec,threshold,**kwargs):
-    """
-    uses spline interpolation and local stadard deviations to predict
-    events.
-
-    Args:
-        split_fec: split_force_extension object, already initialized, and 
-        zerod, with the autocorraltion time set. 
-
-        threshhold: maximum probability that a given datapoint fits the 
-        model
-        
-        kwargs: passed to _predict
-    Returns:
-        prediction_info object
-    """
-    retract = split_fec.retract
-    time,separation,force = retract.Time,retract.Separation,retract.Force
+def make_event_parameters_from_split_fec(split_fec):
     n_points = split_fec.tau_num_points
-    # N degree b-spline has continuous (N-1) derivative
-    interp_retract = split_fec.retract_spline_interpolator()
-    # set the knots based on the initial interpolator, so that
-    # any time we make a new splining object, we use the same knots
-    split_fec.set_retract_knots(interp_retract)
     # set the epsilon and tau by the approach
     min_points_between = _min_points_between(n_points)    
     stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach =\
@@ -443,27 +422,59 @@ def _predict_helper(split_fec,threshold,**kwargs):
     # get the remainder of the approach metrics needed
     # note: to start, we do *not* use delta; this is calculated
     # after the adhesion
-    approach_dict = dict(integral_sigma   = 2*sigma*min_points_between,
+    approach_dict = dict(epsilon=epsilon,
+                         sigma=sigma,
+                         integral_sigma   = 2*sigma*min_points_between,
                          integral_epsilon = epsilon,
                          delta_epsilon = delta_epsilon,
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,
-                         derivative_sigma   = derivative_sigma,
-                         valid_delta = False,
+                         derivative_sigma   = derivative_sigma)
+    return approach_dict
+
+
+
+def _predict_helper(split_fec,threshold,**kwargs):
+    """
+    uses spline interpolation and local stadard deviations to predict
+    events.
+
+    Args:
+        split_fec: split_force_extension object, already initialized, and 
+        zerod, with the autocorraltion time set. 
+
+        threshhold: maximum probability that a given datapoint fits the 
+        model
+        
+        kwargs: passed to _predict
+    Returns:
+        prediction_info object
+    """
+    retract = split_fec.retract
+    time,separation,force = retract.Time,retract.Separation,retract.Force
+    n_points = split_fec.tau_num_points
+    # N degree b-spline has continuous (N-1) derivative
+    interp_retract = split_fec.retract_spline_interpolator()
+    # set the knots based on the initial interpolator, so that
+    # any time we make a new splining object, we use the same knots
+    split_fec.set_retract_knots(interp_retract)
+    approach_kwargs = make_event_parameters_from_split_fec(split_fec)
+    approach_dict = dict(approach_kwargs,valid_delta=False,
                          **kwargs)
     local_fitter = lambda *_args,**_kwargs: \
                    event_by_loading_rate(*_args,
                                          interpolator=interp_retract,
                                          n_points=n_points,
                                          **_kwargs)
+    fit_func = old_detector.event_by_loading_rate
     # call the predict function
-    final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
+    final_kwargs = dict(**approach_dict)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
                       interp=interp_retract,
                       threshold=threshold,
-                      local_event_idx_function=local_fitter,
+                      local_event_idx_function=fit_func,
                       **final_kwargs)
     # XXX modify mask; find first time under threshhold after where we predict
     # the surface
