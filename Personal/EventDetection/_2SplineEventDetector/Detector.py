@@ -488,12 +488,17 @@ def _predict_functor(example,f):
     return lambda *args,**kwargs : f(example,*args,**kwargs)
 
 
-def _predict_full(example,threshold=1e-2):
+def _predict_full(example,threshold=1e-2,f_refs=None):
     """
-    see predict, example returns tuple of <split FEC,prediction_info>
+    see predict, example returns tuple of <split FEC,prediction_info>. Except:
+    
+    Args:
+        f_refs: list of functions for adding domain-specific information.
+        Defaults to 
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
+    if (f_refs is None):
+        f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
                       threshold=threshold)

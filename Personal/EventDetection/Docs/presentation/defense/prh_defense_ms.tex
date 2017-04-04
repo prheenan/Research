@@ -445,7 +445,7 @@
 \end{block}
 \end{frame}
 
-\begin{frame}{\only<7>{\textcolor{Red}{\textit{\underline{Naïve}}} }Algorithm Pipeline}
+\begin{frame}{\only<7>{\textcolor{RedOrange}{\textit{\underline{Naïve}}} }Algorithm Pipeline}
 
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
@@ -488,7 +488,7 @@
       \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
       \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
-    \node<4-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \node<4-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
       \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
       \only<4-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
@@ -506,8 +506,8 @@
 \begin{itemize}
   \item Determine 
     \begin{itemize}
-      \item Spline integral
       \item Spline differentiation
+      \item Spline integral
       \item Spline difference
     \end{itemize}
 \end{itemize}
@@ -516,7 +516,10 @@
 \begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<4-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -526,44 +529,37 @@
 
 \end{frame}
 
-\begin{frame}{Removing Domain-Specific False Positives}
+\begin{frame}{SMFS Domain knowledge improves algorithm}
 
 \begin{columns}[T]
-\begin{column}{0.7\textwidth}
+\begin{column}{0.5\textwidth}
 
 \begin{itemize}
-\item Adhesions (events near at the surface)
+\item Adhesions (events near the surface)
 \invisible<-1>{
   \begin{itemize}
-    \item Locate surface by approach 
-    \item Remove events at surface
+    \item Locate surface (approach)
+    \item Remove surface events
   \end{itemize}}
-\invisible<-2>{
 \item Re-folding or stretching
+\invisible<-3>{
   \begin{itemize}
     \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
   \end{itemize}
-}
-\invisible<-3>{
-\item `Mask' by spline transform (tx) 
+\item Events must have a non-zero force
   \begin{itemize}
+    \item `Mask' by spline transform (tx) 
     \item Require tx signal $\ge$ noise
-    \item \emph{i.e.} $|\Sigma_{t,\mathrm{tx}}-\epsilon_{\mathrm{tx}}| \ge \sigma_{\mathrm{tx}}$
     \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
   \end{itemize}}
 \end{itemize}
 \end{column}
 
-\begin{column}{0.4\textwidth}
+\begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway0.pdf}};
-    \begin{scope}[x={(image.south east)},y={(image.north west)}]
-      \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.47);%
-    \end{scope}
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway1.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway2.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway3.pdf}};
+    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract4.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract5.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -766,8 +762,53 @@
 
 \end{frame}
 
-\begin{frame}
+
+\begin{frame}{Another adhesion example}
+
+\begin{columns}[T]
+\begin{column}{0.7\textwidth}
+
+\begin{itemize}
+\item Adhesions (events near at the surface)
+\invisible<-1>{
+  \begin{itemize}
+    \item Locate surface by approach 
+    \item Remove events at surface
+  \end{itemize}}
+\invisible<-2>{
+\item Re-folding or stretching
+  \begin{itemize}
+    \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
+  \end{itemize}
+}
+\invisible<-3>{
+\item `Mask' by spline transform (tx) 
+  \begin{itemize}
+    \item Require tx signal $\ge$ noise
+    \item \emph{i.e.} $|\Sigma_{t,\mathrm{tx}}-\epsilon_{\mathrm{tx}}| \ge \sigma_{\mathrm{tx}}$
+    \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
+  \end{itemize}}
+\end{itemize}
+\end{column}
+
+\begin{column}{0.4\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway0.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+      \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.47);%
+    \end{scope}
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{pathway3.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+\end{column}
+\end{columns}
+
 \end{frame}
+
+
 
 
 \end{document}

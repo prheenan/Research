@@ -238,6 +238,7 @@ def run(base="./"):
     make just the retract figures
     """
     retract_figsize = (6,8)
+    # make retract figures showing how the probability is built up
     extra_kwargs = [dict(valid_delta=False,valid_integral=False,
                          valid_derivative=False),
                     dict(valid_delta=False,valid_integral=False),
@@ -261,17 +262,26 @@ def run(base="./"):
         out_replace = "_retract{:d}.pdf".format(i)
         PlotUtilities.savefig(fig,out_fig.replace(".pdf",out_replace),
                               subplots_adjust=subplots_adjust_pres)
-    # make the 'final result' figure
-    fig = PlotUtilities.figure(retract_figsize)
-    retract_figure(x_plot,force_plot,slice_before,slice_after,
-                   force_filtered_plot,ylim_force,force_label,
-                   diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
-                   prob_final,threshold,epsilon_plot,sigma_plot)
-    plt.ylim(prob_limits)
-    out_replace = "_retract{:d}.pdf".format(i+1)
-    PlotUtilities.savefig(fig,out_fig.replace(".pdf",out_replace),
-                          subplots_adjust=subplots_adjust_pres)
-    # as a final plot, make the 'actual' probability (with all the masking)
+    f_adhesions = Detector.adhesion_mask_function_for_split_fec
+    f_delta = Detector.delta_mask_function
+    # make the 'final result' figure, showing how the masks are used
+    kwargs_masks = [dict(f_refs=[f_adhesions]),
+                    dict(f_refs=[f_adhesions,f_delta])]
+    offset = len(extra_kwargs)
+    for i,kwargs_tmp in enumerate(kwargs_masks): 
+         _,predict_info_tmp = Detector._predict_full(example,
+                                                     threshold=threshold,
+                                                     **kwargs_tmp)
+         prob_tmp = predict_info_tmp.probabilities[-1]
+         fig = PlotUtilities.figure(retract_figsize)
+         retract_figure(x_plot,force_plot,slice_before,slice_after,
+                        force_filtered_plot,ylim_force,force_label,
+                        diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
+                        prob_tmp,threshold,epsilon_plot,sigma_plot)
+         plt.ylim(prob_limits)         
+         out_replace = "_retract{:d}.pdf".format(i+offset)
+         PlotUtilities.savefig(fig,out_fig.replace(".pdf",out_replace),
+                               subplots_adjust=subplots_adjust_pres)
     """
     make just the approach figure
     """
