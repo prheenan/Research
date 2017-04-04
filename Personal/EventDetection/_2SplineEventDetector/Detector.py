@@ -262,10 +262,10 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_updated)
     split_fec.set_retract_knots(interp)
     no_event_parameters_object._set_valid_delta(True)
+    no_event_parameters_object.negative_only = True
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
-        _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
-                              negative_only=True)
+        _no_event_probability(x,interp,y,n_points,no_event_parameters_object)
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
@@ -429,7 +429,7 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
                          epsilon=epsilon,sigma=sigma,**kwargs)
     return approach_dict                           
                          
-def _predict_helper(split_fec,threshold,**kwargs):
+def _predict_helper(split_fec,threshold,remasking_functions,**kwargs):
     """
     uses spline interpolation and local stadard deviations to predict
     events.
@@ -437,7 +437,7 @@ def _predict_helper(split_fec,threshold,**kwargs):
     Args:
         split_fec: split_force_extension object, already initialized, and 
         zerod, with the autocorraltion time set. 
-
+        remasking_functions: for remasking...
         threshhold: maximum probability that a given datapoint fits the 
         model
         
@@ -461,16 +461,15 @@ def _predict_helper(split_fec,threshold,**kwargs):
                                          n_points=n_points,
                                          **_kwargs)
     # call the predict function
-    final_kwargs = dict(valid_delta = False,**approach_dict)
+    final_kwargs = dict(valid_delta=False,negative_only=False,**approach_dict)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
                       interp=interp_retract,
                       threshold=threshold,
                       local_event_idx_function=local_fitter,
+                      remasking_functions = remasking_functions,
                       **final_kwargs)
-    # XXX modify mask; find first time under threshhold after where we predict
-    # the surface
     return to_ret
 
 def _predict_functor(example,f):
@@ -488,20 +487,21 @@ def _predict_functor(example,f):
     return lambda *args,**kwargs : f(example,*args,**kwargs)
 
 
-def _predict_full(example,threshold=1e-2,f_refs=None):
+def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
     """
     see predict, example returns tuple of <split FEC,prediction_info>. Except:
     
     Args:
         f_refs: list of functions for adding domain-specific information.
-        Defaults to 
+        Defaults to adhesion then delta mask
+        **kwargs: passed to predict
     """
     example_split = Analysis.zero_and_split_force_extension_curve(example)
     if (f_refs is None):
         f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
     final_dict = dict(remasking_functions=funcs,
-                      threshold=threshold)
+                      threshold=threshold,**kwargs)
     pred_info = _predict_helper(example_split,**final_dict)
     return example_split,pred_info
 

@@ -246,12 +246,12 @@ def run(base="./"):
                     dict()]
     for i,extra in enumerate(extra_kwargs):
         full_dict = dict(threshold=threshold,**approach_kwargs)
-        full_dict = dict(full_dict,**extra)
+        full_dict = dict(full_dict,negative_only=True,mask_is_conditional=False,
+                         **extra)
         obj_tmp = _no_event.no_event_parameters(**full_dict)
         prob_tmp,_= _no_event.\
         _no_event_probability(time,interp=interpolator,
-                              y=force,mask_is_conditional=False,
-                              n_points=n_points,negative_only=True,
+                              y=force,n_points=n_points,
                               no_event_parameters_object=obj_tmp)
         fig = PlotUtilities.figure(retract_figsize)
         retract_figure(x_plot,force_plot,slice_before,slice_after,
@@ -265,8 +265,9 @@ def run(base="./"):
     f_adhesions = Detector.adhesion_mask_function_for_split_fec
     f_delta = Detector.delta_mask_function
     # make the 'final result' figure, showing how the masks are used
-    kwargs_masks = [dict(f_refs=[f_adhesions]),
-                    dict(f_refs=[f_adhesions,f_delta])]
+    kwargs_masks = [dict(f_refs=[f_adhesions],mask_is_conditional=False),
+                    dict(f_refs=[f_adhesions,f_delta],
+                                 mask_is_conditional=False)]
     offset = len(extra_kwargs)
     for i,kwargs_tmp in enumerate(kwargs_masks): 
          _,predict_info_tmp = Detector._predict_full(example,

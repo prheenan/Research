@@ -50,7 +50,8 @@ class no_event_parameters:
                  delta_epsilon=None,delta_sigma=None,
                  derivative_epsilon=None,derivative_sigma=None,
                  integral_epsilon=None,integral_sigma=None,
-                 valid_delta=True,valid_derivative=True,valid_integral=True):
+                 valid_delta=True,valid_derivative=True,valid_integral=True,
+                 mask_is_conditional=True,negative_only=True):
         self.epsilon = epsilon
         self.sigma = sigma
         self.threshold = threshold
@@ -67,6 +68,8 @@ class no_event_parameters:
         self._set_valid_delta(valid_delta)
         self._set_valid_derivative(valid_derivative)
         self._set_valid_integral(valid_integral)
+        self.mask_is_conditional = mask_is_conditional
+        self.negative_only=negative_only
     def _set_valid_delta(self,flag):
         self.valid_delta = ((self.delta_epsilon is not None and
                             self.delta_sigma is not None) and flag)
@@ -219,9 +222,7 @@ def _derivative_probability(interp,x,no_event_parameters_object,
     return to_ret
 
 
-def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
-                          negative_only=False,
-                          mask_is_conditional=True):
+def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     """
     returns the no-event probability at each point in y
 
@@ -233,14 +234,13 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
         local standard deviaiton of y-interp(x)
         no_event_params_obj: the no-event parameters object to use
         slice_fit: an optional slice to use to compute the probabilities
-        mask_is_conditional: if true, then the integral mask 
-        will only affect points which are already below the threshold
     Returns:
         tuple of <probability, local stdevs>
     """
     n_original = x.size
     x_s = x
     y_s = y
+    negative_only=no_event_parameters_object.negative_only
     # get the interpolated function
     interpolated_y = interp(x_s)
     stdev_masked,_,_ = Analysis.\
@@ -266,7 +266,8 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object,
         boolean_tmp = (probability_distribution  < threshold)
         probability_distribution *= p_int
         where_not_already = np.where(np.logical_not(boolean_tmp))[0]    
-        if (where_not_already.size > 0 and mask_is_conditional):
+        if (where_not_already.size > 0 and 
+            no_event_parameters_object.mask_is_conditional):
             probability_distribution[where_not_already] = 1
     if (no_event_parameters_object.valid_delta):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
