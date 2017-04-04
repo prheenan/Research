@@ -47,7 +47,7 @@ def run():
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
-    n_learners = 3
+    n_learners = 1
     learners = Learners.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
@@ -64,7 +64,6 @@ def run():
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-        break                                                
     num_to_plot = limit
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
@@ -127,8 +126,6 @@ def run():
             Detector._predict_full(example,threshold=threshold)
         score_tmp = Scoring.get_scoring_info(example_split,pred_info.event_idx)
         scores.append(score_tmp)
-        # XXX remove...
-        continue
         meta = example.Meta
         GenUtilities.ensureDirExists(cache_directory)
         id_data = "{:d}{:s}{:.1f}p={:s}".format(i,meta.Name,meta.Velocity,
@@ -136,50 +133,6 @@ def run():
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
-    # XXX Debugging
-    # get the bcc
-    ruptures_valid_true,ruptures_valid_pred = \
-        Learning.get_true_and_predicted_ruptures_per_param(learner)  
-    true = ruptures_valid_true[best_param_idx]
-    pred = ruptures_valid_pred[best_param_idx]
-    ruptures_true,loading_true = \
-        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(true)
-    ruptures_pred,loading_pred = \
-        Learning.get_rupture_in_pN_and_loading_in_pN_per_s(pred)    
-    _,bins_rupture,_,bins_load = \
-        Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
-                                                loading_true,loading_pred,
-                                                limit=False)   
-    # XXX fix?
-    bins_rupture = np.linspace(-10,400,num=15) 
-    bins_load = np.linspace(0,np.log10(2e3),num=15)   
-    coeffs = Analysis.bc_coeffs_load_force_2d(loading_true,loading_pred,
-                                              bins_load,ruptures_true,
-                                              ruptures_pred,bins_rupture)
-    # just get the 2d (last one
-    bcc = 1-coeffs[-1]                                                
-    # get the rupture force spectrum stuff
-    rupture_dist_hists = [s.euclidean_rupture_spectrum_distance()
-                          for s in scores]
-    cat_rupture_dist = np.concatenate(rupture_dist_hists)
-    cat_dist_safe = cat_rupture_dist[np.where(cat_rupture_dist > 0)]
-    PlotUtilities.figure()
-    bins = np.logspace(np.log10(min(cat_dist_safe)),
-                       np.log10(max(cat_dist_safe)),num=10)
-    line = (cat_rupture_dist,bcc,np.percentile(cat_rupture_dist,
-                                                  [25,50,75,90,95,97,100]))
-    with open("tmp.csv","w") as f:                       
-        f.write("\n".join(["{:s}".format(str(l)) for l in line]))
-    fig = PlotUtilities.figure()
-    plt.hist(cat_rupture_dist,log=True,bins=bins)
-    plt.xscale('log')
-    PlotUtilities.lazyLabel("RSQ Spectrum Error","Count",
-                            "bcc={:.3g}".format(bcc))
-    PlotUtilities.savefig(fig,"./out.png")
-
-    # load the worst n back into memory
-    # redo the prediction for the worst N, saving to the debug directory
-
 
 
 if __name__ == "__main__":
