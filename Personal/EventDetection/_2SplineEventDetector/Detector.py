@@ -395,31 +395,8 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
         return local_max_idx
     return idx_above_predicted[-1]
 
-def _predict_helper(split_fec,threshold,**kwargs):
-    """
-    uses spline interpolation and local stadard deviations to predict
-    events.
-
-    Args:
-        split_fec: split_force_extension object, already initialized, and 
-        zerod, with the autocorraltion time set. 
-
-        threshhold: maximum probability that a given datapoint fits the 
-        model
-        
-        kwargs: passed to _predict
-    Returns:
-        prediction_info object
-    """
-    retract = split_fec.retract
-    time,separation,force = retract.Time,retract.Separation,retract.Force
+def make_event_parameters_from_split_fec(split_fec,**kwargs):
     n_points = split_fec.tau_num_points
-    # N degree b-spline has continuous (N-1) derivative
-    interp_retract = split_fec.retract_spline_interpolator()
-    # set the knots based on the initial interpolator, so that
-    # any time we make a new splining object, we use the same knots
-    split_fec.set_retract_knots(interp_retract)
-    # set the epsilon and tau by the approach
     min_points_between = _min_points_between(n_points)    
     stdevs,epsilon,sigma,slice_fit_approach,spline_fit_approach =\
         split_fec._approach_metrics()
@@ -449,15 +426,42 @@ def _predict_helper(split_fec,threshold,**kwargs):
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,
                          derivative_sigma   = derivative_sigma,
-                         valid_delta = False,
-                         **kwargs)
+                         epsilon=epsilon,sigma=sigma,**kwargs)
+    return approach_dict                           
+                         
+def _predict_helper(split_fec,threshold,**kwargs):
+    """
+    uses spline interpolation and local stadard deviations to predict
+    events.
+
+    Args:
+        split_fec: split_force_extension object, already initialized, and 
+        zerod, with the autocorraltion time set. 
+
+        threshhold: maximum probability that a given datapoint fits the 
+        model
+        
+        kwargs: passed to _predict
+    Returns:
+        prediction_info object
+    """
+    retract = split_fec.retract
+    time,separation,force = retract.Time,retract.Separation,retract.Force
+    n_points = split_fec.tau_num_points
+    # N degree b-spline has continuous (N-1) derivative
+    interp_retract = split_fec.retract_spline_interpolator()
+    # set the knots based on the initial interpolator, so that
+    # any time we make a new splining object, we use the same knots
+    split_fec.set_retract_knots(interp_retract)
+    # set the epsilon and tau by the approach
+    approach_dict = make_event_parameters_from_split_fec(split_fec,**kwargs)
     local_fitter = lambda *_args,**_kwargs: \
                    event_by_loading_rate(*_args,
                                          interpolator=interp_retract,
                                          n_points=n_points,
                                          **_kwargs)
     # call the predict function
-    final_kwargs = dict(epsilon=epsilon,sigma=sigma,**approach_dict)
+    final_kwargs = dict(valid_delta = False,**approach_dict)
     to_ret = _predict(x=time,
                       y=force,
                       n_points=n_points,
