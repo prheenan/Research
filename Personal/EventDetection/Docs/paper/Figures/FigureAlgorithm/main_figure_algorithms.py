@@ -204,7 +204,7 @@ def run(base="./"):
         stdevs_epsilon_and_sigma(n_points=n_points,
                                 slice_fit_approach=slice_fit_approach)
     # get the probability
-    threshold = 1e-3
+    threshold = 1e-2
     approach_kwargs = Detector.make_event_parameters_from_split_fec(fec_split)
     # get the prediction info
     _,predict_info = Detector._predict_full(example,threshold=threshold)
@@ -249,7 +249,7 @@ def run(base="./"):
         obj_tmp = _no_event.no_event_parameters(**full_dict)
         prob_tmp,_= _no_event.\
         _no_event_probability(time,interp=interpolator,
-                              y=force,
+                              y=force,mask_is_conditional=False,
                               n_points=n_points,negative_only=True,
                               no_event_parameters_object=obj_tmp)
         fig = PlotUtilities.figure(retract_figsize)
