@@ -129,7 +129,7 @@ def plot_epsilon(epsilon_plot,sigma_plot):
 def retract_figure(x_plot,force_plot,slice_before,slice_after,
                    force_filtered_plot,ylim_force,force_label,
                    diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
-                   prob_final,threshold,epsilon_plot,sigma_plot):
+                   prob,threshold,epsilon_plot,sigma_plot):
     plt.subplot(4,1,1)
     plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                      force_filtered_plot,ylim_force)
@@ -150,10 +150,9 @@ def retract_figure(x_plot,force_plot,slice_before,slice_after,
     PlotUtilities.ylabel(filtered_error_label)
     PlotUtilities.legend(frameon=True,loc='upper right')
     plt.subplot(4,1,4)
-    plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
+    plot_probability(threshold,x_plot,prob,slice_before,slice_after)
     PlotUtilities.no_x_label()
     PlotUtilities.xlabel("")
-
 
 def run(base="./"):
     """
@@ -205,13 +204,8 @@ def run(base="./"):
         stdevs_epsilon_and_sigma(n_points=n_points,
                                 slice_fit_approach=slice_fit_approach)
     # get the probability
-    threshold = 0.1
+    threshold = 1e-3
     approach_kwargs = Detector.make_event_parameters_from_split_fec(fec_split)
-    obj = _no_event.no_event_parameters(threshold=threshold,**approach_kwargs)
-    prob,_= _no_event._no_event_probability(time,interp=interpolator,
-                                            y=force,
-                                            n_points=n_points,
-                                            no_event_parameters_object=obj)
     # get the prediction info
     _,predict_info = Detector._predict_full(example,threshold=threshold)
     # get the final masks
@@ -219,6 +213,7 @@ def run(base="./"):
     bool_final = np.zeros(time.size)
     bool_final[mask_final] = 1
     prob_final = predict_info.probabilities[-1]
+    prob_limits =  [min(prob_final/2),2]
     # plot everything
     x_plot = time
     xlim_approach = [min(approach_time),min(time)]
@@ -242,13 +237,41 @@ def run(base="./"):
     """
     make just the retract figures
     """
-    fig = PlotUtilities.figure((6,8))
+    retract_figsize = (6,8)
+    extra_kwargs = [dict(valid_delta=False,valid_integral=False,
+                         valid_derivative=False),
+                    dict(valid_delta=False,valid_integral=False),
+                    dict(valid_delta=False),
+                    dict()]
+    for i,extra in enumerate(extra_kwargs):
+        full_dict = dict(threshold=threshold,**approach_kwargs)
+        full_dict = dict(full_dict,**extra)
+        obj_tmp = _no_event.no_event_parameters(**full_dict)
+        prob_tmp,_= _no_event.\
+        _no_event_probability(time,interp=interpolator,
+                              y=force,
+                              n_points=n_points,negative_only=True,
+                              no_event_parameters_object=obj_tmp)
+        fig = PlotUtilities.figure(retract_figsize)
+        retract_figure(x_plot,force_plot,slice_before,slice_after,
+                       force_filtered_plot,ylim_force,force_label,
+                       diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
+                       prob_tmp,threshold,epsilon_plot,sigma_plot)
+        plt.ylim(prob_limits)
+        out_replace = "_retract{:d}.pdf".format(i)
+        PlotUtilities.savefig(fig,out_fig.replace(".pdf",out_replace),
+                              subplots_adjust=subplots_adjust_pres)
+    # make the 'final result' figure
+    fig = PlotUtilities.figure(retract_figsize)
     retract_figure(x_plot,force_plot,slice_before,slice_after,
                    force_filtered_plot,ylim_force,force_label,
                    diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
                    prob_final,threshold,epsilon_plot,sigma_plot)
-    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_retract.pdf"),
+    plt.ylim(prob_limits)
+    out_replace = "_retract{:d}.pdf".format(i+1)
+    PlotUtilities.savefig(fig,out_fig.replace(".pdf",out_replace),
                           subplots_adjust=subplots_adjust_pres)
+    # as a final plot, make the 'actual' probability (with all the masking)
     """
     make just the approach figure
     """
