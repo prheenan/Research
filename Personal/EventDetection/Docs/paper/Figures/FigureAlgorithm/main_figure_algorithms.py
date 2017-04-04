@@ -23,12 +23,12 @@ style_approach = dict(color='k', **common)
 style_raw = dict(alpha=0.3,**common)
 style_filtered = dict(linewidth=3,**common)
 retract_style = dict(color='g',**common)
-style_retract_error_dist = dict(linewidth=2,**common)
+style_retract_error_dist = dict(linewidth=2,alpha=0.5,**common)
 label_s_t = r"$\Sigma_\mathrm{t}$"
 label_r_t = r"r$_t$"
 lazy_kwargs = dict(loc='lower right',frameon=False)
 
-error_label = "r$_\mathrm{t}$ or\n" + label_s_t + " (pN)"
+error_label = "Residual (pN)"
 filtered_error_label = label_s_t + " (pN)"
 force_label = "Force (pN)"
 
@@ -52,7 +52,7 @@ def plot_fec(time_approach,force_approach,interp_approach,
 def plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                      force_filtered_plot,ylim_force):
     Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
-                              style_raw,label="Raw (retract)")
+                              style_raw,label="Raw")
     Plotting.before_and_after(x_plot,force_filtered_plot,
                               slice_before,slice_after,style_filtered,
                               label="Spline")
@@ -88,7 +88,7 @@ def plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
 def plot_filtered_stdev(time_approach_plot,approach_stdev_plot,
                         epsilon_plot,sigma_plot,xlim_approach,
                         ylim_diff_filtered):
-    plt.plot(time_approach_plot,approach_stdev_plot,**style_approach)
+    plt.plot(time_approach_plot,approach_stdev_plot,alpha=0.3,**style_approach)
     plot_epsilon(epsilon_plot,sigma_plot)
     plt.xlim(xlim_approach)
     plt.ylim(*ylim_diff_filtered)
@@ -120,11 +120,11 @@ def plot_probability(threshold,x_plot,prob_final,slice_before,slice_after):
 
 
 def plot_epsilon(epsilon_plot,sigma_plot):
-    epsilon_style = dict(color='b')
-    plt.axhline(epsilon_plot,label="$\epsilon$")
-    plt.axhline(epsilon_plot+sigma_plot,linestyle='--',
-                label="$\epsilon \pm \sigma$",**epsilon_style)
-    plt.axhline(epsilon_plot-sigma_plot,linestyle='--',**epsilon_style)
+    epsilon_style = dict(color='k')
+    min_v = epsilon_plot-sigma_plot
+    max_v = epsilon_plot+sigma_plot
+    plt.axhspan(min_v,max_v,color='c',alpha=0.3,
+                label="$\epsilon \pm \sigma$")
 
 def run(base="./"):
     """
@@ -213,7 +213,8 @@ def run(base="./"):
     """
     make just the retract figures
     """
-    fig = PlotUtilities.figure((8,9))
+    subplots_adjust_pres = dict(hspace=0.1)
+    fig = PlotUtilities.figure((6,8))
     plt.subplot(4,1,1)
     plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                      force_filtered_plot,ylim_force)
@@ -227,6 +228,7 @@ def run(base="./"):
     plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
                        ylim_diff)
     PlotUtilities.ylabel(error_label)
+    PlotUtilities.legend(frameon=True,loc='lower right')
     plt.subplot(4,1,3)
     plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
                                 epsilon_plot,sigma_plot,ylim_diff_filtered)
@@ -236,14 +238,15 @@ def run(base="./"):
     plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
     PlotUtilities.no_x_label()
     PlotUtilities.xlabel("")
-    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_retract.pdf"))
+    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_retract.pdf"),
+                          subplots_adjust=subplots_adjust_pres)
     """
     make just the approach figure
     """
-    fig = PlotUtilities.figure((6,7))
+    fig = PlotUtilities.figure((6,8))
     plt.subplot(3,1,1)
     plot_fec(time_approach,force_approach,interp_approach,
-             ylim_force,xlim_approach,"Raw (approach)")
+             ylim_force,xlim_approach,"Raw")
     # remove the title 
     PlotUtilities.xlabel("Time (s)")
     PlotUtilities.x_label_on_top()
@@ -260,7 +263,8 @@ def run(base="./"):
     PlotUtilities.xlabel("")
     # increase the y limits to more or less the distribution
     plt.ylim([ epsilon_plot-sigma_plot*10,epsilon_plot+sigma_plot*10])
-    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_approach.pdf"))
+    PlotUtilities.savefig(fig,out_fig.replace(".pdf","_approach.pdf"),
+                          subplots_adjust=subplots_adjust_pres)
     """
     make the plot for the paper
     """
@@ -268,7 +272,7 @@ def run(base="./"):
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
     plot_fec(time_approach,force_approach,interp_approach,
-             ylim_force,xlim_approach,"Raw (approach)")
+             ylim_force,xlim_approach,"Raw")
     tick_function()
     PlotUtilities.no_x_label()
     plt.subplot(gs[0,1])

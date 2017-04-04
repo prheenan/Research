@@ -93,6 +93,7 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta,
         if (when_to_break == _break_after_first_zoom):
             break
     plt.ylim(range_plot_diff)
+    tick_kwargs = dict(right=False)
     # plot all the subregions
     for i in range(n_plots):
         xlim_tmp = xlim_abs[i]
@@ -112,9 +113,9 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta,
         PlotUtilities.no_x_anything()
         if (i != 0):
             PlotUtilities.no_y_label()
-            PlotUtilities.tickAxisFont()
+            PlotUtilities.tickAxisFont(**tick_kwargs)
         else:
-            PlotUtilities.lazyLabel("","Force (pN)","")
+            PlotUtilities.lazyLabel("","Force (pN)","",tick_kwargs=tick_kwargs)
         plt.xlim(xlim_tmp)
         plt.ylim(ylim_tmp)
         if (when_to_break != _break_after_interp):
@@ -142,7 +143,7 @@ def plot(interp,split_fec,f,xlim_rel_start,xlim_rel_delta,
         color = style_tmp['color']
         plt.ylim(ylim_tmp)
         plt.xlim([0,max(n)*1.6])
-        PlotUtilities.tickAxisFont()
+        PlotUtilities.tickAxisFont(**tick_kwargs)
         PlotUtilities.no_y_label()
         # remove the info we dont want
         if (when_to_break == _break_after_first_zoom):
@@ -168,9 +169,10 @@ def plot_residual_histogram(diff_plot_tmp,style_tmp):
 def sequence_plots(out_base,*args,**kwargs):
     break_points = [_break_after_interp,_break_after_first_zoom,_dont_break]
     for i,break_point in enumerate(break_points):
-        fig = PlotUtilities.figure((10,12))
+        fig = PlotUtilities.figure((6,6))
         plot(*args,when_to_break=break_point,**kwargs)
-        PlotUtilities.savefig(fig,out_base + "{:d}.pdf".format(i))
+        PlotUtilities.savefig(fig,out_base + "{:d}.pdf".format(i),
+                              subplots_adjust=dict(wspace=0.05))
 
 def run(base="./"):
     """
