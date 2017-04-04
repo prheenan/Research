@@ -126,6 +126,35 @@ def plot_epsilon(epsilon_plot,sigma_plot):
     plt.axhspan(min_v,max_v,color='c',alpha=0.3,
                 label="$\epsilon \pm \sigma$")
 
+def retract_figure(x_plot,force_plot,slice_before,slice_after,
+                   force_filtered_plot,ylim_force,force_label,
+                   diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
+                   prob_final,threshold,epsilon_plot,sigma_plot):
+    plt.subplot(4,1,1)
+    plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
+                     force_filtered_plot,ylim_force)
+    # remove the title 
+    plt.title("")
+    PlotUtilities.xlabel("Time (s)")
+    PlotUtilities.ylabel(force_label)
+    PlotUtilities.legend(frameon=True,loc='lower right')
+    PlotUtilities.x_label_on_top()
+    plt.subplot(4,1,2)
+    plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
+                       ylim_diff)
+    PlotUtilities.ylabel(error_label)
+    PlotUtilities.legend(frameon=True,loc='lower right')
+    plt.subplot(4,1,3)
+    plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
+                                epsilon_plot,sigma_plot,ylim_diff_filtered)
+    PlotUtilities.ylabel(filtered_error_label)
+    PlotUtilities.legend(frameon=True,loc='upper right')
+    plt.subplot(4,1,4)
+    plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
+    PlotUtilities.no_x_label()
+    PlotUtilities.xlabel("")
+
+
 def run(base="./"):
     """
     
@@ -207,37 +236,17 @@ def run(base="./"):
     ylim_force_min = min([min(force_plot),min(force_approach)])
     ylim_force_max = max([max(force_plot),max(force_approach)])
     ylim_force = [ylim_force_min,ylim_force_max]
-    fig = PlotUtilities.figure((16,12))
     n_rows = 3
     n_cols = 2
+    subplots_adjust_pres = dict(hspace=0.1)
     """
     make just the retract figures
     """
-    subplots_adjust_pres = dict(hspace=0.1)
     fig = PlotUtilities.figure((6,8))
-    plt.subplot(4,1,1)
-    plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
-                     force_filtered_plot,ylim_force)
-    # remove the title 
-    plt.title("")
-    PlotUtilities.xlabel("Time (s)")
-    PlotUtilities.ylabel(force_label)
-    PlotUtilities.legend(frameon=True,loc='lower right')
-    PlotUtilities.x_label_on_top()
-    plt.subplot(4,1,2)
-    plot_retract_error(x_plot,diff_pN,slice_before,slice_after,stdev_plot,
-                       ylim_diff)
-    PlotUtilities.ylabel(error_label)
-    PlotUtilities.legend(frameon=True,loc='lower right')
-    plt.subplot(4,1,3)
-    plot_filtered_retract_stdev(x_plot,stdev_plot,slice_before,slice_after,
-                                epsilon_plot,sigma_plot,ylim_diff_filtered)
-    PlotUtilities.ylabel(filtered_error_label)
-    PlotUtilities.legend(frameon=True,loc='upper right')
-    plt.subplot(4,1,4)
-    plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
-    PlotUtilities.no_x_label()
-    PlotUtilities.xlabel("")
+    retract_figure(x_plot,force_plot,slice_before,slice_after,
+                   force_filtered_plot,ylim_force,force_label,
+                   diff_pN,stdev_plot,ylim_diff,ylim_diff_filtered,
+                   prob_final,threshold,epsilon_plot,sigma_plot)
     PlotUtilities.savefig(fig,out_fig.replace(".pdf","_retract.pdf"),
                           subplots_adjust=subplots_adjust_pres)
     """
