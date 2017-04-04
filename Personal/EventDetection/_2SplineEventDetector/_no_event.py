@@ -193,8 +193,7 @@ def _spline_derivative(x,interpolator):
     """
     return interpolator.derivative()(x)
 
-
-def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
+def local_noise_integral(f,interp_f,n_points,no_event_parameters_object):
     min_points_between = _min_points_between(n_points)
     diff = f-interp_f
     stdev = Analysis.local_stdev(diff,n_points)
@@ -205,6 +204,12 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     integral_sigma   = no_event_parameters_object.integral_sigma
     local_integral = Analysis.local_integral(stdev-integral_epsilon,
                                              min_points_between)
+    return local_integral
+
+def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
+    local_integral = local_noise_integral(f,interp_f,n_points,
+                                          no_event_parameters_object)
+    integral_sigma   = no_event_parameters_object.integral_sigma
     # get the propr probability
     probability_integral = _no_event_chebyshev(local_integral,0,
                                                integral_sigma)
