@@ -176,49 +176,36 @@
       No attachment
     \item<2->
       Single attachment
-    \item<3->
+    \item<3-5>
       Multiple attachments
     \end{itemize}
-  \invisible<1-3>{\item
-    \DefineTerm{Rupture} ($\textcolor{OliveGreen}{\blacktriangledown}$): molecule unbinds}
-  \only<4->{
-  \item Linear fit $\rightarrow$ rupture properties 
-    \begin{itemize}
-    \item<4->
-      \DefineTerm{Loading rate}: slope of fit
-    \item<5->
-      \DefineTerm{Rupture force}: fit value where data last above fit
-    \end{itemize}
- }%
+  \invisible<-3>{
+    \item Goal: determine event locations
+  \begin{itemize}
+    \item This paper: unfolding of DNA
+    \only<5>{
+    \item Next paper: unfolding \underline{and} refolding of protein 
+    }
+  \end{itemize}
+  }
   \end{itemize}
 \end{column}
 
 % rupture image column 
-\begin{column}{0.45\textwidth}  %%<--- here
+\begin{column}{0.5\textwidth}  %%<--- here
 
-\only<4-6>{ 
+\only<5>{ 
   \begin{figure}[ht]
     \centering
-      \begin{tikzpicture}
-% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
-% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres0.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres1.pdf}};
-    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres2.pdf}};
-    \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
-        \only<5> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
-        \only<6> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
-    \end{scope}
-\end{tikzpicture}
+    \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Figure_S4_Continuous_Transitionv4_edit.pdf}};
+    \end{tikzpicture}
   \end{figure}
 }%
 \end{column}
 \end{columns}
 
-
-
-\invisible<4->{ 
+\invisible<5->{ 
   \begin{figure}[ht]
     \centering
       \begin{tikzpicture}
@@ -228,11 +215,54 @@
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);%
         \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);%
-        \only<3-4> \fill [white] (1.0,0) rectangle (1.0,1.0);%
+        \only<3-5> \fill [white] (1.0,0) rectangle (1.0,1.0);%
     \end{scope}
 \end{tikzpicture}
   \end{figure}
 }%
+\end{frame}
+
+\begin{frame}{Defining events (ruptures)}
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
+  \begin{itemize}
+  \item
+    \DefineTerm{Rupture} ($\textcolor{OliveGreen}{\blacktriangledown}$): molecule unbinds
+  \invisible<-1>{
+  \item Linear fit $\rightarrow$ rupture properties 
+    \begin{itemize}
+    \item<3-4>
+      \DefineTerm{Loading rate}: slope of fit
+    \item<4>
+      \DefineTerm{Rupture force}: fit value where data last above fit
+    \end{itemize}
+ }%
+    \end{itemize}
+\end{column}
+
+\begin{column}{0.45\textwidth}  %%<--- here
+
+\only<1-4>{ 
+  \begin{figure}[ht]
+    \centering
+      \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres1.pdf}};
+    \node<3-4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ruptures_pres2.pdf}};
+    \begin{scope}[x={(image.south east)},y={(image.north west)}]
+        \only<1> \fill [white] (0.0,0.0) rectangle (1.0,0.62);%
+        \only<2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
+        \only<3-4> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
+    \end{scope}
+\end{tikzpicture}
+  \end{figure}
+}%
+\end{column}
+\end{columns}
+
 \end{frame}
 
 
@@ -271,7 +301,7 @@
 
 \end{frame}
 
-\begin{frame}{Past Work in SMFS Event Detection}
+\begin{frame}{Limitations of Past Work in Rupture Detection}
 
 
 \begin{columns}[T]
@@ -322,15 +352,13 @@
   \begin{itemize}
     \item We want an algorithm with all the positives...%
       \begin{itemize}
-        \item Physically motivated, robust to noise%
+        \item Physically motivated, robust to noise, and unbiased%
         \item Simple, fast, and generic%
-        \item Unbiased estimates for event locations%
       \end{itemize}
  \invisible<-4>{
     \item ... fixes all the negatives ... %
       \begin{itemize}
-        \item Robust to local trendline%
-        \item Robust to SMFS false positive %
+        \item Robust to local trendline and false positives%
         \item Generalizes well%
       \end{itemize}}
  \invisible<-5>{
@@ -400,12 +428,31 @@
 
 \begin{frame}{Algorithm Formalism}
 
+\begin{block}{}
+\begin{itemize}
+\item Inputs
+  \begin{itemize}
+    \item Approach and retract
+    \item Smoothing parameter $\tau$
+    \item Probability threshold 
+  \end{itemize}
+\item Outputs
+  \begin{itemize}
+    \item List of event indices
+  \end{itemize}
+\end{itemize}
+
+\end{block}
+\end{frame}
+
+\begin{frame}{\only<7>{\textcolor{Red}{\textit{\underline{Naïve}}} }Algorithm Pipeline}
+
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
 \begin{itemize}
 \item Fit \textit{no-event} model%
   \begin{itemize}
-    \item Spline fit to approach%
+    \item Spline fit approach by $\tau$%
       \invisible<-1>{\item Residuals $r_t$%
         \begin{itemize}
           \item Use local variance: $\Sigma_t^2$
@@ -425,13 +472,9 @@
         \end{itemize}
 }
 \invisible<-5>{
-  \item Repeat for transformations
-    \begin{itemize}
-      \item Spline integral
-      \item Spline differentiation
-      \item Spline difference
-    \end{itemize}
-  \item Multiply all probabilities}
+  \item Get regions where probability < threshold
+  \item Find rupture in each region
+}
   \end{itemize}}
 \end{itemize}
 \end{column}
@@ -445,15 +488,33 @@
       \only<-2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
       \only<-3> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
-    \node<4-6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
+    \node<4-7>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
       \only<4> \fill [white] (0.0,0.0) rectangle (1.0,0.25);%
-      \only<4-5> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
+      \only<4-7> \fill [white] (0.0,0.0) rectangle (1.0,0.0);%
     \end{scope}
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
 \end{columns}
+\end{frame}
+
+\begin{frame}{Data transformations improve algorithm}
+
+\begin{columns}[T]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+  \item Determine 
+    \begin{itemize}
+      \item Spline integral
+      \item Spline differentiation
+      \item Spline difference
+    \end{itemize}
+\end{itemize}
+\end{column}
+
+\end{columns}
+
 
 \end{frame}
 
@@ -551,9 +612,11 @@
   \begin{itemize}
   \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
   \invisible<-1>{\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true}%
-\only<4>{\item FEATHER}%
+\invisible<-4>{
+\only<1-4>{\item FEATHER}%
 \only<5>{\item OpenFovea}%
 \only<6>{\item Scientific Python}%
+}
   \end{itemize}
 \end{column}
 \end{columns}
