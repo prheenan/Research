@@ -243,7 +243,7 @@ def spline_fit_fec(tau,time_sep_force,slice_to_fit=None,**kwargs):
         
 def local_integral(y,n,mode='reflect'):
     """
-    gets the integral of y_i from -n/2 to n/2 (total of n points)
+    gets the integral of y_i from -n to n (total of 2*n points)
 
     Args:
         y: to integrate
