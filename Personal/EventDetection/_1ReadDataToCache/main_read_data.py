@@ -109,10 +109,9 @@ def run():
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 0.002094
+    threshold = best_x_value
     example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
-    scores = []
     for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
@@ -124,8 +123,6 @@ def run():
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)
-        score_tmp = Scoring.get_scoring_info(example_split,pred_info.event_idx)
-        scores.append(score_tmp)
         meta = example.Meta
         GenUtilities.ensureDirExists(cache_directory)
         id_data = "{:d}{:s}{:.1f}p={:s}".format(i,meta.Name,meta.Velocity,

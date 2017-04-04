@@ -730,7 +730,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
-    label_func = lambda i,r: "{:.3f}".format(r.get_height())
+    label_func = lambda i,r: "{:.3g}".format(r.get_height())
     y_func = lambda i,r: r.get_height()/2
     PlotUtilities.autolabel(rects1,label_func=label_func,y_func=y_func,
                             fontsize=PlotUtilities.g_font_legend,
