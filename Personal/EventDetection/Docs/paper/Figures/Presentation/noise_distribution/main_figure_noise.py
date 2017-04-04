@@ -169,7 +169,7 @@ def plot_residual_histogram(diff_plot_tmp,style_tmp):
 def sequence_plots(out_base,*args,**kwargs):
     break_points = [_break_after_interp,_break_after_first_zoom,_dont_break]
     for i,break_point in enumerate(break_points):
-        fig = PlotUtilities.figure((6,6))
+        fig = PlotUtilities.figure((8,9))
         plot(*args,when_to_break=break_point,**kwargs)
         PlotUtilities.savefig(fig,out_base + "{:d}.pdf".format(i),
                               subplots_adjust=dict(wspace=0.05))
