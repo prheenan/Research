@@ -254,18 +254,28 @@ def local_integral(y,n,mode='reflect'):
         clamped in integral centering)
     """
     cumulative_integral = cumtrapz(y=y, dx=1.0, axis=-1, initial=0)
-    size = y.size
-    # get the centered integral difference. 
-    diff = np.array([cumulative_integral[min(size-1,i+n)]-\
-                     cumulative_integral[max(0,i-n)]
-                     for i in range(size)])
-    return diff
+    return local_centered_diff(cumulative_integral,n)
 
-def local_centered_diff(f,n):
-    n_pts = f.size
-    diff =  np.array([f[min(n_pts-1,i+n)]-f[max(0,i-n)]
-                      for i in range(n_pts)])
-    return diff
+def local_centered_diff(y,n):
+    """
+    return the local centered difference: y[n]-y[-n], with zeros at the 
+    boundaries
+
+    Args:
+        y: to get the centered diff of
+        n: the size of the window
+    """
+    # get the 'initial' points. this is the first point for the first n,
+    # then the remainder of the array (eg: y[n] has an initial of y[0],
+    #  y[n+1] has an initial of y[1], but y[0] has an initial of y[0]
+    yi = np.zeros(y.size)
+    yi[:n] = y[0]
+    yi[n:] = y[:-n]
+    # ibid, except the final points. y[0] gets y[n], y[n] gets y[n]
+    yf = np.zeros(y.size)
+    yf[-n:] = y[-1]
+    yf[:-n] = y[n:]
+    return yf-yi
 
 def local_stdev(f,n):
     """
