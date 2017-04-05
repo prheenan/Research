@@ -7,7 +7,6 @@ import sys
 from scipy import signal,stats
 
 from Research.Personal.EventDetection.Util import Analysis,Plotting
-from GeneralUtil.python import PlotUtilities,GenUtilities
 # XXX reduce import size below
 from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
     _min_points_between,_predict,\
