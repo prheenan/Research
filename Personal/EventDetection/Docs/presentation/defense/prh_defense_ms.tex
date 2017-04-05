@@ -47,7 +47,7 @@
 
 
 \title[] % (optional, use only with long paper titles)
-{Detecting Molecular Unbinding Events in Force Spectroscopy Data via a Bayesian Algorithm}
+{Detecting Molecular Unbinding and Unfolding Events in Force Spectroscopy Data via a Bayesian Algorithm}
 
 \subtitle
 {} % (optional)
@@ -182,9 +182,9 @@
   \invisible<-3>{
     \item Goal: determine event locations
   \begin{itemize}
-    \item This paper: unfolding of DNA
+    \item This paper: pulling on DNA
     \only<5>{
-    \item Next paper: unfolding \underline{and} refolding of protein 
+    \item Next paper: unfolding \underline{and} refolding of protein\cite{yu_hidden_2017} 
     }
   \end{itemize}
   }
@@ -428,8 +428,9 @@
 
 \begin{frame}{Algorithm Formalism}
 
-\begin{block}{}
+\begin{block}{FEATHER}
 \begin{itemize}
+  \item \textbf{F}orce \textbf{E}xtension \textbf{A}nalysis using a \textbf{T}estable \textbf{H}ypothesis for \textbf{E}vent \textbf{R}ecognition
 \item Inputs
   \begin{itemize}
     \item Approach and retract
@@ -504,16 +505,16 @@
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
 \begin{itemize}
- \item<2-> Spline differentiation
- \item<4-> Spline residual integral
- \item<5-> Spline difference
+ \item<2-> Spline difference
+ \item<4-> Spline differentiation
+ \item<5-> Spline residual integral
 \end{itemize}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
+    \node<2-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
+    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
 \end{tikzpicture}
   \end{overlayarea}
 
@@ -523,9 +524,9 @@
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
     \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
+    \node<2-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
+    \node<5-6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -547,14 +548,14 @@
     \item Locate surface (approach)
     \item Remove surface events
   \end{itemize}}
+\invisible<-2>{
 \item Re-folding or stretching
-\invisible<-3>{
   \begin{itemize}
     \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
   \end{itemize}
-\item Events must have a non-zero force
+\item Events force > 0
   \begin{itemize}
-    \item `Mask' by spline transform (tx) 
+    \item `Mask' by transforms (tx) 
     \item Require tx signal $\ge$ noise
     \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
   \end{itemize}}
@@ -564,8 +565,9 @@
 \begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract4.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract5.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract4.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract5.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -621,7 +623,7 @@
 % column about BCC
   \begin{itemize}
   \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
-  \invisible<-1>{\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true}%
+\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true%
 \invisible<-4>{
 \only<1-4>{\item FEATHER}%
 \only<5>{\item OpenFovea}%
@@ -645,6 +647,7 @@
     \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_dist.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
+
 
 \end{frame}
 
@@ -715,9 +718,11 @@
     Next steps
     \begin{itemize}
     \item
-      Apply to (more interesting) protein dataset
+      Apply to unfolding protein dataset
     \item
       Publish results
+    \item 
+      Modify FEATHER to detect \underline{re}folding events
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -775,12 +780,11 @@
 \begin{column}{0.7\textwidth}
 
 \begin{itemize}
-\item Adhesions (events near at the surface)
-\invisible<-1>{
+\item Adhesions (surface events)
   \begin{itemize}
     \item Locate surface by approach 
     \item Remove events at surface
-  \end{itemize}}
+  \end{itemize}
 \invisible<-3>{
 \item Re-folding or stretching
   \begin{itemize}
