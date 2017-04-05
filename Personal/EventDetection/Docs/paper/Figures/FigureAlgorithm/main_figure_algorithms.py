@@ -52,10 +52,10 @@ def plot_fec(time_approach,force_approach,interp_approach,
 def plot_retract_fec(x_plot,force_plot,slice_before,slice_after,
                      force_filtered_plot,ylim_force):
     Plotting.before_and_after(x_plot,force_plot,slice_before,slice_after,
-                              style_raw,label="Raw")
+                              style_raw,label="Retract",label_for_before=False)
     Plotting.before_and_after(x_plot,force_filtered_plot,
                               slice_before,slice_after,style_filtered,
-                              label="Spline")
+                              label_for_before=False,label="Spline")
     title = "Calculating the no-event probability"
     plt.ylim(ylim_force)
     PlotUtilities.lazyLabel("","",title,**lazy_kwargs)
@@ -356,7 +356,7 @@ def run(base="./"):
     fig = PlotUtilities.figure((6,8))
     plt.subplot(3,1,1)
     plot_fec(time_approach,force_approach,interp_approach,
-             ylim_force,xlim_approach,"Raw")
+             ylim_force,xlim_approach,"Approach")
     # remove the title 
     PlotUtilities.xlabel("Time (s)")
     PlotUtilities.x_label_on_top()
@@ -382,7 +382,7 @@ def run(base="./"):
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
     plot_fec(time_approach,force_approach,interp_approach,
-             ylim_force,xlim_approach,"Raw")
+             ylim_force,xlim_approach,"Approach")
     tick_function()
     PlotUtilities.no_x_label()
     plt.subplot(gs[0,1])
