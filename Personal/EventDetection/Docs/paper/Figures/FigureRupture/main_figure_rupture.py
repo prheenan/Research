@@ -91,7 +91,7 @@ def rupture_plot(data_base,ax1_labels=True,ax2_labels=True):
     plt.xlim(xlim)
     ax1.xaxis.tick_top()
     ax1.xaxis.set_label_position('top') 
-    marker_size=75
+    marker_size=90
     Plotting.plot_arrows_above_events([index_absolute],x,force_filtered,
                                       fudge_y=fudge_y*4.5,
                                       markersize=marker_size)

@@ -136,6 +136,17 @@
 \usepackage{amsmath,amssymb}
 % move the bullets over, to give more space
 \setlength{\leftmargini}{1em}
+% Use letters for citations, restart each page:
+% tex.stackexchange.com/questions/1656/footnote-counter-would-like-to-restart-from-1-each-page
+\usepackage[perpage]{footmisc}
+\renewcommand*{\thefootnote}{\alph{footnote}}
+% make the footnotes small:
+%http://tex.stackexchange.com/questions/21741/how-do-i-change-footnote-font-size-in-beamer-presentation
+\let\oldfootnotesize\footnotesize
+\renewcommand*{\footnotesize}{\oldfootnotesize\tiny}
+% for some reason, that screws up the subsub items?
+\setbeamerfont*{itemize/enumerate subsubbody}{parent=itemize/enumerate body}
+
 
 
 \begin{document}
@@ -225,7 +236,7 @@
 \end{tikzpicture}
   \end{figure}
 }%
-\footnotetext[1]{yu_hidden_2017}
+\footnotetext[1]{Yu et. al, \textit{Science}, 2017}
 \end{overlayarea}
 
 
@@ -286,13 +297,10 @@
 % Your text here
   \begin{itemize}
   \item
-    Stock price fluctuations\cite{struzik_wavelet_2002}%
-  \invisible<-1>{
-  \item Atmospheric temperature\cite{turner_conditional_1994}%
-  }%
-  \invisible<-2>{
-  \item Contaminants in water \cite{perelman_event_2012}%
-  }%
+    Stock price fluctuations\footnotemark%\cite{struzik_wavelet_2002}
+  \item<1-> Atmospheric temperature\footnotemark%\cite{turner_conditional_1994}
+  %
+  \item<2-> Contaminants in water\footnotemark%\cite{perelman_event_2012}
  \end{itemize}
 \end{column}
 \begin{column}{0.2\textwidth}
@@ -304,10 +312,16 @@
   \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{struzik_2002_price-vs-time_edit.pdf}};
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{turner_1994_edit.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{Perelman_2012_Edit.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{struzik_2002_price-vs-time_edit.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{turner_1994_edit.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{Perelman_2012_Edit.pdf}};
 \end{tikzpicture}
+
+\footnotetext[1]{Struzik et. al, \textit{Physica A}, 2002}
+\invisible<-1>{\footnotetext[2]{Turner et. al, \textit{J. of Atmospheric and Oceanic Tech.}, 1994}}
+\invisible<-2>{\footnotetext[3]{Perelman et. al, \textit{Env. Science and Tech.}, 2012}}
+
+
 \end{overlayarea}
 
 \end{frame}
@@ -320,11 +334,11 @@
 % Your text here
   \begin{itemize}
   \item
-    Contour length alignment\cite{kuhn_automated_2005}%
-  \item<2->
-    Threshholding\cite{andreopoulos_efficient_2011}%
-  \item<3->
-    Transformations\cite{benitez_searching_2017-1}%
+    Contour alignment\footnotemark%\cite{kuhn_automated_2005}
+  \item<2->%
+    Threshholding\footnotemark%\cite{andreopoulos_efficient_2011}
+  \item<3->%
+    Transformations\footnotemark%\cite{benitez_searching_2017-1}
  \end{itemize}
 \end{column}
 
@@ -339,20 +353,16 @@
     }%
   \item[\MinusOpt{}]%
     \MinusColor{%
-      \only<1>{Requires polymer model}%
+      \only<1>{Requires model, Slow ($\Theta(N^2)$)}%
       \only<2>{Optimized parameters do not generalize}%
       \only<3>{Influenced by local trend line}%
 }%
   \invisible<4->{\item[\MinusOpt{}]%
     \MinusColor{%
-      \only<1>{Biased against rare behavior}%
+      \only<1>{Biased against rare behavior}
       \only<2>{Susceptible to noise}%
       \only<3>{Susceptible to SMFS false positives}%
-}}%
-  \invisible<2->{\item[\MinusOpt{}]%
-    \MinusColor{%
-      \only<1>{Slow ($\Theta(N^2)$)}%
-}}%
+      }}
  \end{itemize}
 }
 \end{column}
@@ -369,27 +379,30 @@
  \invisible<-4>{
     \item ... fixes all the negatives ... %
       \begin{itemize}
-        \item Robust to local trendline and false positives%
-        \item Generalizes well%
+        \item Robust to local trendline and false positives, Generalizes %
       \end{itemize}}
  \invisible<-5>{
  \item ... and outperforms existing techniques %
    \begin{itemize}
-      \item OpenFovea\cite{roduit_openfovea:_2012}: threshold technique%
-      \item Scientific Python\cite{jones_scipy:_2001}: transformation (wavelet) technique%
+      \item OpenFovea: threshold technique%\cite{roduit_openfovea:_2012}
+      \item Scientific Python: transformation (wavelet) technique%\cite{jones_scipy:_2001}
    \end{itemize}}
   \end{itemize}
-\end{block}}
+\end{block}
+}
 
 
 \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{kuhn_2005_edit.pdf}};
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{Andreopoulos_2011_edit.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.7\textwidth]{bentez_2017_edit_1.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{kuhn_2005_edit.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{Andreopoulos_2011_edit.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{bentez_2017_edit_1.pdf}};
 \end{tikzpicture}
+\footnotetext[1]{Kuhn et. al, \textit{Journal of Microscopy}, 2005}
+\footnotetext[2]{Andreopoulous et. al, \textit{Algorithms for Molecular Biology}, 2011}
+\footnotetext[3]{Benitez et. al, \textit{Microscopy Research and Technique}, 2017}
 \end{overlayarea}
 
 \end{frame}
@@ -553,7 +566,7 @@
 \begin{column}{0.5\textwidth}
 
 \begin{itemize}
-\item Adhesions (events near the surface)
+\item Adhesions (surface events)
 \invisible<-1>{
   \begin{itemize}
     \item Locate surface (approach)

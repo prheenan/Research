@@ -921,7 +921,7 @@ def top_bars(x,y,slices,colors,ymin=None,ymax=None):
                     color=c,alpha=0.3,linewidth=0)
 
 def before_and_after(x,y,before_slice,after_slice,style=dict(),
-                     color_before='r',color_after='b',label=None):
+                     color_before='k',color_after='r',label=None):
     """
     plots x and y two before and after slices
 

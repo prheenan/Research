@@ -86,7 +86,7 @@ def run(base="./"):
     subplots_adjust = dict(left=0.12,wspace=0.2,hspace=0.1)
     fig = PlotUtilities.figure((8,4))
     plot_fec_cartoon(base,data_base,file_names,
-                     arrow_kwargs=dict(markersize=8))
+                     arrow_kwargs=dict(markersize=75))
     PlotUtilities.savefig(fig,name.replace(".pdf","_pres.pdf"),
                           subplots_adjust=subplots_adjust)
     # save with the labels for the presentation
