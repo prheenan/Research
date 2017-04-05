@@ -227,7 +227,7 @@
       \begin{tikzpicture}
 % see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
-    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.9\textwidth]{cartoon_pres.pdf}};
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.8\textwidth]{cartoon_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);%
         \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);%
@@ -238,8 +238,6 @@
 }%
 \footnotetext[1]{Yu et. al, \textit{Science}, 2017}
 \end{overlayarea}
-
-
 
 \end{frame}
 
@@ -258,14 +256,22 @@
       \DefineTerm{Loading rate}: slope of fit
     \item<4>
       \DefineTerm{Rupture force}: fit value where data last above fit
+    \end{itemize}}
+  \invisible<-4>{
+  \item Rupture properties $\rightarrow$ Landscape properties\footnotemark{}
+    \begin{itemize}
+    \item Landscape barrier distance $x^{\ddagger}$
+    \item Landscape barrier energy $\Delta G^{\ddagger}$
+    \item Zero-force transition rate $k_0$
     \end{itemize}
- }%
-    \end{itemize}
+    }%
+  \end{itemize}
 \end{column}
 
 \begin{column}{0.45\textwidth}  %%<--- here
 
-\only<1-4>{ 
+\only<1-5>{ 
+\begin{overlayarea}{\textwidth}{\textheight}
   \begin{figure}[ht]
     \centering
       \begin{tikzpicture}
@@ -279,8 +285,11 @@
         \only<2> \fill [white] (0.0,0.0) rectangle (1.0,0.32);%
         \only<3-4> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
     \end{scope}
+   \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{best_2008.jpeg}};
+\invisible<-4>{\footnotetext[1]{Best et. al, \textit{J. Phys. Chem. B}, 2008}}
 \end{tikzpicture}
   \end{figure}
+\end{overlayarea}
 }%
 \end{column}
 \end{columns}
@@ -359,7 +368,7 @@
 }%
   \invisible<4->{\item[\MinusOpt{}]%
     \MinusColor{%
-      \only<1>{Biased against rare behavior}
+      \only<1>{Biased against rare behavior}%
       \only<2>{Susceptible to noise}%
       \only<3>{Susceptible to SMFS false positives}%
       }}
@@ -400,7 +409,7 @@
     \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{Andreopoulos_2011_edit.pdf}};
     \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.6\textwidth]{bentez_2017_edit_1.pdf}};
 \end{tikzpicture}
-\footnotetext[1]{Kuhn et. al, \textit{Journal of Microscopy}, 2005}
+\footnotetext[1]{Kuhn et. al, \textit{J. Microscopy}, 2005}
 \footnotetext[2]{Andreopoulous et. al, \textit{Algorithms for Molecular Biology}, 2011}
 \footnotetext[3]{Benitez et. al, \textit{Microscopy Research and Technique}, 2017}
 \end{overlayarea}
@@ -409,6 +418,8 @@
 
 
 \section{Algorithm Design}
+
+\subsection{Intuition and Basics}
 
 \begin{frame}{Algorithm Intuition}
 
@@ -523,6 +534,8 @@
 \end{column}
 \end{columns}
 \end{frame}
+
+\subsection{Optimization}
 
 \begin{frame}{Spline transformations improve algorithm}
 
@@ -648,9 +661,9 @@
   \begin{itemize}
   \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
 \item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true%
-\invisible<-4>{
-\only<1-4>{\item FEATHER}%
-\only<5>{\item OpenFovea}%
+\invisible<-2>{
+\only<1-3>{\item FEATHER}%
+\only<4-5>{\item OpenFovea}%
 \only<6>{\item Scientific Python}%
 }
   \end{itemize}
@@ -663,12 +676,13 @@
 % and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
     \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_distances_pres.pdf}};
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
-        \only<-2> \fill [white] (0.5,0.0) rectangle (1.0,1.0);%
-        \only<-3> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
+        \only<-1> \fill [white] (0.5,0.0) rectangle (1.0,1.0);%
+        \only<-2> \fill [white] (1.0,0.0) rectangle (1.0,1.0);%
     \end{scope}
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_dist.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{OpenFovea_dist.pdf}};
-    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_dist.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_dist.pdf}};
+    \node<4-5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{OpenFovea_dist.pdf}};
+    \node<5>[anchor=south west,inner sep=0, red,font={\large\bfseries}] at (6,2.5) {False Positives};
+    \node<6>[anchor=south west,inner sep=0,] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_dist.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 
@@ -688,6 +702,11 @@
     \item 
       Informally: probability mass difference
     \end{itemize}
+    \invisible<-4>{
+      \only<5>{\item FEATHER}%
+      \only<6>{\item OpenFovea}%
+      \only<7>{\item Scientific Python}%
+    }
   \end{itemize}
 \end{column}
 

@@ -502,7 +502,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
     return style_pred
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
-                       xlabel="Relative Error [x$_\mathrm{k}$]",
+                       xlabel="Relative Error (x$_\mathrm{k}$)",
                        distance_limits=None,clip_limits=False):
     """
     Args:
