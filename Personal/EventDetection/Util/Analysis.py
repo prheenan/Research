@@ -259,11 +259,13 @@ def local_integral(y,n,mode='reflect'):
 def local_centered_diff(y,n):
     """
     return the local centered difference: y[n]-y[-n], with zeros at the 
-    boundaries
+    boundaries points (ie 0 and y.size-1), 
 
     Args:
         y: to get the centered diff of
         n: the size of the window
+    Returns:
+        array a, same size as y, where a[i] = y[min(i,y.size-1)]-y[max(0,i)]
     """
     # get the 'initial' points. this is the first point for the first n,
     # then the remainder of the array (eg: y[n] has an initial of y[0],
