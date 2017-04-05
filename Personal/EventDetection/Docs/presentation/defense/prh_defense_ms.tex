@@ -128,6 +128,8 @@
 \newcommand{\PlusOpt}[1]{\PlusColor{$\mathbf{+}$}}
 \newcommand{\MinusOpt}[1]{\MinusColor{$\mathbf{-}$}}
 % bibliography command
+% for citing at bottom, see:
+% tex.stackexchange.com/questions/86650/how-to-display-the-footnote-in-the-bottom-of-the-slide-while-using-columns
 \usepackage[super]{natbib}
 % for tables and math symbols
 \usepackage{tabularx}
@@ -184,7 +186,7 @@
   \begin{itemize}
     \item This paper: pulling on DNA
     \only<5>{
-    \item Next paper: unfolding \underline{and} refolding of protein\cite{yu_hidden_2017} 
+    \item Next paper: unfolding \underline{and} refolding of protein\footnotemark
     }
   \end{itemize}
   }
@@ -203,9 +205,12 @@
   \end{figure}
 }%
 \end{column}
+
 \end{columns}
 
-\invisible<5->{ 
+\begin{overlayarea}{\textwidth}{\textheight}
+
+\only<1-4>{ 
   \begin{figure}[ht]
     \centering
       \begin{tikzpicture}
@@ -215,12 +220,18 @@
     \begin{scope}[x={(image.south east)},y={(image.north west)}]
         \only<1> \fill [white] (0.4,0) rectangle (1.0,1.0);%
         \only<2> \fill [white] (0.7,0) rectangle (1.0,1.0);%
-        \only<3-5> \fill [white] (1.0,0) rectangle (1.0,1.0);%
+        \only<3-4> \fill [white] (1.0,1.0) rectangle (1.0,1.0);%
     \end{scope}
 \end{tikzpicture}
   \end{figure}
 }%
+\footnotetext[1]{yu_hidden_2017}
+\end{overlayarea}
+
+
+
 \end{frame}
+
 
 \begin{frame}{Defining events (ruptures)}
 
@@ -505,16 +516,16 @@
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
 \begin{itemize}
- \item<2-> Spline difference
+ \item Spline difference
  \item<4-> Spline differentiation
  \item<5-> Spline residual integral
 \end{itemize}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<2-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
-    \node<6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
 \end{tikzpicture}
   \end{overlayarea}
 
@@ -523,10 +534,10 @@
 \begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
-    \node<2-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
+    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
     \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
-    \node<5-6>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
