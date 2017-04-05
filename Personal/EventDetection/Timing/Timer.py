@@ -171,15 +171,16 @@ def single_learner(learner,curve_numbers,categories,**kwargs):
     return time_trials_by_loading_rate(learner,trials,loading_rates,
                                        curve_numbers)
 
-def cache_all_learners(learners,categories,curve_numbers,cache_directory,
-                       force=True,**kwargs):
+def cache_all_learners(learners,categories,curve_numbers,cache_data_directory,
+                       cache_dir,force=True,**kwargs):
     """
     caches and returns the timing results for all the learners
 
     Args:
         learners: list ofLearning.learnin_curve object to use
         categories: list of Learninrg.ForceExtensionCtegories to use
-        cache_directory: where the cache lives
+        cache_data_directory: where the cache lives
+        cache_directory: where to put the timing results
         curve_numbers: how many curves to use (from each category;
         they are all used separately)
         **kwargs: passed to curve_numbers
@@ -188,15 +189,15 @@ def cache_all_learners(learners,categories,curve_numbers,cache_directory,
     """
     times = []
     # read in all the data
-    categories = InputOutput.read_categories(categories,force,cache_directory,
+    categories = InputOutput.read_categories(categories,force,cache_data_directory,
                                              limit=max(curve_numbers))
     # get all the trials for all the learners        
     for l in learners:
-        learner_file = (cache_directory + "_l_" + l.description)
+        learner_file = (cache_dir + "_l_" + l.description)
         t = CheckpointUtilities.\
             getCheckpoint(learner_file,single_learner,
                           force,l,curve_numbers,categories,
-                          cache_directory=cache_directory,
+                          cache_directory=cache_dir,
                           force_trials=force,**kwargs)
         times.append(t)
     return times
@@ -218,14 +219,15 @@ def run():
         get_categories(positives_directory=positives_directory,
                        use_simulated=True)
     curve_numbers = [1,2,5,10,30,50,100,150,200]
-    cache_dir = "../_1ReadDataToCache/cache/"
+    cache_data_dir = "../_1ReadDataToCache/cache/"
+    cache_dir = "./cache/"
     GenUtilities.ensureDirExists(cache_dir)
     force = False
     times = CheckpointUtilities.getCheckpoint(cache_dir + "all_timer.pkl",
                                               cache_all_learners,force,
                                               learners,positive_categories,
                                               curve_numbers,
-                                              cache_dir,force)
+                                              cache_data_dir,cache_dir,force)
     out_base = "./out/"
     GenUtilities.ensureDirExists(out_base)
     # sort the times by their loading rates

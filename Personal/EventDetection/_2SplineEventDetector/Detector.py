@@ -138,7 +138,7 @@ def delta_mask_function(split_fec,slice_to_use,
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)
     # get the retract df spectrum
-    interpolator = split_fec.retract_spline_interpolator(slice_to_use)
+    interpolator = no_event_parameters_object.last_interpolator_used
     interp_f = interpolator(x_sliced)
     df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
     # get the baseline results
@@ -354,6 +354,7 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     post_slice_fit = slice(abs_max_change_idx,slice_event.stop,1)
     post_slice_event = slice(abs_median_change_idx,slice_event.stop,1)
     final_event_idx = abs_max_change_idx
+    # need at least three points to fit the line
     if (post_slice_fit.stop - post_slice_fit.start >= 3):
         fit_x_rev,fit_y_rev,pred_rev,_,idx_below_predicted,_ = \
                 _loading_rate_helper(x,y,slice_event=post_slice_event,
