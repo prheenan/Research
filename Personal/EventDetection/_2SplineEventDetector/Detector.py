@@ -171,34 +171,11 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """
-    xlim = plt.xlim(min(x),max(x))
-    plt.subplot(4,1,1)
-    valid_idx = np.where(np.logical_not(gt_condition))
-    invalid_idx = np.where(gt_condition)
-    plt.plot(x[invalid_idx],force[invalid_idx],color='k',alpha=0.3)
-    plt.plot(x[valid_idx],force[valid_idx],color='g')    
-    plt.plot(x_sliced,interp_f,color='b')
-    plt.xlim(xlim)
-    plt.subplot(4,1,2)
-    plt.plot(x,boolean_array+2.1)
-    plt.plot(x_sliced,no_event_cond+1.1)
-    plt.plot(x_sliced,value_cond)
-    plt.plot(x,gt_condition-1.1)
-    plt.plot(x,boolean_ret-2.1,linestyle='--')
-    plt.xlim(xlim)
-    plt.subplot(4,1,3)
-    plt.plot(x,boolean_array+1.1)
-    plt.plot(x,boolean_ret+2.1,linestyle='--')
-    plt.xlim(xlim)
-    plt.subplot(4,1,4)
-    plt.semilogy(x,probability_updated,linestyle='--')
-    plt.semilogy(x,probability)
-    plt.xlim(xlim)
-    plt.axhline(threshold)
-    plt.xlim(xlim)
-    plt.show()
-    """
+    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
+                               boolean_array,no_event_cond,value_cond,
+                               boolean_ret,probability_updated,probability,
+                               threshold)
+    plt.show()                                
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -275,6 +252,11 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
                                                          min_points_between)
+    plt.subplot(2,1,1)
+    plt.plot(x,interp(x))
+    plt.subplot(2,1,2)                                                         
+    plt.semilogy(x,probability_in_slice)
+    plt.show()                                                         
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
@@ -283,6 +265,8 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     slice_updated = slice(min_idx,slice_updated.stop,1)
     probability_updated[:min_idx] = 1
     boolean_ret =  probability_updated < threshold
+    plt.plot(probability_updated)
+    plt.show()
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event,slice_fit=None):
