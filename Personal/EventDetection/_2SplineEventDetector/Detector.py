@@ -95,17 +95,8 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
-    if (negative_only):
-        # XXX ?.... shouldnt this be minimum? (*dont* want positive)
-        value_cond = (np.minimum(0,df_true) > baseline)
-    else:
-        # XXX should *not* need to have two separate methods. determine why
-        # (probably adhesions)
-        n_slice_region = df_true.size
-        f0 = [interp_f[min(n_slice_region-1,i+n_points)] 
-          for i in range(n_slice_region)]            
-        interp_f_minus_baseline = interp_f - f0
-        value_cond = (np.abs(interp_f_minus_baseline) < min_signal)
+    # XXX ?.... shouldnt this be minimum? (*dont* want positive)
+    value_cond = (np.minimum(0,df_true) > baseline)
     return value_cond
 
 def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
