@@ -499,18 +499,24 @@
 \end{columns}
 \end{frame}
 
-\begin{frame}{Data transformations improve algorithm}
+\begin{frame}{Spline transformations improve algorithm}
 
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
 \begin{itemize}
-  \item Determine 
-    \begin{itemize}
-      \item Spline differentiation
-      \item Spline integral
-      \item Spline difference
-    \end{itemize}
+ \item<2-> Spline differentiation
+ \item<4-> Spline residual integral
+ \item<5-> Spline difference
 \end{itemize}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
+    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
+\end{tikzpicture}
+  \end{overlayarea}
+
 \end{column}
 
 \begin{column}{0.5\textwidth}
