@@ -51,7 +51,8 @@ class no_event_parameters:
                  derivative_epsilon=None,derivative_sigma=None,
                  integral_epsilon=None,integral_sigma=None,
                  valid_delta=True,valid_derivative=True,valid_integral=True,
-                 mask_is_conditional=True,negative_only=True):
+                 mask_is_conditional=True,negative_only=True,
+                 last_interpolator_used=None):
         self.epsilon = epsilon
         self.sigma = sigma
         self.threshold = threshold
@@ -70,6 +71,7 @@ class no_event_parameters:
         self._set_valid_integral(valid_integral)
         self.mask_is_conditional = mask_is_conditional
         self.negative_only=negative_only
+        self.last_interpolator_used = None
     def _set_valid_delta(self,flag):
         self.valid_delta = ((self.delta_epsilon is not None and
                             self.delta_sigma is not None) and flag)
@@ -260,6 +262,7 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     probability_distribution = np.ones(y.size)
     # get the probability for all the non edge cases
     probability_distribution = chebyshev
+    no_event_parameters_object.last_interpolator_used = interp
     if (no_event_parameters_object.valid_derivative):
         p_deriv = _derivative_probability(interp,x_s,no_event_parameters_object,
                                           negative_only=negative_only)
@@ -278,7 +281,7 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
         p_delta = _delta_probability(df,no_event_parameters_object,
                                      negative_only=negative_only)
-        probability_distribution *= p_delta
+        probability_distribution *= p_delta        
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
