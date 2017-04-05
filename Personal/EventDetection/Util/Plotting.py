@@ -502,7 +502,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
     return style_pred
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
-                       xlabel="Relative Error [x$_\mathrm{k}$]",
+                       xlabel="Relative Error (x$_\mathrm{k}$)",
                        distance_limits=None,clip_limits=False):
     """
     Args:
@@ -536,7 +536,8 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
-                                 xlabel="Distance [m]",loc='best'):
+                                 xlabel="Distance [m]",loc='best',q=None,
+                                 q_label=None):
     """
     plots the distribution of distances from true/predicted to counterparts
 
@@ -549,11 +550,20 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     """
     # plot the distance scores; color by i in 'i->j' (ie: true->predicted
     # is colored by true
+    rel_pred = to_pred/max_x_true
+    rel_true = to_true/max_x_pred
     if (to_pred.size > 0):
-        plt.hist(to_pred/max_x_true,
+        plt.hist(rel_pred,
                  log=True,bins=bins,**style_true)
     if (to_true.size > 0):
-        plt.hist(to_true/max_x_pred,log=True,bins=bins,**style_pred)
+        plt.hist(rel_true,log=True,bins=bins,**style_pred)
+    if (q is not None):
+        cat = np.concatenate([rel_pred,rel_true])
+        q_num = np.percentile(cat,q)
+        if (q_label is None):
+            q_label = ((r"P$_{" + "{:d}".format(q) + r"}$=") + \
+                       ("{:.3g}").format(q_num))
+        plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4)
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
@@ -921,7 +931,8 @@ def top_bars(x,y,slices,colors,ymin=None,ymax=None):
                     color=c,alpha=0.3,linewidth=0)
 
 def before_and_after(x,y,before_slice,after_slice,style=dict(),
-                     color_before='r',color_after='b',label=None):
+                     color_before='k',color_after='r',label=None,
+                     label_for_before=True):
     """
     plots x and y two before and after slices
 
@@ -932,9 +943,15 @@ def before_and_after(x,y,before_slice,after_slice,style=dict(),
         style; for each of them
         label: for one of them
     """
+    if label_for_before:
+        label_before = label
+        label_after = None
+    else:
+        label_before = None
+        label_after = label
     before_slice = slice(before_slice.start,before_slice.stop+1,1)
-    tuples = [ [x,y,before_slice,color_before,style,label],
-               [x,y,after_slice,color_after,style,None]]
+    tuples = [ [x,y,before_slice,color_before,style,label_before],
+               [x,y,after_slice,color_after,style,label_after]]
     for x_tmp,y_tmp,slice_v,color_tmp,style_tmp,label in tuples:
         x_sliced = x_tmp[slice_v]
         plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,

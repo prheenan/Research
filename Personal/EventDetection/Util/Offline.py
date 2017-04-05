@@ -74,7 +74,6 @@ class plotting_metrics:
         f_max_true = lambda x: [x.max_displacement() for _ in range(x.n_true())]
         true_raw = self._lambda(f_max_true)
         pred_raw = self._lambda(f_max_pred)
-        print(true_raw,pred_raw)
         true = self.safe_concat(true_raw)
         pred = self.safe_concat(pred_raw)
         return true,pred
@@ -121,7 +120,7 @@ class plotting_metrics:
                                                ruptures_pred,bins_rupture)
         to_true,to_pred = self.to_true_and_pred_distances()
         max_x_true,max_x_pred = self.max_x_distances_true_pred()
-        cat_median,cat_q,cat_relative_median,cat_relative_q = \
+        cat_median,cat_q,cat_relative_median,cat_relative_q,q = \
                 relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,
                                                    max_x_pred)
         return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,

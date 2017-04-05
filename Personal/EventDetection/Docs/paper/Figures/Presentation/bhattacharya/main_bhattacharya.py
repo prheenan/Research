@@ -11,6 +11,8 @@ import sys
 sys.path.append("../../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 
+from scipy.stats import pearsonr,ttest_ind,norm
+
 def bc(x,y):
     p_x = (x/sum(x))
     p_y = (y/sum(y))
@@ -30,7 +32,17 @@ def plot_bhattacharya(sigma,n_samples,bins,loc):
                                      **common_style)
     n_gauss,e_gauss,_ = plt.hist(distribution,bins=bins,label=label_gauss,
                                  hatch="////",**common_style)
-    return bc(n_uniform,n_gauss)
+    return bc(n_uniform,n_gauss),distribution,uniform
+
+def p_label(bhattacharya,dist_truth,dist_measuring):
+    bcc = "BCC: {:.3g}".format(1-bhattacharya)
+    mu,sigma = np.mean(dist_truth),np.std(dist_truth)
+    z_scores = (dist_measuring-mu)/sigma
+    p_values = norm.sf(abs(z_scores))*2 #twosided
+    p_value = np.mean(p_values)
+    p_value_label = r"$<p_{\mathrm{i.i.d.}}>$"
+    to_ret = "{:s}\n".format(bcc) + p_value_label + ":{:.2g}".format(p_value)
+    return to_ret
 
 def run():
     """
@@ -52,21 +64,21 @@ def run():
     bins = np.linspace(*xlim,endpoint=True,num=n_bins)
     fig = PlotUtilities.figure((12,7))
     plt.subplot(1,n_cols,1)
-    bhattacharya = plot_bhattacharya(sigma,n_samples,bins=bins,
-                                     loc=-9)
+    bhattacharya,x1,x2 = plot_bhattacharya(sigma,n_samples,bins=bins,
+                                           loc=-9)
     plt.xlim(xlim)
     PlotUtilities.tickAxisFont()
     PlotUtilities.xlabel("Distribution Value")
     PlotUtilities.ylabel("Probability")
     PlotUtilities.legend(frameon=False)
     plt.ylim(ylim)
-    title = (r"BCC of {:.3f}".format(1-bhattacharya))
+    title = p_label(bhattacharya,x1,x2)
     PlotUtilities.title(title)
     for i,loc in enumerate(loc_arr):
         plt.subplot(1,n_cols,(i+2))
-        bhattacharya = plot_bhattacharya(sigma,n_samples,bins,
-                                         loc=loc)
-        title = (r"BCC of {:.3f}".format(1-bhattacharya))
+        bhattacharya,x1,x2 = plot_bhattacharya(sigma,n_samples,bins,
+                                               loc=loc)
+        title = p_label(bhattacharya,x1,x2)
         PlotUtilities.title(title)
         plt.xlim(xlim)
         plt.ylim(ylim)
