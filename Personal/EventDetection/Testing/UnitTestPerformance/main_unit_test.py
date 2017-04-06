@@ -88,7 +88,7 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 1e-2
-    fractional_error_tolerance = 7e-3 
+    fractional_error_tolerance = 7.34e-3 
     predicted,examples = [],[]
     for i,f in enumerate(load_paths):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 
