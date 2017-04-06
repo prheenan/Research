@@ -130,6 +130,10 @@ def delta_mask_function(split_fec,slice_to_use,
     # get the retract df spectrum
     interpolator = no_event_parameters_object.last_interpolator_used
     interp_f = interpolator(x_sliced)
+    # offset to right now (assume this is after surface  touchoff /adhesions)
+    offset_zero_force = interp_f[0]
+    split_fec.zero_retract_force(offset_zero_force)
+    interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
     # get the baseline results
     ratio_probability = _no_event.\
@@ -276,7 +280,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     slice_updated = slice(min_idx,slice_updated.stop,1)
     probability_updated[:min_idx] = 1
     boolean_ret =  probability_updated < threshold
-    split_fec.zero_retract_force(interp_slice[min_idx-slice_interp.start])
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event,slice_fit=None):

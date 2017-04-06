@@ -71,6 +71,8 @@ class split_force_extension:
             
             kwargs: passed to spline_interpolator
         """
+        if (slice_to_fit is None):
+            slice_to_fit = slice(0,self.retract.Time.size-1,1)
         if knots is None:
             knots = self.retract_knots
         if (knots is not None):
