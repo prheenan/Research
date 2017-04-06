@@ -198,10 +198,12 @@ class split_force_extension:
         """
         approach_idx = self.get_predicted_approach_surface_index()
         offset_points = self.approach.Force.size-approach_idx
+        # assume the surface is at the same point; convert from idx to real 
+        # units by getting the ratio of separation differences 
         grad_appr = np.gradient(self.approach.Separation)
         grad_retr = np.gradient(self.retract.Separation)
         sep_diff_median_ratio = abs(np.median(grad_retr)/np.median(grad_appr))
-        return int(offset_points * sep_diff_median_ratio)
+        return int(np.ceil(offset_points * sep_diff_median_ratio))
 
 def _index_surface_relative(x,offset_needed):
     """
