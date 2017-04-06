@@ -146,7 +146,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # get the interpolated derivative
     slice_v = info.slice_fit
     time_slice = time[slice_v]
-    interpolator = ex.retract_spline_interpolator()
+    interpolator = ex.retract_spline_interpolator(slice_v)
     interp_first_deriv = interpolator.derivative(1)(time_slice)
     interpolated_force = interpolator(time_slice)
     tau = ex.tau
