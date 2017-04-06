@@ -268,7 +268,8 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
                                           negative_only=negative_only)
         probability_distribution *= p_deriv
     if (no_event_parameters_object.valid_integral):
-        p_int = _integral_probability(y_s,interpolated_y,n_points,
+        p_int = _integral_probability(y_s,interpolated_y,
+                                      _min_points_between(n_points),
                                       no_event_parameters_object)
         threshold = no_event_parameters_object.threshold
         boolean_tmp = (probability_distribution  < threshold)
