@@ -29,12 +29,12 @@ def run():
     limit = 200
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
+    debugging = False
     copy_files = True
     force_read = False
     force_relearn = False
     force_learn = False
-    only_lowest = False
+    only_lowest = True
     n_tuning_points = 15
     debug_directory = "./debug_no_event/"
     GenUtilities.ensureDirExists(debug_directory)
@@ -64,7 +64,7 @@ def run():
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-    num_to_plot = 9
+    num_to_plot = 15
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)

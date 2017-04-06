@@ -170,12 +170,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    boolean_ret = probability_updated < threshold
-    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
-                               boolean_array,no_event_cond,value_cond,
-                               boolean_ret,probability_updated,probability,
-                               threshold)
-    plt.show()                                
+    boolean_ret = probability_updated < threshold                    
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -251,12 +246,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)
-    plt.subplot(2,1,1)
-    plt.plot(x,interp(x))
-    plt.subplot(2,1,2)                                                         
-    plt.semilogy(x,probability_in_slice)
-    plt.show()                                                         
+                                                         min_points_between)                                                  
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
@@ -265,8 +255,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     slice_updated = slice(min_idx,slice_updated.stop,1)
     probability_updated[:min_idx] = 1
     boolean_ret =  probability_updated < threshold
-    plt.plot(probability_updated)
-    plt.show()
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event,slice_fit=None):
