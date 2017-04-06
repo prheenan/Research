@@ -839,6 +839,36 @@
 \end{frame}
 
 
+\begin{frame}{More metrics: Precision, Recall, and F$_1$ score (number of events)}
+
+\begin{columns}[T]
+\begin{column}{\textwidth}
+  \begin{itemize}
+    \item True positive (TP), False positive (FP)
+    \item True negative (TN), False negatve (FN)
+    \item Precision (P): $\frac{TP}{TP+FP}$ 
+      \begin{itemize}
+        \item Relative number of predicted events which are true
+      \end{itemize}
+    \item Recall (R): $\frac{TP}{TP+FN}$
+      \begin{itemize}
+        \item Relative number of true events which are predicted 
+      \end{itemize}
+    \item F$_1$ score: harmonic mean of P and R ($2\frac{ P \cdot R }{P + R}$)
+  \end{itemize}
+\end{column}
+\end{columns}
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{f_score.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+
+
+\end{frame}
+
+
 
 \begin{frame}{Tuning}
 
