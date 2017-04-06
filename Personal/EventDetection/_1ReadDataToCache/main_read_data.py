@@ -47,7 +47,7 @@ def run():
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
     # XXX use just the first N learners
-    n_learners = 1
+    n_learners = 3
     learners = Learners.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
@@ -110,7 +110,7 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x_value
-    example_numbers = []
+    example_numbers = [0,1]
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \

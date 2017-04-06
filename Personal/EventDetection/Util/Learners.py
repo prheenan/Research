@@ -27,7 +27,7 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-4,-2,
+    no_event_tuple = [Detector.predict,np.logspace(-4,-1,
                                                    endpoint=True,
                                                    base=10,
                                                    num=n_points_no_event)]
