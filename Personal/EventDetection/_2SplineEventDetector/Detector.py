@@ -200,7 +200,7 @@ def get_events_before_marker(marker_idx,event_mask,min_points_between):
     events_containing_surface = [e for e in event_boundaries
                                  if (e.start <= marker_idx)]     
     return events_containing_surface
-    
+
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          no_event_parameters_object):
@@ -249,7 +249,9 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # since adhesion (probably) really screws everything up
     x = split_fec.retract.Time[slice_updated]
     y = split_fec.retract.Force[slice_updated]
-    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_updated)
+    slice_interp = slice(slice_updated.start,slice_updated.stop,1)
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
+    interp_slice = interp(x)
     split_fec.set_retract_knots(interp)
     no_event_parameters_object._set_valid_delta(True)
     no_event_parameters_object.negative_only = True
@@ -267,12 +269,14 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                                          min_points_between)
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
+    # XXX zero by whatever is happening after the last event..
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)
     slice_updated = slice(min_idx,slice_updated.stop,1)
     probability_updated[:min_idx] = 1
     boolean_ret =  probability_updated < threshold
+    split_fec.zero_retract_force(interp_slice[min_idx-slice_interp.start])
     return slice_updated,boolean_ret,probability_updated
 
 def _loading_rate_helper(x,y,slice_event,slice_fit=None):

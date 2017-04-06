@@ -121,6 +121,8 @@ class split_force_extension:
             self.tau = np.median(np.diff(self.approach.Time))*tau_num_points
         else:
             self.tau = None
+    def zero_retract_force(self,offset):
+        self.retract.Force -= offset
     def zero_all(self,separation,zsnsr,force,force_retract):
         """ 
         zeros the distance and force of the approach,dwell, and retract
