@@ -46,7 +46,7 @@ def run(in_base="../FigurePerformance_CS/"):
     
     """
     out_base = "./"
-    data_file = in_base + "data/Scores.pkl"
+    data_file = "../FigurePerformance_CS/data/Scores.pkl"
     force=False
     cache_file = out_base + "cache.pkl"
     metrics = CheckpointUtilities.getCheckpoint(cache_file,get_best_metrics,
@@ -72,11 +72,13 @@ def run(in_base="../FigurePerformance_CS/"):
         color_pred =  colors[i]
         print("The best parameter for {:s} was {:.4g}".\
               format(name,m.x_values[m.best_param_idx]))
-        distance_histogram= Plotting.event_error_kwargs(m,color_pred=color_pred)
+        distance_histogram= \
+            Plotting.event_error_kwargs(m,color_pred=color_pred,
+                                        q=Offline._def_q())
         true,pred = m.true,m.pred
         # make the 'just the distance' figures
         fig = PlotUtilities.figure((10,5))
-        Plotting.histogram_event_distribution(q=85,**distance_histogram)
+        Plotting.histogram_event_distribution(**distance_histogram)
         final_out_dist = "{:s}{:s}_dist.pdf".format(out_base,safe_name)
         PlotUtilities.savefig(fig,final_out_dist)
         # make the rupture spectrum figure

@@ -86,8 +86,8 @@ def run(base="./"):
     
     """
     out_base = base
-    data_base = base + "data/"
-    data_file = data_base + "Scores.pkl"
+    data_base =  base + "data/"
+    data_file = "../FigurePerformance_CS/data/Scores.pkl"
     force=False
     cache_file = base + "cache.pkl"
     fec_file = data_base + "multiple.csv.pkl"
