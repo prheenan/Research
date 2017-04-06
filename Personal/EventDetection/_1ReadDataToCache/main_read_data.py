@@ -14,47 +14,30 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    cache_directory = "./cache/"
-    # limit (per category)
-    limit = 200
-    n_folds = 5
-    pool_size =  multiprocessing.cpu_count()-1
-    debugging = True
-    copy_files = True
-    force_read = False
-    force_relearn = False
-    force_learn = False
-    only_lowest = True
-    n_tuning_points = 15
-    debug_directory = "./debug_no_event/"
-    GenUtilities.ensureDirExists(debug_directory)
+def get_learner_results(cache_directory,debug_directory,positive_categories,
+                        limit = 200,n_folds=5,n_tuning_points = 15,
+                        force_read = False,    
+                        pool_size =  multiprocessing.cpu_count()-1,
+                        force_relearn = False,
+                        force_learn = False,
+                        n_learners = 1,
+                        *args,**kwargs):
     learners_kwargs = dict(n_points_no_event=n_tuning_points,
                            n_points_fovea=n_tuning_points,
                            n_points_wavelet=n_tuning_points)
-    positives_directory = InputOutput.get_positives_directory()
-    positive_categories = InputOutput.get_categories(positives_directory,
-                                                     only_lowest=only_lowest)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
-    # XXX use just the first N learners
-    n_learners = 3
     learners = Learners.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
                              force_relearn,positive_categories,
                              force_read,force_learn,cache_directory,limit,
                              n_folds,pool_size=pool_size,
-                             learners=learners)
+                             learners=learners)         
+    return learners
+    
+def profile_learners(learners,debug_directory,cache_directory,debugging = True,
+                     copy_files = True):
     for l in learners:
         if debugging:
             break
@@ -129,7 +112,31 @@ def run():
                                                 str(threshold))
         wave_name = example_split.retract.Meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
-        Plotting.debugging_plots(id_string,example_split,pred_info)
+        Plotting.debugging_plots(id_string,example_split,pred_info)  
+        
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    cache_directory = "./cache/"
+    only_lowest = True
+    debugging = False    
+    n_learners = 1    
+    debug_directory = "./debug_no_event/"
+    GenUtilities.ensureDirExists(debug_directory)
+    positives_directory = InputOutput.get_positives_directory()
+    positive_categories = InputOutput.get_categories(positives_directory,
+                                                     only_lowest=only_lowest)
+    learners = get_learner_results(cache_directory,debug_directory,
+                                   positive_categories,n_learners=n_learners)
+    profile_learners(learners,debug_directory,cache_directory,
+                     debugging=debugging)
 
 
 if __name__ == "__main__":

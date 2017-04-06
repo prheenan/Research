@@ -39,23 +39,44 @@ class ForceExtensionCategory:
         self.data = data 
 
 
-
-def get_positives_directory(data_base=None):
+def _base_curated(data_base=None):
     """
-    reads the (csv) file at file_path, cachine it to cache_directory,
-    reading in events 
-    
-    Args;
-        data_base: where the data lives
-    Returns
-        positive categories base directory
+    Args:
+        data_base: where the network drive lives.
+    Returns:
+        the base to the curated data for the masters thesis
     """
     if (data_base is None):
         data_base = FEC_Util.default_data_root()
     network = data_base
     base_directory = network + "/4Patrick/CuratedData/Masters_CSCI/"
+    return base_directory
+
+def get_positives_directory(*args,**kwargs):
+    """
+    reads the (csv) file at file_path, cachine it to cache_directory,
+    reading in events 
+    
+    Args;
+        see _base_curated
+    Returns
+        positive categories base directory
+    """
+    base_directory = _base_curated(*args,**kwargs)
     positives_directory = base_directory + "Positive/650nm-4x-bio/csv/"
     return positives_directory
+ 
+def get_protein_directory(*args,**kwargs):
+    """
+    the same as get_positives_directory, except for protein
+    
+    Args:
+        see get_positives_directory
+    Returns: 
+        string to the protein base
+    """
+    base_directory = _base_curated(*args,**kwargs)
+    return base_directory + "Positive/4nug2_alpha3D_MarcAndre/csv/"
 
 def read_and_cache_file(file_path,cache_directory,has_events=False,force=True):
     """
@@ -210,7 +231,12 @@ def read_categories(categories,force_read,cache_directory,limit):
     return categories
 
 
-    
+def get_protein_categories(base_directory=get_protein_directory()):
+    protein_meta = [ [base_directory,"NUG2",500]]
+    # create objects to represent our data categories
+    protein_categories = [ForceExtensionCategory(i,*r,has_events=True) 
+                          for i,r in enumerate(positive_meta)]    
+    return protein_categories
     
 def get_categories(positives_directory,use_simulated=False,only_lowest=False):
     """
