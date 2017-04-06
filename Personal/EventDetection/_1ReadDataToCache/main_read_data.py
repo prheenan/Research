@@ -30,7 +30,7 @@ def run():
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True
-    copy_files = True
+    copy_files = False
     force_read = False
     force_relearn = False
     force_learn = False
@@ -64,7 +64,7 @@ def run():
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-    num_to_plot = limit
+    num_to_plot = 10
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -110,9 +110,9 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x_value
-    example_numbers = []
+    example_numbers = [3,8]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples):
+    for i,example in enumerate(examples_f):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
