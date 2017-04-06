@@ -84,29 +84,6 @@ def run(base="./"):
     # plot the best fold for each
     out_names = []
     colors_pred =  algorithm_colors()
-    for m in metric_list:
-        precision = m.precision()
-        recall = m.recall()
-        data = [precision,recall]
-        bins = np.linspace(0,1)
-        colors = ['g','r']
-        labels = ["Precision","Recall"]
-        ind = np.arange(len(data)) 
-        style_precision = dict(color='g',alpha=0.3,hatch="//",label="Precision")
-        style_recall = dict(color='r',alpha=0.3,label="Recall")
-        width = 0.5
-        rects = plt.bar(ind,data,color=colors,width=width)
-        ax = plt.gca()
-        ax.set_xticks(ind + width / 2)
-        ax.set_xticklabels(labels)
-        y_func=lambda i,r: "{:.3f}".format(r.get_height()/2)
-        PlotUtilities.autolabel(rects,y_func=y_func)
-        PlotUtilities.lazyLabel("Metric Value",
-                                "Number of Force-Extension Curves","",
-                                frameon=True)
-        plt.xlim([-0.1,1+2*width])
-        plt.ylim([0,1])
-        #XXX todo
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,18))
     entire_figure = gridspec.GridSpec(3,1)

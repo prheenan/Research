@@ -16,6 +16,31 @@ def get_best_metrics(data_file):
     metrics = [Offline.best_metric_from_learner(l) for l in learners]
     return metrics
 
+def precison_recall_plot(metric):
+    precision = metric.precision()
+    recall = metric.recall()
+    f1_score = 2*precision*recall/(precision+recall)
+    data = [precision,recall,f1_score]
+    bins = np.linspace(0,1)
+    colors = ['m','b','r']
+    labels = ["Precision","Recall","F$_1$-Score"]
+    ind = np.arange(len(data)) 
+    style_precision = dict(color='k',alpha=0.3,hatch="//",label="Precision")
+    style_recall = dict(color='r',alpha=0.3,label="Recall")
+    width = 0.7
+    rects = plt.bar(ind,data,color=colors,width=width,alpha=0.6)
+    ax = plt.gca()
+    ax.set_xticks(ind)
+    ax.set_xticklabels(labels)
+    y_func=lambda i,r: "{:.3f}".format(r.get_height()/2)
+    PlotUtilities.autolabel(rects,y_func=y_func)
+    PlotUtilities.lazyLabel("Metric",
+                            "Value","",
+                            frameon=True)
+    plt.xlim([-width,len(labels)-width/2])
+    plt.ylim([0,1])
+    
+
 def run(in_base="../FigurePerformance_CS/"):
     """
     
@@ -32,8 +57,17 @@ def run(in_base="../FigurePerformance_CS/"):
     locs = [loc_top,loc_left,loc_left,loc_lower,loc_lower]
     titles = Plotting.algorithm_title_dict()
     colors = Plotting.algorithm_colors()
+    names = [titles[m.name.lower()] for m in metrics]
+    # make the precision and recall plots
+    fig = PlotUtilities.figure((12,4))
     for i,m in enumerate(metrics):
-        name = titles[m.name.lower()]
+        ax = plt.subplot(1,3,(i+1))
+        precison_recall_plot(m)
+        PlotUtilities.title(names[i])
+        ax.tick_params(axis=u'x', which=u'both',length=0)
+    PlotUtilities.savefig(fig,"./f_score.pdf")
+    for i,m in enumerate(metrics):
+        name = names[i]
         safe_name = name.replace(" ","")
         color_pred =  colors[i]
         print("The best parameter for {:s} was {:.4g}".\
