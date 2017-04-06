@@ -86,9 +86,9 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     # XXX move to utility
     epsilon = no_event_parameters_object.epsilon
     sigma = no_event_parameters_object.sigma
-    min_signal = (epsilon+sigma)
     epsilon_approach = no_event_parameters_object.delta_epsilon
     sigma_approach = no_event_parameters_object.delta_sigma
+    min_signal = (epsilon+sigma)
     if (negative_only):
         baseline = -min_signal
     else:
@@ -136,8 +136,7 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
     # get the baseline results
-    ratio_probability = _no_event.\
-        _delta_probability(df=df_true,
+    ratio_probability = _no_event._delta_probability(df=df_true,
                            no_event_parameters=no_event_parameters_object)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
@@ -163,7 +162,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    boolean_ret = probability_updated < threshold    
+    boolean_ret = probability_updated < threshold                      
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -376,8 +375,9 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     """
     interpolator_approach_x = split_fec.approach.Time[slice_fit_approach]
     interpolator_approach_f = spline_fit_approach(interpolator_approach_x)
-    df_approach = Analysis.local_centered_diff(interpolator_approach_f,
-                                               n=min_points_between)
+    df_approach = _no_event._delta(interpolator_approach_x,
+                                   interpolator_approach_f,
+                                   min_points_between)
     delta_epsilon,delta_sigma = np.median(df_approach),np.std(df_approach)
     """
     get the interpolate derivative in the slice
