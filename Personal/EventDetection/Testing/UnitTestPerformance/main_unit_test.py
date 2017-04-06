@@ -14,7 +14,7 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.118,
+def check_bcc(examples,predicted,bcc_threshold=0.154,
               rupture_tuple=(0.112,1.49)):
     # get the scoring objects
     scores = []

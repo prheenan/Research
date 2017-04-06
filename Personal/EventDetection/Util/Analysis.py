@@ -476,17 +476,12 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
     force_baseline,idx_surface,filtered_obj = \
         get_surface_index(approach,n_smooth,last_less_than=True)
     idx_delta = approach.Force.size-idx_surface
-    # XXX debugging
-    time_retr = split_fec.retract.Time
-    split_fec.set_tau_num_points(n_smooth)
-    retract_interp = split_fec.retract_spline_interpolator()(time_retr)
-    retract_baseline = retract_interp[idx_delta]
     # get the separation at the baseline
     separation_baseline = filtered_obj.Separation[idx_surface]
     zsnsr_baseline = filtered_obj.Zsnsr[idx_surface]
     # zero everything 
     split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline,
-                       retract_baseline)
+                       force_baseline)
     if (flip_force):
         split_fec.flip_forces()
     split_fec.set_tau_num_points(n_smooth)

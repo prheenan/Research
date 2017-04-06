@@ -112,7 +112,7 @@ def run():
     threshold = best_x_value
     example_numbers = [3,8]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples_f):
+    for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
