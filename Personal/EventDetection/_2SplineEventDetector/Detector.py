@@ -138,8 +138,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # get the baseline results
     ratio_probability = _no_event.\
         _delta_probability(df=df_true,
-                           no_event_parameters=no_event_parameters_object,
-                           negative_only=negative_only)
+                           no_event_parameters=no_event_parameters_object)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     # find where the derivative is definitely not an event

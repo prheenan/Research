@@ -162,7 +162,8 @@ def _delta(x,interp_f,n_points_diff):
     df_true = Analysis.local_centered_diff(interp_f,n=n_points_diff)
     return df_true
 
-def _delta_probability(df,no_event_parameters,negative_only=False):
+def _delta_probability(df,no_event_parameters):
+    negative_only=no_event_parameters.negative_only
     epsilon = no_event_parameters.epsilon
     sigma = no_event_parameters.sigma
     min_signal = (epsilon+sigma)
@@ -221,8 +222,8 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
                                                integral_sigma)
     return probability_integral
 
-def _derivative_probability(interp,x,no_event_parameters_object,
-                            negative_only=False):
+def _derivative_probability(interp,x,no_event_parameters_object):
+    negative_only=no_event_parameters_object.negative_only
     derivative = _spline_derivative(x,interp)
     deriv_epsilon = no_event_parameters_object.derivative_epsilon
     deriv_sigma = no_event_parameters_object.derivative_sigma
@@ -251,7 +252,6 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     n_original = x.size
     x_s = x
     y_s = y
-    negative_only=no_event_parameters_object.negative_only
     # get the interpolated function
     interpolated_y = interp(x_s)
     stdev_masked,_,_ = Analysis.\
@@ -268,20 +268,16 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     probability_distribution = chebyshev
     no_event_parameters_object.last_interpolator_used = interp
     if (no_event_parameters_object.valid_derivative):
-        p_deriv = _derivative_probability(interp,x_s,no_event_parameters_object,
-                                          negative_only=negative_only)
+        p_deriv = _derivative_probability(interp,x_s,no_event_parameters_object)
         probability_distribution *= p_deriv
     if (no_event_parameters_object.valid_integral):
         p_int = _integral_probability(y_s,interpolated_y,
                                       _min_points_between(n_points),
                                       no_event_parameters_object)
-        threshold = no_event_parameters_object.threshold
-        boolean_tmp = (probability_distribution  < threshold)
         probability_distribution *= p_int
     if (no_event_parameters_object.valid_delta):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
-        p_delta = _delta_probability(df,no_event_parameters_object,
-                                     negative_only=negative_only)
+        p_delta = _delta_probability(df,no_event_parameters_object)
         probability_distribution *= p_delta        
     return probability_distribution,stdev_masked
         
