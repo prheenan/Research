@@ -30,7 +30,7 @@ def run():
     n_folds = 5
     pool_size =  multiprocessing.cpu_count()-1
     debugging = True
-    copy_files = False
+    copy_files = True
     force_read = False
     force_relearn = False
     force_learn = False
