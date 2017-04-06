@@ -23,7 +23,7 @@ This thesis describes a new method for detecting events in \fec{}s.  The algorit
 
 \section{Sample preparation}
 
-Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere\cite{walder_robert_rapid_nodate}. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
+Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere.\cite{walder_robert_rapid_nodate} Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
 
 \section{\sLabel{Surface}Atomic force microscopy}
 
@@ -90,7 +90,7 @@ The following two algorithms were chosen for comparison to \name{}:
 Two metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics reported are listed in \tRef{metrics}. The event error metric, $P_{85}$, is the 85th percentile of relative error between predicted and true event locations (see \fRef{DistanceMetric}). The rupture \BccLong{}, $1-\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the mismatch between the true and predicted distribution over loading rates and rupture forces. 
 
 \begin{table}
-\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. The metrics are bolded, and the quantities that they depend on are listed first. BCC stands for \BccLong{}.  Throughout, `k' refers to the (arbitrary) index of a \fec{}, and `i' and `j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in \fec{} 4, and $d_{(\nu,F),p}$ represents the joint distribution of predicted points in the space of loading rates and rupture forces.  }
+\caption[Definition of algorithmic performance metrics]{\tLabel{metrics} The definitions of the performance metrics reported. The metrics are bolded, and the quantities that they depend on are listed first. BCC stands for \BccLong{}.  Throughout, `k' refers to the index of a \fec{}, and `i' and `j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in \fec{} 4. }
 \begin{tabularx}{\textwidth}{ l | l | l | l  }
 \hline \hline
 Name & Notation  & Range & \text{Optimum} \e 
