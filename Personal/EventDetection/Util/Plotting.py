@@ -144,9 +144,11 @@ def plot_prediction_info(ex,info,xlabel="Time",
     event_idx = info.event_idx
     mask = info.mask
     # get the interpolated derivative
+    slice_v = info.slice_fit
+    time_slice = time[slice_v]
     interpolator = ex.retract_spline_interpolator()
-    interp_first_deriv = interpolator.derivative(1)(time)
-    interpolated_force = interpolator(time)
+    interp_first_deriv = interpolator.derivative(1)(time_slice)
+    interpolated_force = interpolator(time_slice)
     tau = ex.tau
     stdevs = info.local_stdev
     # plot everything
@@ -160,6 +162,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     x_limits = [min_x - fudge,max_x + fudge]
     force_plot = force * 1e12
     interpolated_force_plot = interpolated_force*1e12
+    time_interpolated_plot = time_slice - min(retract.Time)
     # get the informaiton relevant to the CDF
     original_cdf = info.probabilities[0]
     cdf = original_cdf
@@ -172,7 +175,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     lazy_kwargs = dict(frameon=False,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
-    plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
+    plt.plot(time_interpolated_plot,interpolated_force_plot,color='b',
+             linewidth=2,label="2-spline")
     plt.axvline(x[surface_index],label="Surface\n(pred)")
     highlight_events(event_slices,x,force_plot,**style_events)
     PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)

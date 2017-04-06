@@ -273,10 +273,6 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
         threshold = no_event_parameters_object.threshold
         boolean_tmp = (probability_distribution  < threshold)
         probability_distribution *= p_int
-        where_not_already = np.where(np.logical_not(boolean_tmp))[0]    
-        if (where_not_already.size > 0 and 
-            no_event_parameters_object.mask_is_conditional):
-            probability_distribution[where_not_already] = 1
     if (no_event_parameters_object.valid_delta):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
         p_delta = _delta_probability(df,no_event_parameters_object,
