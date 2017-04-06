@@ -143,9 +143,12 @@ def plot_prediction_info(ex,info,xlabel="Time",
     event_idx_end = [e.stop for e in event_slices_predicted]
     event_idx = info.event_idx
     mask = info.mask
-    interp_first_deriv = info.interp.derivative(1)(time)
     # get the interpolated derivative
-    interpolated_force = info.interp(time)
+    slice_v = info.slice_fit
+    time_slice = time[slice_v]
+    interpolator = ex.retract_spline_interpolator()
+    interp_first_deriv = interpolator.derivative(1)(time_slice)
+    interpolated_force = interpolator(time_slice)
     tau = ex.tau
     stdevs = info.local_stdev
     # plot everything
@@ -159,6 +162,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     x_limits = [min_x - fudge,max_x + fudge]
     force_plot = force * 1e12
     interpolated_force_plot = interpolated_force*1e12
+    time_interpolated_plot = time_slice - min(retract.Time)
     # get the informaiton relevant to the CDF
     original_cdf = info.probabilities[0]
     cdf = original_cdf
@@ -171,7 +175,8 @@ def plot_prediction_info(ex,info,xlabel="Time",
     lazy_kwargs = dict(frameon=False,loc="best")
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
-    plt.plot(x,interpolated_force_plot,color='b',linewidth=2,label="2-spline")
+    plt.plot(time_interpolated_plot,interpolated_force_plot,color='b',
+             linewidth=2,label="2-spline")
     plt.axvline(x[surface_index],label="Surface\n(pred)")
     highlight_events(event_slices,x,force_plot,**style_events)
     PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)
@@ -349,7 +354,38 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
                             loc=loc)
     PlotUtilities.set_legend_kwargs()
 
-
+def debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
+                           boolean_array,no_event_cond,value_cond,
+                           boolean_ret,probability_updated,probability,
+                           threshold):
+    xlim = plt.xlim(min(x),max(x))
+    plt.subplot(4,1,1)
+    valid_idx = np.where(np.logical_not(gt_condition))
+    invalid_idx = np.where(gt_condition)
+    plt.plot(x[invalid_idx],force[invalid_idx],color='k',alpha=0.3)
+    plt.plot(x[valid_idx],force[valid_idx],color='g')    
+    plt.plot(x_sliced,interp_f,color='b')
+    plt.xlim(xlim)
+    plt.subplot(4,1,2)
+    plt.plot(x,boolean_array+2.1,label="orig")
+    plt.plot(x_sliced,no_event_cond+1.1)
+    plt.plot(x_sliced,value_cond)
+    plt.plot(x,gt_condition-1.1,label="concat")
+    plt.plot(x,boolean_ret-2.1,linestyle='--',label="f")
+    plt.legend(loc='upper left')
+    plt.xlim(xlim)
+    plt.subplot(4,1,3)
+    plt.plot(x,boolean_array+1.1)
+    plt.plot(x,boolean_ret+2.1,linestyle='--')
+    plt.xlim(xlim)
+    plt.subplot(4,1,4)
+    plt.semilogy(x,probability_updated,linestyle='--')
+    plt.semilogy(x,probability)
+    plt.xlim(xlim)
+    plt.axhline(threshold)
+    plt.xlim(xlim)
+    
+    
 def debugging_plots(id_string,example_split,info,plot_auto=False):
     """
     Plots the autocorrelation and prediction information
@@ -811,56 +847,6 @@ def plot_individual_learner(cache_directory,learner,rupture_kwargs=dict()):
                                      to_true=True)
     PlotUtilities.savefig(fig,out_file_stem + "dist.png")
 
-def debug_plot_force_value(x,f,interp_f,probability,probability_updated,
-                           slice_to_use,bool_interp):
-    """
-    For debugging at the end of Detector.force_value_mask_function
-
-    Args:
-        see Detector.force_value_mask_function
-    Returns: 
-        nothing, makes a pretty plot.
-    """
-    force_plot = lambda x: x * 1e12
-    plt.subplot(2,1,1)
-    plt.plot(x, force_plot(f),alpha=0.3,color='k',label="raw")
-    plt.plot(x, force_plot(interp_f),color='b',label="interpolated")
-    PlotUtilities.lazyLabel("","Force","",loc='upper right')
-    plt.subplot(2,1,2)
-    plt.semilogy(x,bool_interp + 1e-2,label="mask")
-    plt.semilogy(x,probability_updated[slice_to_use],color='r',linestyle='--',
-                 label="prob new")
-    plt.semilogy(x,probability[slice_to_use],color='k',alpha=0.3,
-                 label="prob orig")
-    PlotUtilities.lazyLabel("Time","Prob/Mask","",loc='upper right')
-
-def debug_plot_derivative_ratio(time,slice_to_use,
-                                 ratio,interp_sliced,force_sliced,
-                                 interp_slice_deriv,
-                                 boolean_ret,probability_updated,
-                                 absolute_min_idx,ratio_min_threshold):
-    x_sliced = time[slice_to_use]
-    xlim = [min(x_sliced),max(x_sliced)]
-    where_possible = np.where(ratio < ratio_min_threshold)
-    plot_interp_deriv = interp_slice_deriv/max(interp_slice_deriv)
-    plt.subplot(3,1,1)
-    plt.plot(x_sliced,interp_sliced*1e12,linewidth=3,label="interp")
-    plt.plot(x_sliced,force_sliced*1e12,color='k',alpha=0.3,label="force")
-    PlotUtilities.lazyLabel("","Force","")
-    plt.xlim(xlim)
-    plt.subplot(3,1,2)
-    plt.plot(x_sliced,ratio,color='k',alpha=0.3,label="ratio") 
-    plt.plot(x_sliced[where_possible],ratio[where_possible],color='b')
-    PlotUtilities.lazyLabel("","ratio df/epsilon","")
-    plt.axvline(time[absolute_min_idx])
-    plt.xlim(xlim)
-    plt.subplot(3,1,3)
-    plt.plot(time,probability_updated,label="prob")
-    plt.plot(time,boolean_ret + min(probability_updated),label="mask")
-    plt.yscale('log')
-    plt.xlim(xlim)
-    PlotUtilities.lazyLabel("time","prob,mask","")
-
 def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
                   sigma,epsilon):
     plt.subplot(3,1,1)
@@ -877,36 +863,6 @@ def plot_no_event(x,y,interp,slice_fit,probability_distribution,stdev_masked,
     plt.plot(x,probability_distribution)
     PlotUtilities.lazyLabel("Time","Probability","")
     plt.yscale('log')
-
-def debug_plot_derivs(approach_time,approach_force,
-                      approach_interp_sliced,x_sliced,
-                      force_sliced,interp_sliced,
-                      approach_interp_deriv,interp_slice_deriv,
-                      min_deriv):
-    ylim = [min(force_sliced),max(force_sliced)]
-    min_v = min([min(approach_interp_deriv),min(interp_slice_deriv)])
-    max_v = max([max(approach_interp_deriv),max(interp_slice_deriv)])
-    ylim_deriv = [min_v,max_v]
-    plt.subplot(2,2,1)
-    plt.plot(approach_time,approach_force,alpha=0.3)
-    plt.plot(approach_time,approach_interp_sliced)
-    plt.ylim(ylim)
-    PlotUtilities.lazyLabel("time","Force","")
-    plt.subplot(2,2,3)
-    plt.plot(x_sliced,force_sliced,alpha=0.3)
-    plt.plot(x_sliced,interp_sliced)
-    plt.ylim(ylim)
-    PlotUtilities.lazyLabel("time","Force","")
-    plt.subplot(2,2,2)
-    plt.plot(approach_time,approach_interp_deriv)
-    plt.ylim(ylim_deriv)
-    PlotUtilities.lazyLabel("time","Deriv","")
-    plt.subplot(2,2,4)
-    plt.plot(x_sliced, interp_slice_deriv)
-    plt.axhline(min_deriv,label="Minimum of approach")
-    plt.ylim(ylim_deriv)
-    PlotUtilities.lazyLabel("time","Deriv","")
-    
 
 def top_bars(x,y,slices,colors,ymin=None,ymax=None):
     """
@@ -956,44 +912,6 @@ def before_and_after(x,y,before_slice,after_slice,style=dict(),
         x_sliced = x_tmp[slice_v]
         plt.plot(x_sliced,y_tmp[slice_v],color=color_tmp,label=label,
                  **style_tmp)
-
-def debug_plot_derivative(retract,slice_to_use,probability_updated,
-                          boolean_ret,probability_original,
-                          slice_updated,threshold,interp):
-    """
-    For debugging at the end of Detector.derivative_mask_function
-
-    Args:
-        see Detector.derivative_mask_function
-    Returns: 
-        nothing, makes a pretty plot.
-    """
-    time = retract.Time
-    time_lim = [min(time),max(time)]
-    x = retract.Time[slice_to_use]
-    f = retract.Force * 1e12
-    plt.subplot(2,1,1)
-    plt.plot(time,f,label="force",color='k',alpha=0.3)
-    plt.plot(x,f[slice_to_use])
-    plt.plot(x,interp(x)*1e12,color='r')
-    PlotUtilities.lazyLabel("","Force","",loc="upper right")
-    plt.xlim(time_lim)
-    plt.subplot(2,1,2)
-    plt.plot(time,probability_updated,label="prob (updated)",
-             linestyle='--')
-    plt.plot(time,probability_original,color='k',alpha=0.3,
-             label="prob (original)")
-    plt.xlim(time_lim)
-    plt.plot(time,boolean_ret+min(probability_original),linewidth=1,alpha=0.3,
-             label="mask")
-    plt.axhline(threshold,label="t={:.3g}".format(threshold))
-    mask_ends = np.zeros(time.size)
-    mask_ends[slice_updated] = 1
-    plt.plot(time,mask_ends,label="end mask")
-    plt.yscale('log')
-    plt.ylim([min(probability_updated)/5,2])
-    PlotUtilities.lazyLabel("Time","Probability","",loc="upper right")
-
 
 def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
     """

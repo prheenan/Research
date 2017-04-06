@@ -7,7 +7,6 @@ import sys
 from scipy import signal,stats
 
 from Research.Personal.EventDetection.Util import Analysis,Plotting
-from GeneralUtil.python import PlotUtilities,GenUtilities
 # XXX reduce import size below
 from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
     _min_points_between,_predict,\
@@ -131,6 +130,10 @@ def delta_mask_function(split_fec,slice_to_use,
     # get the retract df spectrum
     interpolator = no_event_parameters_object.last_interpolator_used
     interp_f = interpolator(x_sliced)
+    # offset to right now (assume this is after surface  touchoff /adhesions)
+    offset_zero_force = interp_f[0]
+    split_fec.zero_retract_force(offset_zero_force)
+    interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
     # get the baseline results
     ratio_probability = _no_event.\
@@ -161,35 +164,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    boolean_ret = probability_updated < threshold
-    """
-    xlim = plt.xlim(min(x),max(x))
-    plt.subplot(4,1,1)
-    valid_idx = np.where(np.logical_not(gt_condition))
-    invalid_idx = np.where(gt_condition)
-    plt.plot(x[invalid_idx],force[invalid_idx],color='k',alpha=0.3)
-    plt.plot(x[valid_idx],force[valid_idx],color='g')    
-    plt.plot(x_sliced,interp_f,color='b')
-    plt.xlim(xlim)
-    plt.subplot(4,1,2)
-    plt.plot(x,boolean_array+2.1)
-    plt.plot(x_sliced,no_event_cond+1.1)
-    plt.plot(x_sliced,value_cond)
-    plt.plot(x,gt_condition-1.1)
-    plt.plot(x,boolean_ret-2.1,linestyle='--')
-    plt.xlim(xlim)
-    plt.subplot(4,1,3)
-    plt.plot(x,boolean_array+1.1)
-    plt.plot(x,boolean_ret+2.1,linestyle='--')
-    plt.xlim(xlim)
-    plt.subplot(4,1,4)
-    plt.semilogy(x,probability_updated,linestyle='--')
-    plt.semilogy(x,probability)
-    plt.xlim(xlim)
-    plt.axhline(threshold)
-    plt.xlim(xlim)
-    plt.show()
-    """
+    boolean_ret = probability_updated < threshold                    
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -201,7 +176,7 @@ def get_events_before_marker(marker_idx,event_mask,min_points_between):
     events_containing_surface = [e for e in event_boundaries
                                  if (e.start <= marker_idx)]     
     return events_containing_surface
-    
+
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          no_event_parameters_object):
@@ -250,7 +225,9 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # since adhesion (probably) really screws everything up
     x = split_fec.retract.Time[slice_updated]
     y = split_fec.retract.Force[slice_updated]
-    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_updated)
+    slice_interp = slice(slice_updated.start,slice_updated.stop,1)
+    interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
+    interp_slice = interp(x)
     split_fec.set_retract_knots(interp)
     no_event_parameters_object._set_valid_delta(True)
     no_event_parameters_object.negative_only = True
@@ -265,9 +242,10 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)
+                                                         min_points_between)                                                  
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
+    # XXX zero by whatever is happening after the last event..
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     min_idx = max(min_idx,last_event_containing_surface_end)

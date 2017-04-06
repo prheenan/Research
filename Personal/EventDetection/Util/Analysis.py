@@ -71,6 +71,8 @@ class split_force_extension:
             
             kwargs: passed to spline_interpolator
         """
+        if (slice_to_fit is None):
+            slice_to_fit = slice(0,self.retract.Time.size-1,1)
         if knots is None:
             knots = self.retract_knots
         if (knots is not None):
@@ -121,7 +123,9 @@ class split_force_extension:
             self.tau = np.median(np.diff(self.approach.Time))*tau_num_points
         else:
             self.tau = None
-    def zero_all(self,separation,zsnsr,force):
+    def zero_retract_force(self,offset):
+        self.retract.Force -= offset
+    def zero_all(self,separation,zsnsr,force,force_retract):
         """ 
         zeros the distance and force of the approach,dwell, and retract
         
@@ -130,7 +134,7 @@ class split_force_extension:
         """
         self.approach.offset(separation,zsnsr,force)
         self.dwell.offset(separation,zsnsr,force)
-        self.retract.offset(separation,zsnsr,force)
+        self.retract.offset(separation,zsnsr,force_retract)
     def flip_forces(self):
         """
         multiplies all the forces by -1; useful after offsetting
@@ -259,11 +263,13 @@ def local_integral(y,n,mode='reflect'):
 def local_centered_diff(y,n):
     """
     return the local centered difference: y[n]-y[-n], with zeros at the 
-    boundaries
+    boundaries points (ie 0 and y.size-1), 
 
     Args:
         y: to get the centered diff of
         n: the size of the window
+    Returns:
+        array a, same size as y, where a[i] = y[min(i,y.size-1)]-y[max(0,i)]
     """
     # get the 'initial' points. this is the first point for the first n,
     # then the remainder of the array (eg: y[n] has an initial of y[0],
@@ -433,6 +439,14 @@ def _surface_index(filtered_y,y,last_less_than=True):
     pred_approach = np.polyval(coeffs_approach,x=x)
     pred_invols = np.polyval(coeffs_invols,x=x)
     surface_idx = np.argmin(np.abs(pred_approach-pred_invols))
+    # iterate to get the final surface touchoff ; where is the filtered
+    # version less than the line?
+    where_touch = np.where( (x <= surface_idx) & 
+                            (filtered_y <= pred_approach))[0]
+    if (where_touch.size > 0):
+        surface_idx = where_touch[-1]
+    # the final baseline is just the value of the approach
+    median = pred_approach[surface_idx]
     return median,surface_idx
 
 def get_surface_index(obj,n_smooth,last_less_than=True):
@@ -465,11 +479,13 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
     approach = split_fec.approach
     force_baseline,idx_surface,filtered_obj = \
         get_surface_index(approach,n_smooth,last_less_than=True)
+    idx_delta = approach.Force.size-idx_surface
     # get the separation at the baseline
     separation_baseline = filtered_obj.Separation[idx_surface]
     zsnsr_baseline = filtered_obj.Zsnsr[idx_surface]
     # zero everything 
-    split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline)
+    split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline,
+                       force_baseline)
     if (flip_force):
         split_fec.flip_forces()
     split_fec.set_tau_num_points(n_smooth)
@@ -660,11 +676,11 @@ def zero_and_split_force_extension_curve(example):
     n_approach = f.size
     # *last* time we are under; note that this is at the end of the approach
     get_last_under_median = \
-        lambda y: (y.size - np.where(y < np.median(f))[0][-1])
+        lambda y: (np.where(y < np.median(f))[0][-1])
     last_idx_under_median = get_last_under_median(f)
-    num_points = last_idx_under_median
+    num_points_approach = n_approach - last_idx_under_median
     x_tmp = np.arange(0,n_approach,1)
-    interp = spline_interpolator(tau_x=num_points,x=x_tmp,f=f)
+    interp = spline_interpolator(tau_x=num_points_approach,x=x_tmp,f=f)
     interp_approach = interp(x_tmp)
     last_idx_under_median = get_last_under_median(interp_approach)
     n_retract = retract.Force.size
