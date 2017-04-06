@@ -204,8 +204,12 @@ def local_noise_integral(f,interp_f,n_points,no_event_parameters_object):
     # we admit an event might be possible
     integral_epsilon = no_event_parameters_object.integral_epsilon
     integral_sigma   = no_event_parameters_object.integral_sigma
+    # if we only want negative differences, set the places where we are
+    # positive to zero...
+    if (no_event_parameters_object.negative_only):
+        stdev[np.where(diff > 0)] = integral_epsilon    
     local_integral = Analysis.local_integral(stdev-integral_epsilon,
-                                             min_points_between)
+                                             min_points_between)                                             
     return local_integral
 
 def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
