@@ -110,7 +110,7 @@ def run():
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x_value
-    example_numbers = [0,3,8]
+    example_numbers = []
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \

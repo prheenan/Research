@@ -143,9 +143,10 @@ def plot_prediction_info(ex,info,xlabel="Time",
     event_idx_end = [e.stop for e in event_slices_predicted]
     event_idx = info.event_idx
     mask = info.mask
-    interp_first_deriv = info.interp.derivative(1)(time)
     # get the interpolated derivative
-    interpolated_force = info.interp(time)
+    interpolator = ex.retract_spline_interpolator()
+    interp_first_deriv = interpolator.derivative(1)(time)
+    interpolated_force = interpolator(time)
     tau = ex.tau
     stdevs = info.local_stdev
     # plot everything
