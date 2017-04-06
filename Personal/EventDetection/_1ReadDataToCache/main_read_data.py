@@ -124,19 +124,25 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    cache_directory = "./cache/"
     only_lowest = True
-    debugging = False    
+    debugging = True    
     n_learners = 1    
-    debug_directory = "./debug_no_event/"
-    GenUtilities.ensureDirExists(debug_directory)
     positives_directory = InputOutput.get_positives_directory()
-    positive_categories = InputOutput.get_categories(positives_directory,
-                                                     only_lowest=only_lowest)
-    learners = get_learner_results(cache_directory,debug_directory,
-                                   positive_categories,n_learners=n_learners)
-    profile_learners(learners,debug_directory,cache_directory,
-                     debugging=debugging)
+    dna_categories = InputOutput.get_categories(positives_directory,
+                                                only_lowest=only_lowest)
+    meta = [["_protein",InputOutput.protein_categories()],
+            ["",dna_categories]]
+    for subdir,categories in meta:
+        cache_directory = "./cache{:s}/".format(subdir)
+        debug_directory = "./debug_no_event{:s}/".format(subdir)    
+        GenUtilities.ensureDirExists(debug_directory)       
+        GenUtilities.ensureDirExists(cache_directory)        
+        learners = get_learner_results(cache_directory,debug_directory,
+                                       categories,
+                                       n_learners=n_learners)
+        profile_learners(learners,debug_directory,cache_directory,
+                         debugging=debugging)
+        break
 
 
 if __name__ == "__main__":
