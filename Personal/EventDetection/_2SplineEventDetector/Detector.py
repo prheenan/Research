@@ -109,8 +109,7 @@ def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
     zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
     """
     plt.subplot(2,1,1)
-    plt.plot(diff)
-    plt.axhline(zero_force)
+    plt.plot(interp_f)
     plt.subplot(2,1,2)    
     plt.plot(diff)
     plt.axhline(zero_force)

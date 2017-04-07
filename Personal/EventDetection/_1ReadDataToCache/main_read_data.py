@@ -93,9 +93,9 @@ def profile_learners(learners,debug_directory,cache_directory,debugging = True,
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x_value
-    example_numbers = [0,1]
+    example_numbers = [8]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples):
+    for i,example in enumerate(examples_f):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
@@ -126,7 +126,7 @@ def run():
     """
     cache_directory = "./cache/"
     only_lowest = True
-    debugging = False    
+    debugging = True   
     n_learners = 1    
     debug_directory = "./debug_no_event/"
     GenUtilities.ensureDirExists(debug_directory)
