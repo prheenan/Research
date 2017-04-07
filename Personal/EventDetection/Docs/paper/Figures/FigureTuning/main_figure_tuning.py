@@ -36,7 +36,7 @@ def run(base="./"):
     
     """
     out_base = base
-    data_file = base + "data/Scores.pkl"
+    data_file = "../FigurePerformance_CS/data/Scores.pkl"
     force=False
     events_off = CheckpointUtilities.getCheckpoint("cache_dist.pkl",
                                                    dist_values,force,

@@ -539,7 +539,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
                        xlabel="Relative Error (x$_\mathrm{k}$)",
-                       distance_limits=None,clip_limits=False):
+                       distance_limits=None,clip_limits=False,q=None):
     """
     Args:
         see Plotting.histogram_event_distribution
@@ -567,7 +567,8 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
         distance_limits = limit
     return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
                 bins=bins,style_true=style_true,style_pred=style_pred,loc=loc,
-                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred)
+                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred,
+                q=q)
 
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
