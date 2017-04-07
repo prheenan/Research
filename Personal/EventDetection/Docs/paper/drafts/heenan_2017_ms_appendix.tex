@@ -74,7 +74,7 @@ For \emph{any} noise distribution, \eRef{feather-probability} bounds the probabi
 
 To obtain an accurate estimator for $g_t$, the data must be smoothed. The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline\citePRH{dierckx_algorithm_1975} to the force versus time curve. The spline is second-order to ensure a continuous first derivative (\fRef{FeatherExample}), and the spline knots are spaced uniformly at intervals of  the user-specified $\tau$ (see \tRef{Parameters}). \fRef{FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  \eRef{error}.
 
-Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations `$\WindowStdev{}$'. $\WindowStdev{}$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{2},\frac{\tau}{2}]$. Using $\WindowStdev{}$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  
+Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations `$\WindowStdev{}$'. $\WindowStdev{}$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{4},\frac{\tau}{4}]$. Using $\WindowStdev{}$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\WindowStdev{}$ on the region of the approach curve where the AFM tip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\WindowStdev{}$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these pseudo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
 
@@ -95,14 +95,14 @@ def event_indices(approach,retract,threshold,$\tau$):
    g$_a$ = second order spline fit to approach using $\tau$ for knots
    r = retract - g$^{*}$
    r$_a$ = approach - g$^{*}$
-   s[i] = standard deviation of r[i-$\tau$/2:i+$\tau$/2]
-   s$_a$[i] = standard deviation of r$_a$[i-$\tau$/2:i+$\tau$/2]
+   s[i] = standard deviation of r[i-$\frac{\tau}{4}$:i+$\frac{\tau}{4}$]
+   s$_a$[i] = standard deviation of r$_a$[i-$\frac{\tau}{4}$:i+$\frac{\tau}{4}$]
    $\epsilon$ = median of s$_a$
    $\sigma$ = standard deviation of s$_a$
    k = (s-$\epsilon$)/$\sigma$
    probability = mininimum(1,k$^{-2}$)
    # multiply by the integral probability 
-   integrated$_{s}$[i] = integrate (s-$\epsilon$) from [i-$\tau$] to [i+$\tau$]
+   integrated$_{s}$[i] = integrate (s-$\epsilon$) from [i-$\frac{\tau}{4}$] to [i+$\frac{\tau}{4}$]
    set integrated$_{s}$ where positive to 0
    k$_{\text{integ}}$ = (integrated$_{s}$/$\sigma$)
    probability = probability * minimum(1,k$_{\text{integ}}^{-2}$)
@@ -113,13 +113,15 @@ def event_indices(approach,retract,threshold,$\tau$):
    k$_{\text{deriv}}$ = (g$_{\text{deriv}}$ - $\epsilon_d$)/$\sigma_d$
    probability = probability * minimum(1,k$_{\text{deriv}}^{-2}$)
    # multiply by the differential probability 
-   df[i] = g$^{*}$[i+tau] - g$^{*}$[i-tau]
+   df[i] = g$^{*}$[i+$\frac{\tau}{2}$] - g$^{*}$[i-$\frac{\tau}{2}$]
    k$_{\text{df}}$ = (df - $\epsilon$)/$\sigma$
    probability = probability * minimum(1,k$_{\text{df}}^{-2}$)
    possible_events = indices where probability <= threshold
-   # update the probability to remove false positives (adhesions)
+   # update the probability to remove false positives 
    surface_location = last point where retract > 0
-   set possible events containing surface_location to 0
+   set events containing surface_location to 0
+   remove events where retract-df $\le$ zero
+   remove events where df within (epsilon+sigma) of zero
    return possible_events
 \end{lstlisting}
 \end{figure}
@@ -161,7 +163,7 @@ v (nm/s) & N$_\mathrm{curves}$ & $\mu_{\mathrm{Curve Size}}$ & $\sigma_{\mathrm{
 
 
 \begin{figure}[htp]
-\caption[Cross validation of algorithms and optimal parameters]{\noindent\fLabel{Tuning} Details of tuning experiments. \subref{A} The total number of extra and missing predicted events divided by the expected number of events for \name{}. \subref{B} As (A), but for the OpenFovea method. \subref{C} As (A), but for the Scientific Python method.  }
+\caption[Cross validation of algorithms and optimal parameters]{\noindent\fLabel{Tuning} Details of tuning experiments. \subref{A} The \BccLong{} metric versus tuning parameter for \name{}. \subref{B} As (A), but for the OpenFovea method. \subref{C} As (A), but for the Scientific Python method. In all subplots, only tuning points which return at least one prediction are plotted. }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/tuning.pdf}% Here is how to import EPS art
 \end{figure}

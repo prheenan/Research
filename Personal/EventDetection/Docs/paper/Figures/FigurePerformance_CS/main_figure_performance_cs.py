@@ -27,10 +27,12 @@ def write_coeffs_file(out_file,coeffs):
     opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
+        q = c.q
+        err_str =  (r"Relative event error P$_{" + "{:d}".format(q) + \
+                    r"}$ ($\downarrow$)")
         tmp =[ [opt_low,r"Rupture BCC ($\downarrow$)",
                 1-c.bc_2d],
-               [opt_low,r"Relative event error P$_{85}$ ($\downarrow$)",
-                c.cat_relative_q]]
+               [opt_low,err_str,c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
@@ -104,7 +106,7 @@ def run(base="./"):
         gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
                                               height_ratios=[2,1],
                                               subplot_spec=entire_figure[i],
-                                              wspace=0.4,hspace=0.5)
+                                              wspace=0.3,hspace=0.4)
         # plot the metric plot
         Plotting.rupture_plot(true,pred,
                               lim_plot_load=lim_load_max,

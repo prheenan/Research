@@ -14,7 +14,9 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 # mostly due to figure problems)
 # Arguments:
 #### Arg 1: Description
-git-latexdiff --ignore-latex-errors --main prheenan_thesis_ms.tex 0f0d13f088c4bba06a3566f4a5efbcda3b6ef161 --
+#rev=d61409367a84cd7389ecc1cd97d37bd0369520d1
+rev=0f0d13f088c4bba06a3566f4a5efbcda3b6ef161
+git-latexdiff --ignore-latex-errors --main prheenan_thesis_ms.tex $rev --
 
 
 

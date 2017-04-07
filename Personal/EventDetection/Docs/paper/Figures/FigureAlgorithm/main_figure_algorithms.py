@@ -28,7 +28,7 @@ label_s_t = r"$\Sigma_\mathrm{t}$"
 label_r_t = r"r$_t$"
 lazy_kwargs = dict(loc='lower right',frameon=False)
 
-error_label = "Residual (pN)"
+error_label = "Residual\n(pN)"
 filtered_error_label = label_s_t + " (pN)"
 force_label = "Force (pN)"
 
@@ -409,9 +409,9 @@ def run(base="./"):
     # probability distribution for the retract
     plt.subplot(gs[3,1])
     plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
-    PlotUtilities.label_tom(fig,loc=(-0.15,1.0))
+    PlotUtilities.label_tom(fig,loc=(-0.1,1.05))
     PlotUtilities.savefig(fig,out_fig,
-                          subplots_adjust=dict(hspace=0.2,wspace=0.2))
+                          subplots_adjust=dict(hspace=0.3,wspace=0.15))
 
 if __name__ == "__main__":
     run()
