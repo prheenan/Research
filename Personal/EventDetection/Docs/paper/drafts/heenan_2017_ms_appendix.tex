@@ -4,7 +4,7 @@
 
 Glass surfaces were etched using potassium hydroxide. \ValUnit{12}{mm} diameter glass disks \supply{Ted Pella}{26023} were sonicated \supply{Branson}{2510} for 5 minutes in \ValUnit{250}{mL} of ACS grade acetone \supply{Fisher}{A18-4}, 5 minutes in \ValUnit{250}{mL} of 95\% ethanol \supply{Decon}{2801}, and transferred to a solution of \ValUnit{80}{g} of potassium hydroxide \supply{Fisher}{P250-500} dissolved in  \ValUnit{170}{mL} of 95\% ethanol and \ValUnit{80}{mL} of deionized water \supply{Barnstead}{GenPure Pro} for 3 minutes. To removed residual KOH, the glass was serially diluted in two \ValUnit{1}{L} beakers of \ValUnit{18.2}{M$\Omega$} deionized water. The etched surfaces were dried with 99.8\% pure nitrogen gas \supply{Airgas}{NI UHP-300} and stored at room temperature in a dust-proof box. 
 
-To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in a UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a \ValUnit{70}{mL}, 60\degreeC{} solution of \ValUnit{0.15}{mg/mL} \ValUnit{600}{Dalton} Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then mounted in a custom-made teflon-holder and rinsed serially in \ValUnit{250}{mL} of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with nitrogen gas and stored in a dust-proof container at 4\degreeC{}.  
+To create azide-functionalized surfaces, etched glass was activated using 30 minutes exposure in an UV-ozone chamber \supply{Novascan}{PSDP Digital UV Ozone System} and incubated for three hours in a \ValUnit{70}{mL}, 60\degreeC{} solution of \ValUnit{0.15}{mg/mL} \ValUnit{600}{Dalton} Silane-PEG-Azide \supply{Nanocs}{PG2-AZSL-600} dissolved in toluene \supply{Sigma}{179418-4L}. The surfaces were then mounted in a custom-made teflon-holder and rinsed serially in \ValUnit{250}{mL} of toluene, isopropanol \supply{Fisher}{A416-4}, and deionized water. The azide-functionalized surfaces were dried with nitrogen gas and stored in a dust-proof container at 4\degreeC{}.  
 
 
 \begin{table}[htp]
@@ -42,7 +42,7 @@ This section details the event-detection algorithm. The following conventions ar
 
 \section{Defining the no-event hypothesis}
 
-\name{} defines an event as a discontinuity in piecewise-continuous time series data. In \singlemol{}, events occur when the force applied to a molecule exhibits a discontinuity as the molecule passes over an energy barrier. We assume this event takes place on time scales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `$t$' and finds where the probability of a measurement is low. Hereafter, the definition of an event and these assumptions will be referred to as the \emph{no-event hypothesis}. 
+\name{} defines an event as a discontinuity in piecewise-continuous time series data. In \singlemol{}, events occur when the force applied to a molecule exhibits a discontinuity as the molecule passes over an energy barrier. \name{} assumes that events take place on time scales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time `$t$' and finds where the probability of a measurement is low. Hereafter, the definition of an event and these assumptions will be referred to as the \emph{no-event hypothesis}. 
 
 \section{Mathematical background for testing the no-event hypothesis}
 
@@ -62,7 +62,7 @@ and
 
 \eqlab{ |E[R_t]| = \epsilon_t \le E[|R_t|] }{feather-epsilon}
 
-In practice (see \fRef{FeatherExample}), we approximate $\epsilon_t$ by the average over all time points $\hat{\epsilon}_t \approx \langle \epsilon_t \rangle_{\text{all t}} = \frac{1}{N} \sum_{t=1}^N |r_t|$. Under this assumption, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality:
+Under these assumptions, the probability `P' of measuring $r_t$ is bounded by Chebyshev's inequality:
 
 \eqlab{ \boxed{P( |R_t-\epsilon_t| \ge |r_t-\epsilon_t| ) \le
  (\frac{\sigma}{|r_t-\epsilon_t|})^2 }}{feather-probability}
@@ -76,7 +76,7 @@ To obtain an accurate estimator for $g_t$, the data must be smoothed. The approx
 
 Using $r_t$ as shown in \eRef{feather-epsilon} does not provide a strong signal in the presence of an event (see \fRef{FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations `$\WindowStdev{}$'. $\WindowStdev{}$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{4},\frac{\tau}{4}]$. Using $\WindowStdev{}$ instead of $r_t$ provides a much stronger signal in the presence of an event (see \fRef{FeatherExample}).  
 
-The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\WindowStdev{}$ on the region of the approach curve where the AFM tip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\WindowStdev{}$, and $\hat{\epsilon}$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these pseudo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
+The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\WindowStdev{}$ on the region of the approach curve where the AFM tip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\WindowStdev{}$, and $\hat{\epsilon}_t$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these pseudo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
 
 The quality of \name{}'s results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in \fRef{Code}. The calculation of each of these probabilities is exactly the same as \eRef{feather-probability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
 
@@ -103,7 +103,7 @@ def event_indices(approach,retract,threshold,$\tau$):
    probability = mininimum(1,k$^{-2}$)
    # multiply by the integral probability 
    integrated$_{s}$[i] = integrate (s-$\epsilon$) from [i-$\frac{\tau}{4}$] to [i+$\frac{\tau}{4}$]
-   set integrated$_{s}$ where positive to 0
+   set integrated$_{s}$ where positive to $\sigma$
    k$_{\text{integ}}$ = (integrated$_{s}$/$\sigma$)
    probability = probability * minimum(1,k$_{\text{integ}}^{-2}$)
    # multiply by the derivative probability
@@ -118,7 +118,7 @@ def event_indices(approach,retract,threshold,$\tau$):
    probability = probability * minimum(1,k$_{\text{df}}^{-2}$)
    possible_events = indices where probability <= threshold
    # update the probability to remove false positives 
-   surface_location = last point where retract > 0
+   surface_location = last point where appproach > 0
    set events containing surface_location to 0
    remove events where retract-df $\le$ zero
    remove events where df within (epsilon+sigma) of zero

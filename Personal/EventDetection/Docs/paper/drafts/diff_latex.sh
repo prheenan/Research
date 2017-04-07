@@ -27,5 +27,5 @@ git-latexdiff -b \
 	      --main prheenan_thesis_ms.tex $rev \
 	      -- \
 	      --config=$config_str \
-	      --append-context2cmd=$config_str
+	      --append-context2cmd=$context_append_str
 
