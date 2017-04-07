@@ -205,10 +205,6 @@ def local_noise_integral(f,interp_f,n_points,no_event_parameters_object):
     # we admit an event might be possible
     integral_epsilon = no_event_parameters_object.integral_epsilon
     integral_sigma   = no_event_parameters_object.integral_sigma
-    # if we only want negative differences, set the places where we are
-    # positive to zero...
-    if (no_event_parameters_object.negative_only):
-        stdev[np.where(diff > 0)] = integral_epsilon    
     local_integral = Analysis.local_integral(stdev-integral_epsilon,
                                              min_points_between)                                             
     return local_integral
@@ -221,10 +217,11 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     probability_integral = _no_event_chebyshev(local_integral,0,
                                                integral_sigma)
     return probability_integral
+    
+    
 
-def _derivative_probability(interp,x,no_event_parameters_object):
+def _derivative_probability(derivative,no_event_parameters_object):
     negative_only=no_event_parameters_object.negative_only
-    derivative = _spline_derivative(x,interp)
     deriv_epsilon = no_event_parameters_object.derivative_epsilon
     deriv_sigma = no_event_parameters_object.derivative_sigma
     k = (derivative-deriv_epsilon)/deriv_sigma
@@ -268,7 +265,8 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     probability_distribution = chebyshev
     no_event_parameters_object.last_interpolator_used = interp
     if (no_event_parameters_object.valid_derivative):
-        p_deriv = _derivative_probability(interp,x_s,no_event_parameters_object)
+        derivative = _spline_derivative(x_s,interp)
+        p_deriv = _derivative_probability(derivative,no_event_parameters_object)
         probability_distribution *= p_deriv
     if (no_event_parameters_object.valid_integral):
         p_int = _integral_probability(y_s,interpolated_y,
@@ -279,6 +277,11 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
         p_delta = _delta_probability(df,no_event_parameters_object)
         probability_distribution *= p_delta        
+    if (no_event_parameters_object.negative_only):
+        deriv_epsilon = no_event_parameters_object.derivative_epsilon
+        deriv_sigma = no_event_parameters_object.derivative_sigma
+        condition = np.where(derivative > -(deriv_epsilon+deriv_sigma))
+        probability_distribution[condition] = 1
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
@@ -381,7 +384,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     mask = np.where(bool_array)[0]
     n = mask.size
     if (mask.size > 0):
-        event_slices = _event_slices_from_mask(mask,int(min_points_between/5))
+        event_slices = _event_slices_from_mask(mask,int(min_points_between))
     else:
         event_slices = []
     # XXX reject events with a very small time?
