@@ -93,9 +93,9 @@ def profile_learners(learners,debug_directory,cache_directory,debugging = True,
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
     threshold = best_x_value
-    example_numbers = [8]
+    example_numbers = [0]
     examples_f = [examples[i] for i in example_numbers]
-    for i,example in enumerate(examples_f):
+    for i,example in enumerate(examples):
         load_file_name = (os.path.basename(example.Meta.SourceFile) + \
                           example.Meta.Name + ".csv.pkl")
         # copy the pkl file to the debugging location
@@ -124,19 +124,25 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    cache_directory = "./cache/"
     only_lowest = True
-    debugging = True   
+    debugging = True    
     n_learners = 1    
-    debug_directory = "./debug_no_event/"
-    GenUtilities.ensureDirExists(debug_directory)
     positives_directory = InputOutput.get_positives_directory()
-    positive_categories = InputOutput.get_categories(positives_directory,
-                                                     only_lowest=only_lowest)
-    learners = get_learner_results(cache_directory,debug_directory,
-                                   positive_categories,n_learners=n_learners)
-    profile_learners(learners,debug_directory,cache_directory,
-                     debugging=debugging)
+    dna_categories = InputOutput.get_categories(positives_directory,
+                                                only_lowest=only_lowest)
+    meta = [["_protein",InputOutput.protein_categories()],
+            ["",dna_categories]]
+    for subdir,categories in meta:
+        cache_directory = "./cache{:s}/".format(subdir)
+        debug_directory = "./debug_no_event{:s}/".format(subdir)    
+        GenUtilities.ensureDirExists(debug_directory)       
+        GenUtilities.ensureDirExists(cache_directory)        
+        learners = get_learner_results(cache_directory,debug_directory,
+                                       categories,
+                                       n_learners=n_learners)
+        profile_learners(learners,debug_directory,cache_directory,
+                         debugging=debugging)
+        break
 
 
 if __name__ == "__main__":

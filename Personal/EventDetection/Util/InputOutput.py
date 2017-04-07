@@ -231,11 +231,11 @@ def read_categories(categories,force_read,cache_directory,limit):
     return categories
 
 
-def get_protein_categories(base_directory=get_protein_directory()):
+def protein_categories(base_directory=get_protein_directory()):
     protein_meta = [ [base_directory,"NUG2",500]]
     # create objects to represent our data categories
     protein_categories = [ForceExtensionCategory(i,*r,has_events=True) 
-                          for i,r in enumerate(positive_meta)]    
+                          for i,r in enumerate(protein_meta)]    
     return protein_categories
     
 def get_categories(positives_directory,use_simulated=False,only_lowest=False):
