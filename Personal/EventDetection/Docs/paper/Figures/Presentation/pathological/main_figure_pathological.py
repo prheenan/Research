@@ -15,20 +15,21 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 import matplotlib.gridspec as gridspec
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def plot_arrows(split_fec):
+def plot_arrows(split_fec,**kwargs):
     x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     marker_size = 30
     fudge_pN = 25
     event_idx = split_fec.get_retract_event_starts()
     Plotting.plot_arrows_above_events(event_idx,x_plot,y_plot,fudge_pN,
-                                      markersize=marker_size,hatch='////')
+                                      markersize=marker_size,hatch='////',
+                                      **kwargs)
 
 def plot_retract_with_events(split_fec,fudge_pN=15,marker_size=30,
                              n_filter_points=1000):
     x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     x_filtered,y_filtered = \
         FEC_Plot._fec_base_plot(x_plot,y_plot,n_filter_points=n_filter_points)
-    plot_arrows(split_fec)
+    plot_arrows(split_fec,label="True Events")
     
 def plot_events_by_colors(split_fec,predicted_event_idx,n_points_filter=1000,
                           plot_filtered=False):
@@ -44,12 +45,13 @@ def plot_events_by_colors(split_fec,predicted_event_idx,n_points_filter=1000,
     color_before = 'r'
     color_after = 'b'
     for i,(before_tmp,after_tmp) in enumerate(zip(slices[:-1],slices[1:])):
+        label = "" if i != 0 else "Colored by predicted"
         dict_common = dict(color_before=color_before,
                            color_after=color_after,
                            before_slice=before_tmp,
                            after_slice=after_tmp)
         Plotting.before_and_after(x_plot,y_plot,style=dict(alpha=0.3),
-                                  **dict_common)
+                                  label=label,**dict_common)
         if (plot_filtered):
             Plotting.before_and_after(x_filtered,y_filtered,
                                       style=dict(alpha=1.0),**dict_common)
@@ -58,10 +60,24 @@ def plot_events_by_colors(split_fec,predicted_event_idx,n_points_filter=1000,
         color_after = tmp
     plot_arrows(split_fec)
 
-def label_and_save(fig,name,num=0):
-    PlotUtilities.lazyLabel("Time (s)","Force","")
+def label_and_save(fig,name,ylabel="Force",num=0):
+    PlotUtilities.lazyLabel("Time (s)",ylabel,"")
     PlotUtilities.savefig(fig,name + "{:d}.pdf".format(num))
     return num+1
+
+def get_state_vs_time(time,idx):
+    to_ret = np.zeros(time.size)
+    for i in idx:
+        to_ret[i:] += 1
+    return to_ret
+
+def plot_state_transition_diagram(split_fec,predicted_idx):
+    start_idx = split_fec.get_retract_event_starts()
+    x_plot,_ = Plotting.plot_format(split_fec.retract)
+    true = get_state_vs_time(x_plot,start_idx)
+    pred = get_state_vs_time(x_plot,predicted_idx)
+    plt.plot(x_plot,true,label="True 'State'")
+    plt.plot(x_plot,pred,'b--',label="Predicted 'State'")
 
 def run(base="./"):
     """
@@ -87,9 +103,14 @@ def run(base="./"):
         fig = PlotUtilities.figure((8,4))
         plot_events_by_colors(split_fec,predicted_event_idx)
         num = label_and_save(fig=fig,name=name,num=num)
-        fig = PlotUtilities.figure((8,4))
+        fig = PlotUtilities.figure((8,8))
+        plt.subplot(2,1,1)
         plot_events_by_colors(split_fec,predicted_event_idx,plot_filtered=True)
-        num = label_and_save(fig=fig,name=name,num=num)
+        PlotUtilities.lazyLabel("","Force (pN)","")
+        PlotUtilities.no_x_label()
+        plt.subplot(2,1,2)
+        plot_state_transition_diagram(split_fec,predicted_event_idx)
+        num = label_and_save(fig=fig,name=name,num=num,ylabel="State")
 
 
 if __name__ == "__main__":
