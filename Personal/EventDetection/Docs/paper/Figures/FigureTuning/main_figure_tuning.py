@@ -63,8 +63,8 @@ def run(base="./"):
         plt.subplot(1,n_cols,(i+1))
         lazy_kwargs = dict(useLegend=first,
                            frameon=True)
-        plt.semilogy(x,args,marker=markers[i],linestyle='-',color=colors[i],
-                     markersize=7)
+        plt.loglog(x,args,marker=markers[i],linestyle='-',color=colors[i],
+                   markersize=7)
         plot_name = Plotting.algorithm_title_dict()[name]
         title = "Tuning curve for {:s}".format(plot_name)
         PlotUtilities.lazyLabel(xlabel,ylabel,title,**lazy_kwargs)

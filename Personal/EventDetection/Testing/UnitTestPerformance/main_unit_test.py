@@ -83,7 +83,7 @@ def run():
         This is a description of what is returned.
     """
     base = "./"
-    data_base = base + "data/"
+    data_base = base + "dev/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")

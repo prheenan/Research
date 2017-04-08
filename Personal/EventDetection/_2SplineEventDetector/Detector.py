@@ -95,7 +95,7 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
     # XXX ?.... shouldnt this be minimum? (*dont* want positive)
-    value_cond = (np.minimum(0,df_true) > baseline) | (df_true > 0)
+    value_cond = (df_true > baseline)
     return value_cond
 
 def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
@@ -161,7 +161,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    boolean_ret = probability_updated < threshold                      
+    boolean_ret = probability_updated < threshold      
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -239,7 +239,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                                  
+                                                         min_points_between)                                                 
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
