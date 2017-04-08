@@ -103,7 +103,7 @@ def run(base="./"):
         fig = PlotUtilities.figure((8,4))
         plot_events_by_colors(split_fec,predicted_event_idx)
         num = label_and_save(fig=fig,name=name,num=num)
-        fig = PlotUtilities.figure((8,8))
+        fig = PlotUtilities.figure((12,8))
         plt.subplot(2,1,1)
         plot_events_by_colors(split_fec,predicted_event_idx,plot_filtered=True)
         PlotUtilities.lazyLabel("","Force (pN)","")
