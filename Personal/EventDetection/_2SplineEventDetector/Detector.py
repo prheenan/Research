@@ -165,10 +165,10 @@ def delta_mask_function(split_fec,slice_to_use,
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
     dt = np.median(np.diff(x_sliced))
     deriv_cond = np.zeros(boolean_ret.size)
-    sigma = no_event_parameters_object.sigma
-    epsilon = no_event_parameters_object.epsilon
+    sigma_df = no_event_parameters_object.delta_sigma
+    epsilon_df = no_event_parameters_object.delta_epsilon
     deriv_cond[slice_to_use] = \
-            interp_f + (deriv * min_points_between * dt) < 0
+            interp_f + (deriv * min_points_between * dt) < sigma_df + epsilon_df
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,

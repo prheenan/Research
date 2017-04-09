@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.752,
-              rupture_tuple=(0.226,1.40)):
+def check_bcc(examples,predicted,bcc_threshold=0.0674,
+              rupture_tuple=(0.367,1.162)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -90,7 +90,7 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 5e-2
-    fractional_error_tolerance = 5.84e-3
+    fractional_error_tolerance = 5.52e-3
     predicted,examples = [],[]
     max_error = 0
     for i,f in enumerate(load_paths):
