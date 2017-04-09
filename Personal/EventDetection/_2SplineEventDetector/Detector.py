@@ -125,7 +125,7 @@ def delta_mask_function(split_fec,slice_to_use,
     offset_zero_force = interp_f[0]
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
-    df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
+    df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
     # get the baseline results
     kw_delta = dict(df=df_true,
                     no_event_parameters=no_event_parameters_object)
@@ -156,7 +156,6 @@ def delta_mask_function(split_fec,slice_to_use,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
     # XXX debugging...
-    """
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     if (last_greater.size > 0):
         offset_tmp = np.median(interp_f[last_greater[-1]:])
@@ -169,7 +168,7 @@ def delta_mask_function(split_fec,slice_to_use,
     sigma = no_event_parameters_object.sigma
     epsilon = no_event_parameters_object.epsilon
     deriv_cond[slice_to_use] = \
-            -1 * (deriv * min_points_between * dt) < sigma 
+            interp_f + (deriv * min_points_between * dt) < 0
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
@@ -177,7 +176,6 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
