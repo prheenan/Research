@@ -188,6 +188,28 @@ def get_events_before_marker(marker_idx,event_mask,min_points_between):
                                  if (e.start <= marker_idx)]     
     return events_containing_surface
 
+def set_knots_by_derivative(split_fec,interp,x_all,slice_v):
+    """
+    sets the knots of a split fec, choosing them proportionally to the absolute
+    derivative of the splien interpolator. note that this is randomized
+
+    Args:
+        split_fec: the split force extension object to set the knots of
+        interp: to get the derivative of
+        x_all: the x values for split_fec to use
+        slice_v: the subslice which we want the knots in. 
+    Returns:
+        nothing, but sets the retract knots of split_fec as described above
+    """
+    x_slice = x_all[slice_v]
+    interp_deriv = interp.derivative()(x_slice)
+    n_knots = int(np.ceil(x_slice.size/split_fec.tau_num_points))
+    prob = np.abs(interp_deriv)
+    prob = (prob)/(sum(prob))
+    knots = np.random.choice(a=x_slice.size,size=n_knots,replace=False,p=prob)
+    split_fec.retract_knots = np.array(sorted(knots)) + slice_v.start
+
+
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
                                          no_event_parameters_object):
@@ -223,7 +245,11 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # (could be some adhesion!)
     events_containing_surface = get_events_before_marker(min_idx,event_mask,
                                                          min_points_between)
+    x_all = split_fec.retract.Time
+    y_all = split_fec.retract.Force
     if (len(events_containing_surface) == 0):
+        interp = no_event_parameters_object.last_interpolator_used
+        set_knots_by_derivative(split_fec,interp,x_all,slice_updated)
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
@@ -234,17 +260,18 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     slice_updated = slice(min_idx,slice_updated.stop,1)
     # set the interpolator for the non-adhesion region; need to re-calculate
     # since adhesion (probably) really screws everything up
-    x = split_fec.retract.Time[slice_updated]
-    y = split_fec.retract.Force[slice_updated]
+    x_slice = x_all[slice_updated]
+    y_slice = y_all[slice_updated]
     slice_interp = slice(slice_updated.start,slice_updated.stop,1)
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
-    interp_slice = interp(x)
-    split_fec.set_retract_knots(interp)
+    interp_slice = interp(x_slice)
+    set_knots_by_derivative(split_fec,interp,x_all,slice_updated)
     no_event_parameters_object._set_valid_delta(True)
     no_event_parameters_object.negative_only = True
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
-        _no_event_probability(x,interp,y,n_points,no_event_parameters_object)
+        _no_event_probability(x_slice,interp,y_slice,
+                              n_points,no_event_parameters_object)
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
@@ -427,6 +454,7 @@ def _predict_helper(split_fec,threshold,remasking_functions,**kwargs):
     Returns:
         prediction_info object
     """
+    np.random.seed(42)
     retract = split_fec.retract
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
