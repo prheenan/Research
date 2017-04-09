@@ -92,7 +92,8 @@ def run(base="./"):
     # save with the labels for the presentation
     fig = PlotUtilities.figure((16,8))
     subplots_adjust = dict(left=0.08,wspace=0.2,hspace=0.1)
-    plot_fec_cartoon(base,data_base,file_names)
+    plot_fec_cartoon(base,data_base,file_names,
+                     arrow_kwargs=dict(markersize=125))
     n_subplots = 2
     n_categories = len(file_names)
     letters =  string.uppercase[:n_categories]

@@ -72,7 +72,8 @@ def make_distance_figure(l,data_file,fec_file):
     plt.axvline(plot_x[pred_idx],linestyle='--',color='b',
                 label="Predicted event")
     # plot the events as arrows
-    Plotting.plot_arrows_above_events(event_starts,plot_x,plot_y,fudge_pN)
+    Plotting.plot_arrows_above_events(event_starts,plot_x,plot_y,fudge_pN,
+                                      markersize=100)
     PlotUtilities.lazyLabel("Separation (nm)","Force(pN)","",frameon=False)
     plt.subplot(1,2,2)
     Plotting.histogram_event_distribution(**distance_histogram)
@@ -85,8 +86,8 @@ def run(base="./"):
     
     """
     out_base = base
-    data_base = base + "data/"
-    data_file = data_base + "Scores.pkl"
+    data_base =  base + "data/"
+    data_file = "../FigurePerformance_CS/data/Scores.pkl"
     force=False
     cache_file = base + "cache.pkl"
     fec_file = data_base + "multiple.csv.pkl"

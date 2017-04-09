@@ -146,7 +146,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     # get the interpolated derivative
     slice_v = info.slice_fit
     time_slice = time[slice_v]
-    interpolator = ex.retract_spline_interpolator()
+    interpolator = ex.retract_spline_interpolator(slice_v)
     interp_first_deriv = interpolator.derivative(1)(time_slice)
     interpolated_force = interpolator(time_slice)
     tau = ex.tau
@@ -539,7 +539,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
                        xlabel="Relative Error (x$_\mathrm{k}$)",
-                       distance_limits=None,clip_limits=False):
+                       distance_limits=None,clip_limits=False,q=None):
     """
     Args:
         see Plotting.histogram_event_distribution
@@ -563,11 +563,14 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
     log_limit = np.log10(limit)
     max_x_true,max_x_pred =  metric.max_x_distances_true_pred()
     bins = np.logspace(*log_limit,num=n_bins)
+    if (q is None):
+        q = Offline._def_q()
     if (distance_limits is None):
         distance_limits = limit
     return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
                 bins=bins,style_true=style_true,style_pred=style_pred,loc=loc,
-                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred)
+                xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred,
+                q=q)
 
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
@@ -597,9 +600,9 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         cat = np.concatenate([rel_pred,rel_true])
         q_num = np.percentile(cat,q)
         if (q_label is None):
-            q_label = ((r"P$_{" + "{:d}".format(q) + r"}$=") + \
-                       ("{:.3g}").format(q_num))
-        plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4)
+            q_label = (r"P$_{" + "{:d}".format(q) + "}$")
+        plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4,
+                    color='k')
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
@@ -782,7 +785,7 @@ def rupture_plot(true,pred,fig,count_ticks=3,
                             fontsize=PlotUtilities.g_font_legend,
                             fontweight='bold')
     plt.xticks(index, labels_coeffs,
-               rotation=30,fontsize=PlotUtilities.g_font_label)
+               rotation=0,fontsize=PlotUtilities.g_font_label)
     PlotUtilities.ylabel("Metric")
     PlotUtilities.tickAxisFont()
     # push metric to the right

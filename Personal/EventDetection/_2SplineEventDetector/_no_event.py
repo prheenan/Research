@@ -162,7 +162,8 @@ def _delta(x,interp_f,n_points_diff):
     df_true = Analysis.local_centered_diff(interp_f,n=n_points_diff)
     return df_true
 
-def _delta_probability(df,no_event_parameters,negative_only=False):
+def _delta_probability(df,no_event_parameters):
+    negative_only=no_event_parameters.negative_only
     epsilon = no_event_parameters.epsilon
     sigma = no_event_parameters.sigma
     min_signal = (epsilon+sigma)
@@ -176,7 +177,7 @@ def _delta_probability(df,no_event_parameters,negative_only=False):
     # get the pratio probability
     k_cheby_ratio = df_relative/sigma
     if negative_only:
-        k_cheby_ratio = np.minimum(df_relative/sigma,1)
+        k_cheby_ratio = np.minimum(k_cheby_ratio,1)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     return ratio_probability
 
@@ -216,10 +217,11 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     probability_integral = _no_event_chebyshev(local_integral,0,
                                                integral_sigma)
     return probability_integral
+    
+    
 
-def _derivative_probability(interp,x,no_event_parameters_object,
-                            negative_only=False):
-    derivative = _spline_derivative(x,interp)
+def _derivative_probability(derivative,no_event_parameters_object):
+    negative_only=no_event_parameters_object.negative_only
     deriv_epsilon = no_event_parameters_object.derivative_epsilon
     deriv_sigma = no_event_parameters_object.derivative_sigma
     k = (derivative-deriv_epsilon)/deriv_sigma
@@ -247,7 +249,6 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     n_original = x.size
     x_s = x
     y_s = y
-    negative_only=no_event_parameters_object.negative_only
     # get the interpolated function
     interpolated_y = interp(x_s)
     stdev_masked,_,_ = Analysis.\
@@ -264,20 +265,23 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     probability_distribution = chebyshev
     no_event_parameters_object.last_interpolator_used = interp
     if (no_event_parameters_object.valid_derivative):
-        p_deriv = _derivative_probability(interp,x_s,no_event_parameters_object,
-                                          negative_only=negative_only)
+        derivative = _spline_derivative(x_s,interp)
+        p_deriv = _derivative_probability(derivative,no_event_parameters_object)
         probability_distribution *= p_deriv
     if (no_event_parameters_object.valid_integral):
-        p_int = _integral_probability(y_s,interpolated_y,n_points,
+        p_int = _integral_probability(y_s,interpolated_y,
+                                      _min_points_between(n_points),
                                       no_event_parameters_object)
-        threshold = no_event_parameters_object.threshold
-        boolean_tmp = (probability_distribution  < threshold)
         probability_distribution *= p_int
     if (no_event_parameters_object.valid_delta):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
-        p_delta = _delta_probability(df,no_event_parameters_object,
-                                     negative_only=negative_only)
+        p_delta = _delta_probability(df,no_event_parameters_object)
         probability_distribution *= p_delta        
+    if (no_event_parameters_object.negative_only):
+        deriv_epsilon = no_event_parameters_object.derivative_epsilon
+        deriv_sigma = no_event_parameters_object.derivative_sigma
+        condition = np.where(derivative > -(deriv_epsilon+deriv_sigma))
+        probability_distribution[condition] = 1
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,
@@ -380,22 +384,19 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     mask = np.where(bool_array)[0]
     n = mask.size
     if (mask.size > 0):
-        event_slices = _event_slices_from_mask(mask,int(min_points_between/5))
+        event_slices = _event_slices_from_mask(mask,int(min_points_between))
     else:
         event_slices = []
     # XXX reject events with a very small time?
     event_duration = [ (e.stop-e.start) for e in event_slices]
-    delta_split_rem = [ int(np.ceil((min_points_between-(delta))/2))
+    delta_split_rem = [ int(np.ceil((n_points-(delta))/2))
                         for delta in event_duration]
     # determine where the events are happening locally (guarentee at least
     # a search window of min_points)
     # XXX debugging 
     remainder_split = [max(0,d) for d in delta_split_rem ]
-    event_slices = [slice(event.start-2*remainder,event.stop,1)
+    event_slices = [slice(event.start-remainder,event.stop+remainder,1)
                     for event,remainder in zip(event_slices,remainder_split)]
-    # combine them if they do.
-    event_slices = list(join_contiguous_slices(event_slices))
-    # POST: event slices aren't contiguous
     event_idx = [local_event_idx_function(x,y,e) for e in event_slices]
     to_ret = prediction_info(event_idx = event_idx,
                              event_slices = event_slices,

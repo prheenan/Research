@@ -444,6 +444,20 @@
     \invisible<-7>{\item Probability(retract|model)}%
     \end{itemize}
 \end{itemize}
+%
+\begin{overlayarea}{\textwidth}{\textheight}
+\begin{figure}[!h]
+\begin{centering}
+  \begin{tikzpicture}
+    \node<1-3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.3\textwidth]{Surface_Down.png}};
+    \node<4-8>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.3\textwidth]{Surface_Up.png}};
+    % see :http://tex.stackexchange.com/questions/186389/how-can-i-annotate-an-image-with-arrow-and-text
+\end{tikzpicture}
+\end{centering}
+\end{figure}
+\end{overlayarea}
+%
+%
 \end{column}
 \begin{column}{0.6\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
@@ -458,6 +472,8 @@
 \end{overlayarea}
 \end{column}
 \end{columns}
+
+
 
 \end{frame}
 
@@ -839,6 +855,36 @@
 \end{frame}
 
 
+\begin{frame}{More metrics: Precision, Recall, and F$_1$ score (number of events)}
+
+\begin{columns}[T]
+\begin{column}{\textwidth}
+  \begin{itemize}
+    \item True positive (TP), False positive (FP)
+    \item True negative (TN), False negatve (FN)
+    \item Precision (P): $\frac{TP}{TP+FP}$ 
+      \begin{itemize}
+        \item Relative number of predicted events which are true
+      \end{itemize}
+    \item Recall (R): $\frac{TP}{TP+FN}$
+      \begin{itemize}
+        \item Relative number of true events which are predicted 
+      \end{itemize}
+    \item F$_1$ score: harmonic mean of P and R ($2\frac{ P \cdot R }{P + R}$)
+  \end{itemize}
+\end{column}
+\end{columns}
+
+\begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{f_score.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+
+
+\end{frame}
+
+
 
 \begin{frame}{Tuning}
 
@@ -852,6 +898,22 @@
 \end{columns}
 
 \end{frame}
+
+
+\begin{frame}{Typical examples where FEATHER has trouble}
+
+\begin{columns}[T]
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Image1533Concat2.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Image3929Concat2.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{columns}
+
+\end{frame}
+
 
 
 

@@ -28,7 +28,7 @@ label_s_t = r"$\Sigma_\mathrm{t}$"
 label_r_t = r"r$_t$"
 lazy_kwargs = dict(loc='lower right',frameon=False)
 
-error_label = "Residual (pN)"
+error_label = "Residual\n(pN)"
 filtered_error_label = label_s_t + " (pN)"
 force_label = "Force (pN)"
 
@@ -165,10 +165,10 @@ def spline_figures(fec_split,out_base,threshold=1e-2):
     param_obj = _no_event.no_event_parameters(threshold=threshold,
                                               **approach_kwargs)
     # get the delta probability for negative and positive stuff. 
-    delta_prob_all = _no_event._delta_probability(delta,param_obj,
-                                                  negative_only=False)
-    delta_prob_neg = _no_event._delta_probability(delta,param_obj,
-                                                  negative_only=True)
+    param_obj.negative_only = False
+    delta_prob_all = _no_event._delta_probability(delta,param_obj)
+    param_obj.negative_only = True
+    delta_prob_neg = _no_event._delta_probability(delta,param_obj)
     y_plot_f = lambda x : x * 1e12
     delta_plot = y_plot_f(delta)
     delta_label = "dF (pN)"
@@ -183,9 +183,8 @@ def spline_figures(fec_split,out_base,threshold=1e-2):
                     y_plot_f(param_obj.derivative_sigma)]
     derivative = _no_event._spline_derivative(x,interp)
     deriv_plot = y_plot_f(derivative)
-    deriv_prob = _no_event._derivative_probability(interp,x,
-                                                   param_obj,
-                                                   negative_only=True)
+    param_obj.negative_only = True
+    deriv_prob = _no_event._derivative_probability(interp,x,param_obj)
     deriv_label = r"$\frac{dF}{dt}$ (pN/s)"
     deriv_p_label = r"$\epsilon_{\frac{dF}{dt}} \pm \sigma_{\frac{dF}{dt}}$"
     # get the integral stuff 
@@ -410,9 +409,9 @@ def run(base="./"):
     # probability distribution for the retract
     plt.subplot(gs[3,1])
     plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
-    PlotUtilities.label_tom(fig,loc=(-0.15,1.0))
+    PlotUtilities.label_tom(fig,loc=(-0.1,1.05))
     PlotUtilities.savefig(fig,out_fig,
-                          subplots_adjust=dict(hspace=0.2,wspace=0.2))
+                          subplots_adjust=dict(hspace=0.3,wspace=0.15))
 
 if __name__ == "__main__":
     run()

@@ -9,7 +9,8 @@ sys.path.append("../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 
-from Research.Personal.EventDetection.Util import Offline,Plotting,Analysis
+from Research.Personal.EventDetection.Util import Offline,Plotting,Analysis,\
+    Learning
 from Research.Personal.EventDetection.Util.Offline import plotting_metrics
 import matplotlib.gridspec as gridspec
 
@@ -20,23 +21,22 @@ def dist_values(data_file):
     trials = CheckpointUtilities.lazy_load(data_file)
     n_cols = 3
     to_ret = []
-    for i,m in enumerate(trials):
-        x_values = m.param_values()
-        train_scores = m._scores_by_params(train=True)
-        valid_scores = m._scores_by_params(train=False)
-        tmp = Plotting.get_train_test_n_off_and_error(x_values,
-                                                      train_scores,
-                                                      valid_scores)
-        to_ret.append([tmp,m.description.lower()])
+    for t in trials:
+        ruptures_valid_true,ruptures_valid_pred = \
+                Learning.get_true_and_predicted_ruptures_per_param(t)
+        ret  = [Offline.metrics(true,pred) 
+                for true,pred in zip(ruptures_valid_true,ruptures_valid_pred)]
+        coeffs = [r[0] for r in ret]
+        bcc = [1-c[-1] for c in coeffs]
+        to_ret.append([bcc,t.param_values(),t.description.lower()])
     return to_ret
-        
 
 def run(base="./"):
     """
     
     """
     out_base = base
-    data_file = base + "data/Scores.pkl"
+    data_file = "../FigurePerformance_CS/data/Scores.pkl"
     force=False
     events_off = CheckpointUtilities.getCheckpoint("cache_dist.pkl",
                                                    dist_values,force,
@@ -44,40 +44,33 @@ def run(base="./"):
     max_with_error = 0
     min_with_error = np.inf
     # get the bounds
-    for i,(args,name) in enumerate(events_off):
-        x_train,train_dist,train_dist_std,x_valid,valid_dist,valid_dist_std = \
-            args
-        local_max = max(max(train_dist+train_dist_std),
-                        max(valid_dist+valid_dist_std))
-        local_min = min(min(train_dist-train_dist_std),
-                        min(valid_dist-valid_dist_std))
-        max_with_error = max(max_with_error,local_max)
-        min_with_error = min(min_with_error,local_min)
+    for i,(args,x,name) in enumerate(events_off):
+        max_with_error = max(max_with_error,max(args))
+        min_with_error = min(min_with_error,min(args))
     ylim = [min_with_error/2,max_with_error*2]
     # plot everything
     fig = PlotUtilities.figure((16,8))
     n_cols = 3
     parameters = ["FEATHER probability","OpenFovea sensitivity",
                   "Scientific Python minimum SNR"]
-    xlim = [None,[0.5,2],[10,200]]
-    for i,(args,name) in enumerate(events_off):
+    markers = Plotting.algorithm_markers()
+    colors = Plotting.algorithm_colors()
+    for i,(args,x,name) in enumerate(events_off):
         first = (i == 0)
         param = parameters[i]
         xlabel = "Tuning Parameter\n({:s})".format(param)
-        ylabel = "" if not first else \
-                 "Relative number of extra or missing events"
+        ylabel = "" if not first else "BCC"
         plt.subplot(1,n_cols,(i+1))
         lazy_kwargs = dict(useLegend=first,
                            frameon=True)
-        Plotting._plot_num_events_off(*args,xlabel=xlabel,ylabel=ylabel,
-                                      lazy_kwargs=lazy_kwargs)
-        plt.ylim(ylim)
-        if (xlim[i] is not None):
-            plt.xlim(xlim[i])
-        PlotUtilities.tickAxisFont()
+        plt.loglog(x,args,marker=markers[i],linestyle='-',color=colors[i],
+                   markersize=7)
         plot_name = Plotting.algorithm_title_dict()[name]
-        PlotUtilities.title("Tuning curve for {:s}".format(plot_name))
-    loc = (-0.20,1.025)
+        title = "Tuning curve for {:s}".format(plot_name)
+        PlotUtilities.lazyLabel(xlabel,ylabel,title,**lazy_kwargs)
+        PlotUtilities.tickAxisFont()
+        plt.ylim([min_with_error/2,max_with_error*2])
+    loc = (-0.10,1.025)
     PlotUtilities.label_tom(fig,loc=loc)
     PlotUtilities.savefig(fig,out_base + "tuning.pdf")
 

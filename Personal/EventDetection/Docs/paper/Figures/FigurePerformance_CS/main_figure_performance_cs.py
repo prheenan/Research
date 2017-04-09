@@ -27,10 +27,12 @@ def write_coeffs_file(out_file,coeffs):
     opt_high = lambda x: np.argmax(x)
     funcs_names_values = []
     for c in coeffs:
+        q = c.q
+        err_str =  (r"Relative event error P$_{" + "{:d}".format(q) + \
+                    r"}$ ($\downarrow$)")
         tmp =[ [opt_low,r"Rupture BCC ($\downarrow$)",
                 1-c.bc_2d],
-               [opt_low,r"Relative event error P$_{85}$ ($\downarrow$)",
-                c.cat_relative_q]]
+               [opt_low,err_str,c.cat_relative_q]]
         funcs_names_values.append(tmp)
     # only get the funcs nad names from the first (redudant to avoid typos
     funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
@@ -84,29 +86,6 @@ def run(base="./"):
     # plot the best fold for each
     out_names = []
     colors_pred =  algorithm_colors()
-    for m in metric_list:
-        precision = m.precision()
-        recall = m.recall()
-        data = [precision,recall]
-        bins = np.linspace(0,1)
-        colors = ['g','r']
-        labels = ["Precision","Recall"]
-        ind = np.arange(len(data)) 
-        style_precision = dict(color='g',alpha=0.3,hatch="//",label="Precision")
-        style_recall = dict(color='r',alpha=0.3,label="Recall")
-        width = 0.5
-        rects = plt.bar(ind,data,color=colors,width=width)
-        ax = plt.gca()
-        ax.set_xticks(ind + width / 2)
-        ax.set_xticklabels(labels)
-        y_func=lambda i,r: "{:.3f}".format(r.get_height()/2)
-        PlotUtilities.autolabel(rects,y_func=y_func)
-        PlotUtilities.lazyLabel("Metric Value",
-                                "Number of Force-Extension Curves","",
-                                frameon=True)
-        plt.xlim([-0.1,1+2*width])
-        plt.ylim([0,1])
-        #XXX todo
     # make a giant figure, 3 rows (one per algorithm)
     fig = PlotUtilities.figure(figsize=(16,18))
     entire_figure = gridspec.GridSpec(3,1)
@@ -127,7 +106,7 @@ def run(base="./"):
         gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
                                               height_ratios=[2,1],
                                               subplot_spec=entire_figure[i],
-                                              wspace=0.4,hspace=0.5)
+                                              wspace=0.3,hspace=0.4)
         # plot the metric plot
         Plotting.rupture_plot(true,pred,
                               lim_plot_load=lim_load_max,

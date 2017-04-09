@@ -140,7 +140,7 @@ def run(base="./"):
     """
     
     """
-    data_file = base + "all.pkl"
+    data_file = base + "all_timer.pkl"
     with open(data_file,"r") as f:
         trials = pickle.load(f)
     out_base = base 

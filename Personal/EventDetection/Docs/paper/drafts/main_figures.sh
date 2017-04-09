@@ -55,7 +55,8 @@ rupture_dir="${base_dir_rel}FigureRupture/"
 pres_dir="${base_dir_rel}Presentation/"
 prev_dir="${base_dir_rel}FiguresPreviousWork/"
 out_previous="../Finals_Presentation/"
-# copy the metric table
+# copy the metric table here and to the output, for the paper/pres to use
+cp ${base_dir_rel}FigurePerformance_CS/*.tex .
 cp metric_table.tex "$out_dir"
 # copt the previous results/other relevant work paper 
 copy_pdfs "$prev_dir" "$out_previous" $pngs

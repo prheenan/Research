@@ -86,16 +86,16 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     # XXX move to utility
     epsilon = no_event_parameters_object.epsilon
     sigma = no_event_parameters_object.sigma
-    min_signal = (epsilon+sigma)
     epsilon_approach = no_event_parameters_object.delta_epsilon
     sigma_approach = no_event_parameters_object.delta_sigma
+    min_signal = (epsilon+sigma)
     if (negative_only):
         baseline = -min_signal
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
     # XXX ?.... shouldnt this be minimum? (*dont* want positive)
-    value_cond = (np.minimum(0,df_true) > baseline)
+    value_cond = (df_true > baseline)
     return value_cond
 
 def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
@@ -104,18 +104,9 @@ def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
     sigma_approach = no_event_parameters_object.delta_sigma
     pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
                                         slice_to_use.start
-    zero_force = interp_f[pred_retract_surface_idx_in_slice]
     diff = interp_f - np.maximum(0,df_true)
+    zero_force = interp_f[pred_retract_surface_idx_in_slice]
     zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
-    """
-    plt.subplot(2,1,1)
-    plt.plot(diff)
-    plt.axhline(zero_force)
-    plt.subplot(2,1,2)    
-    plt.plot(diff)
-    plt.axhline(zero_force)
-    plt.show()
-    """
     return (diff <= zero_condition_baseline) 
 
 def delta_mask_function(split_fec,slice_to_use,
@@ -134,12 +125,11 @@ def delta_mask_function(split_fec,slice_to_use,
     offset_zero_force = interp_f[0]
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
-    df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
+    df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
     # get the baseline results
-    ratio_probability = _no_event.\
-        _delta_probability(df=df_true,
-                           no_event_parameters=no_event_parameters_object,
-                           negative_only=negative_only)
+    kw_delta = dict(df=df_true,
+                    no_event_parameters=no_event_parameters_object)
+    ratio_probability = _no_event._delta_probability(**kw_delta)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     # find where the derivative is definitely not an event
@@ -164,7 +154,28 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    boolean_ret = probability_updated < threshold                    
+    boolean_ret = probability_updated < threshold
+    # XXX debugging...
+    last_greater = np.where(boolean_ret[slice_to_use])[0]
+    if (last_greater.size > 0):
+        offset_tmp = np.median(interp_f[last_greater[-1]:])
+        offset_zero_force = offset_tmp
+    split_fec.zero_retract_force(offset_zero_force)
+    interp_f -= offset_zero_force
+    deriv = _no_event._spline_derivative(x_sliced,interpolator)
+    dt = np.median(np.diff(x_sliced))
+    deriv_cond = np.zeros(boolean_ret.size)
+    sigma_df = no_event_parameters_object.delta_sigma
+    epsilon_df = no_event_parameters_object.delta_epsilon
+    deriv_cond[slice_to_use] = \
+            interp_f + (deriv * min_points_between * dt) < sigma_df + epsilon_df
+    boolean_ret,probability_updated = \
+            safe_reslice(original_boolean=boolean_ret,
+                         original_probability=probability_updated,
+                         condition=deriv_cond,
+                         min_points_between=min_points_between,
+                         get_best_slice_func=get_best_slice_func)
+    boolean_ret = probability_updated < threshold
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -176,6 +187,28 @@ def get_events_before_marker(marker_idx,event_mask,min_points_between):
     events_containing_surface = [e for e in event_boundaries
                                  if (e.start <= marker_idx)]     
     return events_containing_surface
+
+def set_knots_by_derivative(split_fec,interp,x_all,slice_v):
+    """
+    sets the knots of a split fec, choosing them proportionally to the absolute
+    derivative of the splien interpolator. note that this is randomized
+
+    Args:
+        split_fec: the split force extension object to set the knots of
+        interp: to get the derivative of
+        x_all: the x values for split_fec to use
+        slice_v: the subslice which we want the knots in. 
+    Returns:
+        nothing, but sets the retract knots of split_fec as described above
+    """
+    x_slice = x_all[slice_v]
+    interp_deriv = interp.derivative()(x_slice)
+    n_knots = int(np.ceil(x_slice.size/split_fec.tau_num_points))
+    prob = np.abs(interp_deriv)
+    prob = (prob)/(sum(prob))
+    knots = np.random.choice(a=x_slice.size,size=n_knots,replace=False,p=prob)
+    split_fec.retract_knots = np.array(sorted(knots)) + slice_v.start
+
 
 def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                          probability,threshold,
@@ -212,7 +245,11 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # (could be some adhesion!)
     events_containing_surface = get_events_before_marker(min_idx,event_mask,
                                                          min_points_between)
+    x_all = split_fec.retract.Time
+    y_all = split_fec.retract.Force
     if (len(events_containing_surface) == 0):
+        interp = no_event_parameters_object.last_interpolator_used
+        set_knots_by_derivative(split_fec,interp,x_all,slice_updated)
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
@@ -223,17 +260,18 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     slice_updated = slice(min_idx,slice_updated.stop,1)
     # set the interpolator for the non-adhesion region; need to re-calculate
     # since adhesion (probably) really screws everything up
-    x = split_fec.retract.Time[slice_updated]
-    y = split_fec.retract.Force[slice_updated]
+    x_slice = x_all[slice_updated]
+    y_slice = y_all[slice_updated]
     slice_interp = slice(slice_updated.start,slice_updated.stop,1)
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
-    interp_slice = interp(x)
-    split_fec.set_retract_knots(interp)
+    interp_slice = interp(x_slice)
+    set_knots_by_derivative(split_fec,interp,x_all,slice_updated)
     no_event_parameters_object._set_valid_delta(True)
     no_event_parameters_object.negative_only = True
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
-        _no_event_probability(x,interp,y,n_points,no_event_parameters_object)
+        _no_event_probability(x_slice,interp,y_slice,
+                              n_points,no_event_parameters_object)
     probability_updated = probability.copy()
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
@@ -242,7 +280,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                                  
+                                                         min_points_between)                                                 
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
@@ -377,8 +415,9 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     """
     interpolator_approach_x = split_fec.approach.Time[slice_fit_approach]
     interpolator_approach_f = spline_fit_approach(interpolator_approach_x)
-    df_approach = Analysis.local_centered_diff(interpolator_approach_f,
-                                               n=min_points_between)
+    df_approach = _no_event._delta(interpolator_approach_x,
+                                   interpolator_approach_f,
+                                   min_points_between)
     delta_epsilon,delta_sigma = np.median(df_approach),np.std(df_approach)
     """
     get the interpolate derivative in the slice
@@ -415,6 +454,7 @@ def _predict_helper(split_fec,threshold,remasking_functions,**kwargs):
     Returns:
         prediction_info object
     """
+    np.random.seed(42)
     retract = split_fec.retract
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points

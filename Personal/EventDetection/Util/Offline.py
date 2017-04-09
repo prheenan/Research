@@ -11,7 +11,7 @@ from Research.Personal.EventDetection.Util import \
 
 class coeffs:
     def __init__(self,bc_loading,bc_rupture,bc_2d,cat_median,cat_q,
-                 cat_relative_median,cat_relative_q,name):
+                 cat_relative_median,cat_relative_q,name,q):
         self.name = name
         self.bc_loading = bc_loading
         self.bc_rupture = bc_rupture
@@ -21,11 +21,13 @@ class coeffs:
         # relative ones!
         self.cat_relative_median=cat_relative_median
         self.cat_relative_q=cat_relative_q
+        self.q = q
 
 class plotting_metrics:
     def __init__(self,l,ret):
         ruptures_valid_true,ruptures_valid_pred = \
                 Learning.get_true_and_predicted_ruptures_per_param(l)
+        # coefficients are the bc; we want to *maximize* the bc
         coeffs = [r[0][-1] for r in ret]
         coeffs_safe_idx = np.where(np.isfinite(coeffs))[0]
         n = len(coeffs)
@@ -107,14 +109,15 @@ class plotting_metrics:
         tmp_limits = [min_dist,max_dist]
 
         return tmp_limits
-    def coefficients(self):
+    def coefficients(self,limit=True):
         ruptures_true,loading_true = \
             Learning.get_rupture_in_pN_and_loading_in_pN_per_s(self.true)
         ruptures_pred,loading_pred = \
             Learning.get_rupture_in_pN_and_loading_in_pN_per_s(self.pred)
         lim_force,bins_rupture,lim_load,bins_load = \
             Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
-                                                    loading_true,loading_pred)
+                                                    loading_true,loading_pred,
+                                                    limit=True)
         tmp = Analysis.bc_coeffs_load_force_2d(loading_true,loading_pred,
                                                bins_load,ruptures_true,
                                                ruptures_pred,bins_rupture)
@@ -125,10 +128,15 @@ class plotting_metrics:
                                                    max_x_pred)
         return coeffs(*tmp,cat_median=cat_median,cat_q=cat_q,name=self.name,
                       cat_relative_median=cat_relative_median,
-                      cat_relative_q=cat_relative_q)
+                      cat_relative_q=cat_relative_q,q=q)
+
+def _def_q():
+    return 90
 
 def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
-                                       q=90,**kwargs):
+                                       q=None,**kwargs):
+    if (q is None):
+        q = _def_q()
     to_true_relative = to_true/max_x_pred
     to_pred_relative = to_pred/max_x_true
     if (len(to_true) > 0):
