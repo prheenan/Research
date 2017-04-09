@@ -62,6 +62,10 @@ class score:
         idx_true = split_fec.get_retract_event_centers()
         retract = split_fec.retract
         self.tau_num_points = split_fec.tau_num_points
+        n_retract = retract.Force.size
+        n_total = sum([tmp.Force.size 
+                        for tmp in [split_fec.retract,split_fec.dwell,
+                                    split_fec.approach]])
         x = retract.Separation
         self.min_x = min(x)
         self.max_x = max(x)
@@ -146,12 +150,15 @@ class score:
 
              kwargs: passed to minimum_distance_distribution
         """
+        true = self.true_x
+        pred = self.pred_x
+        # determine which distances we want
         if (to_true):
-            baseline = self.true_x
-            search = self.pred_x
+            baseline = true
+            search = pred
         else:
-            baseline = self.pred_x
-            search = self.true_x
+            baseline = pred
+            search = true
         if (len(baseline) == 0):
             if (floor_is_max):
                 max_x = self.max_displacement()
