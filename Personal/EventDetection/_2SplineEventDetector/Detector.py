@@ -104,17 +104,9 @@ def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
     sigma_approach = no_event_parameters_object.delta_sigma
     pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
                                         slice_to_use.start
-    zero_force = interp_f[pred_retract_surface_idx_in_slice]
     diff = interp_f - np.maximum(0,df_true)
+    zero_force = interp_f[pred_retract_surface_idx_in_slice]
     zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
-    """
-    plt.subplot(2,1,1)
-    plt.plot(interp_f)
-    plt.subplot(2,1,2)    
-    plt.plot(diff)
-    plt.axhline(zero_force)
-    plt.show()
-    """
     return (diff <= zero_condition_baseline) 
 
 def delta_mask_function(split_fec,slice_to_use,
@@ -135,8 +127,9 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,2*min_points_between)
     # get the baseline results
-    ratio_probability = _no_event._delta_probability(df=df_true,
-                           no_event_parameters=no_event_parameters_object)
+    kw_delta = dict(df=df_true,
+                    no_event_parameters=no_event_parameters_object)
+    ratio_probability = _no_event._delta_probability(**kw_delta)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
     # find where the derivative is definitely not an event
@@ -161,7 +154,30 @@ def delta_mask_function(split_fec,slice_to_use,
                          condition=gt_condition,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
-    boolean_ret = probability_updated < threshold      
+    boolean_ret = probability_updated < threshold
+    # XXX debugging...
+    """
+    last_greater = np.where(boolean_ret[slice_to_use])[0]
+    if (last_greater.size > 0):
+        offset_tmp = np.median(interp_f[last_greater[-1]:])
+        offset_zero_force = offset_tmp
+    split_fec.zero_retract_force(offset_zero_force)
+    interp_f -= offset_zero_force
+    deriv = _no_event._spline_derivative(x_sliced,interpolator)
+    dt = np.median(np.diff(x_sliced))
+    deriv_cond = np.zeros(boolean_ret.size)
+    sigma = no_event_parameters_object.sigma
+    epsilon = no_event_parameters_object.epsilon
+    deriv_cond[slice_to_use] = \
+            -1 * (deriv * min_points_between * dt) < sigma 
+    boolean_ret,probability_updated = \
+            safe_reslice(original_boolean=boolean_ret,
+                         original_probability=probability_updated,
+                         condition=deriv_cond,
+                         min_points_between=min_points_between,
+                         get_best_slice_func=get_best_slice_func)
+    boolean_ret = probability_updated < threshold
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):

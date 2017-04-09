@@ -177,7 +177,7 @@ def _delta_probability(df,no_event_parameters):
     # get the pratio probability
     k_cheby_ratio = df_relative/sigma
     if negative_only:
-        k_cheby_ratio = np.minimum(df_relative/sigma,1)
+        k_cheby_ratio = np.minimum(k_cheby_ratio,1)
     ratio_probability= _probability_by_cheby_k(k_cheby_ratio)
     return ratio_probability
 
@@ -206,7 +206,7 @@ def local_noise_integral(f,interp_f,n_points,no_event_parameters_object):
     integral_epsilon = no_event_parameters_object.integral_epsilon
     integral_sigma   = no_event_parameters_object.integral_sigma
     local_integral = Analysis.local_integral(stdev-integral_epsilon,
-                                             min_points_between)                                             
+                                             min_points_between)
     return local_integral
 
 def _integral_probability(f,interp_f,n_points,no_event_parameters_object):

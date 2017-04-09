@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.105,
-              rupture_tuple=(0.0981,2.249)):
+def check_bcc(examples,predicted,bcc_threshold=0.0858,
+              rupture_tuple=(0.0822,1.52)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -66,11 +66,13 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     actual_centers = np.array(sorted(events))
     errors = abs(predicted_centers-actual_centers)
     n = example_split.retract.Force.size
+    rel_errors = [_/n for _ in errors]
     err_str = ("Fractional Error(s): " + \
-               ",".join(["{:.3g}".format(_/n) for _ in errors]))
+               ",".join(["{:.3g}".format(_) for _ in rel_errors]))
     for e in errors:
         assert e <= fractional_error_tolerance * n , err_str
     print(err_str)
+    return rel_errors
                
 def run():
     """
@@ -83,13 +85,14 @@ def run():
         This is a description of what is returned.
     """
     base = "./"
-    data_base = base + "dev/"
+    data_base = base + "data/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 5e-2
-    fractional_error_tolerance = 7.34e-3 
+    fractional_error_tolerance = 6.42e-3
     predicted,examples = [],[]
+    max_error = 0
     for i,f in enumerate(load_paths):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 
         # get the prediction, save out the plotting information
@@ -102,12 +105,13 @@ def run():
         wave_name = meta.Name
         id_string = debug_directory + "db_" + id_data + "_" + wave_name 
         Plotting.debugging_plots(id_string,example_split,pred_info)
-        check_single_file(example_split,pred_info,
-                          fractional_error_tolerance=fractional_error_tolerance)
-
+        kw = dict(fractional_error_tolerance=fractional_error_tolerance)
+        errors = check_single_file(example_split,pred_info,**kw)
+        max_error = max(max_error,max(errors))
         # save the info so we can check for the bcc
         predicted.append(pred_info)
-        examples.append(example_split)        
+        examples.append(example_split)
+    print("The maximum relative error was {:.4g}".format(max_error))
     # POST: looks okay, but lets just the bcc.
     check_bcc(examples,predicted)
 
