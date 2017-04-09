@@ -248,8 +248,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     x_all = split_fec.retract.Time
     y_all = split_fec.retract.Force
     if (len(events_containing_surface) == 0):
-        interp = no_event_parameters_object.last_interpolator_used
-        set_knots_by_derivative(split_fec,interp,x_all,slice_updated)
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
@@ -265,7 +263,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     slice_interp = slice(slice_updated.start,slice_updated.stop,1)
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
     interp_slice = interp(x_slice)
-    set_knots_by_derivative(split_fec,interp,x_all,slice_updated)
+    split_fec.set_retract_knots(interp)
     no_event_parameters_object._set_valid_delta(True)
     no_event_parameters_object.negative_only = True
     # get the probability of only the negative regions
@@ -454,7 +452,6 @@ def _predict_helper(split_fec,threshold,remasking_functions,**kwargs):
     Returns:
         prediction_info object
     """
-    np.random.seed(42)
     retract = split_fec.retract
     time,separation,force = retract.Time,retract.Separation,retract.Force
     n_points = split_fec.tau_num_points
