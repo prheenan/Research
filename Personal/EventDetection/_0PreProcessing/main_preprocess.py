@@ -160,10 +160,13 @@ def run():
     output_base_directory = base_directory + "Masters_CSCI/"
     positive_directory = output_base_directory + "Positive/"
     relative_650 = "650nm-4x-bio/pxp/"
-    relative_input_dir = [relative_650 + "1000-nanometers-per-second/",
+    relative_protein = "4nug2_alpha3D_MarcAndre/pxp/"
+    relative_input_dir = [relative_protein,
+                          relative_650 + "1000-nanometers-per-second/",
                           relative_650 + "100-nanometers-per-second/",
                           relative_650 + "500-nanometers-per-second/"]
-    absolute_input_dir = [positive_directory + d for d in relative_input_dir]
+    absolute_input_dir = [positive_directory + d 
+                          for d in [relative_input_dir[0]]]
     absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
     for i,(d,d_out) in enumerate(zip(absolute_input_dir,absolute_output_dir)):
         output_waves_in_directory_to_csv_files(d,d_out)
