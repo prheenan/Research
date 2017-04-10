@@ -576,7 +576,7 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
                                  xlabel="Distance [m]",loc='best',q=None,
-                                 q_label=None):
+                                 q_label=None,use_q_number=False):
     """
     plots the distribution of distances from true/predicted to counterparts
 
@@ -601,6 +601,8 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         q_num = np.percentile(cat,q)
         if (q_label is None):
             q_label = (r"P$_{" + "{:d}".format(q) + "}$")
+        if (use_q_number):
+            q_label += "={:.3g}".format(q_num)
         plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4,
                     color='k')
     plt.xscale('log')
@@ -958,7 +960,7 @@ def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
 
 def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
                              marker='v',markersize=15,alpha=1,zorder=10,
-                             **kwargs):
+                             label=None,**kwargs):
     """
     plots arrows at the given indices, signifying an event
 
@@ -974,8 +976,10 @@ def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
               marker=marker,
               s=markersize,
               alpha=alpha,**kwargs)
-    for start in event_idx:
-        plt.scatter(plot_x[start],plot_y[start]+fudge_y,**kw)
+    for i,start in enumerate(event_idx):
+        label_tmp = None if i != 0 else label
+        plt.scatter(plot_x[start],plot_y[start]+fudge_y,label=label_tmp,
+                    **kw)
 
 def plot_format(time_sep_force):
     x_plot = time_sep_force.Time.copy()

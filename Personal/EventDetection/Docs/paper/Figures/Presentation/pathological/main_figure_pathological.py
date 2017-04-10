@@ -15,7 +15,7 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 import matplotlib.gridspec as gridspec
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def plot_arrows(split_fec,**kwargs):
+def plot_arrows(split_fec,label="True Events",**kwargs):
     x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     marker_size = 30
     fudge_pN = 25
@@ -29,7 +29,7 @@ def plot_retract_with_events(split_fec,fudge_pN=15,marker_size=30,
     x_plot,y_plot = Plotting.plot_format(split_fec.retract)
     x_filtered,y_filtered = \
         FEC_Plot._fec_base_plot(x_plot,y_plot,n_filter_points=n_filter_points)
-    plot_arrows(split_fec,label="True Events")
+    plot_arrows(split_fec)
     
 def plot_events_by_colors(split_fec,predicted_event_idx,n_points_filter=1000,
                           plot_filtered=False):
@@ -76,7 +76,7 @@ def plot_state_transition_diagram(split_fec,predicted_idx):
     x_plot,_ = Plotting.plot_format(split_fec.retract)
     true = get_state_vs_time(x_plot,start_idx)
     pred = get_state_vs_time(x_plot,predicted_idx)
-    plt.plot(x_plot,true,label="True 'State'")
+    plt.plot(x_plot,true,linewidth=4,color='k',label="True 'State'",alpha=0.4)
     plt.plot(x_plot,pred,'b--',label="Predicted 'State'")
 
 def run(base="./"):
@@ -85,7 +85,7 @@ def run(base="./"):
     """
     name = "examples.pdf"
     data_base = base + "data/"
-    file_names = ["fast_unfolding","low-snr"]
+    file_names = ["protein","fast_unfolding","low-snr"]
     kw = dict(cache_directory=data_base,force=False)
     file_paths = [data_base + f +".csv" for f in file_names]
     cases = [read_and_cache_file(f,**kw) for f in file_paths]
@@ -103,7 +103,7 @@ def run(base="./"):
         fig = PlotUtilities.figure((8,4))
         plot_events_by_colors(split_fec,predicted_event_idx)
         num = label_and_save(fig=fig,name=name,num=num)
-        fig = PlotUtilities.figure((12,8))
+        fig = PlotUtilities.figure((6,10))
         plt.subplot(2,1,1)
         plot_events_by_colors(split_fec,predicted_event_idx,plot_filtered=True)
         PlotUtilities.lazyLabel("","Force (pN)","")
