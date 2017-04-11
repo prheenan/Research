@@ -49,7 +49,7 @@ def profile_learners(learners,debug_directory,cache_directory,debugging = True,
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-    num_to_plot = 15
+    num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -127,7 +127,7 @@ def run():
         This is a description of what is returned.
     """
     only_lowest = False
-    debugging = True   
+    debugging = False   
     n_learners = 1    
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
@@ -144,7 +144,6 @@ def run():
                                        n_learners=n_learners)
         profile_learners(learners,debug_directory,cache_directory,
                          debugging=debugging)
-        break
 
 
 if __name__ == "__main__":
