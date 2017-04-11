@@ -168,7 +168,7 @@ def delta_mask_function(split_fec,slice_to_use,
     sigma_df = no_event_parameters_object.delta_sigma
     epsilon_df = no_event_parameters_object.delta_epsilon
     deriv_cond[slice_to_use] = \
-            interp_f + (deriv * min_points_between * dt) < sigma_df + epsilon_df
+            interp_f + (deriv * min_points_between/2 * dt) < sigma_df
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
@@ -350,15 +350,18 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     if (where_le_median_rel.size == 0):
         # then just fit the whole thing
         abs_median_change_idx = abs_max_change_idx
+        post_fit_start_idx =  abs_max_change_idx
     else:
         abs_median_change_idx = slice_event.start + where_le_median_rel[0]
+        post_fit_start_idx = min(slice_event.stop-_min_points_between(n_points),
+                                 slice_event.start + where_le_median_rel[-1])
     delta = n_points + 1
     # only *fit* up until the median derivatice
     slice_fit = slice(abs_median_change_idx-delta,abs_median_change_idx,1)
     # *search* in the entire place before the maximum derivative
     start_idx_abs = max(0,abs_max_change_idx-delta)
     # fit a line to the 'post event', to reduce false positives
-    post_slice_fit = slice(abs_max_change_idx,slice_event.stop,1)
+    post_slice_fit = slice(post_fit_start_idx,slice_event.stop,1)
     post_slice_event = slice(abs_median_change_idx,slice_event.stop,1)
     final_event_idx = abs_max_change_idx
     # need at least three points to fit the line
@@ -384,15 +387,18 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     plt.plot(x[slice_event_effective],pred,linewidth=2,color='r')
     plt.subplot(3,1,2)
     plt.plot(x_event,interp_deriv_slice)
-    plt.axhline(np.median(interp_deriv_slice))
+    plt.axhline(median_deriv)
     plt.xlim(xlim_zoom)
     plt.subplot(3,1,3)
     plt.plot(x[slice_event],y[slice_event],color='k',alpha=0.3)
     plt.plot(fit_x,fit_y,color='g',alpha=0.3)
     plt.plot(x_event,interp_slice)
     plt.plot(x[slice_event_effective],pred,linewidth=2,color='r')
-    plt.plot(fit_x_rev,fit_y_rev)
-    plt.plot(x[post_slice_event],pred_rev)
+    try:
+        plt.plot(fit_x_rev,fit_y_rev)
+        plt.plot(x[post_slice_event],pred_rev)
+    except:
+        pass
     plt.axvline(x[idx_above_predicted[-1]])
     plt.xlim(xlim_zoom)
     plt.show()

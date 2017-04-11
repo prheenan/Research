@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0638,
-              rupture_tuple=(0.249,2.35)):
+def check_bcc(examples,predicted,bcc_threshold=0.0501,
+              rupture_tuple=(0.107,0.499)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -37,7 +37,7 @@ def check_bcc(examples,predicted,bcc_threshold=0.0638,
                                               ruptures_pred,bins_rupture)
     # just get the 2d (last one
     bcc = 1-coeffs[-1]          
-    bcc_str =  "bcc is {:.3g}".format(bcc)
+    bcc_str =  "bcc is {:.4g}".format(bcc)
     assert bcc <= bcc_threshold , bcc_str
     print(bcc_str)
     # get the rupture force spectrum stuff
@@ -89,8 +89,8 @@ def run():
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
-    threshold = 1e-2
-    fractional_error_tolerance = 7.94e-3
+    threshold = 1e-3
+    fractional_error_tolerance = 4.60e-3
     predicted,examples = [],[]
     max_error = 0
     for i,f in enumerate(load_paths):

@@ -258,7 +258,7 @@
       \DefineTerm{Rupture force}: fit value where data last above fit
     \end{itemize}}
   \invisible<-4>{
-  \item Rupture properties $\rightarrow$ Landscape properties\footnotemark{}
+  \item Rupture properties $\rightarrow$ Landscape properties \footnotemark{}
     \begin{itemize}
     \item Landscape barrier distance $x^{\ddagger}$
     \item Landscape barrier energy $\Delta G^{\ddagger}$
@@ -286,9 +286,9 @@
         \only<3-4> \fill [white] (0.0,0.0) rectangle (0.0,0.0);%
     \end{scope}
    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{best_2008.jpeg}};
-\invisible<-4>{\footnotetext[1]{Best et. al, \textit{J. Phys. Chem. B}, 2008}}
 \end{tikzpicture}
   \end{figure}
+\footnotetext[1]<5->{Best et. al, \textit{J. Phys. Chem. B}, 2008}
 \end{overlayarea}
 }%
 \end{column}
@@ -388,7 +388,7 @@
  \invisible<-4>{
     \item ... fixes all the negatives ... %
       \begin{itemize}
-        \item Robust to local trendline and false positives, Generalizes %
+        \item Robust to local trendline and false positives, generalizes %
       \end{itemize}}
  \invisible<-5>{
  \item ... and outperforms existing techniques %
@@ -421,7 +421,7 @@
 
 \subsection{Intuition and Basics}
 
-\begin{frame}{Algorithm Intuition}
+\begin{frame}{Algorithm Intuition: Determine a Model for Data without Events }
 
 \begin{columns}[T]
 \begin{column}{0.55\textwidth}
@@ -497,7 +497,7 @@
 \end{block}
 \end{frame}
 
-\begin{frame}{\only<7>{\textcolor{RedOrange}{\textit{\underline{Naïve}}} }Algorithm Pipeline}
+\begin{frame}{Determining the Model and Making Predictions\only<7>{\textcolor{RedOrange}{\textit{ \underline{(Naïve)}}}}}
 
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
@@ -520,7 +520,7 @@
     \item Probability by Chebyshev
         \begin{itemize}
           \item P($\frac{|\Sigma_t-\epsilon|}{\sigma}\ge k$)$\le \frac{1}{k^2}$%
-          \item \textbf{Independent} of noise distribution!%
+          \item \textbf{Any} noise distribution%
         \end{itemize}
 }
 \invisible<-5>{
@@ -559,15 +559,15 @@
 \begin{column}{0.5\textwidth}
 \begin{itemize}
  \item Spline difference
- \item<4-> Spline differentiation
- \item<5-> Spline residual integral
+ \item<3-> Spline differentiation
+ \item<4-> Spline residual integral
 \end{itemize}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
 \end{tikzpicture}
   \end{overlayarea}
 
@@ -576,10 +576,10 @@
 \begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -606,11 +606,10 @@
   \begin{itemize}
     \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
   \end{itemize}
-\item Events force > 0
+\item Event's force > 0
   \begin{itemize}
     \item `Mask' by transforms (tx) 
-    \item Require tx signal $\ge$ noise
-    \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
+    \item Require tx signal > noise
   \end{itemize}}
 \end{itemize}
 \end{column}
@@ -669,14 +668,14 @@
 
 \subsection{Performance}
 
-\begin{frame}{Distance Metric: Error Percentile \ErrorPct{} }
+\begin{frame}{$\sim$100x Lower Distance Error Metric}
 
 \begin{columns}[T]
 \begin{column}{\textwidth}
 % column about BCC
   \begin{itemize}
-  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
-\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true%
+  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: error from true to predicted (0 $\Leftrightarrow$ No false negatives)%
+\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: error from predicted to true (0 $\Leftrightarrow$ No false positives)%
 \invisible<-2>{
 \only<1-3>{\item FEATHER}%
 \only<4-5>{\item OpenFovea}%
@@ -697,7 +696,7 @@
     \end{scope}
     \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{FEATHER_dist.pdf}};
     \node<4-5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{OpenFovea_dist.pdf}};
-    \node<5>[anchor=south west,inner sep=0, red,font={\large\bfseries}] at (6,2.5) {False Positives};
+    \node<5>[anchor=south west,inner sep=0, red,font={\large\bfseries}] at (3,4) {False Positives};
     \node<6>[anchor=south west,inner sep=0,] (image) at (0,0) {\includegraphics[width=\textwidth]{ScientificPython_dist.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
@@ -705,7 +704,7 @@
 
 \end{frame}
 
-\begin{frame}{Rupture Metric: Bhattacharya Coefficient's Complement (BCC)}
+\begin{frame}{$\sim$10x Lower Bhattacharya Coefficient's Complement (BCC)}
 
 \begin{columns}[T]
 \begin{column}{0.99\textwidth}
@@ -760,16 +759,19 @@
 \section*{Summary}
 
 \begin{frame}{Summary}
+
+\begin{columns}[T]
+\begin{column}{0.6\textwidth}
   % Keep the summary *very short*.
   \begin{itemize}
   \item
-    Developed an algorithm for detecting events SMFS data
+    Developed an algorithm for detecting ruptures 
   \item
-    100-fold decrease in relative event error
+    100-fold decrease in event error
   \item
-    Generalizes well to SMFS data ranges
+    Generalizes to typical SMFS data
   \end{itemize}
-  
+  \invisible<-1>{  
   % The following outlook is optional.
   \vskip0pt plus.5fill
   \begin{itemize}
@@ -781,9 +783,23 @@
     \item
       Publish results
     \item 
-      Modify FEATHER to detect \underline{re}folding events
+      Modify, Detect \underline{re}folding events
     \end{itemize}
   \end{itemize}
+}
+\end{column}
+
+\begin{column}{0.4\textwidth}
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Image4113Concat2.pdf}};
+\end{tikzpicture}
+  \end{overlayarea}
+\end{column}
+\end{columns}
+
 \end{frame}
 
 % rest in appendix, see 
@@ -794,32 +810,42 @@
 \section{Acknowledgements}
 
 \begin{frame}
-((Need to finish this))
 
-  The author would like to extend special thanks to the following people: 
-
-  \begin{enumerate}
-  \item His three advisors for providing insight and encouragement into the computational and biophysical aspects of the thesis.
-  \item Chase Bergeson, Dr. Devin Edwards, and Stephen Okoniewski for valuable feedback on drafts of this text.
-  \item Dr. Devin Edwards, for assistance with troubleshooting surface chemistry. 
-  \item Lyle Uyetake and William Van Patten for technical advice on the preparation of samples, surfaces, and cantilevers. 
-  \end{enumerate}
-\end{frame}
-
-\section{Questions}
-
-\begin{frame}
+  \begin{overlayarea}{\textwidth}{\textheight}
+    \begin{tikzpicture}
+% see: tex.stackexchange.com/questions/9559/drawing-on-an-image-with-tikz
+% and: tex.stackexchange.com/questions/82530/how-to-draw-a-filled-rectangle-without-a-border-using-tikz
+    \node[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{acknowledgements}};
+\end{tikzpicture}
+  \end{overlayarea}
 
 \end{frame}
-
-
 
 
 \section{Bibliography}
 
+\nocite{yu_hidden_2017}
+\nocite{best_pulling_2008}
+% other domains
+\nocite{struzik_wavelet_2002}
+\nocite{turner_conditional_1994}
+\nocite{perelman_event_2012}
+%this domain
+\nocite{kuhn_automated_2005}
+\nocite{andreopoulos_efficient_2011}
+\nocite{benitez_searching_2017-1}
+
 \begin{frame}[allowframebreaks]{Bilbiography}
   \bibliographystyle{unsrt}
   \bibliography{../../paper/drafts/Masters.bib}
+\end{frame}
+
+
+\section{Questions}
+
+
+\begin{frame}
+
 \end{frame}
 
 \section{Backup Slides}
@@ -900,13 +926,16 @@
 \end{frame}
 
 
-\begin{frame}{Typical examples where FEATHER has trouble}
+\begin{frame}{Curve `Classes' where FEATHER has trouble %
+\only<1>{(Two Rapid Steps)}%
+\only<2>{(Ringing)}%
+}
 
 \begin{columns}[T]
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Image1533Concat2.pdf}};
-    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{Image3929Concat2.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.4\textwidth]{Image3929Concat2.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.4\textwidth]{Image3279Concat2.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 
@@ -914,6 +943,18 @@
 
 \end{frame}
 
+\begin{frame}{Example where FEATHER does well.}
+
+\begin{columns}[T]
+  \begin{overlayarea}{\textwidth}{\textheight}
+  \begin{tikzpicture}
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.4\textwidth]{Image1533Concat2.pdf}};
+\end{tikzpicture}
+\end{overlayarea}
+
+\end{columns}
+
+\end{frame}
 
 
 

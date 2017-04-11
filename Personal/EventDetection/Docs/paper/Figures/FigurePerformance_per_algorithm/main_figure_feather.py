@@ -78,8 +78,10 @@ def run(in_base="../FigurePerformance_CS/"):
         true,pred = m.true,m.pred
         # make the 'just the distance' figures
         fig = PlotUtilities.figure((10,5))
-        Plotting.histogram_event_distribution(**distance_histogram)
+        Plotting.histogram_event_distribution(use_q_number=True,
+                                              **distance_histogram)
         final_out_dist = "{:s}{:s}_dist.pdf".format(out_base,safe_name)
+        plt.ylim([0.5,max(plt.ylim())*3])
         PlotUtilities.savefig(fig,final_out_dist)
         # make the rupture spectrum figure
         fig = PlotUtilities.figure((14,7.5))
