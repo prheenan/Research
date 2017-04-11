@@ -21,8 +21,8 @@ def fmt(remove_x_labels=True,remove_y_labels=True):
     if (remove_y_labels):
         ax.yaxis.set_ticklabels([])
     PlotUtilities.lazyLabel("","","")
-    plt.ylim([-30,60])
-    plt.xlim([-30,700])
+    plt.ylim([-25,80])
+    plt.xlim([-100,700])
 
 def plot_fec_cartoon(base,data_base,file_names,arrow_kwargs=dict()):
     kw = dict(cache_directory=data_base,force=False)

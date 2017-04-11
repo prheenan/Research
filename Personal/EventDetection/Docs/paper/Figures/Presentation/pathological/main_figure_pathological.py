@@ -85,7 +85,7 @@ def run(base="./"):
     """
     name = "examples.pdf"
     data_base = base + "data/"
-    file_names = ["protein","fast_unfolding","low-snr"]
+    file_names = ["protein","fast_unfolding","low-snr","ringing"]
     kw = dict(cache_directory=data_base,force=False)
     file_paths = [data_base + f +".csv" for f in file_names]
     cases = [read_and_cache_file(f,**kw) for f in file_paths]

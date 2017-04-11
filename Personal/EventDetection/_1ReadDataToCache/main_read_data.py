@@ -126,6 +126,7 @@ def run():
     """
     only_lowest = True
     debugging = True   
+    copy_files = False
     n_learners = 1    
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
@@ -141,7 +142,7 @@ def run():
                                        categories,
                                        n_learners=n_learners)
         profile_learners(learners,debug_directory,cache_directory,
-                         debugging=debugging)
+                         debugging=debugging,copy_files=copy_files)
         break
 
 

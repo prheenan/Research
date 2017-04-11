@@ -288,7 +288,6 @@
    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{best_2008.jpeg}};
 \end{tikzpicture}
   \end{figure}
-%\uncover<4>{\footnoterule}
 \footnotetext[1]<5->{Best et. al, \textit{J. Phys. Chem. B}, 2008}
 \end{overlayarea}
 }%
@@ -389,7 +388,7 @@
  \invisible<-4>{
     \item ... fixes all the negatives ... %
       \begin{itemize}
-        \item Robust to local trendline and false positives, Generalizes %
+        \item Robust to local trendline and false positives, generalizes %
       \end{itemize}}
  \invisible<-5>{
  \item ... and outperforms existing techniques %
@@ -498,7 +497,7 @@
 \end{block}
 \end{frame}
 
-\begin{frame}{\only<7>{\textcolor{RedOrange}{\textit{\underline{Naïve}}} }Determining the Model and Making Predictions}
+\begin{frame}{Determining the Model and Making Predictions\only<7>{\textcolor{RedOrange}{\textit{ \underline{(Naïve)}}}}}
 
 \begin{columns}[T]
 \begin{column}{0.5\textwidth}
@@ -521,7 +520,7 @@
     \item Probability by Chebyshev
         \begin{itemize}
           \item P($\frac{|\Sigma_t-\epsilon|}{\sigma}\ge k$)$\le \frac{1}{k^2}$%
-          \item \textbf{Any} noise distribution!%
+          \item \textbf{Any} noise distribution%
         \end{itemize}
 }
 \invisible<-5>{
@@ -560,15 +559,15 @@
 \begin{column}{0.5\textwidth}
 \begin{itemize}
  \item Spline difference
- \item<4-> Spline differentiation
- \item<5-> Spline residual integral
+ \item<3-> Spline differentiation
+ \item<4-> Spline residual integral
 \end{itemize}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{explaining_spline3.pdf}};
 \end{tikzpicture}
   \end{overlayarea}
 
@@ -577,10 +576,10 @@
 \begin{column}{0.5\textwidth}
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
-    \node<1-2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
-    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
-    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
-    \node<5>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
+    \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract0.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract1.pdf}};
+    \node<3>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract2.pdf}};
+    \node<4>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=\textwidth]{algorithm_retract3.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 \end{column}
@@ -607,11 +606,10 @@
   \begin{itemize}
     \item Require $\frac{\mathrm{dForce}}{\mathrm{dTime}}$<0
   \end{itemize}
-\item Events force > 0
+\item Event's force > 0
   \begin{itemize}
     \item `Mask' by transforms (tx) 
-    \item Require tx signal $\ge$ noise
-    \item \emph{e.g.} Force change: $|\Sigma_{t,\mathrm{dF}}-\epsilon_{\mathrm{dF}}|\ge\sigma_{\mathrm{dF}}$
+    \item Require tx signal > noise
   \end{itemize}}
 \end{itemize}
 \end{column}
@@ -676,8 +674,8 @@
 \begin{column}{\textwidth}
 % column about BCC
   \begin{itemize}
-  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: distance (relative) from true to predicted%
-\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: distance (relative) from predicted to true%
+  \item \DefineTerm{\textcolor{OliveGreen}{d$_{\mathrm{t}\rightarrow\mathrm{p}}$}}: error from true to predicted (0 $\Leftrightarrow$ No false negatives)%
+\item \DefineTerm{\textcolor{Blue}{d$_{\mathrm{p}\rightarrow\mathrm{t}}$}}: error from predicted to true (0 $\Leftrightarrow$ No false positives)%
 \invisible<-2>{
 \only<1-3>{\item FEATHER}%
 \only<4-5>{\item OpenFovea}%
@@ -823,12 +821,32 @@
 
 \end{frame}
 
+
+\section{Bibliography}
+
+\nocite{yu_hidden_2017}
+\nocite{best_pulling_2008}
+% other domains
+\nocite{struzik_wavelet_2002}
+\nocite{turner_conditional_1994}
+\nocite{perelman_event_2012}
+%this domain
+\nocite{kuhn_automated_2005}
+\nocite{andreopoulos_efficient_2011}
+\nocite{benitez_searching_2017-1}
+
+\begin{frame}[allowframebreaks]{Bilbiography}
+  \bibliographystyle{unsrt}
+  \bibliography{../../paper/drafts/Masters.bib}
+\end{frame}
+
+
 \section{Questions}
+
 
 \begin{frame}
 
 \end{frame}
-
 
 \section{Backup Slides}
 
@@ -908,12 +926,16 @@
 \end{frame}
 
 
-\begin{frame}{Example where FEATHER has trouble}
+\begin{frame}{Curve `Classes' where FEATHER has trouble %
+\only<1>{(Two Rapid Steps)}%
+\only<2>{(Ringing)}%
+}
 
 \begin{columns}[T]
   \begin{overlayarea}{\textwidth}{\textheight}
   \begin{tikzpicture}
     \node<1>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.4\textwidth]{Image3929Concat2.pdf}};
+    \node<2>[anchor=south west,inner sep=0] (image) at (0,0) {\includegraphics[width=0.4\textwidth]{Image3279Concat2.pdf}};
 \end{tikzpicture}
 \end{overlayarea}
 
@@ -933,8 +955,6 @@
 \end{columns}
 
 \end{frame}
-
-
 
 
 
