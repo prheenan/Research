@@ -196,26 +196,25 @@ def _spline_derivative(x,interpolator):
     """
     return interpolator.derivative()(x)
 
-def local_noise_integral(f,interp_f,n_points,no_event_parameters_object):
+def local_noise_integral(f,interp_f,n_points):
     min_points_between = _min_points_between(n_points)
     diff = f-interp_f
     stdev = Analysis.local_stdev(diff,n_points)
     # essentially: when is the interpolated value 
     # at least one (local) standard deviation above the median
     # we admit an event might be possible
-    integral_epsilon = no_event_parameters_object.integral_epsilon
-    integral_sigma   = no_event_parameters_object.integral_sigma
-    local_integral = Analysis.local_integral(stdev-integral_epsilon,
+    local_integral = Analysis.local_integral(stdev,
                                              min_points_between)
     return local_integral
 
 def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
-    local_integral = local_noise_integral(f,interp_f,n_points,
-                                          no_event_parameters_object)
+    local_integral = local_noise_integral(f,interp_f,n_points)
     integral_sigma   = no_event_parameters_object.integral_sigma
+    integral_epsilon   = no_event_parameters_object.integral_epsilon
     # get the propr probability
-    probability_integral = _no_event_chebyshev(local_integral,0,
-                                               integral_sigma)
+    probability_integral = _no_event_chebyshev(local_integral,
+                                               epsilon=integral_epsilon,
+                                               sigma=integral_sigma)
     return probability_integral
     
     
@@ -282,6 +281,13 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
         deriv_sigma = no_event_parameters_object.derivative_sigma
         condition = np.where(derivative > -(deriv_epsilon+deriv_sigma))
         probability_distribution[condition] = 1
+    """
+    plt.semilogy(probability_distribution)
+    plt.semilogy(p_deriv,label='deriv')
+    plt.semilogy(p_int,label='int')
+    plt.legend()
+    plt.show()
+    """
     return probability_distribution,stdev_masked
         
 def _event_probabilities(x,y,interp,n_points,threshold,

@@ -418,13 +418,23 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     get the interpolator delta in the slice
     """
     interpolator_approach_x = split_fec.approach.Time[slice_fit_approach]
+    approach_f = split_fec.approach.Force[slice_fit_approach]
     interpolator_approach_f = spline_fit_approach(interpolator_approach_x)
     df_approach = _no_event._delta(interpolator_approach_x,
                                    interpolator_approach_f,
                                    min_points_between)
     delta_epsilon,delta_sigma = np.median(df_approach),np.std(df_approach)
     """
-    get the interpolate derivative in the slice
+    get the interpolated integral in the slice
+    """
+    approach_noise_integral = _no_event.\
+        local_noise_integral(approach_f,
+                             interpolator_approach_f,
+                             min_points_between)
+    integral_epsilon = np.median(approach_noise_integral)
+    integral_sigma = np.std(approach_noise_integral)
+    """
+    get the interpolated derivative in the slice
     """
     approach_interp_deriv = \
             spline_fit_approach.derivative()(interpolator_approach_x)
@@ -433,8 +443,8 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     # get the remainder of the approach metrics needed
     # note: to start, we do *not* use delta; this is calculated
     # after the adhesion
-    approach_dict = dict(integral_sigma   = 2*sigma*min_points_between,
-                         integral_epsilon = epsilon,
+    approach_dict = dict(integral_sigma   = integral_sigma,
+                         integral_epsilon = integral_epsilon,
                          delta_epsilon = delta_epsilon,
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,
