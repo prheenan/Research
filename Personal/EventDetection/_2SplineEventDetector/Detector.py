@@ -100,14 +100,11 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
 
 def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
                              interp_f,pred_retract_surface_idx, slice_to_use):
-    epsilon_approach = no_event_parameters_object.delta_epsilon
-    sigma_approach = no_event_parameters_object.delta_sigma
-    pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
-                                        slice_to_use.start
-    diff = interp_f - np.maximum(0,df_true)
-    zero_force = interp_f[pred_retract_surface_idx_in_slice]
-    zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
-    return (diff <= zero_condition_baseline) 
+    min_sig = no_event_parameters_object.epsilon + \
+              no_event_parameters_object.sigma
+    min_sig_df = no_event_parameters_object.delta_epsilon + \
+                 no_event_parameters_object.delta_sigma
+    return interp_f - min_sig_df <= 0 
 
 def delta_mask_function(split_fec,slice_to_use,
                         boolean_array,probability,threshold,
@@ -123,6 +120,10 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     # offset to right now (assume this is after surface  touchoff /adhesions)
     offset_zero_force = interp_f[0]
+    where_event = np.where(boolean_array)[0]
+    n = force.size
+    if (where_event.size > 0 and (where_event[-1] < n-min_points_between)):
+        offset_zero_force = np.median(force[where_event[-1]:])
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
@@ -286,7 +287,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                             
+                                                         min_points_between)                                           
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
