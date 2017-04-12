@@ -247,7 +247,17 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                                          min_points_between)
     x_all = split_fec.retract.Time
     y_all = split_fec.retract.Force
+    # set up the fec and parameters so we are now looking for negatives,
+    # using the delta
+    no_event_parameters_object._set_valid_delta(True)
+    no_event_parameters_object.negative_only = True
     if (len(events_containing_surface) == 0):
+        interp = no_event_parameters_object.last_interpolator_used
+        probability_updated[slice_updated],_ = _no_event.\
+                _no_event_probability(x_all[slice_updated],interp,
+                                      y_all[slice_updated],
+                                      n_points,no_event_parameters_object)
+        boolean_ret = (probability_updated < threshold)
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
@@ -264,8 +274,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
     interp_slice = interp(x_slice)
     split_fec.set_retract_knots(interp)
-    no_event_parameters_object._set_valid_delta(True)
-    no_event_parameters_object.negative_only = True
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x_slice,interp,y_slice,
@@ -278,7 +286,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                                 
+                                                         min_points_between)                                             
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
