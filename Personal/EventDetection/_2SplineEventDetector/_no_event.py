@@ -388,7 +388,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     else:
         event_slices = []
     # XXX reject events with a very small time?
-    event_duration = [ (e.stop-e.start) for e in event_slices]
+    event_duration = [ abs(e.stop-e.start) for e in event_slices]
     delta_split_rem = [ int(np.ceil((n_points-(delta))/2))
                         for delta in event_duration]
     # determine where the events are happening locally (guarentee at least

@@ -318,12 +318,18 @@ def _loading_rate_helper(x,y,slice_event,slice_fit=None):
         local_max_idx += np.argmax(y_event)
     fit_x = x[slice_fit]
     fit_y = y[slice_fit]
-    coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
-    pred = np.polyval(coeffs,x=x_event)
-    # determine where the data *in the __original__ slice* is __last__
-    # above the fit (after that, it is consistently below it)
-    idx_above_predicted_rel = np.where(y_event > pred)[0]    
-    idx_below_predicted_rel = np.where(y_event <= pred)[0]
+    if (fit_x.size > 0):
+        coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
+        pred = np.polyval(coeffs,x=x_event)
+        # determine where the data *in the __original__ slice* is __last__
+        # above the fit (after that, it is consistently below it)
+        idx_above_predicted_rel = np.where(y_event > pred)[0]    
+        idx_below_predicted_rel = np.where(y_event <= pred)[0]
+    else:
+        # effectively no data to fit
+        pred = y[slice_event.start]
+        idx_above_predicted_rel = [slice_event.start]
+        idx_below_predicted_rel = [slice_event.start]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
     idx_below_predicted = [offset + i for i in idx_below_predicted_rel]
