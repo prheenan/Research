@@ -102,7 +102,7 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     sigma = no_event_parameters_object.sigma
     min_sig_df = no_event_parameters_object.delta_epsilon + \
                  no_event_parameters_object.delta_sigma
-    baseline_interp = min_sig_df
+    baseline_interp = min_sig_df+sigma
     local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
     prev_average = np.zeros(local_average.size)
     prev_average[n:] = local_average[:-n]
