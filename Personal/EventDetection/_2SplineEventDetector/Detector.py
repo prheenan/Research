@@ -98,13 +98,25 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     value_cond = (df_true > baseline)
     return value_cond
 
-def _condition_delta_at_zero(no_event_parameters_object,force,n):
+def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     sigma = no_event_parameters_object.sigma
     min_sig_df = no_event_parameters_object.delta_epsilon + \
                  no_event_parameters_object.delta_sigma
     baseline_interp = min_sig_df
     local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
-    to_ret = (local_average - baseline_interp) <= 0
+    prev_average = np.zeros(local_average.size)
+    prev_average[n:] = local_average[:-n]
+    diff = prev_average-local_average
+    """
+    plt.subplot(2,1,1)
+    plt.plot(force)
+    plt.plot(interp_f)
+    plt.subplot(2,1,2)
+    plt.plot(diff)
+    plt.axhline(-baseline_interp)
+    plt.show()
+    """
+    to_ret = (diff) >= -baseline_interp
     return to_ret
 
 def delta_mask_function(split_fec,slice_to_use,
@@ -185,7 +197,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # find where we are consistent with zero
     consistent_with_zero_cond[slice_to_use] = \
             _condition_delta_at_zero(no_event_parameters_object,force_sliced,
-                                     n_points)
+                                     interp_f,n_points)
     condition_non_events = (consistent_with_zero_cond | deriv_cond)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,

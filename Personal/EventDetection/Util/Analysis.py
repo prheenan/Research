@@ -203,7 +203,20 @@ class split_force_extension:
         grad_appr = np.gradient(self.approach.Zsnsr)
         grad_retr = np.gradient(self.retract.Zsnsr)
         sep_diff_median_ratio = abs(np.median(grad_retr)/np.median(grad_appr))
-        return int(np.ceil(offset_points * sep_diff_median_ratio))
+        ratio = int(np.ceil(offset_points/sep_diff_median_ratio))
+        """
+        plt.subplot(2,1,1)
+        plt.plot(self.approach.Force)
+        plt.axvline(approach_idx)
+        plt.subplot(2,1,2)
+        n = self.approach.Force.size
+        plt.plot(self.retract.Force)
+        plt.axvline(n-approach_idx)
+        plt.axvline(ratio)
+        print(ratio)
+        plt.show()
+        """
+        return ratio
 
 def _index_surface_relative(x,offset_needed):
     """
