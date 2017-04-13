@@ -14,6 +14,7 @@ from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
 from Research.Personal.EventDetection.Util import Plotting,InputOutput
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
+
 def get_learner_results(cache_directory,debug_directory,positive_categories,
                         limit = 200,n_folds=5,n_tuning_points = 15,
                         force_read = False,    
@@ -27,6 +28,7 @@ def get_learner_results(cache_directory,debug_directory,positive_categories,
                            n_points_wavelet=n_tuning_points)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
+
     learners = Learners.get_learners(**learners_kwargs)[:n_learners]
     learners = CheckpointUtilities.\
                getCheckpoint(file_name_cache,Learning.get_cached_folds,
@@ -47,7 +49,7 @@ def profile_learners(learners,debug_directory,cache_directory,debugging = True,
         distance_histogram= Plotting.event_error_kwargs(best_metric)
         Plotting.plot_individual_learner(debug_directory,l,
                                          rupture_kwargs=distance_histogram)
-    num_to_plot = 15
+    num_to_plot = 30
     # XXX looking at the worst of the best for the first learner (no event)
     learner = learners[0]
     valid_scores = learner._scores_by_params(train=False)
@@ -143,7 +145,6 @@ def run():
                                        n_learners=n_learners)
         profile_learners(learners,debug_directory,cache_directory,
                          debugging=debugging,copy_files=copy_files)
-        break
 
 
 if __name__ == "__main__":

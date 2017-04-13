@@ -82,7 +82,8 @@ def get_linear_runtime(x,times,fudge=1):
     return params,params_std,x_pred_plot,y_pred_plot
 
 
-def plot_learner_prediction_time_comparison(learners,color='b'):
+def plot_learner_prediction_time_comparison(learners,
+                                            color=Plotting.algorithm_colors()):
     """
     plots the asympotic slope of the learners
 
@@ -125,8 +126,9 @@ def plot_learner_prediction_time_comparison(learners,color='b'):
     fontsize=PlotUtilities.g_font_legend * 0.8
     for i,(x,y) in enumerate(zip(ind,plot_y)):
         ax.text(x,y*1.25,s=label_func(i,None),ha='center', va='bottom',
-                fontsize=fontsize,color=color[i])
+                fontsize=fontsize,color=color[i % len(color)])
     plt.yscale('log')
+    plt.ylim(min(plot_y)/2,max(plot_y)*2)
     PlotUtilities.lazyLabel("Event finding method",
                             "Points classified / second","")
     

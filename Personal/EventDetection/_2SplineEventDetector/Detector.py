@@ -351,7 +351,9 @@ def _loading_rate_helper(x,y,slice_event,slice_fit=None):
     n_points = int(np.ceil((slice_event.stop-offset+1)/2))
     y_event = y[slice_event]
     x_event = x[slice_event]
-    local_max_idx = offset + np.argmax(y_event)
+    local_max_idx = offset
+    if (y_event.size > 0):
+        local_max_idx += np.argmax(y_event)
     fit_x = x[slice_fit]
     fit_y = y[slice_fit]
     coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
