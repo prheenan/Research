@@ -98,13 +98,14 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     value_cond = (df_true > baseline)
     return value_cond
 
-def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
-                             interp_f,pred_retract_surface_idx, slice_to_use):
-    min_sig = no_event_parameters_object.epsilon + \
-              no_event_parameters_object.sigma
+def _condition_delta_at_zero(no_event_parameters_object,force,n):
+    sigma = no_event_parameters_object.sigma
     min_sig_df = no_event_parameters_object.delta_epsilon + \
                  no_event_parameters_object.delta_sigma
-    return interp_f - min_sig_df <= 0 
+    baseline_interp = min_sig_df
+    local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
+    to_ret = (local_average - baseline_interp) <= 0
+    return to_ret
 
 def delta_mask_function(split_fec,slice_to_use,
                         boolean_array,probability,threshold,
@@ -138,14 +139,8 @@ def delta_mask_function(split_fec,slice_to_use,
         _condition_no_delta_significance(no_event_parameters_object,df_true,
                                          negative_only,interp_f,
                                          n_points)
-    # find where we are consistent with zero
-    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
-    consistent_with_zero_cond = \
-    _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
-                             interp_f,pred_retract_surface_idx,slice_to_use)
     gt_condition = np.ones(boolean_array.size)
-    gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
-                                  (consistent_with_zero_cond))
+    gt_condition[slice_to_use] = (value_cond) | (no_event_cond)
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     # update the boolean array before we slice
@@ -156,6 +151,22 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
+    """
+    plt.subplot(2,1,1)
+    plt.plot(force)
+    plt.subplot(2,1,2)
+    plt.plot(boolean_array[slice_to_use]+2.1)
+    plt.plot(value_cond+1.1)
+    plt.plot(no_event_cond)
+    plt.plot(consistent_with_zero_cond-1.1)
+    plt.show()
+    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
+                                    boolean_array,no_event_cond,value_cond,
+                                    boolean_ret,probability_updated,probability,
+                                    threshold)
+    plt.show()
+    """
+
     # XXX debugging...
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     if (last_greater.size > 0):
@@ -165,15 +176,21 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f -= offset_zero_force
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
     dt = np.median(np.diff(x_sliced))
-    deriv_cond = np.zeros(boolean_ret.size)
+    deriv_cond = np.zeros(boolean_ret.size,dtype=np.bool)
+    consistent_with_zero_cond = np.zeros(boolean_ret.size,dtype=np.bool)
     sigma_df = no_event_parameters_object.delta_sigma
     epsilon_df = no_event_parameters_object.delta_epsilon
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
+    # find where we are consistent with zero
+    consistent_with_zero_cond[slice_to_use] = \
+            _condition_delta_at_zero(no_event_parameters_object,force_sliced,
+                                     n_points)
+    condition_non_events = (consistent_with_zero_cond | deriv_cond)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
-                         condition=deriv_cond,
+                         condition=condition_non_events,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold

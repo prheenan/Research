@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0438,
-              rupture_tuple=(0.0699,0.446)):
+def check_bcc(examples,predicted,bcc_threshold=0.0505,
+              rupture_tuple=(0.107,0.499)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -68,7 +68,7 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     n = example_split.retract.Force.size
     rel_errors = [_/n for _ in errors]
     err_str = ("Fractional Error(s): " + \
-               ",".join(["{:.3g}".format(_) for _ in rel_errors]))
+               ",".join(["{:.4g}".format(_) for _ in rel_errors]))
     for e in errors:
         assert e <= fractional_error_tolerance * n , err_str
     print(err_str)
@@ -90,7 +90,7 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 1e-3
-    fractional_error_tolerance = 4.04e-3
+    fractional_error_tolerance = 4.60-3
     predicted,examples = [],[]
     max_error = 0
     for i,f in enumerate(load_paths):
