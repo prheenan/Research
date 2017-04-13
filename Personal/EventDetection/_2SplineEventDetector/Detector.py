@@ -263,7 +263,18 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     non_events = probability_updated > threshold
     min_points_between = _min_points_between(n_points)
     min_idx = surface_index + min_points_between
-    n = split_fec.retract.Force.size
+    x_all = split_fec.retract.Time
+    y_all = split_fec.retract.Force
+    n = y_all.size
+    # determine where delta is first one (necessary but not sufficient for 
+    # passing adhesions)
+    interp_tmp_delta = no_event_parameters_object.last_interpolator_used(x_all)
+    delta = _no_event._delta(x_all,interp_tmp_delta,n_points)
+    prob = _no_event._delta_probability(delta,no_event_parameters_object)
+    tol = 1e-9
+    where_delta_1 = np.where(1-prob <= tol)[0]
+    if (where_delta_1.size > 0):
+        min_idx = max(min_idx,where_delta_1[0])
     # remove all things before the predicted surface, and at the boundary
     boolean_ret[:min_idx] = 0
     boolean_ret[-min_points_between:] = 0
@@ -275,8 +286,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # (could be some adhesion!)
     events_containing_surface = get_events_before_marker(min_idx,event_mask,
                                                          min_points_between)
-    x_all = split_fec.retract.Time
-    y_all = split_fec.retract.Force
+
     # set up the fec and parameters so we are now looking for negatives,
     # using the delta
     no_event_parameters_object._set_valid_delta(True)
