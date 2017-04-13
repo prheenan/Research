@@ -100,18 +100,22 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
 
 def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     sigma = no_event_parameters_object.sigma
+    epsilon = no_event_parameters_object.epsilon
     min_sig_df = no_event_parameters_object.delta_epsilon + \
                  no_event_parameters_object.delta_sigma
+    threshold_local_average = min_sig_df
     baseline_interp = min_sig_df+sigma
     local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
     prev_average = np.zeros(local_average.size)
     prev_average[n:] = local_average[:-n]
     diff = prev_average-local_average
-    to_ret = ( ((diff) >= -baseline_interp) | (local_average <= sigma))
+    to_ret = ( (diff >= -baseline_interp) | 
+               (local_average <= threshold_local_average))
     """
     plt.subplot(3,1,1)
     plt.plot(force)
     plt.plot(local_average)
+    plt.axhline(threshold_local_average)
     plt.subplot(3,1,2)
     plt.plot(diff)
     plt.axhline(-baseline_interp)
