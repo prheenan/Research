@@ -96,7 +96,7 @@ def run():
     fractional_error_tolerance = 7.24e-3
     predicted,examples = [],[]
     max_error = 0
-    for i,f in enumerate(load_paths[3:]):
+    for i,f in enumerate(load_paths):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 
         # get the prediction, save out the plotting information
         example_split,pred_info = \
