@@ -107,16 +107,19 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     prev_average = np.zeros(local_average.size)
     prev_average[n:] = local_average[:-n]
     diff = prev_average-local_average
+    to_ret = ( ((diff) >= -baseline_interp) | (local_average <= sigma))
     """
-    plt.subplot(2,1,1)
+    plt.subplot(3,1,1)
     plt.plot(force)
-    plt.plot(interp_f)
-    plt.subplot(2,1,2)
+    plt.plot(local_average)
+    plt.subplot(3,1,2)
     plt.plot(diff)
     plt.axhline(-baseline_interp)
+    plt.axhline(sigma,linestyle='--')
+    plt.subplot(3,1,3)
+    plt.plot(to_ret)
     plt.show()
     """
-    to_ret = (diff) >= -baseline_interp
     return to_ret
 
 def delta_mask_function(split_fec,slice_to_use,
@@ -203,9 +206,16 @@ def delta_mask_function(split_fec,slice_to_use,
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
                          condition=condition_non_events,
-                         min_points_between=min_points_between,
+                         min_points_between=min_points_between,    
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
+    """
+    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
+                                    boolean_array,no_event_cond,value_cond,
+                                    boolean_ret,probability_updated,probability,
+                                    threshold)
+    plt.show()
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):

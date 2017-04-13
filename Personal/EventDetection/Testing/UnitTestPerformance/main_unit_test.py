@@ -59,7 +59,10 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     n_expected = len(events)
     err_str = "for {:s}, expected {:d}, got {:d}".\
         format(meta.Name,n_expected,n_found)
-    assert n_found == n_expected , err_str   
+    correct_num = (n_found == n_expected)
+    assert correct_num , err_str   
+    if (not correct_num):
+        return [0]
     # POST: number of events match. check that the locations match (within
     # fractional_error_tolerance * number of points)
     predicted_centers = np.array(sorted(pred_info.event_idx))
@@ -93,7 +96,7 @@ def run():
     fractional_error_tolerance = 7.24e-3
     predicted,examples = [],[]
     max_error = 0
-    for i,f in enumerate(load_paths):
+    for i,f in enumerate(load_paths[3:]):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 
         # get the prediction, save out the plotting information
         example_split,pred_info = \
