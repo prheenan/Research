@@ -71,9 +71,13 @@ class plotting_metrics:
                 flat.append(list(v))
         to_ret = np.concatenate(flat)
         return to_ret
-    def max_x_distances_true_pred(self):
-        f_max_pred = lambda x: [x.max_displacement() for _ in range(x.n_pred())]
-        f_max_true = lambda x: [x.max_displacement() for _ in range(x.n_true())]
+    def max_x_distances_true_pred(self,use_idx=True):
+        if use_idx:
+            func = lambda x: x.n_retract
+        else:
+            func = lambda x: x.max_displacement()
+        f_max_pred = lambda x: [func(x) for _ in range(x.n_pred())]
+        f_max_true = lambda x: [func(x) for _ in range(x.n_true())]
         true_raw = self._lambda(f_max_true)
         pred_raw = self._lambda(f_max_pred)
         true = self.safe_concat(true_raw)

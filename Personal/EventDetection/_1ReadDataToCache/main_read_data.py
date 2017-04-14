@@ -127,7 +127,7 @@ def run():
         This is a description of what is returned.
     """
     only_lowest = True
-    debugging = True   
+    debugging = False   
     copy_files = False
     n_learners = 1    
     positives_directory = InputOutput.get_positives_directory()
