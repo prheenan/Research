@@ -282,13 +282,13 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     n = y_all.size
     # determine where delta is first one (necessary but not sufficient for 
     # passing adhesions)
-    interp_tmp_delta = no_event_parameters_object.last_interpolator_used(x_all)
-    delta = _no_event._delta(x_all,interp_tmp_delta,n_points)
-    delta_threshold = no_event_parameters_object.delta_epsilon + \
-                      no_event_parameters_object.delta_sigma
-    where_delta_1 = np.where(delta <= delta_threshold)[0]
-    if (where_delta_1.size > 0):
-        min_idx = max(min_idx,where_delta_1[0])
+    interp_tmp = no_event_parameters_object.last_interpolator_used
+    interp_tmp_deriv = interp_tmp.derivative()(x_all)
+    deriv_threshold = no_event_parameters_object.derivative_epsilon + \
+                      no_event_parameters_object.derivative_sigma
+    where_change_is_low = np.where(interp_tmp_deriv <= deriv_threshold)[0]
+    if (where_change_is_low.size > 0):
+        min_idx = max(min_idx,where_change_is_low[0])
     # remove all things before the predicted surface, and at the boundary
     boolean_ret[:min_idx] = 0
     boolean_ret[-min_points_between:] = 0
