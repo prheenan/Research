@@ -203,7 +203,20 @@ class split_force_extension:
         grad_appr = np.gradient(self.approach.Zsnsr)
         grad_retr = np.gradient(self.retract.Zsnsr)
         sep_diff_median_ratio = abs(np.median(grad_retr)/np.median(grad_appr))
-        return int(np.ceil(offset_points * sep_diff_median_ratio))
+        ratio = int(np.ceil(offset_points/sep_diff_median_ratio))
+        """
+        plt.subplot(2,1,1)
+        plt.plot(self.approach.Force)
+        plt.axvline(approach_idx)
+        plt.subplot(2,1,2)
+        n = self.approach.Force.size
+        plt.plot(self.retract.Force)
+        plt.axvline(n-approach_idx)
+        plt.axvline(ratio)
+        print(ratio)
+        plt.show()
+        """
+        return ratio
 
 def _index_surface_relative(x,offset_needed):
     """
@@ -277,6 +290,23 @@ def local_centered_diff(y,n):
     yf[:-n] = y[n:]
     return yf-yi
 
+def local_average(f,n,size=None,origin=None,mode='reflect'):
+    """
+    get the local, windowed function of the average, +/- n
+
+    Args:
+        f: what we want the stdev of
+        n: window size (in either direction)
+        mode: see uniform_filter1d
+    Returns:
+        array, same size as f, with the dat we want
+    """
+    if (size is None):
+        size = 2*n
+    if (origin is None):
+        origin = 0
+    return uniform_filter1d(f, size=size, mode=mode, origin=origin)
+
 def local_stdev(f,n):
     """
     Gets the local standard deviaiton (+/- n), except at boundaries 
@@ -296,8 +326,8 @@ def local_stdev(f,n):
     improving-code-efficiency-standard-deviation-on-sliding-windows
     """
     mode = 'reflect'
-    c1 = uniform_filter1d(f, size=2*n, mode=mode, origin=0)
-    c2 = uniform_filter1d(f*f, size=2*n, mode=mode, origin=0)
+    c1 = local_average(f,n)
+    c2 = local_average(f*f,n)
     # sigma^2 = ( <x^2> - <x>^2 )^(1/2), shouldnt dip below 0
     safe_variance = np.maximum(0,c2 - c1*c1)
     stdev = (safe_variance**.5)

@@ -98,16 +98,33 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     value_cond = (df_true > baseline)
     return value_cond
 
-def _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
-                             interp_f,pred_retract_surface_idx, slice_to_use):
-    epsilon_approach = no_event_parameters_object.delta_epsilon
-    sigma_approach = no_event_parameters_object.delta_sigma
-    pred_retract_surface_idx_in_slice = pred_retract_surface_idx-\
-                                        slice_to_use.start
-    diff = interp_f - np.maximum(0,df_true)
-    zero_force = interp_f[pred_retract_surface_idx_in_slice]
-    zero_condition_baseline = zero_force+sigma_approach+epsilon_approach
-    return (diff <= zero_condition_baseline) 
+def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
+    sigma = no_event_parameters_object.sigma
+    epsilon = no_event_parameters_object.epsilon
+    min_sig_df = no_event_parameters_object.delta_epsilon + \
+                 no_event_parameters_object.delta_sigma
+    threshold_local_average = min_sig_df
+    baseline_interp = min_sig_df+sigma
+    local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
+    prev_average = np.zeros(local_average.size)
+    prev_average[n:] = local_average[:-n]
+    diff = prev_average-local_average
+    to_ret = ( (diff >= -baseline_interp) | 
+               (local_average <= threshold_local_average))
+    """
+    plt.subplot(3,1,1)
+    plt.plot(force)
+    plt.plot(local_average)
+    plt.axhline(threshold_local_average)
+    plt.subplot(3,1,2)
+    plt.plot(diff)
+    plt.axhline(-baseline_interp)
+    plt.axhline(sigma,linestyle='--')
+    plt.subplot(3,1,3)
+    plt.plot(to_ret)
+    plt.show()
+    """
+    return to_ret
 
 def delta_mask_function(split_fec,slice_to_use,
                         boolean_array,probability,threshold,
@@ -123,6 +140,10 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f = interpolator(x_sliced)
     # offset to right now (assume this is after surface  touchoff /adhesions)
     offset_zero_force = interp_f[0]
+    where_event = np.where(boolean_array)[0]
+    n = force.size
+    if (where_event.size > 0 and (where_event[-1] < n-min_points_between)):
+        offset_zero_force = np.median(force[where_event[-1]:])
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
@@ -137,14 +158,8 @@ def delta_mask_function(split_fec,slice_to_use,
         _condition_no_delta_significance(no_event_parameters_object,df_true,
                                          negative_only,interp_f,
                                          n_points)
-    # find where we are consistent with zero
-    pred_retract_surface_idx = split_fec.get_predicted_retract_surface_index()
-    consistent_with_zero_cond = \
-    _condition_delta_at_zero(no_event_parameters_object,df_true,negative_only,
-                             interp_f,pred_retract_surface_idx,slice_to_use)
     gt_condition = np.ones(boolean_array.size)
-    gt_condition[slice_to_use] = ((value_cond) | (no_event_cond) | 
-                                  (consistent_with_zero_cond))
+    gt_condition[slice_to_use] = (value_cond) | (no_event_cond)
     get_best_slice_func = lambda slice_list: \
         get_slice_by_max_value(interp_f,slice_to_use.start,slice_list)
     # update the boolean array before we slice
@@ -155,6 +170,22 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
+    """
+    plt.subplot(2,1,1)
+    plt.plot(force)
+    plt.subplot(2,1,2)
+    plt.plot(boolean_array[slice_to_use]+2.1)
+    plt.plot(value_cond+1.1)
+    plt.plot(no_event_cond)
+    plt.plot(consistent_with_zero_cond-1.1)
+    plt.show()
+    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
+                                    boolean_array,no_event_cond,value_cond,
+                                    boolean_ret,probability_updated,probability,
+                                    threshold)
+    plt.show()
+    """
+
     # XXX debugging...
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     if (last_greater.size > 0):
@@ -164,18 +195,31 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f -= offset_zero_force
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
     dt = np.median(np.diff(x_sliced))
-    deriv_cond = np.zeros(boolean_ret.size)
+    deriv_cond = np.zeros(boolean_ret.size,dtype=np.bool)
+    consistent_with_zero_cond = np.zeros(boolean_ret.size,dtype=np.bool)
     sigma_df = no_event_parameters_object.delta_sigma
     epsilon_df = no_event_parameters_object.delta_epsilon
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
+    # find where we are consistent with zero
+    consistent_with_zero_cond[slice_to_use] = \
+            _condition_delta_at_zero(no_event_parameters_object,force_sliced,
+                                     interp_f,n_points)
+    condition_non_events = (consistent_with_zero_cond | deriv_cond)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
                          original_probability=probability_updated,
-                         condition=deriv_cond,
-                         min_points_between=min_points_between,
+                         condition=condition_non_events,
+                         min_points_between=min_points_between,    
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
+    """
+    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
+                                    boolean_array,no_event_cond,value_cond,
+                                    boolean_ret,probability_updated,probability,
+                                    threshold)
+    plt.show()
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
@@ -233,7 +277,18 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     non_events = probability_updated > threshold
     min_points_between = _min_points_between(n_points)
     min_idx = surface_index + min_points_between
-    n = split_fec.retract.Force.size
+    x_all = split_fec.retract.Time
+    y_all = split_fec.retract.Force
+    n = y_all.size
+    # determine where delta is first one (necessary but not sufficient for 
+    # passing adhesions)
+    interp_tmp = no_event_parameters_object.last_interpolator_used
+    interp_tmp_deriv = interp_tmp.derivative()(x_all)
+    deriv_threshold = no_event_parameters_object.derivative_epsilon + \
+                      no_event_parameters_object.derivative_sigma
+    where_change_is_low = np.where(interp_tmp_deriv <= deriv_threshold)[0]
+    if (where_change_is_low.size > 0):
+        min_idx = max(min_idx,where_change_is_low[0])
     # remove all things before the predicted surface, and at the boundary
     boolean_ret[:min_idx] = 0
     boolean_ret[-min_points_between:] = 0
@@ -245,9 +300,18 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # (could be some adhesion!)
     events_containing_surface = get_events_before_marker(min_idx,event_mask,
                                                          min_points_between)
-    x_all = split_fec.retract.Time
-    y_all = split_fec.retract.Force
+
+    # set up the fec and parameters so we are now looking for negatives,
+    # using the delta
+    no_event_parameters_object._set_valid_delta(True)
+    no_event_parameters_object.negative_only = True
     if (len(events_containing_surface) == 0):
+        interp = no_event_parameters_object.last_interpolator_used
+        probability_updated[slice_updated],_ = _no_event.\
+                _no_event_probability(x_all[slice_updated],interp,
+                                      y_all[slice_updated],
+                                      n_points,no_event_parameters_object)
+        boolean_ret = (probability_updated < threshold)
         return slice_updated,boolean_ret,probability_updated
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
@@ -264,8 +328,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
     interp_slice = interp(x_slice)
     split_fec.set_retract_knots(interp)
-    no_event_parameters_object._set_valid_delta(True)
-    no_event_parameters_object.negative_only = True
     # get the probability of only the negative regions
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x_slice,interp,y_slice,
@@ -278,7 +340,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                                 
+                                                         min_points_between)                                           
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
@@ -426,13 +488,23 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     get the interpolator delta in the slice
     """
     interpolator_approach_x = split_fec.approach.Time[slice_fit_approach]
+    approach_f = split_fec.approach.Force[slice_fit_approach]
     interpolator_approach_f = spline_fit_approach(interpolator_approach_x)
     df_approach = _no_event._delta(interpolator_approach_x,
                                    interpolator_approach_f,
                                    min_points_between)
     delta_epsilon,delta_sigma = np.median(df_approach),np.std(df_approach)
     """
-    get the interpolate derivative in the slice
+    get the interpolated integral in the slice
+    """
+    approach_noise_integral = _no_event.\
+        local_noise_integral(approach_f,
+                             interpolator_approach_f,
+                             min_points_between)
+    integral_epsilon = np.median(approach_noise_integral)
+    integral_sigma = np.std(approach_noise_integral)
+    """
+    get the interpolated derivative in the slice
     """
     approach_interp_deriv = \
             spline_fit_approach.derivative()(interpolator_approach_x)
@@ -441,8 +513,8 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     # get the remainder of the approach metrics needed
     # note: to start, we do *not* use delta; this is calculated
     # after the adhesion
-    approach_dict = dict(integral_sigma   = 2*sigma*min_points_between,
-                         integral_epsilon = epsilon,
+    approach_dict = dict(integral_sigma   = integral_sigma,
+                         integral_epsilon = integral_epsilon,
                          delta_epsilon = delta_epsilon,
                          delta_sigma   = delta_sigma,
                          derivative_epsilon = derivative_epsilon,

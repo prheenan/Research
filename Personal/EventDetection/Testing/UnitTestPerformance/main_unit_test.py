@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0501,
-              rupture_tuple=(0.107,0.499)):
+def check_bcc(examples,predicted,bcc_threshold=0.0356,
+              rupture_tuple=(0.231,0.764)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -59,7 +59,10 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     n_expected = len(events)
     err_str = "for {:s}, expected {:d}, got {:d}".\
         format(meta.Name,n_expected,n_found)
-    assert n_found == n_expected , err_str   
+    correct_num = (n_found == n_expected)
+    assert correct_num , err_str   
+    if (not correct_num):
+        return [0]
     # POST: number of events match. check that the locations match (within
     # fractional_error_tolerance * number of points)
     predicted_centers = np.array(sorted(pred_info.event_idx))
@@ -68,9 +71,9 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     n = example_split.retract.Force.size
     rel_errors = [_/n for _ in errors]
     err_str = ("Fractional Error(s): " + \
-               ",".join(["{:.3g}".format(_) for _ in rel_errors]))
-    for e in errors:
-        assert e <= fractional_error_tolerance * n , err_str
+               ",".join(["{:.4g}".format(_) for _ in rel_errors]))
+    for e in rel_errors:
+        assert e <= fractional_error_tolerance, err_str
     print(err_str)
     return rel_errors
                
@@ -90,9 +93,11 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 1e-3
-    fractional_error_tolerance = 4.60e-3
+    fractional_error_tolerance = 7.24e-3
+    error_dist_tolerance = np.array([3.1e-4,3.58e-3])
     predicted,examples = [],[]
     max_error = 0
+    error_dist = []
     for i,f in enumerate(load_paths):
         example = CheckpointUtilities.getCheckpoint(f,None,False) 
         # get the prediction, save out the plotting information
@@ -107,11 +112,20 @@ def run():
         Plotting.debugging_plots(id_string,example_split,pred_info)
         kw = dict(fractional_error_tolerance=fractional_error_tolerance)
         errors = check_single_file(example_split,pred_info,**kw)
+        error_dist.extend(errors)
         max_error = max(max_error,max(errors))
         # save the info so we can check for the bcc
         predicted.append(pred_info)
         examples.append(example_split)
     print("The maximum relative error was {:.4g}".format(max_error))
+    median = np.median(error_dist)
+    q = 95
+    q_val = np.percentile(error_dist,q)
+    dist_str = "The median and q{:d} were {:.4g} and {:.4g}".\
+               format(q,median,q_val)
+    vals = np.array([median,q_val])
+    assert (vals <=  error_dist_tolerance).all() , dist_str
+    print(dist_str)
     # POST: looks okay, but lets just the bcc.
     check_bcc(examples,predicted)
 
