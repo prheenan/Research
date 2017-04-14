@@ -148,8 +148,7 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
     # get the baseline results
-    kw_delta = dict(df=df_true,
-                    no_event_parameters=no_event_parameters_object)
+    kw_delta = dict(df=df_true,no_event_parameters=no_event_parameters_object)
     ratio_probability = _no_event._delta_probability(**kw_delta)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
@@ -189,7 +188,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # XXX debugging...
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     if (last_greater.size > 0):
-        offset_tmp = np.median(interp_f[last_greater[-1]:])
+        offset_tmp = np.median(force[last_greater[-1]:])
         offset_zero_force = offset_tmp
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
