@@ -119,6 +119,7 @@ def run():
         examples.append(example_split)
     print("The maximum relative error was {:.4g}".format(max_error))
     median = np.median(error_dist)
+    # make sure the error distribution is OK. 
     q = 95
     q_val = np.percentile(error_dist,q)
     dist_str = "The median and q{:d} were {:.4g} and {:.4g}".\
