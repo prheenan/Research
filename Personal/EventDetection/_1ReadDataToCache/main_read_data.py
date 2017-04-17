@@ -127,9 +127,9 @@ def run():
         This is a description of what is returned.
     """
     only_lowest = True
-    debugging = False   
+    debugging = True   
     copy_files = False
-    n_learners = 3    
+    n_learners = 1
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
                                                 only_lowest=only_lowest)

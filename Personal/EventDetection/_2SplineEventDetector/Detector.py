@@ -188,10 +188,21 @@ def delta_mask_function(split_fec,slice_to_use,
     # XXX debugging...
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     if (last_greater.size > 0):
-        offset_tmp = np.median(force[last_greater[-1]:])
+        offset_idx = slice_to_use.start + last_greater[-1]
+        offset_tmp = np.median(force[offset_idx:])
         offset_zero_force = offset_tmp
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
+    """
+    plt.subplot(2,1,1)
+    plt.plot(boolean_ret[slice_to_use])
+    plt.subplot(2,1,2)    
+    plt.plot(force[slice_to_use])
+    plt.plot(interp_f)
+    plt.axhline(offset_zero_force)
+    plt.axvline(offset_idx-slice_to_use.start)
+    plt.show()
+    """
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
     dt = np.median(np.diff(x_sliced))
     deriv_cond = np.zeros(boolean_ret.size,dtype=np.bool)
@@ -212,11 +223,13 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,    
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
+    """
     Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
                            boolean_array,condition_non_events,
                            boolean_ret,probability_updated,probability,
                            threshold)
     plt.show()
+    """
     return slice_to_use,boolean_ret,probability_updated
 
 def get_events_before_marker(marker_idx,event_mask,min_points_between):
