@@ -21,11 +21,11 @@ def get_learner_results(cache_directory,debug_directory,positive_categories,
                         pool_size =  multiprocessing.cpu_count()-1,
                         force_relearn = False,
                         force_learn = False,
-                        n_learners = 1,
+                        n_learners = 1,learner_kw=dict(),
                         *args,**kwargs):
     learners_kwargs = dict(n_points_no_event=n_tuning_points,
-                           n_points_fovea=n_tuning_points,
-                           n_points_wavelet=n_tuning_points)
+                          n_points_fovea=n_tuning_points,
+                          n_points_wavelet=n_tuning_points,**learner_kw)
     # for each category, predict where events are
     file_name_cache = "{:s}Scores.pkl".format(cache_directory)
 
@@ -129,19 +129,20 @@ def run():
     only_lowest = True
     debugging = False   
     copy_files = False
-    n_learners = 1    
+    n_learners = 3    
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
                                                 only_lowest=only_lowest)
-    meta = [["_protein",InputOutput.protein_categories()],
-            ["",dna_categories]]
-    for subdir,categories in meta:
+    protein_dict = dict(no_event_log10_start=-6,no_event_log10_end=-3)
+    meta = [["_protein",InputOutput.protein_categories(),protein_dict],
+            ["",dna_categories,dict()]]
+    for subdir,categories,learner_kw in meta:
         cache_directory = "./cache{:s}/".format(subdir)
         debug_directory = "./debug_no_event{:s}/".format(subdir)    
         GenUtilities.ensureDirExists(debug_directory)       
         GenUtilities.ensureDirExists(cache_directory)        
         learners = get_learner_results(cache_directory,debug_directory,
-                                       categories,
+                                       categories,learner_kw=learner_kw,
                                        n_learners=n_learners)
         profile_learners(learners,debug_directory,cache_directory,
                          debugging=debugging,copy_files=copy_files)

@@ -13,7 +13,8 @@ from Research.Personal.EventDetection.OtherMethods.Numpy_Wavelets import \
     wavelet_predictor
     
 
-def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
+def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5,
+                 no_event_log10_start=-3,no_event_log10_end=-2):
     """
     Returns a list of learning_curve objects
 
@@ -27,7 +28,8 @@ def get_learners(n_points_no_event=5,n_points_fovea=5,n_points_wavelet=5):
     """
     # make the no event example
     no_event_func = lambda arg_list: [dict(threshold=t) for t in arg_list]
-    no_event_tuple = [Detector.predict,np.logspace(-3,-2,
+    no_event_tuple = [Detector.predict,np.logspace(no_event_log10_start,
+                                                   no_event_log10_end,
                                                    endpoint=True,
                                                    base=10,
                                                    num=n_points_no_event)]

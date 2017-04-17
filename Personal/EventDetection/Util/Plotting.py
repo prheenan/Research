@@ -778,6 +778,9 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         coeffs.append(cat_relative_q)
         q_fmt = str(int(q))
         labels_coeffs.append(r"P$_{" + q_fmt + "}$")
+    coeffs = np.array(coeffs)
+    # an infinite coefficient (or nan) is just one (worst possible)
+    coeffs[np.where(~np.isfinite(coeffs))] = 1
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)
