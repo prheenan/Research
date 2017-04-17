@@ -522,7 +522,11 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     approach_interp_deriv = \
             spline_fit_approach.derivative()(interpolator_approach_x)
     derivative_epsilon = np.median(approach_interp_deriv)
-    derivative_sigma = np.std(approach_interp_deriv)
+    # avoid stage noise
+    q_low,q_high = np.percentile(approach_interp_deriv,[1,99])
+    idx = np.where( (approach_interp_deriv < q_high) &
+                    (approach_interp_deriv > q_low))
+    derivative_sigma = np.std(approach_interp_deriv[idx])
     # get the remainder of the approach metrics needed
     # note: to start, we do *not* use delta; this is calculated
     # after the adhesion
