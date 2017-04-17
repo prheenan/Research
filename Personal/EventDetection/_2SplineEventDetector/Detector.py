@@ -105,10 +105,13 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
                  no_event_parameters_object.delta_sigma
     threshold_local_average = min_sig_df
     baseline_interp = min_sig_df+sigma
-    local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
-    prev_average = np.zeros(local_average.size)
-    prev_average[n:] = local_average[:-n]
-    diff = prev_average-local_average
+    size = int(np.ceil(int(n/2)))
+    half_size = int(np.ceil(int(size/2)))-1
+    local_average = Analysis.local_average(force,size,
+                                           size=size,origin=half_size)
+    average_baseline = np.zeros(local_average.size)
+    average_baseline[:-half_size] = local_average[half_size:]
+    diff = average_baseline-local_average
     to_ret = ( (diff >= -baseline_interp) | 
                (local_average <= threshold_local_average))
     """
