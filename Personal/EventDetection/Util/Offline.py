@@ -135,7 +135,7 @@ class plotting_metrics:
                       cat_relative_q=cat_relative_q,q=q)
 
 def _def_q():
-    return 90
+    return 95
 
 def relative_and_absolute_median_and_q(to_true,to_pred,max_x_true,max_x_pred,
                                        q=None,**kwargs):
