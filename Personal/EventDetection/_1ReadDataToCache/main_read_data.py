@@ -127,7 +127,7 @@ def run():
         This is a description of what is returned.
     """
     only_lowest = True
-    debugging = True   
+    debugging = False   
     copy_files = False
     n_learners = 1    
     positives_directory = InputOutput.get_positives_directory()
@@ -135,7 +135,7 @@ def run():
                                                 only_lowest=only_lowest)
     meta = [["_protein",InputOutput.protein_categories()],
             ["",dna_categories]]
-    for subdir,categories in meta:
+    for subdir,categories in meta[::-1]:
         cache_directory = "./cache{:s}/".format(subdir)
         debug_directory = "./debug_no_event{:s}/".format(subdir)    
         GenUtilities.ensureDirExists(debug_directory)       
