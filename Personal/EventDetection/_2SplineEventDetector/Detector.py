@@ -615,16 +615,25 @@ def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
     pred_info = _predict_helper(example_split,**final_dict)
     return example_split,pred_info
 
-def predict(example,threshold=1e-2):
+def predict(example,threshold=1e-2,add_offsets=False):
     """
     predict a single event from a force extension curve
 
     Args:
         example: TimeSepForce
         threshold: maximum probability under the no-event hypothesis
+        add_offsets: if true, offset into the entire array. otherwise, we offset
+        into just the retract portion (after splitting into the approach,
+        dwell, and retract)
     Returns:
         list of event starts
     """
     example_split,pred_info = _predict_full(example,threshold=threshold)
-    return pred_info.event_idx
+    #get the offsets for each...
+    if add_offsets:
+        offsets = (example_split.approach.Force.size + \
+                   example_split.dwell.Force.size)
+    else:
+        offsets = 0
+    return offsets + np.array(pred_info.event_idx)
 

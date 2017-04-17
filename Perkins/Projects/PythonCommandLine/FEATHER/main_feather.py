@@ -48,10 +48,10 @@ def parse_and_run():
                         format(in_file))
     # POST: have just one. Go ahead and using FEATHER to predict the locations
     example = RawData[0]
-    event_indices = Detector.predict(example,threshold=threshold)
-    print(event_indices)
+    event_indices = Detector.predict(example,threshold=threshold,
+                                     add_offsets=True)
     # done with the log file...
-    np.savetxt(fname=out_file,delimiter=",",newline="\n",
+    np.savetxt(fname=out_file,delimiter=",",newline="\n",fmt="%d",
                header="(C) PRH 2017\nEvent Indices",
                X=event_indices)
 
