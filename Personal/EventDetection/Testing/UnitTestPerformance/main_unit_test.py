@@ -14,7 +14,7 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0356,
+def check_bcc(examples,predicted,bcc_threshold=0.0383,
               rupture_tuple=(0.231,0.764)):
     # get the scoring objects
     scores = []
@@ -88,7 +88,7 @@ def run():
         This is a description of what is returned.
     """
     base = "./"
-    data_base = base + "data/"
+    data_base = base + "dev-dev/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
