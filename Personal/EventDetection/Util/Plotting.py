@@ -514,13 +514,13 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
     x_values = learner.param_values()
     train_dist = Learning.event_distance_distribution(train_scores,**kwargs)
     valid_dist = Learning.event_distance_distribution(valid_scores,**kwargs)
-    dist_plot = lambda x: [v * 1e9 for v in x]
+    dist_plot = lambda x: [v for v in x]
     train_plot = dist_plot(train_dist)
     valid_plot = dist_plot(valid_dist)
     plt.boxplot(x=train_plot,**box_kwargs)
     plt.boxplot(x=valid_plot,**box_kwargs)
     plt.gca().set_yscale('log')
-    PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (nm)",
+    PlotUtilities.lazyLabel("Tuning parameter","Distance Distribution (idx)",
                             "Event distributions for {:s}".format(name),
                             frameon=False)
 

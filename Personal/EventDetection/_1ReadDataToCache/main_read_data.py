@@ -94,7 +94,7 @@ def profile_learners(learners,debug_directory,cache_directory,debugging = True,
             load_paths.append(p)
     examples = [CheckpointUtilities.getCheckpoint(f,None,False) 
                 for f in load_paths]
-    threshold = 0.1
+    threshold = best_x_value
     example_numbers = [0]
     examples_f = [examples[i] for i in example_numbers]
     for i,example in enumerate(examples):
@@ -127,13 +127,14 @@ def run():
         This is a description of what is returned.
     """
     only_lowest = True
-    debugging = False   
+    debugging = True   
     copy_files = True
     n_learners = 1
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
                                                 only_lowest=only_lowest)
-    protein_dict = dict(no_event_log10_start=-6,no_event_log10_end=-3)
+    protein_dict = dict(no_event_log10_start=-3,
+                        no_event_log10_end=np.log10(0.5))
     meta = [["_protein",InputOutput.protein_categories(),protein_dict],
             ["",dna_categories,dict()]]
     for subdir,categories,learner_kw in meta:
