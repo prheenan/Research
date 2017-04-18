@@ -62,10 +62,10 @@ class score:
         idx_true = split_fec.get_retract_event_centers()
         retract = split_fec.retract
         self.tau_num_points = split_fec.tau_num_points
-        n_retract = retract.Force.size
-        n_total = sum([tmp.Force.size 
-                        for tmp in [split_fec.retract,split_fec.dwell,
-                                    split_fec.approach]])
+        self.n_retract = retract.Force.size
+        self.n_total = sum([tmp.Force.size 
+                            for tmp in [split_fec.retract,split_fec.dwell,
+                                        split_fec.approach]])
         x = retract.Separation
         self.min_x = min(x)
         self.max_x = max(x)
@@ -134,7 +134,8 @@ class score:
     def max_displacement(self):
         to_ret = abs(self.max_x-self.min_x)
         return to_ret
-    def minimum_distance_distribution(self,to_true=True,floor_is_max=False):
+    def minimum_distance_distribution(self,to_true=True,floor_is_max=False,
+                                      distance_is_absolute=False):
         """
         returns the median of the smallest distance from <predicted/true>
         to <true/predicted> if to_true is <true,false>
@@ -147,11 +148,21 @@ class score:
             
              floor_is_max: if the baseline (e.g. predicted) is empty, 
              should we return max_x for each of search.
+             
+             distance_is_absolute: if false, then 'distance' is number of points   
+             from prediction. otherwise (default), distance is the actual
+             x values of the points (which could be noisy)
 
              kwargs: passed to minimum_distance_distribution
         """
-        true = self.true_x
-        pred = self.pred_x
+        if distance_is_absolute:
+            true = self.true_x
+            pred = self.pred_x
+            max_x = self.max_displacement()            
+        else:
+            true = np.array(self.idx_true)
+            pred =  np.array(self.idx_predicted)
+            max_x = self.n_retract
         # determine which distances we want
         if (to_true):
             baseline = true
@@ -161,7 +172,6 @@ class score:
             search = true
         if (len(baseline) == 0):
             if (floor_is_max):
-                max_x = self.max_displacement()
                 return [max_x for x in search]
             else:
                 return []

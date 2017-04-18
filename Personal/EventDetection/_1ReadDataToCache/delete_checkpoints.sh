@@ -9,20 +9,19 @@ IFS=$'\n\t'
 # datestring, used in many different places...
 dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
+delete_checkpoints_in(){
+    dir="$1"
+    rm -f "$dir"/*folds*.pkl 
+    rm -f "$dir"/*Scores.pkl
+    rm -f "$dir"/*param*.pkl
+}
 # Description:
+# removes all checkpoints from the cache directories
 
-# Arguments:
-#### Arg 1: Description
-
-set -x
-python main_iwt.py \
-    -number_of_pairs 16 \
-    -number_of_bins  80 \
-    -f_one_half 10e-12 \
-    -fraction_velocity_fit 0.5 \
-    -flip_forces 0 \
-    -file_input ./Examples/input.pxp \
-    -file_output landscape.csv
+delete_checkpoints_in cache_protein
+delete_checkpoints_in cache
+rm -f debug_no_event/*
+rm -f debug_no_event_protein/*
 
 
 

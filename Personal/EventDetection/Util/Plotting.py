@@ -355,7 +355,7 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
     PlotUtilities.set_legend_kwargs()
 
 def debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
-                           boolean_array,no_event_cond,value_cond,
+                           boolean_array,condition_non_events,
                            boolean_ret,probability_updated,probability,
                            threshold):
     xlim = plt.xlim(min(x),max(x))
@@ -368,11 +368,10 @@ def debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
     plt.xlim(xlim)
     plt.subplot(4,1,2)
     plt.plot(x,boolean_array+2.1,label="orig")
-    plt.plot(x_sliced,no_event_cond+1.1)
-    plt.plot(x_sliced,value_cond)
-    plt.plot(x,gt_condition-1.1,label="concat")
+    plt.plot(x,condition_non_events,label="I$_0$")
+    plt.plot(x,gt_condition-1.1,label="I$_\Delta$")
     plt.plot(x,boolean_ret-2.1,linestyle='--',label="f")
-    plt.legend(loc='upper left')
+    plt.legend(loc='upper right')
     plt.xlim(xlim)
     plt.subplot(4,1,3)
     plt.plot(x,boolean_array+1.1)
@@ -778,6 +777,9 @@ def rupture_plot(true,pred,fig,count_ticks=3,
         coeffs.append(cat_relative_q)
         q_fmt = str(int(q))
         labels_coeffs.append(r"P$_{" + q_fmt + "}$")
+    coeffs = np.array(coeffs)
+    # an infinite coefficient (or nan) is just one (worst possible)
+    coeffs[np.where(~np.isfinite(coeffs))] = 1
     index = np.array([i for i in range(len(coeffs))])
     bar_width = 0.5
     rects1 = plt.bar(index, coeffs,alpha=0.3,color=color_pred)

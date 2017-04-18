@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0356,
-              rupture_tuple=(0.231,0.764)):
+def check_bcc(examples,predicted,bcc_threshold=0.0309,
+              rupture_tuple=(0.261,1.61)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -93,8 +93,8 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
     threshold = 1e-3
-    fractional_error_tolerance = 7.24e-3
-    error_dist_tolerance = np.array([3.1e-4,3.58e-3])
+    fractional_error_tolerance = 8.05e-3
+    error_dist_tolerance = np.array([4.80e-4,4.05-3])
     predicted,examples = [],[]
     max_error = 0
     error_dist = []
@@ -119,6 +119,7 @@ def run():
         examples.append(example_split)
     print("The maximum relative error was {:.4g}".format(max_error))
     median = np.median(error_dist)
+    # make sure the error distribution is OK. 
     q = 95
     q_val = np.percentile(error_dist,q)
     dist_str = "The median and q{:d} were {:.4g} and {:.4g}".\

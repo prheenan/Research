@@ -253,7 +253,7 @@ def lambda_distribution(scores,f_lambda):
     return _walk_scores(scores,func_fold = func_fold,
                         func_param=func_param,func_top=np.array)
 
-def event_distance_distribution(scores,**kwargs):
+def event_distance_distribution(scores,distance_is_absolute=False,**kwargs):
     """
     gets the distribution of distances at each paramter value
 
@@ -263,8 +263,9 @@ def event_distance_distribution(scores,**kwargs):
     Returns:
          concatenates distributions at each parameter value
     """
+    kw = dict(distance_is_absolute=distance_is_absolute,**kwargs)
     func_fold = lambda x: \
-        np.concatenate([v.minimum_distance_distribution(**kwargs) for v in x])
+        np.concatenate([v.minimum_distance_distribution(**kw) for v in x])
     return _walk_scores(scores,func_fold = func_fold,
                         func_param=np.concatenate,func_top=np.array)
 

@@ -279,10 +279,11 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
     if (no_event_parameters_object.negative_only):
         deriv_epsilon = no_event_parameters_object.derivative_epsilon
         deriv_sigma = no_event_parameters_object.derivative_sigma
-        condition = np.where(derivative > -(deriv_epsilon+deriv_sigma))
+        baseline = (deriv_epsilon+deriv_sigma)        
+        condition = np.where(derivative > -baseline)
         probability_distribution[condition] = 1
     """
-    plt.semilogy(probability_distribution)
+    plt.semilogy(probability_distribution,label="full")
     plt.semilogy(p_deriv,label='deriv')
     plt.semilogy(p_int,label='int')
     plt.legend()
@@ -394,7 +395,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
     else:
         event_slices = []
     # XXX reject events with a very small time?
-    event_duration = [ (e.stop-e.start) for e in event_slices]
+    event_duration = [ abs(e.stop-e.start) for e in event_slices]
     delta_split_rem = [ int(np.ceil((n_points-(delta))/2))
                         for delta in event_duration]
     # determine where the events are happening locally (guarentee at least

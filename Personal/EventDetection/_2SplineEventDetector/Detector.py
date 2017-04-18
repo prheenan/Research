@@ -105,10 +105,13 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
                  no_event_parameters_object.delta_sigma
     threshold_local_average = min_sig_df
     baseline_interp = min_sig_df+sigma
-    local_average = Analysis.local_average(force,n,size=n,origin=int(n/2)-1)
-    prev_average = np.zeros(local_average.size)
-    prev_average[n:] = local_average[:-n]
-    diff = prev_average-local_average
+    size = int(np.ceil(int(n/2)))
+    half_size = int(np.ceil(int(size/2)))-1
+    local_average = Analysis.local_average(force,size,
+                                           size=size,origin=half_size)
+    average_baseline = np.zeros(local_average.size)
+    average_baseline[:-half_size] = local_average[half_size:]
+    diff = average_baseline-local_average
     to_ret = ( (diff >= -baseline_interp) | 
                (local_average <= threshold_local_average))
     """
@@ -148,8 +151,7 @@ def delta_mask_function(split_fec,slice_to_use,
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
     # get the baseline results
-    kw_delta = dict(df=df_true,
-                    no_event_parameters=no_event_parameters_object)
+    kw_delta = dict(df=df_true,no_event_parameters=no_event_parameters_object)
     ratio_probability = _no_event._delta_probability(**kw_delta)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
@@ -189,10 +191,21 @@ def delta_mask_function(split_fec,slice_to_use,
     # XXX debugging...
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     if (last_greater.size > 0):
-        offset_tmp = np.median(interp_f[last_greater[-1]:])
+        offset_idx = slice_to_use.start + last_greater[-1]
+        offset_tmp = np.median(force[offset_idx:])
         offset_zero_force = offset_tmp
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
+    """
+    plt.subplot(2,1,1)
+    plt.plot(boolean_ret[slice_to_use])
+    plt.subplot(2,1,2)    
+    plt.plot(force[slice_to_use])
+    plt.plot(interp_f)
+    plt.axhline(offset_zero_force)
+    plt.axvline(offset_idx-slice_to_use.start)
+    plt.show()
+    """
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
     dt = np.median(np.diff(x_sliced))
     deriv_cond = np.zeros(boolean_ret.size,dtype=np.bool)
@@ -215,9 +228,9 @@ def delta_mask_function(split_fec,slice_to_use,
     boolean_ret = probability_updated < threshold
     """
     Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
-                                    boolean_array,no_event_cond,value_cond,
-                                    boolean_ret,probability_updated,probability,
-                                    threshold)
+                           boolean_array,condition_non_events,
+                           boolean_ret,probability_updated,probability,
+                           threshold)
     plt.show()
     """
     return slice_to_use,boolean_ret,probability_updated
@@ -380,12 +393,18 @@ def _loading_rate_helper(x,y,slice_event,slice_fit=None):
         local_max_idx += np.argmax(y_event)
     fit_x = x[slice_fit]
     fit_y = y[slice_fit]
-    coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
-    pred = np.polyval(coeffs,x=x_event)
-    # determine where the data *in the __original__ slice* is __last__
-    # above the fit (after that, it is consistently below it)
-    idx_above_predicted_rel = np.where(y_event > pred)[0]    
-    idx_below_predicted_rel = np.where(y_event <= pred)[0]
+    if (fit_x.size > 0):
+        coeffs = np.polyfit(x=fit_x,y=fit_y,deg=1)
+        pred = np.polyval(coeffs,x=x_event)
+        # determine where the data *in the __original__ slice* is __last__
+        # above the fit (after that, it is consistently below it)
+        idx_above_predicted_rel = np.where(y_event > pred)[0]    
+        idx_below_predicted_rel = np.where(y_event <= pred)[0]
+    else:
+        # effectively no data to fit
+        pred = y[slice_event.start]
+        idx_above_predicted_rel = [slice_event.start]
+        idx_below_predicted_rel = [slice_event.start]
     # dont look at things past where we fit...
     idx_above_predicted = [offset + i for i in idx_above_predicted_rel]
     idx_below_predicted = [offset + i for i in idx_below_predicted_rel]
@@ -503,7 +522,11 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     approach_interp_deriv = \
             spline_fit_approach.derivative()(interpolator_approach_x)
     derivative_epsilon = np.median(approach_interp_deriv)
-    derivative_sigma = np.std(approach_interp_deriv)
+    # avoid stage noise
+    q_low,q_high = np.percentile(approach_interp_deriv,[1,99])
+    idx = np.where( (approach_interp_deriv < q_high) &
+                    (approach_interp_deriv > q_low))
+    derivative_sigma = np.std(approach_interp_deriv[idx])
     # get the remainder of the approach metrics needed
     # note: to start, we do *not* use delta; this is calculated
     # after the adhesion
@@ -592,16 +615,25 @@ def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
     pred_info = _predict_helper(example_split,**final_dict)
     return example_split,pred_info
 
-def predict(example,threshold=1e-2):
+def predict(example,threshold=1e-2,add_offsets=False):
     """
     predict a single event from a force extension curve
 
     Args:
         example: TimeSepForce
         threshold: maximum probability under the no-event hypothesis
+        add_offsets: if true, offset into the entire array. otherwise, we offset
+        into just the retract portion (after splitting into the approach,
+        dwell, and retract)
     Returns:
         list of event starts
     """
     example_split,pred_info = _predict_full(example,threshold=threshold)
-    return pred_info.event_idx
+    #get the offsets for each...
+    if add_offsets:
+        offsets = (example_split.approach.Force.size + \
+                   example_split.dwell.Force.size)
+    else:
+        offsets = 0
+    return offsets + np.array(pred_info.event_idx)
 
