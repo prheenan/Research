@@ -126,7 +126,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    only_lowest = True
+    only_lowest = False
     debugging = False   
     copy_files = True
     n_learners = 1
