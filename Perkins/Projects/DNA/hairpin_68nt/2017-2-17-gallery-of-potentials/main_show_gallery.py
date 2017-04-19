@@ -9,49 +9,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Personal.EventDetection.Util import Analysis
 from GeneralUtil.python import PlotUtilities
-from FitUtil import fit_base
-from scipy.interpolate import interp1d
 
-def coth(x):
-    return 1/np.tanh(x)
-    
-def fjc_predicted_force_at_ext(separation,force,*args,**kwargs):
-    ext_modelled,force_modelled = fjc_model_ext_and_force(force,*args,**kwargs)
-    # interpolate back onto the grid we care about 
-    interp = interp1d(ext_modelled,force_modelled,bounds_error=False,
-                      fill_value="extrapolate")
-    predicted_force = interp(separation)
-    return predicted_force
-
-def fjc_extension(F,L0,Lp,kbT,K0):
-    """
-
-    See: 
-    Wang, M. D., Yin, H., Landick, R., Gelles, J. & Block, S. M. 
-    Stretching DNA with optical tweezers. Biophys J 72, 1335-1346 (1997)
-    """
-    return L0 * (coth( (2*F*Lp)/(kbT)) - kbT/(2*F*Lp)) * (1+F/K0)
-    
-def fjc_model_force(F,*args,**kwargs):
-    force_range = [min(F),max(F)]
-    return np.linspace(*force_range,num=F.size)
-    
-def fjc_model_ext_and_force(F,*args,**kwargs):
-    force_modelled = fjc_model_force(F,*args,**kwargs)
-    ext_modelled = fjc_extension(force_modelled,*args,**kwargs)
-    return ext_modelled,force_modelled
-
-def fit_fjc_contour(separation,force,brute_dict=dict(),**kwargs):
-    func = lambda *args: \
-        fjc_predicted_force_at_ext(separation,force,*args,**kwargs)
-    x0 = fit_base.brute_optimize(func,force,brute_dict=brute_dict,
-                                 full_output=False)
-    x0 = ret
-    model_x, model_y = fjc_model_ext_and_force(force,*x0,**kwargs)
-    min_sep = min(separation)
-    idx = np.where(model_x >= min_sep)
-    return ret,model_x[idx],model_y[idx]
-    
     
 def run():
     """
