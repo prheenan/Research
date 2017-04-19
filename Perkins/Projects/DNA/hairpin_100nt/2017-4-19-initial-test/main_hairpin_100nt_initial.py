@@ -29,12 +29,16 @@ def get_wlc_information(sep,force,sep_bounds,**kwargs):
         where_fit = np.where( (sep <= max_sep) & (sep >= min_sep))
         sep_fit = sep[where_fit]
         brute_dict = dict(ranges=[[max_sep/2,max_sep*2]],**kwargs)
+        pr = cProfile.Profile()
+        pr.enable()
         x0,model_x,model_y = FJC.fit_fjc_contour(sep_fit,
                                                  force[where_fit],
                                                  Lp=0.75e-9,
                                                  kbT=4.1e-21,
                                                  K0=800e-12,
                                                  brute_dict=brute_dict)
+        pr.disable()
+        pr.print_stats(sort='time')                         
         models.append([x0,model_x,model_y]) 
     return models        
         
@@ -67,7 +71,7 @@ def run():
                    [0,delta_x]]
     models = CheckpointUtilities.getCheckpoint("./model{:d}.pkl".format(i),
                                                get_wlc_information,
-                                               False,sep,force,sep_bounds,Ns=10)
+                                               True,sep,force,sep_bounds,Ns=10)
     plt.plot(sep,force)
     for x0,model_x,model_y in models:
         print(x0)
