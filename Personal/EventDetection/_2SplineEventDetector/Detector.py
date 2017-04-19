@@ -103,7 +103,7 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     epsilon = no_event_parameters_object.epsilon
     min_sig_df = no_event_parameters_object.delta_epsilon + \
                  no_event_parameters_object.delta_sigma
-    threshold_local_average = min_sig_df
+    threshold_local_average = min_sig_df+sigma+epsilon
     baseline_interp = min_sig_df+sigma
     size = int(np.ceil(int(n/2)))
     half_size = int(np.ceil(int(size/2)))-1
