@@ -126,7 +126,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    only_lowest = True
+    only_lowest = False
     debugging = False   
     copy_files = True
     n_learners = 1
@@ -147,7 +147,6 @@ def run():
                                        n_learners=n_learners)
         profile_learners(learners,debug_directory,cache_directory,
                          debugging=debugging,copy_files=copy_files)
-        break
 
 if __name__ == "__main__":
     run()

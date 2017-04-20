@@ -52,7 +52,7 @@ def get_basic_information(i,example,force_run=False):
                                                get_wlc_information,
                                                force_run,sep,force,sep_bounds,
                                                Ns=30)
-    return models,sep,force                                                 
+    return models,retract                                                
         
 def run():
     """
@@ -69,13 +69,13 @@ def run():
               "4Patrick/CuratedData/DNA/hairpin-100nt-16gc/Positive"
     _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=False)
     args = []
-    force_run = True
+    force_run = False
     for i,example in enumerate(examples):
         # get the FJC model...
-        models,sep,force = CheckpointUtilities.getCheckpoint(
+        models,retract = CheckpointUtilities.getCheckpoint(
             "./model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
-        args.append([models,sep,force])
+        args.append([models,retract])
     models_all = [ [x0_x_y_tuple[0] for x0_x_y_tuple in list_v[0]] 
                    for list_v in args]
     first_l = np.concatenate([m[1] for m in models_all])
@@ -90,12 +90,12 @@ def run():
     plt.axvline(67,**style_line)
     PlotUtilities.lazyLabel("Contour Length (nm)","Count","")
     PlotUtilities.savefig(fig,"./out/o_hist{:d}.png".format(i))   
-    for i,(models,sep,force) in enumerate(args):
+    for i,(models,retract) in enumerate(args):
         fig = PlotUtilities.figure()                                                   
-        plt.plot(sep,force)
+        plt.plot(retract.Separation,retract.Force)
         for x0,model_x,model_y in models:
             plt.plot(model_x,model_y)
-        plt.xlim([min(sep),max(sep)])
+        plt.xlim([min(retract.Separation),max(retract.Separation)])
         PlotUtilities.lazyLabel("Separation (nm)","Force (pN)","")
         PlotUtilities.savefig(fig,"./out/out{:d}.png".format(i))
     
