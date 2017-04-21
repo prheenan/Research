@@ -226,11 +226,11 @@ def delta_mask_function(split_fec,slice_to_use,
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
     # XXX debugging...
-    df_thresh = sigma_df
+    df_thresh = np.abs(sigma_df + epsilon_df)
     average_tmp,diff = f_average_and_diff(force,n_points)    
     diff_abs_sliced = np.abs(diff[slice_to_use])
     change_insignificant = ((diff_abs_sliced < df_thresh) & 
-                            (np.abs(df_true) < sigma_df + epsilon_df))
+                            (np.abs(df_true) < df_thresh))
     min_zero_idx = n-n_points
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     """
@@ -665,7 +665,8 @@ def _predict_functor(example,f):
     return lambda *args,**kwargs : f(example,*args,**kwargs)
 
 
-def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
+def _predict_full(example,threshold=1e-2,f_refs=None,tau_fraction=0.02,
+                  **kwargs):
     """
     see predict, example returns tuple of <split FEC,prediction_info>. Except:
     
@@ -674,7 +675,9 @@ def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
         Defaults to adhesion then delta mask
         **kwargs: passed to predict
     """
-    example_split = Analysis.zero_and_split_force_extension_curve(example)
+    example_split = Analysis.\
+        zero_and_split_force_extension_curve(example,
+                                             fraction=tau_fraction)
     if (f_refs is None):
         f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
@@ -683,7 +686,7 @@ def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
     pred_info = _predict_helper(example_split,**final_dict)
     return example_split,pred_info
 
-def predict(example,threshold=1e-2,add_offsets=False):
+def predict(example,threshold=1e-2,add_offsets=False,**kwargs):
     """
     predict a single event from a force extension curve
 
@@ -696,7 +699,8 @@ def predict(example,threshold=1e-2,add_offsets=False):
     Returns:
         list of event starts
     """
-    example_split,pred_info = _predict_full(example,threshold=threshold)
+    example_split,pred_info = _predict_full(example,threshold=threshold,
+                                            **kwargs)
     #get the offsets for each...
     if add_offsets:
         offsets = (example_split.approach.Force.size + \

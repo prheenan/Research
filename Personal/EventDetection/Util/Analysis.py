@@ -690,7 +690,7 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,
     tau = abs(1/linear_auto_coeffs[0])
     return tau,coeffs,auto
 
-def zero_and_split_force_extension_curve(example):
+def zero_and_split_force_extension_curve(example,fraction=0.02):
     """
     zeros a force extension curve by its meta information and the touchoff
     on the approach
@@ -698,6 +698,7 @@ def zero_and_split_force_extension_curve(example):
     Args:
         example: 'raw' force extension to use (negative force is away
         from surface on molecule)
+        fraction: the portion of the curve to use for smoothing
     returns:
         example as an Analysis.split_force_extension object
     """
@@ -708,7 +709,6 @@ def zero_and_split_force_extension_curve(example):
     x = approach.Time
     n_approach = f.size
     n_retract = retract.Force.size
-    fraction = 0.02
     num_points_approach = int(np.ceil(n_approach * fraction))
     num_points_retract  = int(np.ceil(n_retract * fraction))
     # zero out everything to the approach using the autocorrelation time 
