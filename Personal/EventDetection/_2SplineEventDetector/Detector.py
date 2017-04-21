@@ -193,19 +193,27 @@ def delta_mask_function(split_fec,slice_to_use,
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
     # XXX debugging...
-    deriv_insignificant = (np.abs(df_true) < sigma_df + epsilon_df)
+    change_insignificant = (np.abs(df_true) < sigma_df + epsilon_df)
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     """
     plt.plot(boolean_ret[slice_to_use])
     plt.plot(deriv_insignificant)
     plt.show()
     """
-    if (last_greater.size > 0):
-        offset_idx = slice_to_use.start + last_greater[-1]
-        offset_tmp = np.median(force[offset_idx:])
-        offset_zero_force = offset_tmp
-    split_fec.zero_retract_force(offset_zero_force)
-    interp_f -= offset_zero_force
+    if ( (last_greater.size > 0)):
+        last_greater_idx_in_slice = last_greater[-1]
+        offset_idx = slice_to_use.start + last_greater_idx_in_slice
+        change_insig_after_greater = \
+            change_insignificant[last_greater_idx_in_slice:]
+        where_insignificant = np.where(change_insig_after_greater)[0]
+        # only zero if we effectively aren't changing at the end
+        if ( (where_insignificant.size > 0) and 
+              (where_insignificant[0] < last_greater.size-n_points)):              
+            # also what to have a negigible delta
+            offset_tmp = np.median(force[offset_idx:])
+            offset_zero_force = offset_tmp
+            split_fec.zero_retract_force(offset_zero_force)
+            interp_f -= offset_zero_force
     """
     plt.subplot(2,1,1)
     plt.plot(x,boolean_ret)
