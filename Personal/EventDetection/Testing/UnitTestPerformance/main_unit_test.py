@@ -91,7 +91,7 @@ def run():
     data_base = base + "data/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
-    load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
+    load_paths = sorted(GenUtilities.getAllFiles(data_base,ext=".pkl"))
     threshold = 1e-3
     fractional_error_tolerance = 8.05e-3
     error_dist_tolerance = np.array([4.80e-4,4.05-3])
@@ -99,7 +99,12 @@ def run():
     max_error = 0
     error_dist = []
     for i,f in enumerate(load_paths):
-        example = CheckpointUtilities.getCheckpoint(f,None,False) 
+        try:
+            example = CheckpointUtilities.getCheckpoint(f,None,False) 
+        except EOFError as e:
+            print(e)
+            print(f)
+            continue
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)

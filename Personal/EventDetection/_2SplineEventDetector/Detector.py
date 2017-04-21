@@ -142,11 +142,13 @@ def delta_mask_function(split_fec,slice_to_use,
     interpolator = no_event_parameters_object.last_interpolator_used
     interp_f = interpolator(x_sliced)
     # offset to right now (assume this is after surface  touchoff /adhesions)
-    offset_zero_force = interp_f[0]
+    offset_idx = 0
+    offset_zero_force = interp_f[offset_idx]
     where_event = np.where(boolean_array)[0]
     n = force.size
     if (where_event.size > 0 and (where_event[-1] < n-min_points_between)):
-        offset_zero_force = np.median(force[where_event[-1]:])
+        offset_idx = where_event[-1]
+        offset_zero_force = np.median(force[offset_idx:])
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
@@ -174,36 +176,12 @@ def delta_mask_function(split_fec,slice_to_use,
     boolean_ret = probability_updated < threshold
     """
     plt.subplot(2,1,1)
-    plt.plot(force)
+    plt.plot(x,force)
+    plt.plot(x_sliced,interp_f)
     plt.subplot(2,1,2)
-    plt.plot(boolean_array[slice_to_use]+2.1)
-    plt.plot(value_cond+1.1)
-    plt.plot(no_event_cond)
-    plt.plot(consistent_with_zero_cond-1.1)
-    plt.show()
-    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
-                                    boolean_array,no_event_cond,value_cond,
-                                    boolean_ret,probability_updated,probability,
-                                    threshold)
-    plt.show()
-    """
-
-    # XXX debugging...
-    last_greater = np.where(boolean_ret[slice_to_use])[0]
-    if (last_greater.size > 0):
-        offset_idx = slice_to_use.start + last_greater[-1]
-        offset_tmp = np.median(force[offset_idx:])
-        offset_zero_force = offset_tmp
-    split_fec.zero_retract_force(offset_zero_force)
-    interp_f -= offset_zero_force
-    """
-    plt.subplot(2,1,1)
-    plt.plot(boolean_ret[slice_to_use])
-    plt.subplot(2,1,2)    
-    plt.plot(force[slice_to_use])
-    plt.plot(interp_f)
-    plt.axhline(offset_zero_force)
-    plt.axvline(offset_idx-slice_to_use.start)
+    plt.plot(x_sliced,boolean_array[slice_to_use]+2.1)
+    plt.plot(x_sliced,value_cond+1.1)
+    plt.plot(x_sliced,no_event_cond)
     plt.show()
     """
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
@@ -214,6 +192,30 @@ def delta_mask_function(split_fec,slice_to_use,
     epsilon_df = no_event_parameters_object.delta_epsilon
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
+    # XXX debugging...
+    deriv_insignificant = (np.abs(df_true) < sigma_df + epsilon_df)
+    last_greater = np.where(boolean_ret[slice_to_use])[0]
+    """
+    plt.plot(boolean_ret[slice_to_use])
+    plt.plot(deriv_insignificant)
+    plt.show()
+    """
+    if (last_greater.size > 0):
+        offset_idx = slice_to_use.start + last_greater[-1]
+        offset_tmp = np.median(force[offset_idx:])
+        offset_zero_force = offset_tmp
+    split_fec.zero_retract_force(offset_zero_force)
+    interp_f -= offset_zero_force
+    """
+    plt.subplot(2,1,1)
+    plt.plot(x,boolean_ret)
+    plt.subplot(2,1,2)    
+    plt.plot(x,force)
+    plt.plot(x_sliced,interp_f)
+    plt.axhline(0)
+    plt.axvline(x[offset_idx])
+    plt.show()
+    """
     # find where we are consistent with zero
     consistent_with_zero_cond[slice_to_use] = \
             _condition_delta_at_zero(no_event_parameters_object,force_sliced,
