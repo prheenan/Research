@@ -102,6 +102,7 @@ def run():
         try:
             example = CheckpointUtilities.getCheckpoint(f,None,False) 
         except EOFError as e:
+            # couldnt load pxp
             print(e)
             print(f)
             continue
