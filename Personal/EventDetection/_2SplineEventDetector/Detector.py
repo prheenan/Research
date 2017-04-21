@@ -197,6 +197,7 @@ def delta_mask_function(split_fec,slice_to_use,
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     """
     plt.subplot(2,1,1)
+    plt.plot(x,force)
     plt.plot(x_sliced,interp_f)
     plt.subplot(2,1,2)
     plt.plot(x_sliced,boolean_ret[slice_to_use])
