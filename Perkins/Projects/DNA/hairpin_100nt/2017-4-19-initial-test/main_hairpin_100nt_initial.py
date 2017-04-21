@@ -38,7 +38,8 @@ def get_wlc_information(sep,force,sep_bounds,**kwargs):
     
 def get_basic_information(i,example,force_run=False):
     example_split = Analysis.zero_and_split_force_extension_curve(example)
-    example_split,pred_info = Detector._predict_full(example,threshold=1e-4)
+    example_split,pred_info = Detector._predict_full(example,threshold=1e-1,
+                                                     tau_fraction=5e-3)
     retract = example_split.retract
     sep = example_split.retract.Separation
     sep -= min(sep)
@@ -52,7 +53,7 @@ def get_basic_information(i,example,force_run=False):
                                                get_wlc_information,
                                                force_run,sep,force,sep_bounds,
                                                Ns=30)
-    return models,retract                                                
+    return models,retract,pred_info                                               
         
 def run():
     """
@@ -71,16 +72,25 @@ def run():
     args = []
     force_run = False
     for i,example in enumerate(examples):
+        # need to fix the dwell times; igor does not record it when using
+        # the indenter
+        example.set_dwell_time(example.Meta.DwellTime1)
         # get the FJC model...
-        models,retract = CheckpointUtilities.getCheckpoint(
+        models,retract,pred_info = CheckpointUtilities.getCheckpoint(
             "./model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
-        args.append([models,retract])
+        args.append([models,retract,pred_info])
+        if (i > 5):
+            break
+    # make a heat map of all the retracts...
+    retracts = [a[1] for a in args]
+    fig = PlotUtilities.figure()
+    FEC_Plot.heat_map_fec(retracts,separation_max=100)
+    PlotUtilities.savefig(fig,"./out/heat.png")
     models_all = [ [x0_x_y_tuple[0] for x0_x_y_tuple in list_v[0]] 
                    for list_v in args]
     first_l = np.concatenate([m[1] for m in models_all])
     last_l = np.concatenate([m[0] for m in models_all])
-    print(first_l)
     style_common = dict(alpha=0.3)
     style_line = dict(linewidth=3,linestyle='--')
     fig = PlotUtilities.figure()                                                       
@@ -90,13 +100,29 @@ def run():
     plt.axvline(67,**style_line)
     PlotUtilities.lazyLabel("Contour Length (nm)","Count","")
     PlotUtilities.savefig(fig,"./out/o_hist{:d}.png".format(i))   
-    for i,(models,retract) in enumerate(args):
-        fig = PlotUtilities.figure()                                                   
-        plt.plot(retract.Separation,retract.Force)
-        for x0,model_x,model_y in models:
-            plt.plot(model_x,model_y)
-        plt.xlim([min(retract.Separation),max(retract.Separation)])
+    x_plot = lambda x: x
+    y_plot = lambda y: y*1e12
+    n_filter_points = 500
+    for i,(models,retract,pred_info) in enumerate(args):
+        fig = PlotUtilities.figure(figsize=(8,12))        
+        plt.subplot(2,1,1)
+        FEC_Plot._fec_base_plot(retract.Separation * 1e9,
+                                y_plot(retract.Force),
+                                n_filter_points=n_filter_points)   
         PlotUtilities.lazyLabel("Separation (nm)","Force (pN)","")
+        ax = plt.subplot(2,1,2)
+        x_plot_tmp = x_plot(retract.Time)
+        FEC_Plot._fec_base_plot(x_plot_tmp,
+                                y_plot(retract.Force),
+                                n_filter_points=n_filter_points)
+        plt.xlim([min(x_plot_tmp),max(x_plot_tmp)])
+        PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
+        retract_nm = 1e9 * retract.Separation
+        limit_second = [min(retract_nm),max(retract_nm)]
+        ax2 = PlotUtilities.secondAxis(ax,label="Separation (nm)",
+                                       limits=limit_second,
+                                       secondY=True,color='b')                                            
+        ax2.plot(retract.Time,retract_nm,color='b')
         PlotUtilities.savefig(fig,"./out/out{:d}.png".format(i))
     
 if __name__ == "__main__":

@@ -507,12 +507,21 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
     # get the separation at the baseline
     separation_baseline = filtered_obj.Separation[idx_surface]
     zsnsr_baseline = filtered_obj.Zsnsr[idx_surface]
+    """
+    plt.subplot(2,1,1)
+    plt.plot(approach.Force,alpha=0.3)
+    plt.plot(filtered_obj.Force)
+    plt.axvline(idx_surface)
+    plt.subplot(2,1,2)
+    plt.plot(split_fec.retract.Force)
+    plt.show()     
+    """
     # zero everything 
     split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline,
                        force_baseline)
     if (flip_force):
         split_fec.flip_forces()
-    split_fec.set_tau_num_points(n_smooth)
+   
    
         
 def split_FEC_by_meta(time_sep_force_obj):
@@ -681,7 +690,7 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,
     tau = abs(1/linear_auto_coeffs[0])
     return tau,coeffs,auto
 
-def zero_and_split_force_extension_curve(example):
+def zero_and_split_force_extension_curve(example,fraction=0.02):
     """
     zeros a force extension curve by its meta information and the touchoff
     on the approach
@@ -689,6 +698,7 @@ def zero_and_split_force_extension_curve(example):
     Args:
         example: 'raw' force extension to use (negative force is away
         from surface on molecule)
+        fraction: the portion of the curve to use for smoothing
     returns:
         example as an Analysis.split_force_extension object
     """
@@ -698,19 +708,12 @@ def zero_and_split_force_extension_curve(example):
     f = approach.Force
     x = approach.Time
     n_approach = f.size
-    # *last* time we are under; note that this is at the end of the approach
-    get_last_under_median = \
-        lambda y: (np.where(y < np.median(f))[0][-1])
-    last_idx_under_median = get_last_under_median(f)
-    num_points_approach = n_approach - last_idx_under_median
-    x_tmp = np.arange(0,n_approach,1)
-    interp = spline_interpolator(tau_x=num_points_approach,x=x_tmp,f=f)
-    interp_approach = interp(x_tmp)
-    last_idx_under_median = get_last_under_median(interp_approach)
     n_retract = retract.Force.size
-    num_points = int(np.ceil(n_retract * 0.02))
+    num_points_approach = int(np.ceil(n_approach * fraction))
+    num_points_retract  = int(np.ceil(n_retract * fraction))
     # zero out everything to the approach using the autocorrelation time 
-    zero_by_approach(example_split,num_points)
+    zero_by_approach(example_split,num_points_approach)
+    example_split.set_tau_num_points(num_points_retract)
     return example_split
 
 def _loading_rate_helper(x,y):
