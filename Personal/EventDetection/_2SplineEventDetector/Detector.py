@@ -196,20 +196,26 @@ def delta_mask_function(split_fec,slice_to_use,
     change_insignificant = (np.abs(df_true) < sigma_df + epsilon_df)
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     """
-    plt.plot(boolean_ret[slice_to_use])
-    plt.plot(deriv_insignificant)
+    plt.subplot(2,1,1)
+    plt.plot(x_sliced,interp_f)
+    plt.subplot(2,1,2)
+    plt.plot(x_sliced,boolean_ret[slice_to_use])
+    plt.plot(x_sliced,change_insignificant,linestyle='--')
     plt.show()
     """
     if ( (last_greater.size > 0)):
         last_greater_idx_in_slice = last_greater[-1]
-        offset_idx = slice_to_use.start + last_greater_idx_in_slice
-        change_insig_after_greater = \
-            change_insignificant[last_greater_idx_in_slice:]
-        where_insignificant = np.where(change_insig_after_greater)[0]
+        offset_change_idx = last_greater_idx_in_slice + min_points_between
+        change_insig_after_greater = change_insignificant[offset_change_idx:]
+        # get where the change is insignificant after  the last event as 
+        # an absolute index into force
+        where_insignificant_abs = np.where(change_insig_after_greater)[0] + \
+                                  offset_change_idx + \
+                                  slice_to_use.start
         # only zero if we effectively aren't changing at the end
-        if ( (where_insignificant.size > 0) and 
-              (where_insignificant[0] < last_greater.size-n_points)):              
-            # also what to have a negigible delta
+        if ( (where_insignificant_abs.size > 0) and 
+              (where_insignificant_abs[0] < n-n_points)): 
+            offset_idx = where_insignificant_abs[0]
             offset_tmp = np.median(force[offset_idx:])
             offset_zero_force = offset_tmp
             split_fec.zero_retract_force(offset_zero_force)
