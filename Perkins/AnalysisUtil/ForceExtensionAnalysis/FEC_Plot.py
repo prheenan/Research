@@ -4,7 +4,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-import Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.FEC_Util
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 import GeneralUtil.python.PlotUtilities as PlotUtilities
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 import copy
