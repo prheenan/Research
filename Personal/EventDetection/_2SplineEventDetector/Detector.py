@@ -82,8 +82,20 @@ def safe_reslice(original_boolean,original_probability,condition,
     return new_boolean,new_probability
 
 def _condition_no_delta_significance(no_event_parameters_object,df_true,
-                                     negative_only,interp_f,n_points):
-    # XXX move to utility
+                                     negative_only,n_points):
+    """
+    Returns a boolean array, 1 where delta is consistent with zero...
+    
+    Args;
+        no_event_parameters_object: see _condition_delta_at_zero
+        df_true: Change in function 
+        negative_only: if true, only look at negative changes (where positive
+        are returned as 1)
+        
+        n_points: how many points to filter by 
+    Returns;
+        boolean array, 1 where nothing happening 
+    """                                     
     epsilon = no_event_parameters_object.epsilon
     sigma = no_event_parameters_object.sigma
     epsilon_approach = no_event_parameters_object.delta_epsilon
@@ -94,17 +106,19 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
-    # XXX ?.... shouldnt this be minimum? (*dont* want positive)
     value_cond = (df_true > baseline)
     return value_cond
-
-def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
-    sigma = no_event_parameters_object.sigma
-    epsilon = no_event_parameters_object.epsilon
-    min_sig_df = no_event_parameters_object.delta_epsilon + \
-                 no_event_parameters_object.delta_sigma
-    threshold_local_average = min_sig_df+sigma+epsilon
-    baseline_interp = min_sig_df+sigma
+    
+def f_average_and_diff(force,n):
+    """
+    Returns the local average and centered difference of force 
+    
+    Args;
+        force: the function to average and difference
+        n: window size
+    Returns;
+        tuple of <local average, local diff>
+    """
     size = int(np.ceil(int(n/2)))
     half_size = int(np.ceil(int(size/2)))-1
     local_average = Analysis.local_average(force,size,
@@ -112,6 +126,26 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     average_baseline = np.zeros(local_average.size)
     average_baseline[:-half_size] = local_average[half_size:]
     diff = average_baseline-local_average
+    return local_average,diff
+
+def _condition_delta_at_zero(no_event_parameters_object,force,n):
+    """
+    returns a boolean array with ones where we are consistent with no change
+    
+    Args:
+        no_event_parameters_object: to use in determining the zeros 
+        force: the raw y values, assumed zeroed
+        n: the number of filterp oints (e.g. tau_num_points)
+    Returns:
+        array of size like force, 1 where nothing much happening 
+    """
+    sigma = no_event_parameters_object.sigma
+    epsilon = no_event_parameters_object.epsilon
+    min_sig_df = no_event_parameters_object.delta_epsilon + \
+                 no_event_parameters_object.delta_sigma
+    threshold_local_average = min_sig_df+sigma+epsilon
+    baseline_interp = min_sig_df+sigma
+    local_average,diff =  f_average_and_diff(force,n)
     to_ret = ( (diff >= -baseline_interp) | 
                (local_average <= threshold_local_average))
     """
@@ -160,8 +194,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # find where the derivative is definitely not an event
     value_cond = \
         _condition_no_delta_significance(no_event_parameters_object,df_true,
-                                         negative_only,interp_f,
-                                         n_points)
+                                         negative_only,n_points)
     gt_condition = np.ones(boolean_array.size)
     gt_condition[slice_to_use] = (value_cond) | (no_event_cond)
     get_best_slice_func = lambda slice_list: \
@@ -193,15 +226,30 @@ def delta_mask_function(split_fec,slice_to_use,
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
     # XXX debugging...
-    change_insignificant = (np.abs(df_true) < sigma_df + epsilon_df)
+    df_thresh = sigma_df
+    average_tmp,diff = f_average_and_diff(force,n_points)    
+    diff_abs_sliced = np.abs(diff[slice_to_use])
+    change_insignificant = ((diff_abs_sliced < df_thresh) & 
+                            (np.abs(df_true) < sigma_df + epsilon_df))
+    min_zero_idx = n-n_points
     last_greater = np.where(boolean_ret[slice_to_use])[0]
     """
-    plt.subplot(2,1,1)
+    xlim = [min(x_sliced),max(x)]
+    plt.subplot(3,1,1)
     plt.plot(x,force)
-    plt.plot(x_sliced,interp_f)
-    plt.subplot(2,1,2)
+    plt.plot(x,average_tmp)
+    plt.axvline(x[min_zero_idx])
+    plt.xlim(xlim)
+    plt.subplot(3,1,2)
+    plt.plot(x_sliced,diff_abs_sliced)
+    plt.axhline(df_thresh)
+    plt.axvline(x[min_zero_idx])        
+    plt.xlim(xlim)    
+    plt.subplot(3,1,3)
     plt.plot(x_sliced,boolean_ret[slice_to_use])
     plt.plot(x_sliced,change_insignificant,linestyle='--')
+    plt.axvline(x[min_zero_idx])    
+    plt.xlim(xlim)    
     plt.show()
     """
     if ( (last_greater.size > 0)):
@@ -215,7 +263,7 @@ def delta_mask_function(split_fec,slice_to_use,
                                   slice_to_use.start
         # only zero if we effectively aren't changing at the end
         if ( (where_insignificant_abs.size > 0) and 
-              (where_insignificant_abs[0] < n-n_points)): 
+              (where_insignificant_abs[0] < min_zero_idx)): 
             offset_idx = where_insignificant_abs[0]
             offset_tmp = np.median(force[offset_idx:])
             offset_zero_force = offset_tmp
@@ -234,7 +282,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # find where we are consistent with zero
     consistent_with_zero_cond[slice_to_use] = \
             _condition_delta_at_zero(no_event_parameters_object,force_sliced,
-                                     interp_f,n_points)
+                                     n_points)
     condition_non_events = (consistent_with_zero_cond | deriv_cond)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
