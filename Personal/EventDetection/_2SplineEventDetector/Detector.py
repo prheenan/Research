@@ -248,8 +248,11 @@ def delta_mask_function(split_fec,slice_to_use,
     plt.subplot(3,1,3)
     plt.plot(x_sliced,boolean_ret[slice_to_use])
     plt.plot(x_sliced,change_insignificant,linestyle='--')
-    plt.axvline(x[min_zero_idx])    
+    plt.axvline(x[min_zero_idx],label="min idx")    
+    plt.axvline(x[min_zero_idx-min_points_between],linestyle='--',
+                label="min idx - points between")
     plt.xlim(xlim)    
+    plt.legend(loc='upper left')
     plt.show()
     """
     if ( (last_greater.size > 0)):
