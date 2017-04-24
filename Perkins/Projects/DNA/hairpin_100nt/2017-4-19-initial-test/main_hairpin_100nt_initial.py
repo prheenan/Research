@@ -85,7 +85,7 @@ def run():
     # make a heat map of all the retracts...
     retracts = [a[1] for a in args]
     fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(retracts,separation_max=100)
+    FEC_Plot.heat_map_fec(retracts,separation_max=100,cmap='gist_earth')
     PlotUtilities.savefig(fig,"./out/heat.png")
     models_all = [ [x0_x_y_tuple[0] for x0_x_y_tuple in list_v[0]] 
                    for list_v in args]
