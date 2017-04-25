@@ -215,6 +215,14 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     probability_integral = _no_event_chebyshev(local_integral,
                                                epsilon=integral_epsilon,
                                                sigma=integral_sigma)
+    """
+    plt.subplot(2,1,1)
+    plt.plot(local_integral)
+    plt.axhline(integral_epsilon+integral_sigma)
+    plt.subplot(2,1,2)
+    plt.semilogy(probability_integral)
+    plt.show()
+    """
     return probability_integral
     
     

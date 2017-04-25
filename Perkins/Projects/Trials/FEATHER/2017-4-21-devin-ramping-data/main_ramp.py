@@ -25,8 +25,8 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    data = FEC_Util.ReadInData("./Devin_example_raw.pxp")
-    split,info = Detector._predict_full(data[0])
+    data = FEC_Util.ReadInData("./Graph3.pxp")
+    split,info = Detector._predict_full(data[0],threshold=1e-1)
     plt.plot(split.retract.Force)
     for i in info.event_idx:
         plt.axvline(i)

@@ -394,8 +394,19 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                       n_points,no_event_parameters_object)
         boolean_ret = (probability_updated < threshold)
         return slice_updated,boolean_ret,probability_updated
+    """
+    plt.subplot(2,1,1)
+    plt.plot(x_all,y_all)
+    plt.plot(x_all,no_event_parameters_object.last_interpolator_used(x_all))
+    plt.axvline(x_all[surface_index])
+    plt.subplot(2,1,2)
+    plt.semilogy(probability_updated)
+    plt.show()
+    """
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
+    last_event_containing_surface_end = min(last_event_containing_surface_end,
+                                            y_all.size)
     min_idx = max(min_idx,last_event_containing_surface_end)
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
@@ -421,7 +432,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                           
+                                                         min_points_between)
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
@@ -589,6 +600,11 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     """
     approach_interp_deriv = \
             spline_fit_approach.derivative()(interpolator_approach_x)
+    plt.plot(interpolator_approach_x,approach_f)
+    plt.plot(interpolator_approach_x,interpolator_approach_f)
+    plt.plot(split_fec.dwell.Time,split_fec.dwell.Force)
+    plt.plot(split_fec.retract.Time,split_fec.retract.Force)
+    plt.show()
     derivative_epsilon = np.median(approach_interp_deriv)
     # avoid stage noise
     q_low,q_high = np.percentile(approach_interp_deriv,[1,99])
