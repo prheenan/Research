@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0445,
-              rupture_tuple=(0.070,0.803)):
+def check_bcc(examples,predicted,bcc_threshold=0.0613,
+              rupture_tuple=(0.238,2.14)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -93,12 +93,12 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = sorted(GenUtilities.getAllFiles(data_base,ext=".pkl"))
     threshold = 1e-3
-    fractional_error_tolerance = 4.11e-3
-    error_dist_tolerance = np.array([1.74e-4,3.30e-3])
+    fractional_error_tolerance = 1.02e-2
+    error_dist_tolerance = np.array([3.60e-4,4.99e-3])
     predicted,examples = [],[]
     max_error = 0
     error_dist = []
-    for i,f in enumerate(load_paths[5:]):
+    for i,f in enumerate(load_paths):
         try:
             example = CheckpointUtilities.getCheckpoint(f,None,False) 
         except EOFError as e:

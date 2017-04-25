@@ -33,7 +33,6 @@ def run():
     absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
     for i,(d,d_out) in enumerate(zip(absolute_input_dir,absolute_output_dir)):
         InputOutput.output_waves_in_directory_to_csv_files(d,d_out)
-    
 
 if __name__ == "__main__":
     run()
