@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0388,
-              rupture_tuple=(0.261,1.61)):
+def check_bcc(examples,predicted,bcc_threshold=0.0445,
+              rupture_tuple=(0.070,0.803)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -93,8 +93,8 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = sorted(GenUtilities.getAllFiles(data_base,ext=".pkl"))
     threshold = 1e-3
-    fractional_error_tolerance = 8.05e-3
-    error_dist_tolerance = np.array([4.80e-4,4.05-3])
+    fractional_error_tolerance = 4.11e-3
+    error_dist_tolerance = np.array([1.74e-4,3.30e-3])
     predicted,examples = [],[]
     max_error = 0
     error_dist = []
@@ -102,7 +102,7 @@ def run():
         try:
             example = CheckpointUtilities.getCheckpoint(f,None,False) 
         except EOFError as e:
-            # couldnt load pxp, keep goiing
+            # couldnt load pxp, keep going (windows error)
             print(e)
             print(f)
             continue

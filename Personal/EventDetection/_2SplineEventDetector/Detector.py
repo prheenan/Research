@@ -156,7 +156,7 @@ def _condition_delta_at_zero(no_event_parameters_object,force,n):
     plt.subplot(3,1,2)
     plt.plot(diff)
     plt.axhline(-baseline_interp)
-    plt.axhline(sigma,linestyle='--')
+    plt.ylim([-5*baseline_interp,5*baseline_interp])
     plt.subplot(3,1,3)
     plt.plot(to_ret)
     plt.show()
