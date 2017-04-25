@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append("../../../../../../")
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
-from Research.Personal.EventDetection.Util import Analysis 
+from Research.Personal.EventDetection.Util import Analysis,Plotting 
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 
 
@@ -26,10 +26,8 @@ def run():
         This is a description of what is returned.
     """
     data = FEC_Util.ReadInData("./Graph3.pxp")
-    split,info = Detector._predict_full(data[0],threshold=1e-1)
-    plt.plot(split.retract.Force)
-    for i in info.event_idx:
-        plt.axvline(i)
+    split,info = Detector._predict_full(data[0],threshold=0.5)
+    Plotting.plot_prediction_info(split,info)
     plt.show()
 
 if __name__ == "__main__":

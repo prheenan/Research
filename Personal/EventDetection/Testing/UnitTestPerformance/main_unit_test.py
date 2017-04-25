@@ -98,7 +98,7 @@ def run():
     predicted,examples = [],[]
     max_error = 0
     error_dist = []
-    for i,f in enumerate(load_paths):
+    for i,f in enumerate(load_paths[5:]):
         try:
             example = CheckpointUtilities.getCheckpoint(f,None,False) 
         except EOFError as e:

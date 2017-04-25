@@ -40,7 +40,7 @@ class split_force_extension:
         self.cached_approach_slice_to_fit = slice_to_fit
     def _approach_metrics(self,n_points=None,slice_fit_approach=None):
         if (n_points is None):
-            n_points = self.tau_num_points
+            n_points = self.tau_num_points_approach
         if (slice_fit_approach is None):
             approach_surface_idx = self.get_predicted_approach_surface_index()
             slice_fit_approach= slice(0,approach_surface_idx,1)
@@ -97,7 +97,8 @@ class split_force_extension:
         """
         See retract_spline_interpolator, but for the approach
         """
-        return spline_fit_fec(self.tau,self.approach,
+        tau_approach = self.tau_num_points_approach*self.dt
+        return spline_fit_fec(tau_approach,self.approach,
                               slice_to_fit=slice_to_fit,**kwargs)        
     def retract_separation_interpolator(self,**kwargs):
         """
@@ -109,6 +110,17 @@ class split_force_extension:
         """    
         x,f = self.retract.Time,self.retract.Separation
         return spline_interpolator(self.tau,x,f,**kwargs)
+    def set_tau_num_points_approach(self,tau_num_points):
+        """
+        sets the approach number of points for tau (may be different 
+        due to different loading rates, etc)
+
+        Args:
+            tau_num_points: number of points to use
+        Returns:
+            nothing, sets tau appropriately
+        """
+        self.tau_num_points_approach = tau_num_points
     def set_tau_num_points(self,tau_num_points):
         """
         sets the autocorrelation time associated with this curve
@@ -120,7 +132,9 @@ class split_force_extension:
         """
         self.tau_num_points = tau_num_points
         if (tau_num_points is not None):
-            self.tau = np.median(np.diff(self.approach.Time))*tau_num_points
+            # we assume the rate of time sampling is  the same everywhere
+            self.dt = np.median(np.diff(self.approach.Time))
+            self.tau = self.dt*tau_num_points
         else:
             self.tau = None
     def zero_retract_force(self,offset):
@@ -721,6 +735,7 @@ def zero_and_split_force_extension_curve(example,fraction=0.02):
     # zero out everything to the approach using the autocorrelation time 
     zero_by_approach(example_split,num_points_approach)
     example_split.set_tau_num_points(num_points_retract)
+    example_split.set_tau_num_points_approach(num_points_approach)
     return example_split
 
 def _loading_rate_helper(x,y):

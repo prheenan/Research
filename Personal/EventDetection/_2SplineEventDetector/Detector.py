@@ -600,11 +600,6 @@ def make_event_parameters_from_split_fec(split_fec,**kwargs):
     """
     approach_interp_deriv = \
             spline_fit_approach.derivative()(interpolator_approach_x)
-    plt.plot(interpolator_approach_x,approach_f)
-    plt.plot(interpolator_approach_x,interpolator_approach_f)
-    plt.plot(split_fec.dwell.Time,split_fec.dwell.Force)
-    plt.plot(split_fec.retract.Time,split_fec.retract.Force)
-    plt.show()
     derivative_epsilon = np.median(approach_interp_deriv)
     # avoid stage noise
     q_low,q_high = np.percentile(approach_interp_deriv,[1,99])
