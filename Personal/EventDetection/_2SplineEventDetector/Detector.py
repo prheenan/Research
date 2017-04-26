@@ -310,7 +310,7 @@ def get_events_before_marker(marker_idx,event_mask,min_points_between):
     event_boundaries = _event_slices_from_mask(event_mask,min_points_between)
     # get a list of the events with a starting point below the surface
     events_containing_surface = [e for e in event_boundaries
-                                 if (e.start <= marker_idx)]     
+                                 if (e.start <= marker_idx)]
     return events_containing_surface
 
 def set_knots_by_derivative(split_fec,interp,x_all,slice_v):
@@ -381,7 +381,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # (could be some adhesion!)
     events_containing_surface = get_events_before_marker(min_idx,event_mask,
                                                          min_points_between)
-
     # set up the fec and parameters so we are now looking for negatives,
     # using the delta
     no_event_parameters_object._set_valid_delta(True)
@@ -403,6 +402,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     plt.semilogy(probability_updated)
     plt.show()
     """
+    # POST: have at least one event.
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
     last_event_containing_surface_end = min(last_event_containing_surface_end,
@@ -411,12 +411,21 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
     boolean_ret[:min_idx] = 0
-    slice_updated = slice(min_idx,slice_updated.stop,1)
+    slice_tmp = slice(min_idx,slice_updated.stop,1)
     # set the interpolator for the non-adhesion region; need to re-calculate
     # since adhesion (probably) really screws everything up
-    x_slice = x_all[slice_updated]
-    y_slice = y_all[slice_updated]
-    slice_interp = slice(slice_updated.start,slice_updated.stop,1)
+    x_slice = x_all[slice_tmp]
+    y_slice = y_all[slice_tmp]
+    if (x_slice.size < min_points_between):
+        # it is possible the event is at the very end of the data, in which
+        # case we are done. 
+        # return the *previous* slice, zeroing out everything
+        boolean_ret[:] = 0
+        probability_updated[:] = 1
+        return slice_updated,boolean_ret,probability_updated   
+    # POST: the updated slice should give us some data to look at
+    slice_updated = slice_tmp
+    slice_interp = slice(slice_updated.start,slice_updated.stop,1)    
     interp = split_fec.retract_spline_interpolator(slice_to_fit=slice_interp)
     interp_slice = interp(x_slice)
     split_fec.set_retract_knots(interp)
@@ -424,7 +433,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     probability_in_slice,_ = _no_event.\
         _no_event_probability(x_slice,interp,y_slice,
                               n_points,no_event_parameters_object)
-    probability_updated = probability.copy()
+    probability_updated = probability.copy()                              
     probability_updated[:min_idx] = 1
     probability_updated[slice_updated] = probability_in_slice
     boolean_ret =  probability_updated < threshold
