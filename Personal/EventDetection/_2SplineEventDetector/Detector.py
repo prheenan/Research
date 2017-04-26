@@ -416,7 +416,6 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     # since adhesion (probably) really screws everything up
     x_slice = x_all[slice_tmp]
     y_slice = y_all[slice_tmp]
-    print(x_slice.size,slice_tmp,min_points_between)
     if (x_slice.size < min_points_between):
         # it is possible the event is at the very end of the data, in which
         # case we are done. 
