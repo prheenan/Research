@@ -215,6 +215,14 @@ def _integral_probability(f,interp_f,n_points,no_event_parameters_object):
     probability_integral = _no_event_chebyshev(local_integral,
                                                epsilon=integral_epsilon,
                                                sigma=integral_sigma)
+    """
+    plt.subplot(2,1,1)
+    plt.plot(local_integral)
+    plt.axhline(integral_epsilon+integral_sigma)
+    plt.subplot(2,1,2)
+    plt.semilogy(probability_integral)
+    plt.show()
+    """
     return probability_integral
     
     
@@ -277,15 +285,22 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
         p_delta = _delta_probability(df,no_event_parameters_object)
         probability_distribution *= p_delta        
     if (no_event_parameters_object.negative_only):
-        deriv_epsilon = no_event_parameters_object.derivative_epsilon
         deriv_sigma = no_event_parameters_object.derivative_sigma
-        baseline = (deriv_epsilon+deriv_sigma)        
-        condition = np.where(derivative > -baseline)
-        probability_distribution[condition] = 1
+        condition = derivative >= 0
+        where_condition = np.where(condition)
+        probability_distribution[where_condition] = 1
     """
+    plt.subplot(2,1,1)
+    plt.plot(y)
+    plt.plot(interp(x_s))
+    plt.subplot(2,1,2)
     plt.semilogy(probability_distribution,label="full")
     plt.semilogy(p_deriv,label='deriv')
     plt.semilogy(p_int,label='int')
+    if (no_event_parameters_object.valid_delta):
+        plt.semilogy(p_delta,label='delta')
+    if (no_event_parameters_object.negative_only):
+        plt.plot(condition+1.1)
     plt.legend()
     plt.show()
     """

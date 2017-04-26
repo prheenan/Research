@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0309,
-              rupture_tuple=(0.261,1.61)):
+def check_bcc(examples,predicted,bcc_threshold=0.00755,
+              rupture_tuple=(0.0354,0.601)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -55,7 +55,7 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     n_found = len(pred_info.event_slices)
     meta = example_split.retract.Meta
     # after plotting, check if anything went wrong
-    events=  example_split.get_retract_event_centers()
+    events=  example_split.get_retract_event_starts()
     n_expected = len(events)
     err_str = "for {:s}, expected {:d}, got {:d}".\
         format(meta.Name,n_expected,n_found)
@@ -91,15 +91,21 @@ def run():
     data_base = base + "data/"
     debug_directory = "./out/"
     GenUtilities.ensureDirExists(debug_directory)    
-    load_paths = GenUtilities.getAllFiles(data_base,ext=".pkl")
+    load_paths = sorted(GenUtilities.getAllFiles(data_base,ext=".pkl"))
     threshold = 1e-3
-    fractional_error_tolerance = 8.05e-3
-    error_dist_tolerance = np.array([4.80e-4,4.05-3])
+    fractional_error_tolerance = 5.79e-3
+    error_dist_tolerance = np.array([8.00e-5,3.29e-3])
     predicted,examples = [],[]
     max_error = 0
     error_dist = []
     for i,f in enumerate(load_paths):
-        example = CheckpointUtilities.getCheckpoint(f,None,False) 
+        try:
+            example = CheckpointUtilities.getCheckpoint(f,None,False) 
+        except EOFError as e:
+            # couldnt load pxp, keep going (windows error)
+            print(e)
+            print(f)
+            continue
         # get the prediction, save out the plotting information
         example_split,pred_info = \
             Detector._predict_full(example,threshold=threshold)

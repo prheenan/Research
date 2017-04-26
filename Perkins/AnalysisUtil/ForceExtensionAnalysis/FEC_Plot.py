@@ -4,7 +4,7 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-import Research.Perkins.AnalysisUtil.ForceExtensionAnalysis.FEC_Util
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 import GeneralUtil.python.PlotUtilities as PlotUtilities
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 import copy
@@ -17,6 +17,7 @@ def _fec_base_plot(x,y,n_filter_points=100,style_data=dict(color='k',alpha=0.3),
     if (style_filtered is None):
         style_filtered = dict(**style_data)
         style_filtered['alpha'] = 1
+        style_filtered['label'] = ""
     x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
     y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
     plt.plot(x,y,**style_data)
@@ -99,7 +100,7 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
     
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
                  separation_max = None,n_filter_func=None,
-                 ConversionOpts=def_conversion_opts):
+                 ConversionOpts=def_conversion_opts,cmap='afmhot'):
     """
     Plots a force extension curve. Splits the curve into approach and 
     Retract and pre-processes by default
@@ -136,7 +137,7 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
     forces = forces[idx_use]
     # make a heat map, essentially
     counts, xedges, yedges, Image = plt.hist2d(separations, forces,
-                                               bins=num_bins,cmap='afmhot')
+                                               bins=num_bins,cmap=cmap)
     PlotUtilities.lazyLabel("Separation [nm]",
                             "Force [pN]",
                             "Two-Dimensional Force-Separation Histogram")

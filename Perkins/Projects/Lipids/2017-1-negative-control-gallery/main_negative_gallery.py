@@ -31,7 +31,7 @@ def run():
     fig_size = (n_cols*inches_per_plot,n_rows*inches_per_plot)
     fig = PlotUtilities.figure(figsize=(fig_size))
     ylim_pN = [-20,75]
-    xlim_nm = [-10,50]
+    xlim_nm = [-10,100]
     FEC_Plot.gallery_fec(processed,xlim_nm,ylim_pN)
     plt.suptitle("Negative Control Gallery",y=1.2,fontsize=25)
     PlotUtilities.savefig(fig,base + "out.png",close=False)

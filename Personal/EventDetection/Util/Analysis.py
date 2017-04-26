@@ -40,7 +40,7 @@ class split_force_extension:
         self.cached_approach_slice_to_fit = slice_to_fit
     def _approach_metrics(self,n_points=None,slice_fit_approach=None):
         if (n_points is None):
-            n_points = self.tau_num_points
+            n_points = self.tau_num_points_approach
         if (slice_fit_approach is None):
             approach_surface_idx = self.get_predicted_approach_surface_index()
             slice_fit_approach= slice(0,approach_surface_idx,1)
@@ -97,7 +97,8 @@ class split_force_extension:
         """
         See retract_spline_interpolator, but for the approach
         """
-        return spline_fit_fec(self.tau,self.approach,
+        tau_approach = self.tau_num_points_approach*self.dt
+        return spline_fit_fec(tau_approach,self.approach,
                               slice_to_fit=slice_to_fit,**kwargs)        
     def retract_separation_interpolator(self,**kwargs):
         """
@@ -109,6 +110,17 @@ class split_force_extension:
         """    
         x,f = self.retract.Time,self.retract.Separation
         return spline_interpolator(self.tau,x,f,**kwargs)
+    def set_tau_num_points_approach(self,tau_num_points):
+        """
+        sets the approach number of points for tau (may be different 
+        due to different loading rates, etc)
+
+        Args:
+            tau_num_points: number of points to use
+        Returns:
+            nothing, sets tau appropriately
+        """
+        self.tau_num_points_approach = tau_num_points
     def set_tau_num_points(self,tau_num_points):
         """
         sets the autocorrelation time associated with this curve
@@ -120,7 +132,9 @@ class split_force_extension:
         """
         self.tau_num_points = tau_num_points
         if (tau_num_points is not None):
-            self.tau = np.median(np.diff(self.approach.Time))*tau_num_points
+            # we assume the rate of time sampling is  the same everywhere
+            self.dt = np.median(np.diff(self.approach.Time))
+            self.tau = self.dt*tau_num_points
         else:
             self.tau = None
     def zero_retract_force(self,offset):
@@ -507,12 +521,21 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
     # get the separation at the baseline
     separation_baseline = filtered_obj.Separation[idx_surface]
     zsnsr_baseline = filtered_obj.Zsnsr[idx_surface]
+    """
+    plt.subplot(2,1,1)
+    plt.plot(approach.Force,alpha=0.3)
+    plt.plot(filtered_obj.Force)
+    plt.axvline(idx_surface)
+    plt.subplot(2,1,2)
+    plt.plot(split_fec.retract.Force)
+    plt.show()     
+    """
     # zero everything 
     split_fec.zero_all(separation_baseline,zsnsr_baseline,force_baseline,
                        force_baseline)
     if (flip_force):
         split_fec.flip_forces()
-    split_fec.set_tau_num_points(n_smooth)
+   
    
         
 def split_FEC_by_meta(time_sep_force_obj):
@@ -538,6 +561,13 @@ def split_FEC_by_meta(time_sep_force_obj):
     approach = slice_func(slice(0             ,start_of_dwell,1))
     dwell    = slice_func(slice(start_of_dwell,end_of_dwell  ,1))
     retract  = slice_func(slice(end_of_dwell  ,None          ,1))
+    """
+    plt.plot(approach.Time,approach.Force)
+    plt.plot(dwell.Time,dwell.Force)
+    plt.plot(retract.Time,retract.Force)
+    print(start_of_dwell,end_of_dwell)
+    plt.show()
+    """
     return split_force_extension(approach,dwell,retract)
 
 def spline_residual_mean_and_stdev(f,f_interp,start_q=1):
@@ -681,7 +711,7 @@ def auto_correlation_tau(x,f_user,deg_autocorrelation=1,
     tau = abs(1/linear_auto_coeffs[0])
     return tau,coeffs,auto
 
-def zero_and_split_force_extension_curve(example):
+def zero_and_split_force_extension_curve(example,fraction=0.02):
     """
     zeros a force extension curve by its meta information and the touchoff
     on the approach
@@ -689,6 +719,7 @@ def zero_and_split_force_extension_curve(example):
     Args:
         example: 'raw' force extension to use (negative force is away
         from surface on molecule)
+        fraction: the portion of the curve to use for smoothing
     returns:
         example as an Analysis.split_force_extension object
     """
@@ -698,19 +729,13 @@ def zero_and_split_force_extension_curve(example):
     f = approach.Force
     x = approach.Time
     n_approach = f.size
-    # *last* time we are under; note that this is at the end of the approach
-    get_last_under_median = \
-        lambda y: (np.where(y < np.median(f))[0][-1])
-    last_idx_under_median = get_last_under_median(f)
-    num_points_approach = n_approach - last_idx_under_median
-    x_tmp = np.arange(0,n_approach,1)
-    interp = spline_interpolator(tau_x=num_points_approach,x=x_tmp,f=f)
-    interp_approach = interp(x_tmp)
-    last_idx_under_median = get_last_under_median(interp_approach)
     n_retract = retract.Force.size
-    num_points = int(np.ceil(n_retract * 0.02))
+    num_points_approach = int(np.ceil(n_approach * fraction))
+    num_points_retract  = int(np.ceil(n_retract * fraction))
     # zero out everything to the approach using the autocorrelation time 
-    zero_by_approach(example_split,num_points)
+    zero_by_approach(example_split,num_points_approach)
+    example_split.set_tau_num_points(num_points_retract)
+    example_split.set_tau_num_points_approach(num_points_approach)
     return example_split
 
 def _loading_rate_helper(x,y):

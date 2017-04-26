@@ -82,8 +82,20 @@ def safe_reslice(original_boolean,original_probability,condition,
     return new_boolean,new_probability
 
 def _condition_no_delta_significance(no_event_parameters_object,df_true,
-                                     negative_only,interp_f,n_points):
-    # XXX move to utility
+                                     negative_only,n_points):
+    """
+    Returns a boolean array, 1 where delta is consistent with zero...
+    
+    Args;
+        no_event_parameters_object: see _condition_delta_at_zero
+        df_true: Change in function 
+        negative_only: if true, only look at negative changes (where positive
+        are returned as 1)
+        
+        n_points: how many points to filter by 
+    Returns;
+        boolean array, 1 where nothing happening 
+    """                                     
     epsilon = no_event_parameters_object.epsilon
     sigma = no_event_parameters_object.sigma
     epsilon_approach = no_event_parameters_object.delta_epsilon
@@ -94,17 +106,19 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
     else:
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
-    # XXX ?.... shouldnt this be minimum? (*dont* want positive)
     value_cond = (df_true > baseline)
     return value_cond
-
-def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
-    sigma = no_event_parameters_object.sigma
-    epsilon = no_event_parameters_object.epsilon
-    min_sig_df = no_event_parameters_object.delta_epsilon + \
-                 no_event_parameters_object.delta_sigma
-    threshold_local_average = min_sig_df+sigma+epsilon
-    baseline_interp = min_sig_df+sigma
+    
+def f_average_and_diff(force,n):
+    """
+    Returns the local average and centered difference of force 
+    
+    Args;
+        force: the function to average and difference
+        n: window size
+    Returns;
+        tuple of <local average, local diff>
+    """
     size = int(np.ceil(int(n/2)))
     half_size = int(np.ceil(int(size/2)))-1
     local_average = Analysis.local_average(force,size,
@@ -112,6 +126,26 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     average_baseline = np.zeros(local_average.size)
     average_baseline[:-half_size] = local_average[half_size:]
     diff = average_baseline-local_average
+    return local_average,diff
+
+def _condition_delta_at_zero(no_event_parameters_object,force,n):
+    """
+    returns a boolean array with ones where we are consistent with no change
+    
+    Args:
+        no_event_parameters_object: to use in determining the zeros 
+        force: the raw y values, assumed zeroed
+        n: the number of filterp oints (e.g. tau_num_points)
+    Returns:
+        array of size like force, 1 where nothing much happening 
+    """
+    sigma = no_event_parameters_object.sigma
+    epsilon = no_event_parameters_object.epsilon
+    min_sig_df = no_event_parameters_object.delta_epsilon + \
+                 no_event_parameters_object.delta_sigma
+    threshold_local_average = min_sig_df+sigma+epsilon
+    baseline_interp = min_sig_df+sigma
+    local_average,diff =  f_average_and_diff(force,n)
     to_ret = ( (diff >= -baseline_interp) | 
                (local_average <= threshold_local_average))
     """
@@ -122,7 +156,7 @@ def _condition_delta_at_zero(no_event_parameters_object,force,interp_f,n):
     plt.subplot(3,1,2)
     plt.plot(diff)
     plt.axhline(-baseline_interp)
-    plt.axhline(sigma,linestyle='--')
+    plt.ylim([-5*baseline_interp,5*baseline_interp])
     plt.subplot(3,1,3)
     plt.plot(to_ret)
     plt.show()
@@ -142,11 +176,13 @@ def delta_mask_function(split_fec,slice_to_use,
     interpolator = no_event_parameters_object.last_interpolator_used
     interp_f = interpolator(x_sliced)
     # offset to right now (assume this is after surface  touchoff /adhesions)
-    offset_zero_force = interp_f[0]
+    offset_idx = 0
+    offset_zero_force = interp_f[offset_idx]
     where_event = np.where(boolean_array)[0]
     n = force.size
     if (where_event.size > 0 and (where_event[-1] < n-min_points_between)):
-        offset_zero_force = np.median(force[where_event[-1]:])
+        offset_idx = where_event[-1]
+        offset_zero_force = np.median(force[offset_idx:])
     split_fec.zero_retract_force(offset_zero_force)
     interp_f -= offset_zero_force
     df_true = _no_event._delta(x_sliced,interp_f,min_points_between)
@@ -158,8 +194,7 @@ def delta_mask_function(split_fec,slice_to_use,
     # find where the derivative is definitely not an event
     value_cond = \
         _condition_no_delta_significance(no_event_parameters_object,df_true,
-                                         negative_only,interp_f,
-                                         n_points)
+                                         negative_only,n_points)
     gt_condition = np.ones(boolean_array.size)
     gt_condition[slice_to_use] = (value_cond) | (no_event_cond)
     get_best_slice_func = lambda slice_list: \
@@ -174,36 +209,12 @@ def delta_mask_function(split_fec,slice_to_use,
     boolean_ret = probability_updated < threshold
     """
     plt.subplot(2,1,1)
-    plt.plot(force)
+    plt.plot(x,force)
+    plt.plot(x_sliced,interp_f)
     plt.subplot(2,1,2)
-    plt.plot(boolean_array[slice_to_use]+2.1)
-    plt.plot(value_cond+1.1)
-    plt.plot(no_event_cond)
-    plt.plot(consistent_with_zero_cond-1.1)
-    plt.show()
-    Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
-                                    boolean_array,no_event_cond,value_cond,
-                                    boolean_ret,probability_updated,probability,
-                                    threshold)
-    plt.show()
-    """
-
-    # XXX debugging...
-    last_greater = np.where(boolean_ret[slice_to_use])[0]
-    if (last_greater.size > 0):
-        offset_idx = slice_to_use.start + last_greater[-1]
-        offset_tmp = np.median(force[offset_idx:])
-        offset_zero_force = offset_tmp
-    split_fec.zero_retract_force(offset_zero_force)
-    interp_f -= offset_zero_force
-    """
-    plt.subplot(2,1,1)
-    plt.plot(boolean_ret[slice_to_use])
-    plt.subplot(2,1,2)    
-    plt.plot(force[slice_to_use])
-    plt.plot(interp_f)
-    plt.axhline(offset_zero_force)
-    plt.axvline(offset_idx-slice_to_use.start)
+    plt.plot(x_sliced,boolean_array[slice_to_use]+2.1)
+    plt.plot(x_sliced,value_cond+1.1)
+    plt.plot(x_sliced,no_event_cond)
     plt.show()
     """
     deriv = _no_event._spline_derivative(x_sliced,interpolator)
@@ -214,10 +225,67 @@ def delta_mask_function(split_fec,slice_to_use,
     epsilon_df = no_event_parameters_object.delta_epsilon
     deriv_cond[slice_to_use] = \
             interp_f + (deriv * min_points_between/2 * dt) < sigma_df
+    # XXX debugging...
+    df_thresh = np.abs(sigma_df + epsilon_df)
+    average_tmp,diff = f_average_and_diff(force,n_points)    
+    diff_abs_sliced = np.abs(diff[slice_to_use])
+    change_insignificant = ((diff_abs_sliced < df_thresh) & 
+                            (np.abs(df_true) < df_thresh))
+    min_zero_idx = n-n_points
+    last_greater = np.where(boolean_ret[slice_to_use])[0]
+    """
+    xlim = [min(x_sliced),max(x)]
+    plt.subplot(3,1,1)
+    plt.plot(x,force)
+    plt.plot(x,average_tmp)
+    plt.axvline(x[min_zero_idx])
+    plt.xlim(xlim)
+    plt.subplot(3,1,2)
+    plt.plot(x_sliced,diff_abs_sliced)
+    plt.axhline(df_thresh)
+    plt.axvline(x[min_zero_idx])        
+    plt.xlim(xlim)    
+    plt.subplot(3,1,3)
+    plt.plot(x_sliced,boolean_ret[slice_to_use])
+    plt.plot(x_sliced,change_insignificant,linestyle='--')
+    plt.axvline(x[min_zero_idx],label="min idx")    
+    plt.axvline(x[min_zero_idx-min_points_between],linestyle='--',
+                label="min idx - points between")
+    plt.xlim(xlim)    
+    plt.legend(loc='upper left')
+    plt.show()
+    """
+    if ( (last_greater.size > 0)):
+        last_greater_idx_in_slice = last_greater[-1]
+        offset_change_idx = last_greater_idx_in_slice + min_points_between
+        change_insig_after_greater = change_insignificant[offset_change_idx:]
+        # get where the change is insignificant after  the last event as 
+        # an absolute index into force
+        where_insignificant_abs = np.where(change_insig_after_greater)[0] + \
+                                  offset_change_idx + \
+                                  slice_to_use.start
+        # only zero if we effectively aren't changing at the end
+        if ( (where_insignificant_abs.size > 0) and 
+              (where_insignificant_abs[0] < min_zero_idx)): 
+            offset_idx = where_insignificant_abs[0]
+            offset_tmp = np.median(force[offset_idx:])
+            offset_zero_force = offset_tmp
+            split_fec.zero_retract_force(offset_zero_force)
+            interp_f -= offset_zero_force
+    """
+    plt.subplot(2,1,1)
+    plt.plot(x,boolean_ret)
+    plt.subplot(2,1,2)    
+    plt.plot(x,force)
+    plt.plot(x_sliced,interp_f)
+    plt.axhline(0)
+    plt.axvline(x[offset_idx])
+    plt.show()
+    """
     # find where we are consistent with zero
     consistent_with_zero_cond[slice_to_use] = \
             _condition_delta_at_zero(no_event_parameters_object,force_sliced,
-                                     interp_f,n_points)
+                                     n_points)
     condition_non_events = (consistent_with_zero_cond | deriv_cond)
     boolean_ret,probability_updated = \
             safe_reslice(original_boolean=boolean_ret,
@@ -326,8 +394,19 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
                                       n_points,no_event_parameters_object)
         boolean_ret = (probability_updated < threshold)
         return slice_updated,boolean_ret,probability_updated
+    """
+    plt.subplot(2,1,1)
+    plt.plot(x_all,y_all)
+    plt.plot(x_all,no_event_parameters_object.last_interpolator_used(x_all))
+    plt.axvline(x_all[surface_index])
+    plt.subplot(2,1,2)
+    plt.semilogy(probability_updated)
+    plt.show()
+    """
     last_event_containing_surface_end = \
         events_containing_surface[-1].stop + min_points_between
+    last_event_containing_surface_end = min(last_event_containing_surface_end,
+                                            y_all.size)
     min_idx = max(min_idx,last_event_containing_surface_end)
     # update the boolean array and the probably to just reflect the slice
     # ie: ignore the non-unfolding probabilities above
@@ -353,7 +432,7 @@ def adhesion_mask_function_for_split_fec(split_fec,slice_to_use,boolean_array,
     event_mask_post_delta = np.where(boolean_ret)[0]
     events_containing_surface = get_events_before_marker(min_idx,
                                                          event_mask_post_delta,
-                                                         min_points_between)                                           
+                                                         min_points_between)
     if (len(events_containing_surface) == 0):
         return slice_updated,boolean_ret,probability_updated
     # XXX zero by whatever is happening after the last event..
@@ -597,7 +676,8 @@ def _predict_functor(example,f):
     return lambda *args,**kwargs : f(example,*args,**kwargs)
 
 
-def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
+def _predict_full(example,threshold=1e-2,f_refs=None,tau_fraction=0.02,
+                  **kwargs):
     """
     see predict, example returns tuple of <split FEC,prediction_info>. Except:
     
@@ -606,7 +686,9 @@ def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
         Defaults to adhesion then delta mask
         **kwargs: passed to predict
     """
-    example_split = Analysis.zero_and_split_force_extension_curve(example)
+    example_split = Analysis.\
+        zero_and_split_force_extension_curve(example,
+                                             fraction=tau_fraction)
     if (f_refs is None):
         f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
@@ -615,7 +697,7 @@ def _predict_full(example,threshold=1e-2,f_refs=None,**kwargs):
     pred_info = _predict_helper(example_split,**final_dict)
     return example_split,pred_info
 
-def predict(example,threshold=1e-2,add_offsets=False):
+def predict(example,threshold=1e-2,add_offsets=False,**kwargs):
     """
     predict a single event from a force extension curve
 
@@ -628,7 +710,8 @@ def predict(example,threshold=1e-2,add_offsets=False):
     Returns:
         list of event starts
     """
-    example_split,pred_info = _predict_full(example,threshold=threshold)
+    example_split,pred_info = _predict_full(example,threshold=threshold,
+                                            **kwargs)
     #get the offsets for each...
     if add_offsets:
         offsets = (example_split.approach.Force.size + \

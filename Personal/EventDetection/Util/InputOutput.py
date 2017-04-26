@@ -8,7 +8,9 @@ from scipy import interpolate
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
 from GeneralUtil.python import CheckpointUtilities,GenUtilities,PlotUtilities
+import csv,re
 
+from IgorUtil.PythonAdapter import TimeSepForceObj,DataObj,ProcessSingleWave
 
 class ForceExtensionCategory:
     def __init__(self,number,directory=None,sample=None,velocity_nm_s=None,
@@ -270,3 +272,141 @@ def get_categories(positives_directory,use_simulated=False,only_lowest=False):
     return simulated_categories[::-1] + positive_categories
 
     
+
+
+
+def get_events(file_name):
+    """
+    given a file formatted like an event file, reads them in 
+
+    Args:
+        file_name: path to read.
+    Returns:
+        list of tupels like <name of event, start index, end of index>
+    """
+    # get the file without the '.pxp' extension
+    f_no_ext = file_name[:-4]
+    # add on the suffix for the events ( by convention)
+    f_events = f_no_ext + "_events.txt"
+    # read in the (csv) file
+    assert os.path.isfile(f_events) , \
+        "Couldn't find event file for {:s}".format(f_events)
+    # POST: event file exists
+    # the syntax is <name,start of event, end of event> separated by commss
+    with open(f_events) as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',')
+        data = [ [str(r[0].strip()),int(r[1]),int(r[2])]
+                for r in spamreader]
+    return data
+
+def read_single_directory_with_events(directory):
+    """
+    Reads in pxp files and their associated events
+
+    Args:
+        directory: where to read the pxp (each is assumed to have 
+    """
+    pxp_files,data = FEC_Util.read_single_directory(directory)
+    # each pxp file should have events associated with it 
+    events = [get_events(f) for f in pxp_files]
+    # create a tuple of everything...
+    combined = [(file_name,dat,ev)  \
+                for file_name,dat,ev in zip(pxp_files,data,events)]
+    return combined
+
+def get_id(x):
+    """
+    Gets the id associated with the string x
+
+    Args:
+        x: probably something like the name of a trace
+    Returns:
+        id (e.g. Image0004_Force would give Image0004)
+    """
+    id_regexpr = r"""
+                 (\D+ # any number of non-numbers
+                 \d+) # any number of digits
+                 \D?"""  # anything *not* a digit
+    match = re.match(id_regexpr,x,re.VERBOSE)
+    assert match is not None , "Couldn't find id of {:s}".format(x)
+    return match.group(1).strip().lower()
+
+def set_events_of_data(data,events):
+    """
+    sets the events of all the data traces
+
+    Args:
+        data: list of time_sep_force objects
+        events: list of <Trace Name, start,end> giving the events
+    Returns:
+        nothing but sets the object's events appropriately
+    """
+    id_data = [get_id(d.Meta.Name) for d in data]
+    # possible the data was double-annotated; get rid of duplicate events
+    events_id_unique = ["".join(str(v) for v in e) for e in events]
+    _, idx = np.unique(events_id_unique,return_index=True)
+    events = [events[i] for i in idx]
+    # POST: each event in events is unique
+    id_events = [get_id(e[0]) for e in events]
+    # determine matches; may have multiple events
+    eq = lambda x,y: x == y
+    id_parity_check = []
+    for idx_tmp,(id_data_tmp,d) in enumerate(zip(id_data,data)):
+        # find which index (in id_events) corresponds to id_data_tmp
+        # XXX quadratic time... small numbers (hundreds), dont care
+        matching_idx = [j for j,id_ev in enumerate(id_events) 
+                        if eq(id_ev,id_data_tmp)]
+        id_parity_check.extend(matching_idx)
+        # make sure we have at least one event for the data...
+        if (len(matching_idx) == 0):
+            print("Couldnt find events for {:s}, removing".
+                  format(str(id_data_tmp)))
+            del data[idx_tmp]
+        # get the actual events
+        events_matching = [events[i] for i in matching_idx]
+        # add the events to the TimeSepForce Object. Note that
+        # an event 'e' is like <name,start,end> so we just get the starts 
+        # and ends
+        starts_and_ends = [e[1:] for e in events_matching]
+        Events = [TimeSepForceObj.Event(*s) for s in starts_and_ends]
+        # set the events of the data
+        d.set_events(Events)
+    assert len(id_parity_check) == len(set(id_parity_check)) , "Double jeopardy"
+    # POST: an event only mapped to one FEC_Util
+    n_events = len(id_events)
+    n_matched =len(id_parity_check)
+    if (n_matched < n_events):
+        unused = [events[i] for i in range(n_events) 
+                  if i not in id_parity_check]
+        print("Warning: The following events were unused: {:s}".format(unused))
+    print("{:d}/{:d} events matched".format(n_matched,n_events))
+
+def output_waves_in_directory_to_csv_files(input_directory,output_directory):
+    """
+    reads all the waves from all pxp files in input_directory and outputs
+    as csv files
+
+    Args:
+        input_directory: where to search for pxp files
+        output_directory: where to put the csv files
+    Returns:
+        Nothing, prints as it goes.
+    """
+    d,d_out = input_directory, output_directory
+    # make the output directory 
+    GenUtilities.ensureDirExists(d_out)
+    # go through each PXP in this directory
+    print("Looking in {:s} for force-extension curves...".format(d))
+    files_data_events = read_single_directory_with_events(d)
+    n_curves = sum([len(d) for _,d,_ in files_data_events])
+    print("Found {:d} curves".format(n_curves))
+    for file_path,data,ev in files_data_events:
+        set_events_of_data(data,ev)
+        # POST: all data are set. go ahead and save them out.
+        n = len(data)
+        for i,dat in enumerate(data):
+            file_name = os.path.basename(file_path)
+            meta_name = dat.Meta.Name
+            output_path = d_out + file_name + meta_name+ ".csv"
+            print("\t Saving out {:s} ({:d}/{:d})".format(meta_name,i+1,n))
+            FEC_Util.save_time_sep_force_as_csv(output_path,dat)
