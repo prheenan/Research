@@ -14,8 +14,8 @@ from Research.Personal.EventDetection.Util import Plotting,InputOutput,Scoring,\
     Learning,Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
-def check_bcc(examples,predicted,bcc_threshold=0.0613,
-              rupture_tuple=(0.238,2.14)):
+def check_bcc(examples,predicted,bcc_threshold=0.00755,
+              rupture_tuple=(0.0354,0.601)):
     # get the scoring objects
     scores = []
     for example_split,pred_info in zip(examples,predicted):          
@@ -55,7 +55,7 @@ def check_single_file(example_split,pred_info,fractional_error_tolerance):
     n_found = len(pred_info.event_slices)
     meta = example_split.retract.Meta
     # after plotting, check if anything went wrong
-    events=  example_split.get_retract_event_centers()
+    events=  example_split.get_retract_event_starts()
     n_expected = len(events)
     err_str = "for {:s}, expected {:d}, got {:d}".\
         format(meta.Name,n_expected,n_found)
@@ -93,8 +93,8 @@ def run():
     GenUtilities.ensureDirExists(debug_directory)    
     load_paths = sorted(GenUtilities.getAllFiles(data_base,ext=".pkl"))
     threshold = 1e-3
-    fractional_error_tolerance = 1.02e-2
-    error_dist_tolerance = np.array([3.60e-4,4.99e-3])
+    fractional_error_tolerance = 5.79e-3
+    error_dist_tolerance = np.array([8.00e-5,3.29e-3])
     predicted,examples = [],[]
     max_error = 0
     error_dist = []
