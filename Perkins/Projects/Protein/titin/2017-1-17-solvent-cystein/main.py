@@ -5,7 +5,7 @@ import pymol
 from pymol import cmd, stored
 import numpy as np,pickle
 
-def GetArea(identifier,solvent_area,dot_density=0,solvent_radius=1.4):
+def GetArea(identifier,solvent_area,dot_density=4,solvent_radius=1.4):
     """
     Args:
         identifier: the idenfier for what we are getting the area of;
