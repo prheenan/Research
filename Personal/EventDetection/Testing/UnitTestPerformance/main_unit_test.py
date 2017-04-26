@@ -104,7 +104,7 @@ def run():
         except EOFError as e:
             # couldnt load pxp, keep going (windows error)
             print(e)
-            print(f)
+            print("Couldn't load {:s}, skipping".format(f))
             continue
         # get the prediction, save out the plotting information
         example_split,pred_info = \
