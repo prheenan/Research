@@ -59,6 +59,7 @@ class score:
             a scoring object; informaiton on precision, recall relative to
             ground truth, as well as loading rate and rupture force
         """
+        self.evt = split_fec.retract.Events
         idx_true = split_fec.get_retract_event_starts()
         retract = split_fec.retract
         self.tau_num_points = split_fec.tau_num_points

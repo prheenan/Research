@@ -80,8 +80,6 @@ def run():
             "./model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
         args.append([models,retract,pred_info])
-        if (i > 5):
-            break
     # make a heat map of all the retracts...
     retracts = [a[1] for a in args]
     fig = PlotUtilities.figure()
