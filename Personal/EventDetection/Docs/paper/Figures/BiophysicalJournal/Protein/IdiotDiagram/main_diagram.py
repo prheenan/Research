@@ -63,7 +63,7 @@ def run():
     width = scale_fraction_width * max_time
     label = "{:.1g}s".format(width)
     PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
-                              y=max(force_plot)*1.1,s=label,
+                              y=0,s=label,
                               width=width)     
     PlotUtilities.no_x_label()               
     # # plot the 'zoomed' axis
