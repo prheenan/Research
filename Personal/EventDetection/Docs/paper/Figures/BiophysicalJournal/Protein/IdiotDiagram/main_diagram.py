@@ -42,7 +42,7 @@ def run():
     probabiity_kwargs = dict(color='r')
     n_cols = 2
     n_rows = 2
-    ylim_force_pN = [-30,max(force_interp_plot)*1.2]
+    ylim_force_pN = [-40,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     fig = PlotUtilities.figure(figsize=(8,8))
     # # plot the 'raw' force
@@ -63,9 +63,9 @@ def run():
     width = scale_fraction_width * max_time
     label = "{:.1g}s".format(width)
     PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
-                              y=0,s=label,
+                              y=-15,s=label,
                               width=width)     
-    PlotUtilities.no_x_label()               
+    PlotUtilities.no_x_anything(ax1)               
     # # plot the 'zoomed' axis
     ax_zoom = plt.subplot(n_rows,n_cols,3)
     # determine the second event (zoom index)
@@ -126,7 +126,7 @@ def run():
                               y=min(force_slice)*1.1,s=label,
                               width=width)    
     PlotUtilities.lazyLabel("Time","Force (pN)","")    
-    PlotUtilities.no_x_label()                                   
+    PlotUtilities.no_x_anything(ax_zoom)                                   
     PlotUtilities.savefig(fig,"./out.png")
 
 if __name__ == "__main__":
