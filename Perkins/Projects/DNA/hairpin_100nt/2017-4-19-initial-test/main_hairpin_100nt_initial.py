@@ -12,7 +12,7 @@ import sys,cProfile
 sys.path.append("../../../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
-from Research.Personal.EventDetection.Util import Analysis
+from Research.Personal.EventDetection.Util import Analysis,Plotting
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 from FitUtil.FreelyJointedChain.Python.Code import FJC
@@ -20,7 +20,6 @@ from FitUtil.FreelyJointedChain.Python.Code import FJC
     
 def get_wlc_information(sep,force,sep_bounds,**kwargs):
     models = []         
-    
     for min_sep,max_sep in sep_bounds:
         where_fit = np.where( (sep <= max_sep) & (sep >= min_sep))
         sep_fit = sep[where_fit]
@@ -39,8 +38,12 @@ def get_wlc_information(sep,force,sep_bounds,**kwargs):
 def get_basic_information(i,example,force_run=False):
     example_split = Analysis.zero_and_split_force_extension_curve(example)
     example_split,pred_info = Detector._predict_full(example,threshold=1e-1,
-                                                     tau_fraction=5e-3)
+                                                     tau_fraction=0.02)
     retract = example_split.retract
+    # XXX debugging...
+    time = retract.Time
+    Plotting.plot_prediction_info(example_split,pred_info)
+    plt.show()
     sep = example_split.retract.Separation
     sep -= min(sep)
     last = pred_info.event_idx[-1]
@@ -70,7 +73,7 @@ def run():
               "4Patrick/CuratedData/DNA/hairpin-100nt-16gc/Positive"
     _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=False)
     args = []
-    force_run = False
+    force_run = True
     for i,example in enumerate(examples):
         # need to fix the dwell times; igor does not record it when using
         # the indenter

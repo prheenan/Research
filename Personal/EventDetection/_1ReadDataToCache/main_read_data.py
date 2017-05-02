@@ -129,7 +129,7 @@ def run():
     only_lowest = False
     debugging = False   
     copy_files = True
-    n_learners = 3
+    n_learners = 1
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
                                                 only_lowest=only_lowest)
