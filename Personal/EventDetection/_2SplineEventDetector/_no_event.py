@@ -13,7 +13,7 @@ from itertools import chain
 class prediction_info:
     def __init__(self,event_idx,event_slices,local_stdev,interp,mask,
                  cdf,slice_fit,threshold,probabilities=None,
-                 condition_results=None):
+                 condition_results=None,event_slices_raw=[]):
         """
         record the data from _predict_helper
 
@@ -44,6 +44,7 @@ class prediction_info:
         self.threshold = threshold
         self.condition_results = condition_results
         self.probabilities= probabilities
+        self.event_slices_raw = event_slices_raw
 
 class no_event_parameters:
     def __init__(self,epsilon,sigma,threshold,
@@ -409,6 +410,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
         event_slices = _event_slices_from_mask(mask,int(min_points_between))
     else:
         event_slices = []
+    event_slices_raw = list(event_slices)
     # XXX reject events with a very small time?
     event_duration = [ abs(e.stop-e.start) for e in event_slices]
     delta_split_rem = [ int(np.ceil((n_points-(delta))/2))
@@ -429,6 +431,7 @@ def _predict(x,y,n_points,interp,threshold,local_event_idx_function,
                              slice_fit=slice_to_use,
                              threshold=threshold,
                              condition_results=masks,
+                             event_slices_raw=event_slices_raw,
                              probabilities=probabilities)
     return to_ret                                
                           
