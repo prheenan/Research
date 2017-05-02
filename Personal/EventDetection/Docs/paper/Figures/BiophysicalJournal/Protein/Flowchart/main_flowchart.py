@@ -56,7 +56,7 @@ def run():
     # plot the 'raw' force
     plt.subplot(n_rows,n_cols,1)
     plt.plot(time_plot,force_plot,**raw_force_kwargs)
-    PlotUtilities.lazyLabel("","Force (pN)","")
+    PlotUtilities.lazyLabel("","Force (pN)","Acquire force versus time curve")
     plt.ylim(ylim_force_pN)
     PlotUtilities.no_x_label()
     # plot the splint fit
