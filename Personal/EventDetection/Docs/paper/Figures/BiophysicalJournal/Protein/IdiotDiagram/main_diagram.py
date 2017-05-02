@@ -18,6 +18,36 @@ from Research.Personal.EventDetection.Util import Offline,Plotting,Learning,\
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 
+def escape_rate(loading_rate,rupture_force,delta_G_dagger,x_dagger,k0,
+                nu,beta):
+    a = (1-nu*rupture_force*x_dagger/delta_G_dagger)
+    b = 1-a**(1/nu)
+    return k0 * (a ** (1/nu -1)) * np.exp(beta*delta_G_dagger * b)
+
+def dudko_model(loading_rate,rupture_force,delta_G_dagger,x_dagger,k0,nu,beta):
+    k_F = escape_rate(loading_rate,rupture_force,delta_G_dagger,x_dagger,
+                      k0,nu,beta)
+    c = beta*x_dagger*loading_rate                      
+    d = (1-nu * rupture_force * x_dagger/delta_G_dagger)**(1-1/nu)
+    return (1/loading_rate) * k_F * np.exp(k_0/c) * np.exp( (-k_F/c) * d)
+            
+def generate_rupture_histogram():
+    np.random.seed(42)
+    # loading rates from 1 pN/s to 1000 pN/s, 
+    loading_rates = np.logspace(-12,-9,num=5)
+    # rupture forces from 1pN to 1000pN
+    rupture_forces = np.logspace(-12,-9,num=50)
+    delta_G_dagger = 10 * 4.1e-21
+    x_dagger= 1e-9
+    k0 = 1e-6
+    nu = 2/3
+    beta = 4.1e-21
+    for loading_rate in loading_rates:
+        model = dudko_model(loading_rate,rupture_forces,
+                            delta_G_dagger=delta_G_dagger,
+                            x_dagger=x_dagger,k0=k0)
+        plt.plot(rupture_forces,model)                            
+
 def run():
     """
     <Description>
@@ -28,6 +58,10 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    hist = generate_rupture_histogram()
+    plt.hist(hist)
+    plt.show()
+    exit(1)
     data_file = "../_Data/example_protein.pkl"
     data = CheckpointUtilities.lazy_load(data_file)
     split_fec,info_final = Detector._predict_full(data)
