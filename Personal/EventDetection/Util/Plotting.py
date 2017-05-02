@@ -601,7 +601,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         if (q_label is None):
             q_label = (r"P$_{" + "{:d}".format(q) + "}$")
         if (use_q_number):
-            q_label += "={:.3g}".format(q_num)
+            q_label += "={:.2g}".format(q_num)
         plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4,
                     color='k')
     plt.xscale('log')

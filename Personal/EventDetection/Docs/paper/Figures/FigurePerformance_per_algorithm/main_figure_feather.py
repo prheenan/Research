@@ -11,11 +11,6 @@ from GeneralUtil.python import CheckpointUtilities
 
 from Research.Personal.EventDetection.Util import Offline,Plotting
 
-def get_best_metrics(data_file):
-    learners = CheckpointUtilities.lazy_load(data_file)
-    metrics = [Offline.best_metric_from_learner(l) for l in learners]
-    return metrics
-
 def precison_recall_plot(metric):
     precision = metric.precision()
     recall = metric.recall()
@@ -49,7 +44,8 @@ def run(in_base="../FigurePerformance_CS/"):
     data_file = "../FigurePerformance_CS/data/Scores.pkl"
     force=False
     cache_file = out_base + "cache.pkl"
-    metrics = CheckpointUtilities.getCheckpoint(cache_file,get_best_metrics,
+    metrics = CheckpointUtilities.getCheckpoint(cache_file,
+                                                Offline.get_best_metrics,
                                                 force,data_file)
     loc_left = (-0.10,1.1)
     loc_top = (-0.12,1.05)

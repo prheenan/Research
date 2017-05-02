@@ -229,3 +229,19 @@ def get_metric_list(data_file):
     for l in trials:
         metric_list.append(best_metric_from_learner(l))
     return metric_list    
+
+
+def get_best_metrics(data_file):
+    """
+    Get the best metrics, given a data file with a list of learners
+    (e.g. Scores.pkl)
+    
+    Args:
+        Data file: what to loading
+    Returns:
+        best metric for each learner
+    """
+    learners = CheckpointUtilities.lazy_load(data_file)
+    metrics = [best_metric_from_learner(l) for l in learners]
+
+    
