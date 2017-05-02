@@ -100,32 +100,38 @@ def run():
         bounds = [time_slice[0],time_slice[-1]]
         plt.axvspan(*bounds,alpha=0.3,color='r')
     plt.ylim(ylim_force_pN)                           
-    # determine the slice we want to use                 
-    first_event_location = info_final.event_idx[0]
-    first_event_slice = info_final.event_slices_raw[0]
-    extra_for_inset_plot = -int(np.ceil(time_plot.size * 0.005))
-    first_event_bounding_slice = info_final.event_slices[0]
-    # add in some padding 
-    first_event_bounding_slice = \
-        slice(first_event_bounding_slice.start-extra_for_inset_plot,
-              first_event_bounding_slice.stop+extra_for_inset_plot,1)
-    time_first_event_plot = time_plot[first_event_bounding_slice]                       
-    inset_by_slice(ax,time_plot,force_plot,force_interp_plot,
-                   time_first_event_plot,first_event_location,raw_force_kwargs,
-                   interp_force_kwargs)
+    event_idx_fudge_and_kw = \
+        [ [0 ,0.005,dict(loc=2,inset_kwargs=dict(loc1=3,loc2=4))],
+          [-1,0.007,dict(loc=1,inset_kwargs=dict(loc1=2,loc2=3))] ]
+    for i,fudge,kw in event_idx_fudge_and_kw:
+        # determine the slice we want to use                 
+        event_location = info_final.event_idx[i]
+        event_slice = info_final.event_slices_raw[i]
+        extra_for_inset_plot = -int(np.ceil(time_plot.size * fudge))
+        event_bounding_slice = info_final.event_slices[i]
+        # add in some padding 
+        event_bounding_slice = \
+            slice(event_bounding_slice.start-extra_for_inset_plot,
+                  event_bounding_slice.stop+extra_for_inset_plot,1)
+        time_first_event_plot = time_plot[event_bounding_slice]                       
+        inset_by_slice(ax,time_plot,force_plot,force_interp_plot,
+                       event_bounding_slice,
+                       event_location,raw_force_kwargs,
+                       interp_force_kwargs,**kw)
     PlotUtilities.savefig(fig,"./out.png",subplots_adjust=dict(hspace=0.4))
     
-def inset_by_slice(ax,x,y,y_interp,slice_v,event_idx,y_kwargs,interp_kwargs):
+def inset_by_slice(ax,x,y,y_interp,slice_v,event_idx,y_kwargs,interp_kwargs,loc,
+                   inset_kwargs=dict()):
     # add an inset box for the first (assumed hardest-to-find) event
     in_ax = inset_axes(ax,
                        width="30%", # width = X% of parent_bbox
                        height="50%", # height  = X% of parent_bbox
-                       loc=2)    
+                       loc=loc)    
    # plot the raw and interpolated force
-    mark_inset(ax, in_ax, loc1=3, loc2=4, fc="none", ec="0.5")    
+    mark_inset(ax, in_ax, fc="none", ec="0.5",**inset_kwargs)    
     in_ax.axvline(x[event_idx])    
-    in_ax.plot(x,y[slice_v],**y_kwargs)
-    in_ax.plot(x,y_interp[slice_v],**interp_kwargs)       
+    in_ax.plot(x[slice_v],y[slice_v],**y_kwargs)
+    in_ax.plot(x[slice_v],y_interp[slice_v],**interp_kwargs)       
     PlotUtilities.no_x_anything(ax=in_ax)
     PlotUtilities.no_y_anything(ax=in_ax)                       
     
