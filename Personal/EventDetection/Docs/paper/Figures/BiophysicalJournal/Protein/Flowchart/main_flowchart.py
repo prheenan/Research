@@ -100,11 +100,6 @@ def run():
         bounds = [time_slice[0],time_slice[-1]]
         plt.axvspan(*bounds,alpha=0.3,color='r')
     plt.ylim(ylim_force_pN)                           
-    # add an inset box for the first (assumed hardest-to-find) event
-    in_ax = inset_axes(ax,
-                       width="30%", # width = X% of parent_bbox
-                       height="50%", # height  = X% of parent_bbox
-                       loc=2)
     # determine the slice we want to use                 
     first_event_location = info_final.event_idx[0]
     first_event_slice = info_final.event_slices_raw[0]
@@ -115,17 +110,24 @@ def run():
         slice(first_event_bounding_slice.start-extra_for_inset_plot,
               first_event_bounding_slice.stop+extra_for_inset_plot,1)
     time_first_event_plot = time_plot[first_event_bounding_slice]                       
-    # plot the raw and interpolated force
-    mark_inset(ax, in_ax, loc1=3, loc2=4, fc="none", ec="0.5")    
-    in_ax.axvline(time_plot[first_event_location])    
-    in_ax.plot(time_first_event_plot,
-               force_plot[first_event_bounding_slice],**raw_force_kwargs)
-    in_ax.plot(time_first_event_plot,
-               force_interp_plot[first_event_bounding_slice],
-               **interp_force_kwargs)       
-    PlotUtilities.no_x_anything(ax=in_ax)
-    PlotUtilities.no_y_anything(ax=in_ax)
+    inset_by_slice(ax,time_plot,force_plot,force_interp_plot,
+                   time_first_event_plot,first_event_location,raw_force_kwargs,
+                   interp_force_kwargs)
     PlotUtilities.savefig(fig,"./out.png",subplots_adjust=dict(hspace=0.4))
+    
+def inset_by_slice(ax,x,y,y_interp,slice_v,event_idx,y_kwargs,interp_kwargs):
+    # add an inset box for the first (assumed hardest-to-find) event
+    in_ax = inset_axes(ax,
+                       width="30%", # width = X% of parent_bbox
+                       height="50%", # height  = X% of parent_bbox
+                       loc=2)    
+   # plot the raw and interpolated force
+    mark_inset(ax, in_ax, loc1=3, loc2=4, fc="none", ec="0.5")    
+    in_ax.axvline(x[event_idx])    
+    in_ax.plot(x,y[slice_v],**y_kwargs)
+    in_ax.plot(x,y_interp[slice_v],**interp_kwargs)       
+    PlotUtilities.no_x_anything(ax=in_ax)
+    PlotUtilities.no_y_anything(ax=in_ax)                       
     
 
 if __name__ == "__main__":
