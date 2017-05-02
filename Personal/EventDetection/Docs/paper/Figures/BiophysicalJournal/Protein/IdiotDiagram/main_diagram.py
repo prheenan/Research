@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+import scipy
+
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities
@@ -31,6 +33,24 @@ def dudko_model(loading_rate,rupture_force,delta_G_dagger,x_dagger,k0,nu,beta):
     d = (1-nu * rupture_force * x_dagger/delta_G_dagger)**(1-1/nu)
     return (1/loading_rate) * k_F * np.exp(k0/c) * np.exp( (-k_F/c) * d)
             
+def mean_rupture_force(loading_rate,delta_G_dagger,x_dagger,k0,nu,beta):
+    c0 = delta_G_dagger*beta
+    gamma = 0.577
+    f = (1/c0) * np.log(k0*np.exp(c0+gamma)/(beta*x_dagger*loading_rate))
+    return delta_G_dagger/(nu*x_dagger) * (1- f**nu)
+    
+def stdev_rupture_force(loading_rate,delta_G_dagger,x_dagger,k0,nu,beta):
+    c0 = delta_G_dagger*beta
+    gamma_t = 1.064
+    f = np.log(k0*np.exp(c0+gamma_t)/(beta*x_dagger*loading_rate))
+    variance = (np.pi**2/(6*(beta*x_dagger)**2)) * (1/c0 * f)**(2*nu-2)
+    return np.sqrt(variance)
+            
+def  generate_normalized_model(loading_rate,rupture_forces,**kwargs):
+    model = dudko_model(loading_rate,rupture_forces,**kwargs)
+    model = model/sum(model)                            
+    return model
+    
 def generate_rupture_histogram():
     np.random.seed(42)
     kbT =  4.1e-21
@@ -45,23 +65,24 @@ def generate_rupture_histogram():
     # rupture forces from 1pN to 1000pN
     F_c = delta_G_dagger/(nu*x_dagger)
     rupture_forces = np.linspace(1e-12,F_c,num=500)
+    common_kwargs = dict(delta_G_dagger=delta_G_dagger,
+                         x_dagger=x_dagger,k0=k0,beta=beta,
+                         nu=nu)
+    mean_rupture_forces = mean_rupture_force(loading_rates,**common_kwargs)
+    stdev_rupture_forces = stdev_rupture_force(loading_rates,**common_kwargs)
     models = []    
     for loading_rate in loading_rates:
-        model = dudko_model(loading_rate,rupture_forces,
-                            delta_G_dagger=delta_G_dagger,
-                            x_dagger=x_dagger,k0=k0,beta=beta,nu=nu)
-        model = model/sum(model)                            
-        models.append(model)
+        model = generate_normalized_model(loading_rate,rupture_forces,
+                                          **common_kwargs)
+        models.append(model)                                        
     # generate histograms from all the models 
     rupture_forces_histograms = []
-    loading_rate_histogram = []
     for loading_rate,model in zip(loading_rates,models):
         # ensure they sum to 1 (XXX shouldnt be needed?)
         choices = np.random.choice(a=rupture_forces,size=n_samples,p=model)
         rupture_forces_histograms.append(choices)
-        loading_rate_histogram.append(np.ones(n_samples)*loading_rate)
-    return loading_rate_histogram,rupture_forces_histograms,models,\
-        rupture_forces
+    return loading_rates,rupture_forces_histograms,models,\
+        rupture_forces,mean_rupture_forces,stdev_rupture_forces
 
 def run():
     """
@@ -73,11 +94,22 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    loading_rate_histogram,rupture_forces_histograms,models,rupture_forces = \
-        generate_rupture_histogram()      
+    loading_rate_histogram,rupture_forces_histograms,models,rupture_forces,\
+        mean_rupture_forces,stdev_rupture_forces = generate_rupture_histogram() 
+    loading_plot = loading_rate_histogram*1e12
     for rupture,loading in zip(rupture_forces_histograms,
-                               loading_rate_histogram):
-        plt.plot(rupture,loading,'ro')
+                               loading_plot):
+        rupture_plot = rupture * 1e12                               
+        most_likely_rupture = np.mean(rupture_plot)
+        std_rupture = np.std(rupture_plot)
+        plt.errorbar(loading,y=most_likely_rupture,yerr=std_rupture,fmt='ro')
+        PlotUtilities.lazyLabel("Loading rate(pN/s)",
+                                "Mean Rupture Force(pN)","")                                  
+    mean_plot = mean_rupture_forces*1e12                                
+    stdev_plot = stdev_rupture_forces*1e12
+    plt.plot(loading_plot,mean_plot)
+    plt.plot(loading_plot,mean_plot-stdev_plot,linestyle='--')
+    plt.plot(loading_plot,mean_plot+stdev_plot,linestyle='--')    
     plt.show()
     for rupture,model in zip(rupture_forces_histograms,models):
         n,_,_ = plt.hist(rupture*1e12)
