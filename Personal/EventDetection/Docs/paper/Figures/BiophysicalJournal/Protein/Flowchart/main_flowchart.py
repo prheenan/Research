@@ -78,7 +78,7 @@ def run():
     plt.subplot(n_rows,n_cols,4)
     plt.semilogy(time_plot,info_remove_adhesions.cdf,**probabiity_kwargs)    
     PlotUtilities.lazyLabel("","Probability",
-                            r"$\downarrow$ Remove where until surface or $\frac{dG}{dt}>0\downarrow$")
+                            r"$\downarrow$ Remove where at surface or $\frac{dG}{dt}>0\downarrow$")
     PlotUtilities.no_x_label()      
     plt.ylim(ylim_prob)    
     # plot the final probability
