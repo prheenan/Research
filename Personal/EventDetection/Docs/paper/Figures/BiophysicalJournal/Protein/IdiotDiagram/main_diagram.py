@@ -75,6 +75,10 @@ def run():
     """
     loading_rate_histogram,rupture_forces_histograms,models,rupture_forces = \
         generate_rupture_histogram()      
+    for rupture,loading in zip(rupture_forces_histograms,
+                               loading_rate_histogram):
+        plt.plot(rupture,loading,'ro')
+    plt.show()
     for rupture,model in zip(rupture_forces_histograms,models):
         n,_,_ = plt.hist(rupture*1e12)
         plt.plot(rupture_forces*1e12,model*max(n)/max(model))
