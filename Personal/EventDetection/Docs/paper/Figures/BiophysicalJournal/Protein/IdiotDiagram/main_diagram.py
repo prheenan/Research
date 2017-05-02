@@ -29,24 +29,39 @@ def dudko_model(loading_rate,rupture_force,delta_G_dagger,x_dagger,k0,nu,beta):
                       k0,nu,beta)
     c = beta*x_dagger*loading_rate                      
     d = (1-nu * rupture_force * x_dagger/delta_G_dagger)**(1-1/nu)
-    return (1/loading_rate) * k_F * np.exp(k_0/c) * np.exp( (-k_F/c) * d)
+    return (1/loading_rate) * k_F * np.exp(k0/c) * np.exp( (-k_F/c) * d)
             
 def generate_rupture_histogram():
     np.random.seed(42)
-    # loading rates from 1 pN/s to 1000 pN/s, 
-    loading_rates = np.logspace(-12,-9,num=5)
-    # rupture forces from 1pN to 1000pN
-    rupture_forces = np.logspace(-12,-9,num=50)
-    delta_G_dagger = 10 * 4.1e-21
-    x_dagger= 1e-9
-    k0 = 1e-6
+    kbT =  4.1e-21
+    delta_G_dagger = 10 *kbT
+    x_dagger= 0.3e-9
+    k0 = 0.1
     nu = 2/3
-    beta = 4.1e-21
+    beta = 1/kbT
+    n_samples = 1000
+    # loading rates from 10 pN/s to 100 pN/s, 
+    loading_rates = np.logspace(-11,-10,num=5)
+    # rupture forces from 1pN to 1000pN
+    F_c = delta_G_dagger/(nu*x_dagger)
+    rupture_forces = np.linspace(1e-12,F_c,num=500)
+    models = []    
     for loading_rate in loading_rates:
         model = dudko_model(loading_rate,rupture_forces,
                             delta_G_dagger=delta_G_dagger,
-                            x_dagger=x_dagger,k0=k0)
-        plt.plot(rupture_forces,model)                            
+                            x_dagger=x_dagger,k0=k0,beta=beta,nu=nu)
+        model = model/sum(model)                            
+        models.append(model)
+    # generate histograms from all the models 
+    rupture_forces_histograms = []
+    loading_rate_histogram = []
+    for loading_rate,model in zip(loading_rates,models):
+        # ensure they sum to 1 (XXX shouldnt be needed?)
+        choices = np.random.choice(a=rupture_forces,size=n_samples,p=model)
+        rupture_forces_histograms.append(choices)
+        loading_rate_histogram.append(np.ones(n_samples)*loading_rate)
+    return loading_rate_histogram,rupture_forces_histograms,models,\
+        rupture_forces
 
 def run():
     """
@@ -58,9 +73,13 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    hist = generate_rupture_histogram()
-    plt.hist(hist)
-    plt.show()
+    loading_rate_histogram,rupture_forces_histograms,models,rupture_forces = \
+        generate_rupture_histogram()      
+    for rupture,model in zip(rupture_forces_histograms,models):
+        n,_,_ = plt.hist(rupture*1e12)
+        plt.plot(rupture_forces*1e12,model*max(n)/max(model))
+        PlotUtilities.lazyLabel("Force (pN)","Count","")
+        plt.show()
     exit(1)
     data_file = "../_Data/example_protein.pkl"
     data = CheckpointUtilities.lazy_load(data_file)
