@@ -21,8 +21,18 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 
 from FitUtil.EnergyLandscapes.Rupture_Dudko2007.Python.Code import Dudko2007
-    
-def generate_rupture_histogram():
+
+# plotting constants    
+raw_force_kwargs = dict(color='k',alpha=0.3)
+interp_force_kwargs = dict(color='b',linewidth=3)
+probabiity_kwargs = dict(color='r')
+# how big the scale bars are
+scale_fraction_width = 0.3
+scale_fraction_offset = 0.3
+
+
+def generate_rupture_histograms():
+    num_loading_rates = 10
     np.random.seed(42)
     kbT =  4.1e-21
     delta_G_dagger = 10 *kbT
@@ -32,10 +42,10 @@ def generate_rupture_histogram():
     beta = 1/kbT
     n_samples = 1000
     # loading rates from 10 pN/s to 100 pN/s, 
-    loading_rates = np.logspace(-11,-10,num=5)
+    loading_rates = np.logspace(-11,-10,num=num_loading_rates)
     # rupture forces from 1pN to 1000pN
     F_c = delta_G_dagger/(nu*x_dagger)
-    rupture_forces = np.linspace(1e-12,F_c,num=500)
+    rupture_forces = np.linspace(1e-12,F_c,num=n_samples)
     common_kwargs = dict(delta_G_dagger=delta_G_dagger,
                          x_dagger=x_dagger,k0=k0,beta=beta,
                          nu=nu)
@@ -57,79 +67,24 @@ def generate_rupture_histogram():
     return loading_rates,rupture_forces_histograms,models,\
         rupture_forces,mean_rupture_forces,stdev_rupture_forces
 
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    loading_rate_histogram,rupture_forces_histograms,models,rupture_forces,\
-        mean_rupture_forces,stdev_rupture_forces = generate_rupture_histogram() 
-    loading_plot = loading_rate_histogram*1e12
-    for rupture,loading in zip(rupture_forces_histograms,
-                               loading_plot):
-        rupture_plot = rupture * 1e12                               
-        most_likely_rupture = np.mean(rupture_plot)
-        std_rupture = np.std(rupture_plot)
-        plt.errorbar(loading,y=most_likely_rupture,yerr=std_rupture,fmt='ro')
-        PlotUtilities.lazyLabel("Loading rate(pN/s)",
-                                "Mean Rupture Force(pN)","")                                  
-    mean_plot = mean_rupture_forces*1e12                                
-    stdev_plot = stdev_rupture_forces*1e12
-    plt.plot(loading_plot,mean_plot)
-    plt.plot(loading_plot,mean_plot-stdev_plot,linestyle='--')
-    plt.plot(loading_plot,mean_plot+stdev_plot,linestyle='--')    
-    plt.show()
-    for rupture,model in zip(rupture_forces_histograms,models):
-        n,_,_ = plt.hist(rupture*1e12)
-        plt.plot(rupture_forces*1e12,model*max(n)/max(model))
-        PlotUtilities.lazyLabel("Force (pN)","Count","")
-        plt.show()
-    exit(1)
-    data_file = "../_Data/example_protein.pkl"
-    data = CheckpointUtilities.lazy_load(data_file)
-    split_fec,info_final = Detector._predict_full(data)
-    # get the plotting versions of the time, etc
-    time= split_fec.retract.Time
-    time_plot = time - time[0]
-    force_plot = split_fec.retract.Force * 1e12
-    force_interp_plot = split_fec.retract_spline_interpolator()(time) * 1e12
-    # plot everything
-    raw_force_kwargs = dict(color='k',alpha=0.3)
-    interp_force_kwargs = dict(color='b',linewidth=3)
-    probabiity_kwargs = dict(color='r')
-    n_cols = 2
-    n_rows = 2
-    ylim_force_pN = [-40,max(force_interp_plot)*1.2]
-    ylim_prob = [min(info_final.cdf)/2,2]
-    fig = PlotUtilities.figure(figsize=(8,8))
-    # # plot the 'raw' force
-    ax1 = plt.subplot(n_rows,n_cols,1)
+def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
+                    arrow_kwargs):
     plt.plot(time_plot,force_plot,**raw_force_kwargs)
     plt.plot(time_plot,force_interp_plot,**interp_force_kwargs)
     PlotUtilities.lazyLabel("","Force (pN)","")
-    plt.ylim(ylim_force_pN)
     # plot arrows above the events
-    arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
-                        markersize=50)
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
                                       fudge_y=20,**arrow_kwargs)
     # add a scale bar
-    scale_fraction_width = 0.3
-    scale_fraction_offset = 0.3
+    PlotUtilities.no_x_anything(plt.gca())               
     max_time = max(time_plot)
     width = scale_fraction_width * max_time
     label = "{:.1g}s".format(width)
     PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
                               y=-15,s=label,
                               width=width)     
-    PlotUtilities.no_x_anything(ax1)               
-    # # plot the 'zoomed' axis
-    ax_zoom = plt.subplot(n_rows,n_cols,3)
+
+def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # determine the second event (zoom index)
     zoom_event_idx = 1
     event_zoom = info_final.event_idx[zoom_event_idx]
@@ -148,9 +103,11 @@ def run():
         Analysis._loading_rate_helper(x_fit,y_fit)
     plt.plot(time_slice,force_slice,**raw_force_kwargs)
     color_loading_line = 'm'
-    plt.plot(x_fit,predicted,linestyle='--',color=color_loading_line,linewidth=3)
+    plt.plot(x_fit,predicted,linestyle='--',color=color_loading_line,
+             linewidth=3)
     xlim = [time_slice[0],time_slice[-1]]
     plt.xlim(xlim)
+    ax_zoom = plt.gca()
     PlotUtilities.zoom_effect01(ax1, ax_zoom, *xlim)
     # plot annotations showing the loading rate
     bbox_props = dict(boxstyle="rarrow,pad=0.3",linestyle='--',
@@ -189,6 +146,76 @@ def run():
                               width=width)    
     PlotUtilities.lazyLabel("Time","Force (pN)","")    
     PlotUtilities.no_x_anything(ax_zoom)                                   
+
+
+def plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
+                      mean_rupture_forces,stdev_rupture_forces):
+    loading_plot = loading_rate_histogram*1e12
+    means = np.mean(rupture_forces_histograms,axis=1) *1e12
+    stdevs= np.std(rupture_forces_histograms,axis=1) * 1e12
+    plt.errorbar(loading_plot,y=means,yerr=stdevs,fmt='ro')
+    mean_plot = mean_rupture_forces*1e12                                
+    stdev_plot = stdev_rupture_forces*1e12
+    plt.plot(loading_plot,mean_plot)
+    plt.plot(loading_plot,mean_plot-stdev_plot,linestyle='--')
+    plt.plot(loading_plot,mean_plot+stdev_plot,linestyle='--')    
+
+def plot_histogram_and_model(rupture_forces,rupture,model):
+    n,_,_ = plt.hist(rupture*1e12)
+    plt.plot(rupture_forces*1e12,model*max(n)/max(model))
+
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    loading_rate_histogram,rupture_forces_histograms,models,rupture_forces,\
+        mean_rupture_forces,stdev_rupture_forces = \
+            CheckpointUtilities.getCheckpoint("./ruptures.pkl",
+                                              generate_rupture_histograms,
+                                              False)
+    data_file = "../_Data/example_protein.pkl"
+    data = CheckpointUtilities.lazy_load(data_file)
+    split_fec,info_final = Detector._predict_full(data)
+    # get the plotting versions of the time, etc
+    time= split_fec.retract.Time
+    time_plot = time - time[0]
+    force_plot = split_fec.retract.Force * 1e12
+    force_interp_plot = split_fec.retract_spline_interpolator()(time) * 1e12
+    # plot everything
+    n_cols = 3
+    n_rows = 2
+    ylim_force_pN = [-40,max(force_interp_plot)*1.2]
+    ylim_prob = [min(info_final.cdf)/2,2]
+    arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
+                        markersize=50)
+    fig = PlotUtilities.figure(figsize=(16,8))
+    # # plot the 'raw' force
+    ax1 = plt.subplot(n_rows,n_cols,1)
+    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
+                    arrow_kwargs)
+    plt.ylim(ylim_force_pN)
+    # # plot the 'zoomed' axis
+    ax_zoom = plt.subplot(n_rows,n_cols,4)
+    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
+    # # plot (a single) histogram and model
+    example_idx = 0
+    ax_zoom = plt.subplot(n_rows,n_cols,5)
+    plot_histogram_and_model(rupture_forces,
+                             rupture_forces_histograms[example_idx],
+                             models[example_idx])
+    PlotUtilities.lazyLabel(r"F$_r$ (pN)","Count","")
+    ax_zoom = plt.subplot(n_rows,n_cols,6)
+    # # plot the distribution of expected rupture forces
+    plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
+                      mean_rupture_forces,stdev_rupture_forces)
+    PlotUtilities.lazyLabel(r"$\frac{dF}{dt}$ (pN/s)",
+                            r"<F$_r$> (pN)","")
     PlotUtilities.savefig(fig,"./out.png")
 
 if __name__ == "__main__":
