@@ -14,13 +14,14 @@ import scipy
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities
-
+from matplotlib.patches import Ellipse
 from Research.Personal.EventDetection.Util import Offline,Plotting,Learning,\
     Analysis
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 
 from FitUtil.EnergyLandscapes.Rupture_Dudko2007.Python.Code import Dudko2007
+import matplotlib.gridspec as gridspec
 
 # plotting constants    
 raw_force_kwargs = dict(color='k',alpha=0.3)
@@ -37,8 +38,8 @@ def generate_rupture_histograms():
     num_loading_rates = 10
     np.random.seed(42)
     kbT =  4.1e-21
-    delta_G_dagger = 10 *kbT
-    x_dagger= 0.3e-9
+    delta_G_ddagger = 10 *kbT
+    x_ddagger= 0.3e-9
     k0 = 0.1
     nu = 2/3
     beta = 1/kbT
@@ -46,16 +47,18 @@ def generate_rupture_histograms():
     # loading rates from 10 pN/s to 100 pN/s, 
     loading_rates = np.logspace(-11,-10,num=num_loading_rates)
     # rupture forces from 1pN to 1000pN
-    F_c = delta_G_dagger/(nu*x_dagger)
+    F_c = delta_G_ddagger/(nu*x_ddagger)
     rupture_forces = np.linspace(1e-12,F_c,num=n_samples)
-    common_kwargs = dict(delta_G_dagger=delta_G_dagger,
-                         x_dagger=x_dagger,k0=k0,beta=beta,
-                         nu=nu)
+    basic_kwargs = dict(delta_G_ddagger=delta_G_ddagger,
+                        x_ddagger=x_ddagger,nu=nu)
+    common_kwargs = dict(k0=k0,beta=beta,**basic_kwargs)
     mean_rupture_forces = Dudko2007.mean_rupture_force(loading_rates,
                                                        **common_kwargs)
     stdev_rupture_forces = Dudko2007.stdev_rupture_force(loading_rates,
                                                          **common_kwargs)
     models = []    
+    x = np.linspace(start=-x_ddagger*0.8,stop=x_ddagger*0.8)
+    landscape = Dudko2007.free_energy_landscape(x=x,**basic_kwargs)
     for loading_rate in loading_rates:
         model = Dudko2007.normalized_model(loading_rate,rupture_forces,
                                            **common_kwargs)
@@ -67,7 +70,7 @@ def generate_rupture_histograms():
         choices = np.random.choice(a=rupture_forces,size=n_samples,p=model)
         rupture_forces_histograms.append(choices)
     return loading_rates,rupture_forces_histograms,models,\
-        rupture_forces,mean_rupture_forces,stdev_rupture_forces
+        rupture_forces,mean_rupture_forces,stdev_rupture_forces,x,landscape
 
 def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs):
@@ -84,7 +87,16 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     label = "{:.1g}s".format(width)
     PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
                               y=-15,s=label,
-                              width=width)     
+                              width=width)  
+
+def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=20,
+                                        shrinkB=20,
+                                        connectionstyle="arc3")):
+    return  dict(xycoords='data',
+                 textcoords='data',
+                 verticalalignment='center',
+                 horizontalalignment='center',fontsize=fontsize,
+                 arrowprops=arrowprops)
 
 def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # determine the second event (zoom index)
@@ -128,12 +140,8 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     event_force = rupture_force
     event_time = time_plot[event_zoom]
     ax_zoom.annotate(rupture_string,
-                     xy=(event_time,event_force), xycoords='data',
-                     xytext=(min_time, event_force), textcoords='data',
-                     verticalalignment='center',
-                     horizontalalignment='center',fontsize=fontsize,
-                     arrowprops=dict(arrowstyle="->",
-                                     connectionstyle="arc3"))
+                     xy=(event_time,event_force), 
+                     xytext=(min_time, event_force),**common_arrow_kwargs())
     zoom_event_only = [event_zoom]
     Plotting.plot_arrows_above_events(event_idx=zoom_event_only,fudge_y=6,
                                       **arrow_kwargs)
@@ -180,7 +188,7 @@ def run():
         This is a description of what is returned.
     """
     loading_rate_histogram,rupture_forces_histograms,models,rupture_forces,\
-        mean_rupture_forces,stdev_rupture_forces = \
+        mean_rupture_forces,stdev_rupture_forces,x,landscape = \
             CheckpointUtilities.getCheckpoint("./ruptures.pkl",
                                               generate_rupture_histograms,
                                               True)
@@ -200,25 +208,58 @@ def run():
     # plot everything
     n_cols = 3
     n_rows = 2
+    gs = gridspec.GridSpec(n_rows, n_cols)
     ylim_force_pN = [-40,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=50)
     fig = PlotUtilities.figure(figsize=(16,8))
     # # plot the 'raw' force
-    ax1 = plt.subplot(n_rows,n_cols,1)
+    ax1 = plt.subplot(gs[0,0])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs)
     plt.ylim(ylim_force_pN)
+    # # plot the energy landscape with annotations
+    ax = plt.subplot(gs[0,1:])
+    landscape -= min(landscape)
+    landscape /= 4.1e-21
+    x *= 1e9
+    plt.plot(x,landscape)
+    PlotUtilities.no_x_label(ax)
+    # determine where to put all the annotations
+    max_idx = np.argmax(landscape)
+    min_idx =np.argmin(landscape)
+    x_max = x[max_idx]
+    x_min = x[min_idx]
+    y_low_plot = -2
+    y_max = landscape[max_idx]
+    # make the x_dagger annotation
+    dagger_props = common_arrow_kwargs()
+    ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
+                s=r"x$^{\ddag}$",**dagger_props)
+    # make the delta_G_dagger annotation
+    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
+                **dagger_props)
+    # make the extension scale bar 
+    width = scale_fraction_width * (max(x)-min(x))
+    label = "{:.2g}nm".format(width)
+    x_text = x_min
+    y_text = np.mean(plt.ylim())
+    PlotUtilities.scale_bar_x(x=x_text,
+                              y=y_text,
+                              s=label,
+                              width=width)    
+    PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
+    plt.ylim(-4,max(plt.ylim()))
     # # plot the 'zoomed' axis
-    ax_zoom = plt.subplot(n_rows,n_cols,4)
+    ax_zoom = plt.subplot(gs[1,0])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
     # # plot (a single) histogram and model. This one is special, so we 
     # use a slightly different error bar for it 
     fmt_error = dict(marker='v',color='k',markersize=15,linewidth=3)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
-    ax_zoom = plt.subplot(n_rows,n_cols,5)
+    plt.subplot(gs[1,1])
     plot_histogram_and_model(rupture_forces,
                              rupture_forces_histograms[example_idx],
                              models[example_idx],fmt_error)
@@ -230,7 +271,7 @@ def run():
              horizontalalignment='center',
              verticalalignment='center')
     plt.xlim(rupture_limits)
-    ax_zoom = plt.subplot(n_rows,n_cols,6)
+    plt.subplot(gs[1,2])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
