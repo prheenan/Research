@@ -223,7 +223,7 @@ def run():
                              rupture_forces_histograms[example_idx],
                              models[example_idx],fmt_error)
     PlotUtilities.lazyLabel(r"F$_r$ (pN)","Count","")
-    # give the loading rate
+    # give the loading rate as an annotation
     plt.text(x=np.mean(rupture_limits),y=np.mean(plt.ylim())*0.5,
              s=df_dt_string+"={:.2g} pN/s".\
              format(loading_rate_example_pN_per_s),fontsize=fontsize,
@@ -236,6 +236,7 @@ def run():
                       mean_rupture_forces,stdev_rupture_forces)
     PlotUtilities.lazyLabel(df_dt_string + " (pN/s)",
                             r"<F$_r$> (pN)","")
+    # plot the 'extra' point specially, so it sticks out. 
     mean = 1e12*np.mean(rupture_forces_histograms[example_idx])
     stdev = 1e12*np.std(rupture_forces_histograms[example_idx])
     plt.errorbar(x=loading_rate_histogram[example_idx]*1e12,
