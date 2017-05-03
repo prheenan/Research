@@ -4,8 +4,11 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
-from Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea.\
-    openfovea_src.openfovea.fovea_toolbox import curve
+import Research.Personal.EventDetection.OtherMethods.Roduit2012_OpenFovea.\
+    openfovea_src.openfovea as openfovea
+from openfovea.fovea_toolbox import curve
+    
+    
 
 from Research.Personal.EventDetection.Util import Analysis
 

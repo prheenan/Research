@@ -294,7 +294,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,    
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """
+    """    
     Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
                            boolean_array,condition_non_events,
                            boolean_ret,probability_updated,probability,

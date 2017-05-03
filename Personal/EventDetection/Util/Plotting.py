@@ -22,7 +22,7 @@ def _style_true(color_true=color_true_def):
 def _style_pred(color_pred=color_pred_def):
     return dict(color=color_pred,alpha=0.4)
 
-_fec_event_colors = ['k','r','b']
+_fec_event_colors = ['k','r','b','m','g']
 
 def algorithm_colors():
     return ['b','k','r']
@@ -601,7 +601,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         if (q_label is None):
             q_label = (r"P$_{" + "{:d}".format(q) + "}$")
         if (use_q_number):
-            q_label += "={:.3g}".format(q_num)
+            q_label += "={:.2g}".format(q_num)
         plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4,
                     color='k')
     plt.xscale('log')
@@ -947,9 +947,10 @@ def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
         colors_before = colors
         colors_after = colors
         for i in range(len(slices)-1):
+            color_idx = lambda x: x % len(colors)
             before_kwargs = dict(before_slice=slices[i],after_slice=slices[i+1],
-                                 color_before=colors_before[i],
-                                 color_after=colors_after[i+1])
+                                 color_before=colors_before[color_idx(i)],
+                                 color_after=colors_after[color_idx(i+1)])
             before_and_after(x=sep,y=force,style=dict(alpha=0.3),
                              **before_kwargs)
             before_and_after(x=sep_filtered,y=force_filtered,
