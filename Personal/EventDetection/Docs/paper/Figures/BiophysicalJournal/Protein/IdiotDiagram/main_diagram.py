@@ -20,36 +20,7 @@ from Research.Personal.EventDetection.Util import Offline,Plotting,Learning,\
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 
-def escape_rate(loading_rate,rupture_force,delta_G_dagger,x_dagger,k0,
-                nu,beta):
-    a = (1-nu*rupture_force*x_dagger/delta_G_dagger)
-    b = 1-a**(1/nu)
-    return k0 * (a ** (1/nu -1)) * np.exp(beta*delta_G_dagger * b)
-
-def dudko_model(loading_rate,rupture_force,delta_G_dagger,x_dagger,k0,nu,beta):
-    k_F = escape_rate(loading_rate,rupture_force,delta_G_dagger,x_dagger,
-                      k0,nu,beta)
-    c = beta*x_dagger*loading_rate                      
-    d = (1-nu * rupture_force * x_dagger/delta_G_dagger)**(1-1/nu)
-    return (1/loading_rate) * k_F * np.exp(k0/c) * np.exp( (-k_F/c) * d)
-            
-def mean_rupture_force(loading_rate,delta_G_dagger,x_dagger,k0,nu,beta):
-    c0 = delta_G_dagger*beta
-    gamma = 0.577
-    f = (1/c0) * np.log(k0*np.exp(c0+gamma)/(beta*x_dagger*loading_rate))
-    return delta_G_dagger/(nu*x_dagger) * (1- f**nu)
-    
-def stdev_rupture_force(loading_rate,delta_G_dagger,x_dagger,k0,nu,beta):
-    c0 = delta_G_dagger*beta
-    gamma_t = 1.064
-    f = np.log(k0*np.exp(c0+gamma_t)/(beta*x_dagger*loading_rate))
-    variance = (np.pi**2/(6*(beta*x_dagger)**2)) * (1/c0 * f)**(2*nu-2)
-    return np.sqrt(variance)
-            
-def  generate_normalized_model(loading_rate,rupture_forces,**kwargs):
-    model = dudko_model(loading_rate,rupture_forces,**kwargs)
-    model = model/sum(model)                            
-    return model
+from FitUtil.EnergyLandscapes.Rupture_Dudko2007.Python.Code import Dudko2007
     
 def generate_rupture_histogram():
     np.random.seed(42)
@@ -68,12 +39,14 @@ def generate_rupture_histogram():
     common_kwargs = dict(delta_G_dagger=delta_G_dagger,
                          x_dagger=x_dagger,k0=k0,beta=beta,
                          nu=nu)
-    mean_rupture_forces = mean_rupture_force(loading_rates,**common_kwargs)
-    stdev_rupture_forces = stdev_rupture_force(loading_rates,**common_kwargs)
+    mean_rupture_forces = Dudko2007.mean_rupture_force(loading_rates,
+                                                       **common_kwargs)
+    stdev_rupture_forces = Dudko2007.stdev_rupture_force(loading_rates,
+                                                         **common_kwargs)
     models = []    
     for loading_rate in loading_rates:
-        model = generate_normalized_model(loading_rate,rupture_forces,
-                                          **common_kwargs)
+        model = Dudko2007.normalized_model(loading_rate,rupture_forces,
+                                           **common_kwargs)
         models.append(model)                                        
     # generate histograms from all the models 
     rupture_forces_histograms = []
