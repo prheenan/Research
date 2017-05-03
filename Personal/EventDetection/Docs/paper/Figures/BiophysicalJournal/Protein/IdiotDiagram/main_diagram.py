@@ -177,6 +177,40 @@ def plot_histogram_and_model(rupture_forces,rupture,model,kwargs_errorbar):
     stdev = np.std(rupture_plot)
     plt.errorbar(x=mean,xerr=stdev,y=max(n)*1.05,**kwargs_errorbar)
 
+def plot_landscape(x,landscape):
+    ax = plt.gca()
+    landscape -= min(landscape)
+    landscape /= 4.1e-21
+    x *= 1e9
+    plt.plot(x,landscape)
+    PlotUtilities.no_x_label(ax)
+    # determine where to put all the annotations
+    max_idx = np.argmax(landscape)
+    min_idx =np.argmin(landscape)
+    x_max = x[max_idx]
+    x_min = x[min_idx]
+    y_low_plot = -2
+    y_max = landscape[max_idx]
+    # make the x_dagger annotation
+    dagger_props = common_arrow_kwargs()
+    ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
+                s=r"x$^{\ddag}$",**dagger_props)
+    # make the delta_G_dagger annotation
+    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
+                **dagger_props)
+    # make the extension scale bar 
+    width = scale_fraction_width * (max(x)-min(x))
+    label = "{:.2g}nm".format(width)
+    x_text = x_min
+    y_text = np.mean(plt.ylim())
+    PlotUtilities.scale_bar_x(x=x_text,
+                              y=y_text,
+                              s=label,
+                              width=width)    
+    PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
+    plt.ylim(-4,max(plt.ylim()))
+
+
 def run():
     """
     <Description>
@@ -221,36 +255,7 @@ def run():
     plt.ylim(ylim_force_pN)
     # # plot the energy landscape with annotations
     ax = plt.subplot(gs[0,1:])
-    landscape -= min(landscape)
-    landscape /= 4.1e-21
-    x *= 1e9
-    plt.plot(x,landscape)
-    PlotUtilities.no_x_label(ax)
-    # determine where to put all the annotations
-    max_idx = np.argmax(landscape)
-    min_idx =np.argmin(landscape)
-    x_max = x[max_idx]
-    x_min = x[min_idx]
-    y_low_plot = -2
-    y_max = landscape[max_idx]
-    # make the x_dagger annotation
-    dagger_props = common_arrow_kwargs()
-    ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
-                s=r"x$^{\ddag}$",**dagger_props)
-    # make the delta_G_dagger annotation
-    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
-                **dagger_props)
-    # make the extension scale bar 
-    width = scale_fraction_width * (max(x)-min(x))
-    label = "{:.2g}nm".format(width)
-    x_text = x_min
-    y_text = np.mean(plt.ylim())
-    PlotUtilities.scale_bar_x(x=x_text,
-                              y=y_text,
-                              s=label,
-                              width=width)    
-    PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
-    plt.ylim(-4,max(plt.ylim()))
+    plot_landscape(x,landscape)
     # # plot the 'zoomed' axis
     ax_zoom = plt.subplot(gs[1,0])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
