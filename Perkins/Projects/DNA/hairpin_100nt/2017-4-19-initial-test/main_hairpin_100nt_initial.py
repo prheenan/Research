@@ -105,7 +105,12 @@ def run():
     pred_info = [a[2] for a in args]
     just_ramping_portions = []
     for r,inf in zip(retracts,pred_info):
-        just_ramping_portions.append(slice_retract(r,inf))
+        just_ramp_tmp = slice_retract(r,inf)
+        just_ramping_portions.append(just_ramp_tmp)
+        plt.plot(just_ramp_tmp.Force)
+        for i in range(0,3):
+            plt.axvline((just_ramp_tmp.size/3) * i)
+        plt.show()
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
                            cmap='gist_earth')
