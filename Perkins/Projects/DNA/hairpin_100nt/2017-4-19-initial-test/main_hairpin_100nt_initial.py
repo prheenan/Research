@@ -42,8 +42,6 @@ def get_basic_information(i,example,force_run=False):
     retract = example_split.retract
     # XXX debugging...
     time = retract.Time
-    Plotting.plot_prediction_info(example_split,pred_info)
-    plt.show()
     sep = example_split.retract.Separation
     sep -= min(sep)
     last = pred_info.event_idx[-1]
@@ -52,12 +50,29 @@ def get_basic_information(i,example,force_run=False):
     force = example_split.retract.Force
     sep_bounds = [ [delta_x*1.2,last_x],
                    [0,delta_x]]
+    """                            
     models = CheckpointUtilities.getCheckpoint("./model{:d}.pkl".format(i),
                                                get_wlc_information,
                                                force_run,sep,force,sep_bounds,
                                                Ns=30)
+    """
+    models = None
     return models,retract,pred_info                                               
         
+
+def slice_retract(r,inf):
+    n_points = int(0.02 * r.Separation.size)
+    filtered = Analysis.filter_fec(r,n_points)
+    where_force_above_zero = np.where(filtered.Force >= 0)[0]
+    # the slice of the retract is between the zero point and the last time 
+    # we are (effectively) at the surface
+    last_event_idx = inf.event_idx[-1]
+    min_sep = np.percentile(filtered.Separation[:last_event_idx],50)    
+    where_sep_le_min_sep = np.where(filtered.Separation <= min_sep)[0]
+    slice_v = slice(where_force_above_zero[0],where_sep_le_min_sep[-1])
+    slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
+    return slice_obj
+
 def run():
     """
     <Description>
@@ -73,7 +88,7 @@ def run():
               "4Patrick/CuratedData/DNA/hairpin-100nt-16gc/Positive"
     _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=False)
     args = []
-    force_run = True
+    force_run = False
     for i,example in enumerate(examples):
         # need to fix the dwell times; igor does not record it when using
         # the indenter
@@ -83,11 +98,24 @@ def run():
             "./model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
         args.append([models,retract,pred_info])
+        if (i == 5):
+            break
     # make a heat map of all the retracts...
     retracts = [a[1] for a in args]
+    pred_info = [a[2] for a in args]
+    just_ramping_portions = []
+    for r,inf in zip(retracts,pred_info):
+        just_ramping_portions.append(slice_retract(r,inf))
     fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(retracts,separation_max=100,cmap='gist_earth')
+    FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
+                           cmap='gist_earth')
     PlotUtilities.savefig(fig,"./out/heat.png")
+    exit(1)
+    """
+    Do a *really* fast-and-dirty energy landscape analysis
+    """
+    """
+    """
     models_all = [ [x0_x_y_tuple[0] for x0_x_y_tuple in list_v[0]] 
                    for list_v in args]
     first_l = np.concatenate([m[1] for m in models_all])
@@ -101,6 +129,7 @@ def run():
     plt.axvline(67,**style_line)
     PlotUtilities.lazyLabel("Contour Length (nm)","Count","")
     PlotUtilities.savefig(fig,"./out/o_hist{:d}.png".format(i))   
+    """
     x_plot = lambda x: x
     y_plot = lambda y: y*1e12
     n_filter_points = 500
@@ -125,6 +154,7 @@ def run():
                                        secondY=True,color='b')                                            
         ax2.plot(retract.Time,retract_nm,color='b')
         PlotUtilities.savefig(fig,"./out/out{:d}.png".format(i))
+    """
     
 if __name__ == "__main__":
     run()
