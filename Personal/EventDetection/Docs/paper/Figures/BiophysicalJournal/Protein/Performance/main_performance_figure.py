@@ -28,7 +28,7 @@ def run():
     """
     data_file = "../_Data/Scores.pkl"
     metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
-                                                Offline.get_best_metrics,False,
+                                                Offline.get_best_metrics,True,
                                                 data_file)
     fig = PlotUtilities.figure(figsize=(18,12))
     colors = Plotting.algorithm_colors()
@@ -110,7 +110,8 @@ def run():
         plt.xlim(xlim_rupture)                                                                   
         if not last_row:
             PlotUtilities.no_x_label()                                
-    PlotUtilities.savefig(fig,"./out.png",subplots_adjust=dict(hspace=0.02))
+    PlotUtilities.savefig(fig,"./performance.png",
+                          subplots_adjust=dict(hspace=0.02))
     
 
 if __name__ == "__main__":

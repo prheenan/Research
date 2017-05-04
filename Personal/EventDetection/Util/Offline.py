@@ -198,6 +198,7 @@ def update_limits(previous,new,floor=None):
         to_update_min = np.max([to_update_min,floor])
     to_update_max = np.max(cat_max)
     return [to_update_min,to_update_max]
+    
 def best_metric_from_learner(l):
     """
     returns the best metric from the learner l
@@ -243,5 +244,5 @@ def get_best_metrics(data_file):
     """
     learners = CheckpointUtilities.lazy_load(data_file)
     metrics = [best_metric_from_learner(l) for l in learners]
-
+    return metrics
     

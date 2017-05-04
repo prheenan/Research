@@ -216,7 +216,7 @@ def run():
                               width=width)    
     PlotUtilities.lazyLabel("Time","Force (pN)","")    
     PlotUtilities.no_x_anything(ax_zoom)                                   
-    PlotUtilities.savefig(fig,"./out.png")
+    PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":
     run()
