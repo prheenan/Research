@@ -1,0 +1,94 @@
+\usepackage{braket}
+%% % allow for break spaces...
+%% % defines \textmu, which is now what inputenx seems to use for μ - probably due inpmath.. also \textdegree... but not \textrho. Need utf - BOM
+%% % lstlisting: for code
+\usepackage{listings}
+%% % lstset: for stting colors of stuff
+\lstset{language=python,mathescape,
+        frame = single,
+        basicstyle=\ttfamily,
+        keywordstyle=\color{blue}\ttfamily,
+        stringstyle=\color{red}\ttfamily,
+        commentstyle=\color{green}\ttfamily}
+%% % amsmath: for align, etc
+\usepackage{amsmath}
+%% \usepackage{txfonts}
+\usepackage{tabularx}
+\usepackage{textcomp}
+%% % http://kb.mit.edu/confluence/pages/viewpage.action?pageId=3907057
+
+\newcommand{\eqs}[1]{
+\begin{align*} 
+\begin{split}
+#1
+\end{split}					
+\end{align*}}
+
+\newcommand{\eqlab}[2]{
+\begin{equation}
+\label{equation:#2}
+\begin{split}
+#1
+\end{split}
+\end{equation}
+}
+
+\newcommand{\e}[0]{\\ \hline}
+
+% for making specific references.
+\newcommand{\tRef}[1]{Table \ref{table:#1}}
+\newcommand{\fRef}[1]{Figure \ref{figure:#1}}
+\newcommand{\sRef}[1]{Section \ref{section:#1}}
+\newcommand{\eRef}[1]{Equation \ref{equation:#1}}
+
+\newcommand{\fLabel}[1]{\label{figure:#1}}
+\newcommand{\tLabel}[1]{\label{table:#1}}
+\newcommand{\sLabel}[1]{\label{section:#1}}
+
+% tex.stackexchange.com/questions/153334/change-the-baselinestretch-line-spacing-only-for-figure-captions
+\usepackage{kantlipsum}
+
+% see: tex.stackexchange.com/questions/48152/dynamic-signature-date-line
+\newcommand{\titledate}[2][2in]{%
+  \noindent%
+  \begin{tabular}{@{}p{#1}@{}}
+    \\ \hline \\[-.75\normalbaselineskip]
+    #2
+  \end{tabular} \hspace{1in}
+  \begin{tabular}{@{}p{#1}@{}}
+    \\ \hline \\[-.75\normalbaselineskip]
+    Date
+  \end{tabular}
+}
+\newcommand{\name}[0]{FEATHER}
+\newcommand{\na}[0]{\textemdash{}}
+\newcommand{\bc}[0]{Bhattacharyya}
+\newcommand{\BccLong}[0]{Bhattacharyya coefficient's complement}
+\newcommand{\acronym}[0]{\textbf{F}orce \textbf{E}xtension \textbf{A}nalysis using a \textbf{T}estable \textbf{H}ypothesis for \textbf{E}vent \textbf{R}ecognition}
+\newcommand{\TitleName}[0]{Detecting Molecular Unbinding and Unfolding Events in Force Spectroscopy Data via a Bayesian Algorithm}
+\newcommand{\figwidth}[0]{\linewidth}
+% supply: for 'citing' where we got a reagent or thing
+%    Args:
+%        #1: name of company we got the thing from
+%        #2: product number for the thing
+\newcommand{\supply}[2]{(#1 #2)}
+% singlemol: for writing single molecular force spectroscopy
+\newcommand{\singlemol}[0]{SMFS}
+% degreeC: for abbreviating degrees celsius
+\newcommand{\degreeC}[0]{$^{\circ}$C}
+% citePRH: for controlling the citation method
+\newcommand{\citePRH}[1]{\cite{#1}}
+\newcommand{\ValUnit}[2]{#1 #2}
+\newcommand{\subref}[1]{(\textbf{\textit{#1}})}
+\newcommand{\WindowStdev}[1]{\Sigma_t}
+\newcommand{\OpenFovea}[1]{Open Fovea}
+\newcommand{\fec}[1]{force-extension curve}
+\newcommand{\qPct}[0]{90}
+\newcommand{\bcc}[0]{0.03}
+\newcommand{\bccI}[0]{10}
+\newcommand{\DistError}[0]{0.007}
+\newcommand{\DistErrorI}[0]{100}
+\graphicspath{{../../Figures/Finals/}}
+
+
+
