@@ -621,8 +621,21 @@ def spline_interpolated_by_index(f,nSmooth,**kwargs):
         spline interpolated value of f on the indices (*not* an interpolator
         object, just an array) 
     """
+    x,interp = spline_interpolator_by_index(f,nSmooth,**kwargs)
+    return interp(x)
+    
+def spline_interpolator_by_index(f,n_smooth,**kwargs):
+    """
+    see spline_interpolated_by_index. except returns tuple of <x,interpolator
+    object>
+    
+    Args:
+        see spline_interpolated_by_index
+    Returns: 
+        see spline_interpolated_by_index 
+    """
     x = np.arange(start=0,stop=f.size,step=1)
-    return spline_interpolator(nSmooth,x,f,**kwargs)(x)
+    return x,spline_interpolator(n_smooth,x,f,**kwargs)
 
 def spline_interpolator(tau_x,x,f,knots=None,deg=2):
     """

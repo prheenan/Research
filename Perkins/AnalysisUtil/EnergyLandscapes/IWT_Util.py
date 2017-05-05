@@ -456,5 +456,34 @@ def ExtensionOffsetFromCoeffs(coeffs):
     return -coeffs[1]/(2*coeffs[0])
 
 
-
+def get_unfold_and_refold_objects(data,number_of_pairs,flip_forces=False,
+                                  fraction_for_vel=0.1):
+    """
+    Splits a TimeSepForceObj into number_of_pairs unfold/refold pairs, converting
+    into IWT Objects.
+    
+    Args:
+        data: TimeSepForce object to use
+        number_of_pairs: how many unfold/refold *pairs* there are (ie: single
+        'out and back' would be one, etc
+        flip_forces: if true, multiply all the forces by -1
+        fraction_for_vel: fraction to use for the velocity
+    Returns:
+        tuple of <unfold,refold> objects
+    """
+    Length = data.Force.size
+    data_per_curve = int(np.round(Length/number_of_pairs))
+    get_slice = lambda j: slice(j*data_per_curve,(j+1)*data_per_curve,1)
+    pairs = [FEC_Util.MakeTimeSepForceFromSlice(data,get_slice(i))
+             for i in range(number_of_pairs) ]
+    # POST: pairs has each slice (approach/retract pair) that we want
+    # break up into retract and approach (ie: unfold,refold)
+    unfold,refold = [],[]
+    for p in pairs:
+        unfold_tmp,refold_tmp = \
+            split_into_iwt_objects(p,fraction_for_vel=fraction_for_vel,
+                                   flip_forces=flip_forces)
+        unfold.append(unfold_tmp)
+        refold.append(refold_tmp)
+    return unfold,refold        
         

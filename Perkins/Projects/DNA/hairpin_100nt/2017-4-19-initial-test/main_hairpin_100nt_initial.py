@@ -16,7 +16,8 @@ from Research.Personal.EventDetection.Util import Analysis,Plotting
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 from FitUtil.FreelyJointedChain.Python.Code import FJC
-
+from Research.Perkins.AnalysisUtil.EnergyLandscapes import \
+   IWT_Util
     
 def get_wlc_information(sep,force,sep_bounds,**kwargs):
     models = []         
@@ -63,13 +64,25 @@ def get_basic_information(i,example,force_run=False):
 def slice_retract(r,inf):
     n_points = int(0.02 * r.Separation.size)
     filtered = Analysis.filter_fec(r,n_points)
+    idx,interp = Analysis.spline_interpolator_by_index(r.Force,n_points)
     where_force_above_zero = np.where(filtered.Force >= 0)[0]
     # the slice of the retract is between the zero point and the last time 
     # we are (effectively) at the surface
     last_event_idx = inf.event_idx[-1]
     min_sep = np.percentile(filtered.Separation[:last_event_idx],50)    
     where_sep_le_min_sep = np.where(filtered.Separation <= min_sep)[0]
-    slice_v = slice(where_force_above_zero[0],where_sep_le_min_sep[-1])
+    last_le_sep_idx = where_sep_le_min_sep[-1]
+    # determine wherethe derivative was last <= 0 in this slice
+    derivative_in_slice = interp.derivative()(idx[:last_le_sep_idx])
+    last_idx_check = np.where(derivative_in_slice <= 0)[0]
+    """
+    plt.plot(r.Time[:last_le_sep_idx],r.Force[:last_le_sep_idx],
+              color='k',alpha=0.3)
+    plt.plot(r.Time[:last_le_sep_idx],interp(idx)[:last_le_sep_idx])
+    plt.axvline(r.Time[last_idx_check[-1]])
+    plt.show()
+    """
+    slice_v = slice(where_force_above_zero[0],last_idx_check[-1])
     slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
     return slice_obj
 
@@ -98,8 +111,6 @@ def run():
             "./model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
         args.append([models,retract,pred_info])
-        if (i == 5):
-            break
     # make a heat map of all the retracts...
     retracts = [a[1] for a in args]
     pred_info = [a[2] for a in args]
@@ -107,10 +118,12 @@ def run():
     for r,inf in zip(retracts,pred_info):
         just_ramp_tmp = slice_retract(r,inf)
         just_ramping_portions.append(just_ramp_tmp)
+        """
         plt.plot(just_ramp_tmp.Force)
         for i in range(0,3):
-            plt.axvline((just_ramp_tmp.size/3) * i)
+            plt.axvline((just_ramp_tmp.Force.size/3) * i)
         plt.show()
+        """
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
                            cmap='gist_earth')
