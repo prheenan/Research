@@ -13,7 +13,17 @@
 % Use standard biophys document class with default font size
 % and typeset in one column. If you need to typeset in two column
 % then give the option "twocolumn" ie \documentclass[twocolumn]{biophys}
+
+
+\newif\iflatextortf
+\iflatextortf
+% This code is processed only by latex2rtf
+\documentclass[12pt,letterpaper]{article}
+\else
+% This code is processed only by latex   
 \documentclass{biophys}
+\fi
+
 \usepackage{helvet,times}
 \usepackage{bm,textcomp}
 

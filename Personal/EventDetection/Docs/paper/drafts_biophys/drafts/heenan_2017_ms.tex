@@ -64,13 +64,15 @@ All timing and tuning results were obtained using a desktop with \ValUnit{16}{GB
 
 
 \begin{table}
+\begin{center}
 \caption{\tLabel{Parameters} The names and definitions of the parameters used by \name{}}
-\begin{tabularx}{\textwidth}{ l | l | l | l  }
+\begin{tabular}{ l | l | l | l  }
 \hline \hline
 Name & Meaning  & Value used in this work \e
 $\tau$ & Number of points for spline grid & 2\% of the curve length \e
 threshold & Probability used to reject events  & Determined by tuning (see \fRef{Tuning}) \e
-\end{tabularx}
+\end{tabular}
+\end{center}
 \end{table}
 
 
@@ -90,8 +92,9 @@ The following two algorithms were chosen for comparison to \name{}:
 Two metrics were used for comparing the event-finding performance of \name{} with the human-annotated data. The metrics reported are listed in \tRef{metrics}. The event error metric, $P_{\qPct{}}$, is the \qPct{}th percentile of relative error between predicted and true event locations (see \fRef{DistanceMetric}). The rupture \BccLong{}, $1-\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$, reports the mismatch between the true and predicted distribution over loading rates and rupture forces. 
 
 \begin{table}
+\begin{center}
 \caption{\tLabel{metrics} The definitions of the performance metrics reported. The metrics are bolded, and the quantities that they depend on are listed first. BCC stands for \BccLong{}.  Throughout, `k' refers to the index of a \fec{}, and `i' and `j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in \fec{} 4. }
-\begin{tabularx}{\textwidth}{ l | l | l | l  }
+\begin{tabular}{ l | l | l | l  }
 \hline \hline
 Name & Notation  & Range & \text{Optimum} \e 
 $x_k$ & \text{total displacement of \fec{} k} & \na & \na\\ \hline 
@@ -105,7 +108,8 @@ $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \n
 & \text{by the number of \fec{}s} && \\\hline \hline 
 \textbf{relative event error} & P$_{\qPct{}}$ &   [0,1] & 0 \e
 \textbf{rupture BCC} & 1-$\braket{d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}}$ & [0,1] & 0 \\
-\end{tabularx}
+\end{tabular}
+\end{center}
 \end{table}
 
 \subsection{\sLabel{Tuning}Algorithm tuning}
