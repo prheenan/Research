@@ -66,7 +66,7 @@ All timing and tuning results were obtained using a desktop with \ValUnit{16}{GB
 \begin{table}
 \begin{center}
 \caption{\tLabel{Parameters} The names and definitions of the parameters used by \name{}}
-\begin{tabular}{ l | l | l | l  }
+\begin{tabular}{ l | l | l | }
 \hline \hline
 Name & Meaning  & Value used in this work \e
 $\tau$ & Number of points for spline grid & 2\% of the curve length \e
@@ -81,8 +81,8 @@ threshold & Probability used to reject events  & Determined by tuning (see \fRef
 The following two algorithms were chosen for comparison to \name{}: 
 
 \begin{itemize}
-\item The AFM-specific `event\_find' routine from the OpenFovea AFM analysis package.\citePRH{roduit_openfovea:_2012}
-\item The general-purpose `find\_peaks\_cwt' method from the Scientific Python package.\citePRH{Jones_SciPy:_2001}
+\item The AFM-specific 'event\_find' routine from the OpenFovea AFM analysis package.\citePRH{roduit_openfovea:_2012}
+\item The general-purpose 'find\_peaks\_cwt' method from the Scientific Python package.\citePRH{Jones_SciPy:_2001}
 \end{itemize}
 
  These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see \fRef{Timing}) for analyzing hundreds of \fec{}s with millions of points each. These baselines represent two common approaches to event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method uses wavelet transformations. 
@@ -93,17 +93,17 @@ Two metrics were used for comparing the event-finding performance of \name{} wit
 
 \begin{table}
 \begin{center}
-\caption{\tLabel{metrics} The definitions of the performance metrics reported. The metrics are bolded, and the quantities that they depend on are listed first. BCC stands for \BccLong{}.  Throughout, `k' refers to the index of a \fec{}, and `i' and `j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in \fec{} 4. }
+\caption{\tLabel{metrics} The definitions of the performance metrics reported. The metrics are bolded, and the quantities that they depend on are listed first. BCC stands for \BccLong{}.  Throughout, 'k' refers to the index of a \fec{}, and 'i' and 'j' refer to either true or predicted. For example, $d_{t\rightarrow p,4}$ represents the distances from the true to the predicted events in \fec{} 4. }
 \begin{tabular}{ l | l | l | l  }
 \hline \hline
 Name & Notation  & Range & \text{Optimum} \e 
 $x_k$ & \text{total displacement of \fec{} k} & \na & \na\\ \hline 
-$d_{i\rightarrow j,k}$ & \text{distribution of distances in `k' from `i' ruptures } & \na &\na \\ 
-& \text{to the closest `j' rupture or $x_k$ if none } &  & \\\hline 
-$P_{\text{x}}$ &  \text{the `x'-th percentile of the concatenation of } & \na & \na \\
+$d_{i\rightarrow j,k}$ & \text{distribution of distances in 'k' from 'i' ruptures } & \na &\na \\ 
+& \text{to the closest 'j' rupture or $x_k$ if none } &  & \\\hline 
+$P_{x}$ &  \text{the 'x'-th percentile of the concatenation of } & \na & \na \\
 & $\frac{1}{x_k}d_{t\rightarrow p,k}$ \text{ and } $\frac{1}{x_k}d_{p\rightarrow t,k}$ \text{ over all k }  &&  \\ \hline 
-$\nu_i$ & \text{histogram of `i' loading rates over all k} & \na & \na \\\hline 
-$F_i$ & \text{histogram of `i' rupture forces over all k} & \na & \na \\\hline 
+$\nu_i$ & \text{histogram of 'i' loading rates over all k} & \na & \na \\\hline 
+$F_i$ & \text{histogram of 'i' rupture forces over all k} & \na & \na \\\hline 
 $d_{(\nu,F),i}$ & \text{joint histogram of $\nu_i$ and $F_i$ divided} & \na & \na \\
 & \text{by the number of \fec{}s} && \\\hline \hline 
 \textbf{relative event error} & P$_{\qPct{}}$ &   [0,1] & 0 \e
