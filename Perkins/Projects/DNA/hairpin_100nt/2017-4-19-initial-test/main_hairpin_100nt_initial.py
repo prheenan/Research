@@ -18,6 +18,8 @@ from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 from FitUtil.FreelyJointedChain.Python.Code import FJC
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import \
    IWT_Util
+from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
+    InverseWeierstrass   
     
 def get_wlc_information(sep,force,sep_bounds,**kwargs):
     models = []         
@@ -66,15 +68,12 @@ def slice_retract(r,inf):
     filtered = Analysis.filter_fec(r,n_points)
     idx,interp = Analysis.spline_interpolator_by_index(r.Force,n_points)
     where_force_above_zero = np.where(filtered.Force >= 0)[0]
-    # the slice of the retract is between the zero point and the last time 
-    # we are (effectively) at the surface
-    last_event_idx = inf.event_idx[-1]
-    min_sep = np.percentile(filtered.Separation[:last_event_idx],50)    
-    where_sep_le_min_sep = np.where(filtered.Separation <= min_sep)[0]
-    last_le_sep_idx = where_sep_le_min_sep[-1]
-    # determine wherethe derivative was last <= 0 in this slice
-    derivative_in_slice = interp.derivative()(idx[:last_le_sep_idx])
-    last_idx_check = np.where(derivative_in_slice <= 0)[0]
+    dt = r.Time[1] - r.Time[0]
+    n_pairs =3
+    t_per_pair= 2.2
+    fudge = 0.5
+    t_total = t_per_pair * n_pairs - fudge
+    idx_to_move = int(np.ceil(t_total/dt))
     """
     plt.plot(r.Time[:last_le_sep_idx],r.Force[:last_le_sep_idx],
               color='k',alpha=0.3)
@@ -82,23 +81,12 @@ def slice_retract(r,inf):
     plt.axvline(r.Time[last_idx_check[-1]])
     plt.show()
     """
-    slice_v = slice(where_force_above_zero[0],last_idx_check[-1])
+    zero_offset = where_force_above_zero[0]
+    slice_v = slice(zero_offset,zero_offset+idx_to_move)
     slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
     return slice_obj
 
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    base_data_dir = FEC_Util.default_data_root()
-    abs_dir = base_data_dir + \
-              "4Patrick/CuratedData/DNA/hairpin-100nt-16gc/Positive"
+def analyze_hairpin(abs_dir):
     _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=False)
     args = []
     force_run = False
@@ -118,36 +106,63 @@ def run():
     for r,inf in zip(retracts,pred_info):
         just_ramp_tmp = slice_retract(r,inf)
         just_ramping_portions.append(just_ramp_tmp)
+    # get split into unfolding and refolding regions...
+    unfold,refold = [],[]
+    for r in just_ramping_portions:
+        unfold_tmp,refold_tmp = IWT_Util.\
+            get_unfold_and_refold_objects_by_sep(r,number_of_pairs=3,
+                                                 flip_forces=False,
+                                                 fraction_for_vel=0.1)
+        unfold.extend(unfold_tmp)
+        refold.extend(refold_tmp)
         """
-        plt.plot(just_ramp_tmp.Force)
-        for i in range(0,3):
-            plt.axvline((just_ramp_tmp.Force.size/3) * i)
-        plt.show()
+        for u,r in zip(unfold,refold):
+            plt.subplot(2,1,1)
+            plt.plot(u.Time,u.Force)
+            plt.subplot(2,1,2)
+            plt.plot(r.Time,r.Force)
+            plt.show()
         """
+    """
+
+    Do a *really* fast-and-dirty energy landscape analysis
+    """        
+    keywords_iwt = dict(UnfoldingObjs=unfold,NumBins=75,RefoldingObjs=refold)
+    landscape = CheckpointUtilities.\
+        getCheckpoint("./landscape.pkl",
+                      InverseWeierstrass.FreeEnergyAtZeroForce,
+                      False,**keywords_iwt)
+    L0_gc_poor_nm = 0.67 * (100 - 4 - 16*2)
+    linker_lengths_nm = 3.2*2
+    for f in [6e-12,8e-12,12e-12,16e-12]:
+        tilted = IWT_Util.TiltedLandscape(landscape,f_one_half_N=f)   
+        fig = PlotUtilities.figure()    
+        ax = plt.subplot(2,1,1)    
+        plt.plot(landscape.Extensions*1e9,landscape.EnergyLandscape/4.1e-21)
+        ylim = np.array(plt.ylim())
+        PlotUtilities.lazyLabel("","Free Landscape (kT)","")    
+        PlotUtilities.secondAxis(ax,label="kcal/mol",limits=ylim*0.529)
+        PlotUtilities.no_x_label()
+        ax = plt.subplot(2,1,2)
+        plt.plot(tilted.landscape_ext_nm,tilted.OffsetTilted_kT)
+        plt.axvline(L0_gc_poor_nm,linestyle=':',linewidth=3,color='g',
+                    label="L$_0$ (GC poor)")
+        linker_kw = dict(color='r',linestyle='--',linewidth=3)
+        plt.axvline(L0_gc_poor_nm+linker_lengths_nm,label="$\pm$ Linkers",
+                    **linker_kw)
+        plt.axvline(L0_gc_poor_nm-linker_lengths_nm,**linker_kw)
+        
+        y= ("Tilted (kT)(tilt: {:.2g}pN)".format(f))
+        plt.ylim([-10,60])
+        PlotUtilities.lazyLabel("Extension (nm)",y,"",frameon=True)
+        ylim = np.array(plt.ylim())
+        PlotUtilities.secondAxis(ax,label="kcal/mol",limits=ylim*0.529)        
+        PlotUtilities.savefig(fig,"./out/landscape_{:.2g}.png".format(f*1e12))
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
                            cmap='gist_earth')
     PlotUtilities.savefig(fig,"./out/heat.png")
     exit(1)
-    """
-    Do a *really* fast-and-dirty energy landscape analysis
-    """
-    """
-    """
-    models_all = [ [x0_x_y_tuple[0] for x0_x_y_tuple in list_v[0]] 
-                   for list_v in args]
-    first_l = np.concatenate([m[1] for m in models_all])
-    last_l = np.concatenate([m[0] for m in models_all])
-    style_common = dict(alpha=0.3)
-    style_line = dict(linewidth=3,linestyle='--')
-    fig = PlotUtilities.figure()                                                       
-    plt.hist(first_l*1e9,label="first FJC",**style_common)
-    plt.hist(last_l*1e9,label="second FJC",**style_common)
-    plt.axvline(43,**style_line)
-    plt.axvline(67,**style_line)
-    PlotUtilities.lazyLabel("Contour Length (nm)","Count","")
-    PlotUtilities.savefig(fig,"./out/o_hist{:d}.png".format(i))   
-    """
     x_plot = lambda x: x
     y_plot = lambda y: y*1e12
     n_filter_points = 500
@@ -171,8 +186,29 @@ def run():
                                        limits=limit_second,
                                        secondY=True,color='b')                                            
         ax2.plot(retract.Time,retract_nm,color='b')
-        PlotUtilities.savefig(fig,"./out/out{:d}.png".format(i))
+        PlotUtilities.savefig(fig,"./out/out{:d}.png".format(i))    
+    
+def run():
     """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    base_data_dir = FEC_Util.default_data_root() + \
+                    "4Patrick/CuratedData/DNA/hairpin-100nt-16gc/Positive"
+    relative = [base_data_dir + "/3_ramps/",
+                base_data_dir + "//"
+    
+        
+    for abs_dir in [base_data_dir + r for r in relative]:
+    analyze_hairpin(abs_dir)
+    abs_dir = base_data_dir + \
+              
+
     
 if __name__ == "__main__":
     run()
