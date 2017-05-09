@@ -139,9 +139,11 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     min_time = min(x_fit) + fudge
     event_force = rupture_force
     event_time = time_plot[event_zoom]
+    arrow_kw_thick = common_arrow_kwargs()
+    arrow_kw_thick['arrowprops']['linewidth'] = 3
     ax_zoom.annotate(rupture_string,
                      xy=(event_time,event_force), 
-                     xytext=(min_time, event_force),**common_arrow_kwargs())
+                     xytext=(min_time, event_force),**arrow_kw_thick)
     zoom_event_only = [event_zoom]
     Plotting.plot_arrows_above_events(event_idx=zoom_event_only,fudge_y=6,
                                       **arrow_kwargs)
