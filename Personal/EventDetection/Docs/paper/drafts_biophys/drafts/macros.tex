@@ -1,18 +1,5 @@
-\usepackage{braket}
-%% % allow for break spaces...
-%% % defines \textmu, which is now what inputenx seems to use for μ - probably due inpmath.. also \textdegree... but not \textrho. Need utf - BOM
-%% % lstlisting: for code
-\usepackage{listings}
-%% % lstset: for stting colors of stuff
-\lstset{language=python,mathescape,
-        frame = single,
-        basicstyle=\ttfamily,
-        keywordstyle=\color{blue}\ttfamily,
-        stringstyle=\color{red}\ttfamily,
-        commentstyle=\color{green}\ttfamily}
 %% % amsmath: for align, etc
 \usepackage{amsmath}
-%% \usepackage{txfonts}
 \usepackage{textcomp}
 \usepackage{natbib}
 %% % http://kb.mit.edu/confluence/pages/viewpage.action?pageId=3907057
@@ -88,6 +75,7 @@
 \newcommand{\bccI}[0]{10}
 \newcommand{\DistError}[0]{0.007}
 \newcommand{\DistErrorI}[0]{100}
+\newcommand{\braket}[1]{<#1>}
 \graphicspath{{../../Figures/Finals/}}
 
 
