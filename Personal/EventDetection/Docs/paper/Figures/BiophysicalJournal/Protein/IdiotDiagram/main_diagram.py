@@ -292,7 +292,7 @@ def run():
                  yerr=stdev,
                  **fmt_error)
     plt.ylim(rupture_limits)
-    PlotUtilities.savefig(fig,"./out.png")
+    PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":
     run()

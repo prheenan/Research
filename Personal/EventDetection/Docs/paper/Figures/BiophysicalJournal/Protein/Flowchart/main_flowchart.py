@@ -118,7 +118,7 @@ def run():
                        event_bounding_slice,
                        event_location,raw_force_kwargs,
                        interp_force_kwargs,**kw)
-    PlotUtilities.savefig(fig,"./out.png",subplots_adjust=dict(hspace=0.4))
+    PlotUtilities.savefig(fig,"./flowchart.png",subplots_adjust=dict(hspace=0.4))
     
 def inset_by_slice(ax,x,y,y_interp,slice_v,event_idx,y_kwargs,interp_kwargs,loc,
                    inset_kwargs=dict()):

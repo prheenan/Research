@@ -61,22 +61,13 @@ def parse_and_run():
         write_and_close("Need exactly one Force/Separation".\
                         format(in_file))
     # POST: have just one. Go ahead and break it up
+    fraction_for_vel = args.fraction_velocity_fit    
     Data= RawData[0]
-    Length = Data.Force.size
-    data_per_curve = int(np.round(Length/number_of_pairs))
-    fraction_for_vel = args.fraction_velocity_fit
-    get_slice = lambda j: slice(j*data_per_curve,(j+1)*data_per_curve,1)
-    pairs = [FEC_Util.MakeTimeSepForceFromSlice(Data,get_slice(i))
-             for i in range(number_of_pairs) ]
-    # POST: pairs has each slice (approach/retract pair) that we want
-    # break up into retract and approach (ie: unfold,refold)
-    unfold,refold = [],[]
-    for p in pairs:
-        unfold_tmp,refold_tmp = \
-            IWT_Util.split_into_iwt_objects(p,fraction_for_vel=fraction_for_vel,
-                                            flip_forces=flip_forces)
-        unfold.append(unfold_tmp)
-        refold.append(refold_tmp)
+    unfold,refold = IWT_Util.\
+        get_unfold_and_refold_objects(Data,
+                                      number_of_pairs=number_of_pairs,
+                                      flip_forces=flip_forces,
+                                      fraction_for_vel=fraction_for_vel)
     # POST: have the unfolding and refolding objects, get the energy landscape
     num_bins = args.number_of_bins
     LandscapeObj =  InverseWeierstrass.\
@@ -110,5 +101,6 @@ def run():
         # Log it or whatever here
         str_out =''.join('!! ' + line for line in lines)
         print(str_out)
+        
 if __name__ == "__main__":
     run()
