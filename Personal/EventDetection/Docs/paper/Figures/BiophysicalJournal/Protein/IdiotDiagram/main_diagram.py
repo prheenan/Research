@@ -22,6 +22,8 @@ from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 
 from FitUtil.EnergyLandscapes.Rupture_Dudko2007.Python.Code import Dudko2007
 import matplotlib.gridspec as gridspec
+from mpl_toolkits.axes_grid.inset_locator import inset_axes
+
 
 # plotting constants    
 raw_force_kwargs = dict(color='k',alpha=0.3)
@@ -307,7 +309,18 @@ def run():
     ax1 = plt.subplot(gs[0,0])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs)
+    xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
+    plt.xlim([xlim[0],xlim[1]*1.5])
+    # # plot the image on top
+    in_ax = inset_axes(ax1,
+                       width="60%", # width = 30% of parent_bbox
+                       height="90%", 
+                       loc=1)
+    im = plt.imread("../_Data/pulling_figure.png")
+    in_ax.imshow(im,interpolation="bicubic")
+    in_ax.set_xticks([])
+    in_ax.set_yticks([])
     # # plot the energy landscape with annotations
     ax = plt.subplot(gs[0,1:])
     plot_landscape(x,landscape)
