@@ -28,7 +28,7 @@ def run():
     """
     data_file = "../_Data/Scores.pkl"
     metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
-                                                Offline.get_best_metrics,True,
+                                                Offline.get_best_metrics,False,
                                                 data_file)
     fig = PlotUtilities.figure(figsize=(18,12))
     colors = Plotting.algorithm_colors()
@@ -76,7 +76,7 @@ def run():
                                                     loading_true,loading_pred,
                                                     limit=0.01)            
         # make the 'just the distance' figures
-        plt.subplot(n_rows,n_cols,(offset+1))
+        ax_dist = plt.subplot(n_rows,n_cols,(offset+1))
         Plotting.histogram_event_distribution(use_q_number=True,
                                               **distance_histogram_kw)
         PlotUtilities.lazyLabel(xlabel_dist,ylabel_dist,title_dist,
@@ -85,7 +85,7 @@ def run():
         if not last_row:
             PlotUtilities.no_x_label()
         # make the loading rate histogram      
-        plt.subplot(n_rows,n_cols,(offset+2))
+        ax_load = plt.subplot(n_rows,n_cols,(offset+2))
         Plotting.loading_rate_histogram(pred,bins=_bins_load_plot,
                                         **pred_style_histogram)
         Plotting.loading_rate_histogram(true,bins=_bins_load_plot,
@@ -98,8 +98,9 @@ def run():
         plt.xlim(xlim_load)               
         if not last_row:
             PlotUtilities.no_x_label()
+        PlotUtilities.no_y_label()
         # make the rupture force histogram
-        plt.subplot(n_rows,n_cols,(offset+3))
+        ax_rupture = plt.subplot(n_rows,n_cols,(offset+3))
         Plotting.rupture_force_histogram(pred,bins=_bins_rupture_plot,
                                         **pred_style_histogram)
         Plotting.rupture_force_histogram(true,bins=_bins_rupture_plot,
@@ -107,11 +108,17 @@ def run():
         plt.yscale('log')
         PlotUtilities.lazyLabel(xlabel_rupture_force,"",title_rupture_force,
                                 useLegend=False)       
-        plt.xlim(xlim_rupture)                                                                   
+        plt.xlim(xlim_rupture)                                                 
         if not last_row:
-            PlotUtilities.no_x_label()                                
-    PlotUtilities.savefig(fig,"./performance.png",
-                          subplots_adjust=dict(hspace=0.02))
+            PlotUtilities.no_x_label()     
+        PlotUtilities.no_y_label()                           
+        # set all the y limits for this row
+        axes_counts = [ax_rupture,ax_load,ax_dist]
+        max_limit = np.max([r.get_ylim() for r in axes_counts])
+        ylim_new = [0.5,max_limit*5]
+        for r in axes_counts:
+            r.set_ylim(ylim_new)
+    PlotUtilities.savefig(fig,"./performance.png")
     
 
 if __name__ == "__main__":
