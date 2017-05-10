@@ -78,8 +78,11 @@ def analyze_hairpin(abs_dir,force=False,**kw):
     dir_relative = os.path.dirname(abs_dir)
     rel = "./" + id
     GenUtilities.ensureDirExists("./out{:s}".format(id))                                                 
-    for i,example in enumerate(examples[18:]):
+    for i,example in enumerate(examples):
         # get the FJC model...
+        # need to fix the dwell times; igor does not record it when using
+        # the indenter
+        example.set_dwell_time(example.Meta.DwellTime1)
         models,retract,pred_info = CheckpointUtilities.getCheckpoint(
             rel + "cache/model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
@@ -205,7 +208,7 @@ def run():
     dict_10_ramps = dict(n_pairs =9,
                          slice_rel=slice(0.14,3.543))
     dict_3_ramps = dict(n_pairs =3,
-                        slice_rel=slice(1.299,7.61))                
+                        slice_rel=slice(0.0,6.1))                
     dirs = [ [base_data_dir + "/3_ramps/",dict_3_ramps],
              [base_data_dir + "/10_ramps/",dict_10_ramps]]
     for abs_dir,kw in dirs:
