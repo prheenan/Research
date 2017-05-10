@@ -73,12 +73,8 @@ def parse_and_run():
     LandscapeObj =  InverseWeierstrass.\
         FreeEnergyAtZeroForce(unfold,NumBins=num_bins,RefoldingObjs=refold)
     # get the distance to the transition state etc
-    all_landscape = [-np.inf,np.inf]
-    Bounds = IWT_Util.BoundsObj(bounds_folded_nm= all_landscape,
-                                bounds_transition_nm= all_landscape,
-                                bounds_unfolded_nm=all_landscape,
-                                force_one_half_N=f_one_half)
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,Bounds)
+    all_landscape = [-np.inf,np.inf]    
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half)
     # write out the file we need
     extension_meters = Obj.landscape_ext_nm/1e9
     landscape_joules = Obj.Landscape_kT * Obj.kT

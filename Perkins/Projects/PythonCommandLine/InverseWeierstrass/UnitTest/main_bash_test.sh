@@ -18,6 +18,8 @@ output_file=${2:-"./UnitTest/unit_test.csv"}
 expected_file=${3:-"./UnitTest/expected_landscape.csv"}
 # go one directory up (where the python file lives)
 cd ..
+# remove the output file, in case we already ran
+rm -f "$output_file"
 python main_iwt.py \
     -number_of_pairs 16\
     -flip_forces 0\

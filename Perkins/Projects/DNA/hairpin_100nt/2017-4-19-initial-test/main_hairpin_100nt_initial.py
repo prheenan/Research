@@ -53,7 +53,8 @@ def slice_retract(r,inf,n_pairs,slice_rel):
     n_points = int(0.02 * r.Separation.size)
     filtered = Analysis.filter_fec(r,n_points)
     idx,interp = Analysis.spline_interpolator_by_index(r.Force,n_points)
-    where_force_above_zero = np.where(filtered.Force >= 0)[0]
+    where_force_above_zero = \
+        np.where(filtered.Time -filtered.Time[0] >= slice_rel.start)[0]
     dt = r.Time[1] - r.Time[0]
     # XXX add in dt...
     idx_to_move = int(np.ceil((slice_rel.stop-slice_rel.start)/dt))
@@ -68,13 +69,16 @@ def slice_retract(r,inf,n_pairs,slice_rel):
     slice_v = slice(zero_offset,zero_offset+idx_to_move)
     slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
     return slice_obj
+   
 
 def analyze_hairpin(abs_dir,force=False,**kw):
-    _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=force)
+    id = "np={:d}_".format(kw["n_pairs"])
+    cache_name = "./cache{:s}.pkl".format(id)
+    _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=force,
+                                              cache_name=cache_name)
     args = []
     force_run = False
     dir_relative = os.path.dirname(abs_dir)
-    id = "np={:d}_".format(kw["n_pairs"])
     rel = "./" + id
     for i,example in enumerate(examples):
         # need to fix the dwell times; igor does not record it when using
@@ -103,6 +107,7 @@ def analyze_hairpin(abs_dir,force=False,**kw):
                                                      flip_forces=False,
                                                      fraction_for_vel=0.1)
         except IndexError as e:
+            print(e)
             continue
         unfold.extend(unfold_tmp)
         refold.extend(refold_tmp)
@@ -118,6 +123,43 @@ def analyze_hairpin(abs_dir,force=False,**kw):
             plt.plot(r.Time,r.Force)
             plt.show()
         """
+ 
+    fig = PlotUtilities.figure()
+    FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
+                           cmap='gist_earth')
+    PlotUtilities.savefig(fig,"./out/{:s}heat.png".format(id))
+    x_plot = lambda x: x
+    y_plot = lambda y: y*1e12
+    n_filter_points = 500
+    for i,retract in enumerate(just_ramping_portions):
+        break
+        fig = PlotUtilities.figure(figsize=(8,12))        
+        plt.subplot(4,1,1)
+        FEC_Plot._fec_base_plot(retract.Separation * 1e9,
+                                y_plot(retract.Force),
+                                n_filter_points=n_filter_points)   
+        PlotUtilities.lazyLabel("Separation (nm)","Force (pN)","")
+        ax = plt.subplot(4,1,2)
+        x_plot_tmp = x_plot(retract.Time)
+        FEC_Plot._fec_base_plot(x_plot_tmp,
+                                y_plot(retract.Force),
+                                n_filter_points=n_filter_points)
+        xlim =  [min(x_plot_tmp),max(x_plot_tmp)]                               
+        plt.xlim(xlim)
+        PlotUtilities.lazyLabel("","Force (pN)","")
+        plt.subplot(4,1,3)        
+        plt.plot(retract.Time,retract.Force*1e12,alpha=0.3)
+        for u,r in zip(unfold_per_obj[i],refold_per_obj[i]):
+            plt.plot(u.Time,u.Force*1e12,color='r',alpha=0.6)                
+            plt.plot(r.Time,r.Force*1e12,color='b',alpha=0.6)   
+        PlotUtilities.lazyLabel("","Force (pN)","")            
+        plt.xlim(xlim)        
+        plt.subplot(4,1,4)                         
+        retract_nm = 1e9 * retract.Separation
+        plt.plot(retract.Time,retract_nm,color='b')
+        PlotUtilities.lazyLabel("Time (s)","Separation (nm)","")
+        plt.xlim(xlim)                
+        PlotUtilities.savefig(fig,"./out/out{:s}{:d}.png".format(id,i))    
     """
     Do a *really* fast-and-dirty energy landscape analysis
     """        
@@ -151,40 +193,7 @@ def analyze_hairpin(abs_dir,force=False,**kw):
         PlotUtilities.lazyLabel("Extension (nm)",y,"",frameon=True)
         ylim = np.array(plt.ylim())
         PlotUtilities.secondAxis(ax,label="kcal/mol",limits=ylim*0.529)        
-        PlotUtilities.savefig(fig,"./out/landscape_{:.2g}.png".format(f*1e12))
-    fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
-                           cmap='gist_earth')
-    PlotUtilities.savefig(fig,"./out/{:s}heat.png".format(id))
-    x_plot = lambda x: x
-    y_plot = lambda y: y*1e12
-    n_filter_points = 500
-    for i,retract in enumerate(just_ramping_portions):
-        fig = PlotUtilities.figure(figsize=(8,12))        
-        plt.subplot(4,1,1)
-        FEC_Plot._fec_base_plot(retract.Separation * 1e9,
-                                y_plot(retract.Force),
-                                n_filter_points=n_filter_points)   
-        PlotUtilities.lazyLabel("Separation (nm)","Force (pN)","")
-        ax = plt.subplot(4,1,2)
-        x_plot_tmp = x_plot(retract.Time)
-        FEC_Plot._fec_base_plot(x_plot_tmp,
-                                y_plot(retract.Force),
-                                n_filter_points=n_filter_points)
-        plt.xlim([min(x_plot_tmp),max(x_plot_tmp)])
-        PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
-        plt.subplot(4,1,3)        
-        plt.plot(retract.Time,retract.Force*1e12,alpha=0.3)
-        for u,r in zip(unfold_per_obj[i],refold_per_obj[i]):
-            plt.plot(u.Time,u.Force*1e12,color='r',alpha=0.6)                
-            plt.plot(r.Time,r.Force*1e12,color='b',alpha=0.6)   
-        PlotUtilities.lazyLabel("Time (s)","Force (pN)","")            
-        retract_nm = 1e9 * retract.Separation
-        plt.subplot(4,1,4)
-        PlotUtilities.lazyLabel("Time (s)","Separation (nm)","")
-                                          
-        plt.plot(retract.Time,retract_nm,color='b')
-        PlotUtilities.savefig(fig,"./out/out{:s}{:d}.png".format(id,i))    
+        PlotUtilities.savefig(fig,"./out/landscape_{:.2g}.png".format(f*1e12))        
     
 def run():
     """
@@ -198,13 +207,13 @@ def run():
     """
     base_data_dir = FEC_Util.default_data_root() + \
                     "4Patrick/CuratedData/DNA/hairpin-100nt-16gc/Positive"
-    dict_10_ramps = dict(n_pairs =10,
-                         slice_rel=slice(0.0,2.1*3))
+    dict_10_ramps = dict(n_pairs =9,
+                         slice_rel=slice(0.14,3.543))
     dict_3_ramps = dict(n_pairs =3,
                         slice_rel=slice(0.0,6.1))                
     dirs = [ [base_data_dir + "/3_ramps/",dict_3_ramps],
              [base_data_dir + "/10_ramps/",dict_10_ramps]]
-    for abs_dir,kw in dirs:
+    for abs_dir,kw in dirs[::-1]:
         analyze_hairpin(abs_dir,**kw)
         break
               
