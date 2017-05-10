@@ -76,8 +76,19 @@ def generate_rupture_histograms():
 
 def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs):
+    # get the style for before and after
+    style_interp_before = dict(**interp_force_kwargs)
+    style_interp_before['color'] = 'b'
+    style_interp_after = dict(**interp_force_kwargs)
+    style_interp_after['color'] = 'g'
+    # get the slices
+    slice_before = slice(0,info_final.event_idx[0],1)
+    slice_after = slice(info_final.event_idx[0],None,1)
     plt.plot(time_plot,force_plot,**raw_force_kwargs)
-    plt.plot(time_plot,force_interp_plot,**interp_force_kwargs)
+    plt.plot(time_plot[slice_before],force_interp_plot[slice_before],
+             **style_interp_before)
+    plt.plot(time_plot[slice_after],force_interp_plot[slice_after],
+             **style_interp_after)
     PlotUtilities.lazyLabel("","Force (pN)","")
     # plot arrows above the events
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
@@ -314,7 +325,7 @@ def run():
     plt.xlim([xlim[0],xlim[1]*1.5])
     # # plot the image on top
     in_ax = inset_axes(ax1,
-                       width="60%", # width = 30% of parent_bbox
+                       width="65%", # width = 30% of parent_bbox
                        height="90%", 
                        loc=1)
     im = plt.imread("../_Data/pulling_figure.png")
