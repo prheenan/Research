@@ -32,7 +32,7 @@ probabiity_kwargs = dict(color='r')
 # how big the scale bars are
 scale_fraction_width = 0.3
 scale_fraction_offset = 0.3
-df_dt_string = r"$\frac{\mathrm{dF}}{\mathrm{dt}}$"
+df_dt_string = r"dF/dt"
 rupture_string = r"F$_{\mathrm{r}}$"
 fontsize=20
 
@@ -94,12 +94,12 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
                                       fudge_y=20,**arrow_kwargs)
     # add a scale bar
-    PlotUtilities.no_x_anything(plt.gca())               
+    PlotUtilities.no_x_label(plt.gca())               
     max_time = max(time_plot)
     width = scale_fraction_width * max_time
     label = "{:.1g}s".format(width)
     PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
-                              y=-15,s=label,
+                              y=np.max(plt.ylim())*0.7,s=label,
                               width=width)  
 
 def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=20,
@@ -178,7 +178,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     text_box_kwargs = dict(horizontalalignment='center',
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
-    plt.text(x=np.min(predicted_x),y=np.mean(ylim)*0.9,backgroundcolor='c',
+    plt.text(x=np.mean(predicted_x),y=np.mean(ylim)*0.9,backgroundcolor='c',
              bbox=dict(linestyle='-.',color='c'),color='w',
              s="Predictions",**text_box_kwargs)
     # plot an from the event to the closest x 
@@ -261,6 +261,7 @@ def plot_landscape(x,landscape):
     y_max = landscape[max_idx]
     # make the x_dagger annotation
     dagger_props = common_arrow_kwargs()
+    dagger_props['arrowprops']['arrowstyle'] = '<->'
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
                 s=r"x$^{\ddag}$",**dagger_props)
     # make the delta_G_dagger annotation
@@ -309,41 +310,34 @@ def run():
     force_interp_plot = split_fec.retract_spline_interpolator()(time) * 1e12
     # plot everything
     n_cols = 3
-    n_rows = 2
+    n_rows = 3
     gs = gridspec.GridSpec(n_rows, n_cols)
-    ylim_force_pN = [-40,max(force_interp_plot)*1.2]
+    ylim_force_pN = [-35,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=50)
-    fig = PlotUtilities.figure(figsize=(16,8))
-    # # plot the 'raw' force
-    ax1 = plt.subplot(gs[0,0])
-    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
-                    arrow_kwargs)
-    xlim = plt.xlim()
-    plt.ylim(ylim_force_pN)
-    plt.xlim([xlim[0],xlim[1]*1.5])
-    # # plot the image on top
-    in_ax = inset_axes(ax1,
-                       width="65%", # width = 30% of parent_bbox
-                       height="90%", 
-                       loc=1)
+    fig = PlotUtilities.figure(figsize=(19,9))
+    # # plot the experimental image
+    in_ax = plt.subplot(gs[:,0])
     im = plt.imread("../_Data/pulling_figure.png")
     in_ax.imshow(im,interpolation="bicubic")
     in_ax.set_xticks([])
     in_ax.set_yticks([])
-    # # plot the energy landscape with annotations
-    ax = plt.subplot(gs[0,1:])
-    plot_landscape(x,landscape)
+    # # plot the 'raw' force
+    ax1 = plt.subplot(gs[0,1:2])
+    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
+                    arrow_kwargs)
+    xlim = plt.xlim()
+    plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis
-    ax_zoom = plt.subplot(gs[1,0])
+    ax_zoom = plt.subplot(gs[1:,1:-1])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
     # # plot (a single) histogram and model. This one is special, so we 
     # use a slightly different error bar for it 
-    fmt_error = dict(marker='v',color='k',markersize=15,linewidth=3)
+    fmt_error = dict(marker='v',color='k',markersize=10,linewidth=3)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
-    plt.subplot(gs[1,1])
+    plt.subplot(gs[0,-1])
     plot_histogram_and_model(rupture_forces,
                              rupture_forces_histograms[example_idx],
                              models[example_idx],fmt_error)
@@ -355,12 +349,13 @@ def run():
              horizontalalignment='center',
              verticalalignment='center')
     plt.xlim(rupture_limits)
-    plt.subplot(gs[1,2])
+    plt.subplot(gs[1,-1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
     PlotUtilities.lazyLabel(df_dt_string + " (pN/s)",
-                            rupture_string + " (pN)","")
+                            rupture_string + " (pN)","",
+                            legend_kwargs=dict(handlelength=1))
     # plot the 'extra' point specially, so it sticks out. 
     mean = 1e12*np.mean(rupture_forces_histograms[example_idx])
     stdev = 1e12*np.std(rupture_forces_histograms[example_idx])
@@ -369,7 +364,11 @@ def run():
                  yerr=stdev,
                  **fmt_error)
     plt.ylim(rupture_limits)
-    PlotUtilities.savefig(fig,"./diagram.png")
+    # # plot the energy landscape with annotations
+    ax = plt.subplot(gs[2,-1])
+    plot_landscape(x,landscape)
+    PlotUtilities.savefig(fig,"./diagram.png",
+                          subplots_adjust=dict(hspace=0.3))
 
 if __name__ == "__main__":
     run()
