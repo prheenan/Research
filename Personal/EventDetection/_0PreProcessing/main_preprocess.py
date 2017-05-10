@@ -23,8 +23,8 @@ def run():
     relative_650 = "650nm-4x-bio/pxp/"
     relative_protein = "4nug2_alpha3D_MarcAndre/pxp/"
     relative_devin = "4nug2-devin/pxp/"
-    relative_input_dir = [relative_devin,
-                          relative_protein,
+    relative_input_dir = [relative_protein,
+                          relative_devin,
                           relative_650 + "1000-nanometers-per-second/",
                           relative_650 + "100-nanometers-per-second/",
                           relative_650 + "500-nanometers-per-second/"]
@@ -33,6 +33,7 @@ def run():
     absolute_output_dir = [d.replace("pxp","csv") for d in absolute_input_dir]
     for i,(d,d_out) in enumerate(zip(absolute_input_dir,absolute_output_dir)):
         InputOutput.output_waves_in_directory_to_csv_files(d,d_out)
+        break
 
 if __name__ == "__main__":
     run()

@@ -351,6 +351,7 @@ def set_events_of_data(data,events):
     # determine matches; may have multiple events
     eq = lambda x,y: x == y
     id_parity_check = []
+    data_to_ret = []
     for idx_tmp,(id_data_tmp,d) in enumerate(zip(id_data,data)):
         # find which index (in id_events) corresponds to id_data_tmp
         # XXX quadratic time... small numbers (hundreds), dont care
@@ -361,7 +362,9 @@ def set_events_of_data(data,events):
         if (len(matching_idx) == 0):
             print("Couldnt find events for {:s}, removing".
                   format(str(id_data_tmp)))
-            del data[idx_tmp]
+            continue
+        # POST: have at least one
+        data_to_ret.append(d)
         # get the actual events
         events_matching = [events[i] for i in matching_idx]
         # add the events to the TimeSepForce Object. Note that
@@ -380,6 +383,7 @@ def set_events_of_data(data,events):
                   if i not in id_parity_check]
         print("Warning: The following events were unused: {:s}".format(unused))
     print("{:d}/{:d} events matched".format(n_matched,n_events))
+    return data_to_ret
 
 def output_waves_in_directory_to_csv_files(input_directory,output_directory):
     """
@@ -401,7 +405,7 @@ def output_waves_in_directory_to_csv_files(input_directory,output_directory):
     n_curves = sum([len(d) for _,d,_ in files_data_events])
     print("Found {:d} curves".format(n_curves))
     for file_path,data,ev in files_data_events:
-        set_events_of_data(data,ev)
+        data = set_events_of_data(data,ev)
         # POST: all data are set. go ahead and save them out.
         n = len(data)
         for i,dat in enumerate(data):

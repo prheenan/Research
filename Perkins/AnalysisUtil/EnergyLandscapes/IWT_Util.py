@@ -12,6 +12,7 @@ from GeneralUtil.python import PlotUtilities
 from FitUtil.FitUtils.Python import FitUtil as pFitUtil
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
+from Research.Personal.EventDetection.Util import Analysis
 
 class BoundsObj:
     def __init__(self,bounds_folded_nm,bounds_unfolded_nm,
@@ -22,7 +23,7 @@ class BoundsObj:
         self.force_one_half_N = force_one_half_N
 
 class TiltedLandscape:
-    def __init__(self,landscape,bounds,kT=4.1e-21):
+    def __init__(self,landscape,f_one_half_N=0,kT=4.1e-21):
         """
         Creates a new tilted landscape object
 
@@ -31,44 +32,13 @@ class TiltedLandscape:
             bounds: the IWT_Util.BoundsObj
             kT: 1/beta, assumed constant
         """
-        bounds_folded_nm = bounds.bounds_folded_nm
-        bounds_transition_nm = bounds.bounds_transition_nm
-        bounds_unfolded_nm = bounds.bounds_unfolded_nm
-        f_one_half = bounds.force_one_half_N 
+
         self.kT = kT
         self.Landscape_kT =  landscape.EnergyLandscape/kT
         self.Tilted_kT = self.Landscape_kT - \
-                         (landscape.Extensions*f_one_half)/kT
+                         (landscape.Extensions*f_one_half_N)/kT
         landscape_ext_nm = landscape.Extensions * 1e9
-        self.pred_fold_x,self.pred_fold_y,self.coeffs_fold = \
-            FitToRegion(landscape_ext_nm,self.Tilted_kT,bounds_folded_nm)
-        self.pred_tx_x,self.pred_tx_y,self.coeffs_tx = \
-                FitToRegion(landscape_ext_nm,self.Tilted_kT,
-                            bounds_transition_nm)
-        self.pred_unfold_x,self.pred_unfold_y,self.coeffs_unfold = \
-                FitToRegion(landscape_ext_nm,self.Tilted_kT,bounds_unfolded_nm)
-        # get the energy landscapes in kT
-        # fit a second order to the tilted one (easy to find transition states)
-        # get the offsets for the SHO
-        self.x0_tx = ExtensionOffsetFromCoeffs(self.coeffs_tx)
-        self.x0_fold = ExtensionOffsetFromCoeffs(self.coeffs_fold)
-        self.x0_unfold = ExtensionOffsetFromCoeffs(self.coeffs_unfold)
-        # DeltaX dagger ais the distance between the transition and
-        # folded state. See after equation 5:
-        """
-        Dudko, O. K., Hummer, G. & Szabo, A. 
-        Theory, analysis, and interpretation of single-molecule force 
-        spectroscopy experiments. PNAS 105, 1575515760 (2008).
-        """
-        self.DeltaXDagger = self.x0_tx-self.x0_fold
-        """
-        DeltaG_dagger is (ibid)
-        "the apparent free-energy of activation in the absence of an external
-        force." (ie: the height of the energy barrier without force)
-        """
-        self.ext_idx = np.argmin(np.abs(landscape_ext_nm - self.x0_tx))
         self.MinG = min(self.Landscape_kT)
-        self.DeltaGDagger = self.Landscape_kT[self.ext_idx]-self.MinG
         self.landscape_ext_nm = landscape_ext_nm
         self.Offset = np.percentile(self.Tilted_kT,10)
         self.OffsetTilted_kT = self.Tilted_kT-self.Offset
@@ -377,7 +347,8 @@ def set_separation_velocity_by_first_num(iwt_data,num):
 
 
 def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
-                           fraction_for_vel=0.5,flip_forces=False):
+                           fraction_for_vel=0.5,flip_forces=False,f_split=None,
+                           unfold_start_idx=None):
     """
     given a 'raw' TimeSepForce object, gets the approach and retract 
     as IWT objects, accounting for the velocity and offset of the separation
@@ -392,9 +363,16 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
     
         fraction_for_vel: fit this much of the retract/approach
         separation versus time to determine the true velocity
+        
+        f_split: if not none, a function taking in data and returning 
+        (idx_end_of_unfolding,idx_end_of_folding)
     returns:
         tuple of <unfolding,refolding> IWT Object
     """
+    if (f_split is not None):
+        unfold_start_idx,idx_end_of_unfolding,idx_end_of_folding = f_split(d)
+    if (unfold_start_idx is None):
+        unfold_start_idx = 0
     if (idx_end_of_unfolding is None):
         idx_end_of_unfolding = int(np.ceil(d.Force.size/2))
     if (idx_end_of_folding is None):
@@ -402,7 +380,7 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
     if (flip_forces):
         d.Force *= -1
     # get the unfolding and unfolds
-    slice_unfolding = slice(0,idx_end_of_unfolding)
+    slice_unfolding = slice(unfold_start_idx,idx_end_of_unfolding)
     unfold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
     slice_folding = slice(idx_end_of_unfolding,idx_end_of_folding)
     fold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_folding)
@@ -455,9 +433,22 @@ def ExtensionOffsetFromCoeffs(coeffs):
     """
     return -coeffs[1]/(2*coeffs[0])
 
+def get_slice(data,j,n):
+    """
+    Gets a slice for a TimeSepForce object 'data'
+    
+    Args:
+        j: which slice (up to n-1)
+        n: maximum number of slices
+    Returns:
+        new slice object
+    """
+    Length = data.Force.size    
+    data_per_curve = int(np.round(Length/n))    
+    return slice(j*data_per_curve,(j+1)*data_per_curve,1)
 
 def get_unfold_and_refold_objects(data,number_of_pairs,flip_forces=False,
-                                  fraction_for_vel=0.1):
+                                  fraction_for_vel=0.1,**kwargs):
     """
     Splits a TimeSepForceObj into number_of_pairs unfold/refold pairs, converting
     into IWT Objects.
@@ -468,22 +459,64 @@ def get_unfold_and_refold_objects(data,number_of_pairs,flip_forces=False,
         'out and back' would be one, etc
         flip_forces: if true, multiply all the forces by -1
         fraction_for_vel: fraction to use for the velocity
+        get_slice: how to slice the data
+        
+        kwargs: passed to split_into_iwt_objects
     Returns:
         tuple of <unfold,refold> objects
     """
-    Length = data.Force.size
-    data_per_curve = int(np.round(Length/number_of_pairs))
-    get_slice = lambda j: slice(j*data_per_curve,(j+1)*data_per_curve,1)
-    pairs = [FEC_Util.MakeTimeSepForceFromSlice(data,get_slice(i))
-             for i in range(number_of_pairs) ]
+    n = number_of_pairs
+    pairs = [FEC_Util.MakeTimeSepForceFromSlice(data,get_slice(data,i,n))
+             for i in range(n) ]
     # POST: pairs has each slice (approach/retract pair) that we want
     # break up into retract and approach (ie: unfold,refold)
     unfold,refold = [],[]
     for p in pairs:
         unfold_tmp,refold_tmp = \
             split_into_iwt_objects(p,fraction_for_vel=fraction_for_vel,
-                                   flip_forces=flip_forces)
+                                   flip_forces=flip_forces,**kwargs)
         unfold.append(unfold_tmp)
         refold.append(refold_tmp)
     return unfold,refold        
+    
+def split_by_max_sep(obj,fraction_smooth=0.02):
+    """
+    gets the end of the Unfolding and end of the folding index for object
+    
+    Args;
+        obj: TimeSepForce object
+        fraction_smooth: how much to smooth the results by
+    Returns:
+        tuple of (unfolding index end, folding index end)
+    """
+    raw_sep = obj.Separation
+    n_smooth = int(np.ceil(fraction_smooth*raw_sep.size))
+    sep = Analysis.spline_interpolated_by_index(raw_sep,n_smooth)
+    unfold_stop_idx = np.argmax(sep)
+    sep_start = sep[0]
+    sep_unfold = sep[unfold_stop_idx]
+    possible_refold = np.where( raw_sep[unfold_stop_idx:] <= sep_start)[0]
+    if (possible_refold.size == 0):
+        refold_stop_idx = obj.Separation.size-1
+    else:
+        refold_stop_idx = unfold_stop_idx + possible_refold[0]
+    # determine the actual unfolding index we should use... may have
+    # split it improperly
+    possible_unfolding_idx = \
+        np.where(sep[:unfold_stop_idx] <= sep[refold_stop_idx])[0]
+    if (possible_unfolding_idx.size == 0):
+        unfold_start_idx = 0 
+    else:
+        unfold_start_idx = possible_unfolding_idx[-1]
+    return unfold_start_idx,unfold_stop_idx,refold_stop_idx
+    
+    
+def get_unfold_and_refold_objects_by_sep(data,f_split=None,**kwargs):   
+    """
+    Gets the unfolding and refolding segemnds of a single TimeSepForce object,
+    using the separation values to intelligently split
+    """
+    if (f_split is None):
+        f_split = split_by_max_sep
+    return get_unfold_and_refold_objects(data,f_split=f_split,**kwargs)
         

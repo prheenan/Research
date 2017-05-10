@@ -697,7 +697,7 @@ def _predict_full(example,threshold=1e-2,f_refs=None,tau_fraction=0.02,
     """
     example_split = Analysis.\
         zero_and_split_force_extension_curve(example,
-                                             fraction=tau_fraction)
+                                             fraction=tau_fraction)                         
     if (f_refs is None):
         f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]

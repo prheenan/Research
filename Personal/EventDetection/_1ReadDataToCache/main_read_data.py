@@ -126,10 +126,10 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    only_lowest = False
+    only_lowest = True
     debugging = False   
     copy_files = True
-    n_learners = 1
+    n_learners = 3
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
                                                 only_lowest=only_lowest)
