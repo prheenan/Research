@@ -58,11 +58,13 @@ def slice_retract(r,inf,n_pairs,slice_rel):
     # XXX add in dt...
     idx_to_move = int(np.ceil((slice_rel.stop-slice_rel.start)/dt))
     zero_offset =where_force_above_zero[0]
+    """
     plt.plot(r.Time,r.Force,color='k',alpha=0.3)
     plt.plot(r.Time,interp(idx))
     plt.axvline(r.Time[zero_offset])
     plt.axvline(r.Time[min(r.Time.size-1,zero_offset+idx_to_move)])
     plt.show()
+    """
     slice_v = slice(zero_offset,zero_offset+idx_to_move)
     slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
     return slice_obj
