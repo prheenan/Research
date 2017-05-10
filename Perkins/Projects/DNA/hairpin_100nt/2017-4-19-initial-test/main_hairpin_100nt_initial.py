@@ -14,7 +14,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Personal.EventDetection.Util import Analysis,Plotting
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
-from GeneralUtil.python import PlotUtilities,CheckpointUtilities
+from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
 from FitUtil.FreelyJointedChain.Python.Code import FJC
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import \
    IWT_Util
@@ -53,19 +53,16 @@ def slice_retract(r,inf,n_pairs,slice_rel):
     n_points = int(0.02 * r.Separation.size)
     filtered = Analysis.filter_fec(r,n_points)
     idx,interp = Analysis.spline_interpolator_by_index(r.Force,n_points)
-    where_force_above_zero = \
-        np.where(filtered.Time -filtered.Time[0] >= slice_rel.start)[0]
+    where_force_above_zero = np.where(filtered.Force >= 0)[0]
     dt = r.Time[1] - r.Time[0]
     # XXX add in dt...
     idx_to_move = int(np.ceil((slice_rel.stop-slice_rel.start)/dt))
     zero_offset =where_force_above_zero[0]
-    """
     plt.plot(r.Time,r.Force,color='k',alpha=0.3)
     plt.plot(r.Time,interp(idx))
     plt.axvline(r.Time[zero_offset])
     plt.axvline(r.Time[min(r.Time.size-1,zero_offset+idx_to_move)])
     plt.show()
-    """
     slice_v = slice(zero_offset,zero_offset+idx_to_move)
     slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
     return slice_obj
@@ -73,20 +70,18 @@ def slice_retract(r,inf,n_pairs,slice_rel):
 
 def analyze_hairpin(abs_dir,force=False,**kw):
     id = "np={:d}_".format(kw["n_pairs"])
-    cache_name = "./cache{:s}.pkl".format(id)
+    cache_name = "./cache/cache{:s}.pkl".format(id)
     _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=force,
                                               cache_name=cache_name)
     args = []
     force_run = False
     dir_relative = os.path.dirname(abs_dir)
     rel = "./" + id
-    for i,example in enumerate(examples):
-        # need to fix the dwell times; igor does not record it when using
-        # the indenter
-        example.set_dwell_time(example.Meta.DwellTime1)
+    GenUtilities.ensureDirExists("./out{:s}".format(id))                                                 
+    for i,example in enumerate(examples[18:]):
         # get the FJC model...
         models,retract,pred_info = CheckpointUtilities.getCheckpoint(
-            rel + "model_all{:d}.pkl".format(i),get_basic_information,
+            rel + "cache/model_all{:d}.pkl".format(i),get_basic_information,
             force_run,i,example)
         args.append([models,retract,pred_info])
     # make a heat map of all the retracts...
@@ -127,12 +122,11 @@ def analyze_hairpin(abs_dir,force=False,**kw):
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
                            cmap='gist_earth')
-    PlotUtilities.savefig(fig,"./out/{:s}heat.png".format(id))
+    PlotUtilities.savefig(fig,"./out{:s}/heat.png".format(id))
     x_plot = lambda x: x
     y_plot = lambda y: y*1e12
     n_filter_points = 500
     for i,retract in enumerate(just_ramping_portions):
-        break
         fig = PlotUtilities.figure(figsize=(8,12))        
         plt.subplot(4,1,1)
         FEC_Plot._fec_base_plot(retract.Separation * 1e9,
@@ -159,11 +153,11 @@ def analyze_hairpin(abs_dir,force=False,**kw):
         plt.plot(retract.Time,retract_nm,color='b')
         PlotUtilities.lazyLabel("Time (s)","Separation (nm)","")
         plt.xlim(xlim)                
-        PlotUtilities.savefig(fig,"./out/out{:s}{:d}.png".format(id,i))    
+        PlotUtilities.savefig(fig,"./out{:s}/{:d}.png".format(id,i))    
     """
     Do a *really* fast-and-dirty energy landscape analysis
     """        
-    keywords_iwt = dict(UnfoldingObjs=unfold,NumBins=75,RefoldingObjs=refold)
+    keywords_iwt = dict(UnfoldingObjs=unfold,NumBins=150,RefoldingObjs=refold)
     landscape = CheckpointUtilities.\
         getCheckpoint(rel + "landscape.pkl",
                       InverseWeierstrass.FreeEnergyAtZeroForce,
@@ -193,7 +187,8 @@ def analyze_hairpin(abs_dir,force=False,**kw):
         PlotUtilities.lazyLabel("Extension (nm)",y,"",frameon=True)
         ylim = np.array(plt.ylim())
         PlotUtilities.secondAxis(ax,label="kcal/mol",limits=ylim*0.529)        
-        PlotUtilities.savefig(fig,"./out/landscape_{:.2g}.png".format(f*1e12))        
+        PlotUtilities.savefig(fig,"./out{:s}/landscape_{:.2g}.png".\
+                              format(id,f*1e12))        
     
 def run():
     """
@@ -210,12 +205,11 @@ def run():
     dict_10_ramps = dict(n_pairs =9,
                          slice_rel=slice(0.14,3.543))
     dict_3_ramps = dict(n_pairs =3,
-                        slice_rel=slice(0.0,6.1))                
+                        slice_rel=slice(1.299,7.61))                
     dirs = [ [base_data_dir + "/3_ramps/",dict_3_ramps],
              [base_data_dir + "/10_ramps/",dict_10_ramps]]
-    for abs_dir,kw in dirs[::-1]:
+    for abs_dir,kw in dirs:
         analyze_hairpin(abs_dir,**kw)
-        break
               
 
     
