@@ -70,22 +70,24 @@ def run():
     # plot the 'raw' probability
     plt.subplot(n_rows,n_cols,3)
     plt.semilogy(time_plot,info_no_domain_specific.cdf,**probabiity_kwargs)    
-    PlotUtilities.lazyLabel("","Probability",
-                            "$\downarrow$ Apply Chebyshev's Inequality $\downarrow$")
+    PlotUtilities.lazyLabel("","Probability",\
+                "$\downarrow$ Apply Chebyshev's Inequality $\downarrow$")
     PlotUtilities.no_x_label()        
     plt.ylim(ylim_prob)
     # plot the adhesion-fixed probability
     plt.subplot(n_rows,n_cols,4)
     plt.semilogy(time_plot,info_remove_adhesions.cdf,**probabiity_kwargs)    
-    PlotUtilities.lazyLabel("","Probability",
-                            r"$\downarrow$ Remove where at surface or $\frac{dG}{dt}>0\downarrow$")
+    title = (r"$\downarrow$ Remove where at surface" + \
+             r" or $\frac{dG}{dt}>0\downarrow$")
+    PlotUtilities.lazyLabel("","Probability",title)
     PlotUtilities.no_x_label()      
     plt.ylim(ylim_prob)    
     # plot the final probability
     plt.subplot(n_rows,n_cols,5)
     plt.semilogy(time_plot,info_final.cdf,**probabiity_kwargs)    
-    PlotUtilities.lazyLabel("","Probability",
-                            r"$\downarrow$ Remove where consistent with noise or 0 $\downarrow$")
+    title_consistent = (r"$\downarrow$ Remove where consistent with noise" + \
+                        " or 0 $\downarrow$")
+    PlotUtilities.lazyLabel("","Probability",title_consistent)
     PlotUtilities.no_x_label()      
     plt.ylim(ylim_prob)    
     # plot the final event locations
@@ -118,7 +120,8 @@ def run():
                        event_bounding_slice,
                        event_location,raw_force_kwargs,
                        interp_force_kwargs,**kw)
-    PlotUtilities.savefig(fig,"./flowchart.png",subplots_adjust=dict(hspace=0.4))
+    PlotUtilities.savefig(fig,"./flowchart.png",
+                          subplots_adjust=dict(hspace=0.4))
     
 def inset_by_slice(ax,x,y,y_interp,slice_v,event_idx,y_kwargs,interp_kwargs,loc,
                    inset_kwargs=dict()):
