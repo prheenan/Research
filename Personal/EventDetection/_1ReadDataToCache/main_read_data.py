@@ -18,7 +18,7 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 def get_learner_results(cache_directory,debug_directory,positive_categories,
                         limit = 200,n_folds=5,n_tuning_points = 15,
                         force_read = False,    
-                        pool_size =  1,
+                        pool_size =  multiprocessing.cpu_count()-1,
                         force_relearn = False,
                         force_learn = False,
                         n_learners = 1,learner_kw=dict(),
