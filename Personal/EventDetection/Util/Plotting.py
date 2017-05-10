@@ -591,10 +591,9 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     rel_pred = to_pred/max_x_true
     rel_true = to_true/max_x_pred
     if (to_pred.size > 0):
-        plt.hist(rel_pred,
-                 log=True,bins=bins,**style_true)
+        to_ret = plt.hist(rel_pred,log=True,bins=bins,**style_true)
     if (to_true.size > 0):
-        plt.hist(rel_true,log=True,bins=bins,**style_pred)
+        to_ret = plt.hist(rel_true,log=True,bins=bins,**style_pred)
     if (q is not None):
         cat = np.concatenate([rel_pred,rel_true])
         q_num = np.percentile(cat,q)
@@ -608,6 +607,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
     PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc=loc)
+    return to_ret
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
