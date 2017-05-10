@@ -30,7 +30,7 @@ raw_force_kwargs = dict(color='k',alpha=0.3)
 interp_force_kwargs = dict(color='b',linewidth=3)
 probabiity_kwargs = dict(color='r')
 # how big the scale bars are
-scale_fraction_width = 0.3
+scale_fraction_width = 0.35
 scale_fraction_offset = 0.3
 df_dt_string = r"dF/dt"
 rupture_string = r"F$_{\mathrm{r}}$"
@@ -81,14 +81,21 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     style_interp_before['color'] = 'b'
     style_interp_after = dict(**interp_force_kwargs)
     style_interp_after['color'] = 'g'
+    style_interp_final = dict(**interp_force_kwargs)
+    style_interp_final['color'] = 'm'
     # get the slices
-    slice_before = slice(0,info_final.event_idx[0],1)
-    slice_after = slice(info_final.event_idx[0],None,1)
+    event_final = info_final.event_idx[-2]
+    event_initial = info_final.event_idx[0]
+    slice_before = slice(0,event_initial,1)
+    slice_after = slice(event_initial,event_final,1)
+    slice_final = slice(event_final,None,1)
     plt.plot(time_plot,force_plot,**raw_force_kwargs)
     plt.plot(time_plot[slice_before],force_interp_plot[slice_before],
              **style_interp_before)
     plt.plot(time_plot[slice_after],force_interp_plot[slice_after],
              **style_interp_after)
+    plt.plot(time_plot[slice_final],force_interp_plot[slice_final],
+             **style_interp_final)
     PlotUtilities.lazyLabel("","Force (pN)","")
     # plot arrows above the events
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
@@ -178,7 +185,8 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     text_box_kwargs = dict(horizontalalignment='center',
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
-    plt.text(x=np.mean(predicted_x),y=np.mean(ylim)*0.9,backgroundcolor='c',
+    plt.text(x=np.min(predicted_x)+abs(np.diff(predicted_x))*0.2,
+             y=np.mean(ylim)*0.9,backgroundcolor='c',
              bbox=dict(linestyle='-.',color='c'),color='w',
              s="Predictions",**text_box_kwargs)
     # plot an from the event to the closest x 
@@ -268,7 +276,7 @@ def plot_landscape(x,landscape):
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
                 **dagger_props)
     # make the extension scale bar 
-    width = 0.19 * (max(x)-min(x))
+    width = 0.2 * (max(x)-min(x))
     label = "{:.1g}nm".format(width)
     x_text = x_min
     y_text = np.mean(plt.ylim())
@@ -278,6 +286,13 @@ def plot_landscape(x,landscape):
                               width=width)    
     PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
     plt.ylim(-4,max(plt.ylim()))
+
+def cantilever_image_plot(image_location):
+    in_ax = plt.gca()
+    im = plt.imread(image_location)
+    in_ax.imshow(im,interpolation="bicubic")
+    in_ax.set_xticks([])
+    in_ax.set_yticks([])
 
 
 def run():
@@ -301,6 +316,7 @@ def run():
     mean_rupture_upper = np.max(mean_rupture_forces+stdev_rupture_forces)
     rupture_limits = np.array([mean_rupture_lower,mean_rupture_upper])*1e12
     data_file = "../_Data/example_protein.pkl"
+    image_location =  "../_Data/pulling_figure_4nug2.png"
     data = CheckpointUtilities.lazy_load(data_file)
     split_fec,info_final = Detector._predict_full(data)
     # get the plotting versions of the time, etc
@@ -319,10 +335,7 @@ def run():
     fig = PlotUtilities.figure(figsize=(19,9))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:,0])
-    im = plt.imread("../_Data/pulling_figure.png")
-    in_ax.imshow(im,interpolation="bicubic")
-    in_ax.set_xticks([])
-    in_ax.set_yticks([])
+    cantilever_image_plot(image_location)
     # # plot the 'raw' force
     ax1 = plt.subplot(gs[0,1:2])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
