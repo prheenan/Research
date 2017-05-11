@@ -37,7 +37,7 @@ def run():
     xlim_dist = [1e-5,2]
     xlim_load = [1,1e5]
     xlim_rupture = [-5,300]
-    legend_locs = ['upper right','upper left','upper right']
+    legend_locs = ['upper right','center left','center left']
     for i,m in enumerate(metrics):
         offset = n_rows * i
         # the first column gets the algorithm label; the first row gets the
@@ -56,12 +56,13 @@ def run():
             xlabel_rupture_force = "Rupture Force (pN)"
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
-        ylabel_dist = "{:s}\nCount".format(m.name.title())
+        ylabel_dist = (r"$N_{\mathrm{" + "{:s}".format(m.name.title()) + "}}$")
         color_pred=colors[i]
         color_true = 'g'
         # get the formatting dictionaries for the various plots 
         distance_histogram_kw= \
-            Plotting.event_error_kwargs(m,color_pred=color_pred)
+            Plotting.event_error_kwargs(m,color_pred=color_pred,
+                                        label_bool=False)
         true_style_histogram = Plotting.\
             _histogram_true_style(color_true=color_true,label="true")
         pred_style_histogram = Plotting.\
@@ -82,10 +83,10 @@ def run():
                                               **distance_histogram_kw)
         PlotUtilities.lazyLabel(xlabel_dist,ylabel_dist,title_dist,
                                 loc=legend_locs[i],legendBgColor='w',
-                                frameon=True)      
+                                frameon=False)      
         plt.xlim(xlim_dist)                                   
         if not last_row:
-            PlotUtilities.no_x_label()
+            PlotUtilities.no_x_label(ax_dist)
         # make the loading rate histogram      
         ax_load = plt.subplot(n_rows,n_cols,(offset+2))
         Plotting.loading_rate_histogram(pred,bins=_bins_load_plot,
@@ -96,11 +97,11 @@ def run():
         plt.yscale('log')
         PlotUtilities.lazyLabel(xlabel_load,"",title_load,
                                 legendBgColor='w',
-                                loc='upper left',frameon=True)
+                                loc='upper left',frameon=False)
         plt.xlim(xlim_load)               
         if not last_row:
-            PlotUtilities.no_x_label()
-        PlotUtilities.no_y_label()
+            PlotUtilities.no_x_label(ax_load)
+        PlotUtilities.no_y_label(ax_load)
         # make the rupture force histogram
         ax_rupture = plt.subplot(n_rows,n_cols,(offset+3))
         Plotting.rupture_force_histogram(pred,bins=_bins_rupture_plot,
@@ -112,12 +113,12 @@ def run():
                                 useLegend=False)       
         plt.xlim(xlim_rupture)                                                 
         if not last_row:
-            PlotUtilities.no_x_label()     
-        PlotUtilities.no_y_label()                           
+            PlotUtilities.no_x_label(ax_rupture)     
+        PlotUtilities.no_y_label(ax_rupture)                           
         # set all the y limits for this row
         axes_counts = [ax_rupture,ax_load,ax_dist]
         max_limit = np.max([r.get_ylim() for r in axes_counts])
-        ylim_new = [0.5,max_limit*5]
+        ylim_new = [0.5,max_limit*1.1]
         for r in axes_counts:
             r.set_ylim(ylim_new)
     PlotUtilities.savefig(fig,"./performance.png")

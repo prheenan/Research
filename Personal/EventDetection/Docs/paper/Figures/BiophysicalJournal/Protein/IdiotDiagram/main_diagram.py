@@ -333,7 +333,7 @@ def run():
     ylim_force_pN = [-35,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
-                        markersize=75,marker=u'$\u2193$')
+                        markersize=75)
     fig = PlotUtilities.figure(figsize=(8,11))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:3,0])

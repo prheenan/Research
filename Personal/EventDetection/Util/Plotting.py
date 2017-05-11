@@ -537,7 +537,7 @@ def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
     return style_pred
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
-                       xlabel="Relative Error (x$_\mathrm{k}$)",
+                       xlabel="Relative Error (x$_\mathrm{k}$)",label_bool=True,
                        distance_limits=None,clip_limits=False,q=None):
     """
     Args:
@@ -569,13 +569,14 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
     return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
                 bins=bins,style_true=style_true,style_pred=style_pred,loc=loc,
                 xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred,
-                q=q)
+                q=q,label_bool=label_bool)
 
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
                                  xlabel="Distance [m]",loc='best',q=None,
-                                 q_label=None,use_q_number=False):
+                                 q_label=None,use_q_number=False,
+                                 label_bool=True):
     """
     plots the distribution of distances from true/predicted to counterparts
 
@@ -601,8 +602,9 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
             q_label = (r"P$_{" + "{:d}".format(q) + "}$")
         if (use_q_number):
             q_label += "={:.2g}".format(q_num)
-        plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4,
-                    color='k')
+    label = q_label if label_bool else ""
+    plt.axvline(q_num,label=label,linestyle='--',linewidth=2,
+                color='k')
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
@@ -962,7 +964,7 @@ def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
     return fec_split
 
 def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
-                             marker='v',markersize=15,alpha=1,zorder=10,
+                             marker=u'$\u2193$',markersize=75,alpha=1,zorder=10,
                              label=None,**kwargs):
     """
     plots arrows at the given indices, signifying an event
