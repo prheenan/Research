@@ -264,12 +264,11 @@ def plot_histogram_and_model(rupture_forces,rupture,model,kwargs_errorbar,
 
 
 
-def plot_landscape(x,landscape):
-    ax = plt.gca()
+def plot_landscape(x,landscape,ax=plt.gca()):
     landscape -= min(landscape)
     landscape /= 4.1e-21
     x *= 1e9
-    plt.plot(x,landscape)
+    plt.plot(x,landscape,color='k',linewidth=2)
     PlotUtilities.no_x_label(ax)
     # determine where to put all the annotations
     max_idx = np.argmax(landscape)
@@ -286,22 +285,14 @@ def plot_landscape(x,landscape):
     # make the delta_G_dagger annotation
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
                 **dagger_props)
-    # make the extension scale bar 
-    width = 0.2 * (max(x)-min(x))
-    label = "{:.1g}nm".format(width)
-    x_text = x_min
-    y_text = np.mean(plt.ylim())
-    PlotUtilities.scale_bar_x(x=x_text,
-                              y=y_text,
-                              s=label,fontsize=fontsize,
-                              width=width)    
-    PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
     plt.ylim(-4,max(plt.ylim()))
+    PlotUtilities.no_y_anything(ax=ax)
+    PlotUtilities.no_x_anything(ax=ax)
 
 def cantilever_image_plot(image_location):
     in_ax = plt.gca()
     im = plt.imread(image_location)
-    in_ax.imshow(im,interpolation="bicubic")
+    in_ax.imshow(im,interpolation="bicubic",aspect='auto')
     in_ax.set_xticks([])
     in_ax.set_yticks([])
 
@@ -374,9 +365,14 @@ def run():
                             rupture_string + " (pN)","",
                             legend_kwargs=dict(handlelength=1))
     plt.ylim(rupture_limits)
-    # # plot the energy landscape with annotations
-    ax = plt.subplot(gs[0,1:])
-    plot_landscape(x,landscape)
+    # # plot the energy landscape with annotations, as an inset 
+    from mpl_toolkits.axes_grid.inset_locator import inset_axes
+    inset_axes = inset_axes(in_ax,
+                            width="70%", # width = 30% of parent_bbox
+                            height="30%", # width = 30% of parent_bbox
+                            loc=4)
+    plt.sca(inset_axes)
+    plot_landscape(x,landscape,ax=inset_axes)
     PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":
