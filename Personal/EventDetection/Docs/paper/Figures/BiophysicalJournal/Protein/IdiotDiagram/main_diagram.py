@@ -30,11 +30,11 @@ raw_force_kwargs = dict(color='k',alpha=0.3)
 interp_force_kwargs = dict(color='b',linewidth=3)
 probabiity_kwargs = dict(color='r')
 # how big the scale bars are
-scale_fraction_width = 0.35
+scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
 df_dt_string = r"dF/dt"
 rupture_string = r"F$_{\mathrm{r}}$"
-fontsize=20
+fontsize=18
 
 def generate_rupture_histograms():
     num_loading_rates = 10
@@ -107,7 +107,7 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     label = "{:.1g}s".format(width)
     PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
                               y=np.max(plt.ylim())*0.7,s=label,
-                              width=width)  
+                              width=width,fontsize=fontsize)  
 
 def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=20,
                                         shrinkB=20,
@@ -186,9 +186,9 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
     plt.text(x=np.min(predicted_x)+abs(np.diff(predicted_x))*0.2,
-             y=np.mean(ylim)*0.9,backgroundcolor='c',
+             y=np.mean(ylim),backgroundcolor='c',
              bbox=dict(linestyle='-.',color='c'),color='w',
-             s="Predictions",**text_box_kwargs)
+             s="Predictions",rotation=90,zorder=10,**text_box_kwargs)
     # plot an from the event to the closest x 
     closest_x_idx = np.argmin(np.abs(predicted_x-event_time))
     closest_x = predicted_x[closest_x_idx]
@@ -219,39 +219,39 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     x_text = time_slice[0] + dx_zoom_full*scale_fraction_offset
     PlotUtilities.scale_bar_x(x=x_text,
                               y=min(force_slice)*1.1,s=label,
-                              width=width)    
+                              width=width,fontsize=fontsize)    
     PlotUtilities.lazyLabel("Time","Force (pN)","") 
     PlotUtilities.no_x_label(ax)
 
 
 def plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces):
+    sizes = [r.size for r in rupture_forces_histograms]
     loading_plot = loading_rate_histogram*1e12
     mean_plot = mean_rupture_forces*1e12                                
     stdev_plot = stdev_rupture_forces*1e12
+    sem_plot = stdev_plot/sizes
     # plot the theory first
     mean_rupture_string = "<" + rupture_string + ">"
     plt.plot(loading_plot,mean_plot,
-             label=(mean_rupture_string + "      (Theory)"),
+             label=(mean_rupture_string + " (Theory)"),
              linewidth=3)
     stdev_style = dict(linestyle=":",linewidth=3,color='m')
-    plt.plot(loading_plot,mean_plot-stdev_plot,
-             label=(mean_rupture_string + r'$\pm \sigma$ (Theory)'),
+    plt.plot(loading_plot,mean_plot-sem_plot,
              **stdev_style)
-    plt.plot(loading_plot,mean_plot+stdev_plot,**stdev_style)
+    plt.plot(loading_plot,mean_plot+sem_plot,**stdev_style)
     # plot the data on top of the theory
     means = np.mean(rupture_forces_histograms,axis=1) *1e12
     stdevs= np.std(rupture_forces_histograms,axis=1) * 1e12
-    plt.errorbar(loading_plot,y=means,yerr=stdevs,fmt='ro')
+    sems = stdevs/sizes 
+    plt.errorbar(loading_plot,y=means,yerr=sems,fmt='ro')
+    plt.gca().set_xscale('log')
 
 
 def plot_histogram_and_model(rupture_forces,rupture,model,kwargs_errorbar):
     rupture_plot = rupture*1e12
     n,_,_ = plt.hist(rupture_plot,alpha=0.5)
     plt.plot(rupture_forces*1e12,model*max(n)/max(model),linewidth=3)
-    mean = np.mean(rupture_plot)
-    stdev = np.std(rupture_plot)
-    plt.errorbar(x=mean,xerr=stdev,y=max(n)*1.05,**kwargs_errorbar)
 
 def plot_landscape(x,landscape):
     ax = plt.gca()
@@ -282,7 +282,7 @@ def plot_landscape(x,landscape):
     y_text = np.mean(plt.ylim())
     PlotUtilities.scale_bar_x(x=x_text,
                               y=y_text,
-                              s=label,
+                              s=label,fontsize=fontsize,
                               width=width)    
     PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
     plt.ylim(-4,max(plt.ylim()))
@@ -326,62 +326,56 @@ def run():
     force_interp_plot = split_fec.retract_spline_interpolator()(time) * 1e12
     # plot everything
     n_cols = 3
-    n_rows = 3
+    n_rows = 5
     gs = gridspec.GridSpec(n_rows, n_cols)
     ylim_force_pN = [-35,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
-                        markersize=50)
-    fig = PlotUtilities.figure(figsize=(19,9))
+                        markersize=75,marker=u'$\u2193$')
+    fig = PlotUtilities.figure(figsize=(8,11))
     # # plot the experimental image
-    in_ax = plt.subplot(gs[:,0])
+    in_ax = plt.subplot(gs[:3,0])
     cantilever_image_plot(image_location)
     # # plot the 'raw' force
-    ax1 = plt.subplot(gs[0,1:2])
+    ax1 = plt.subplot(gs[3,:])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis
-    ax_zoom = plt.subplot(gs[1:,1:-1])
+    ax_zoom = plt.subplot(gs[4,:])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
     # # plot (a single) histogram and model. This one is special, so we 
     # use a slightly different error bar for it 
     fmt_error = dict(marker='v',color='k',markersize=10,linewidth=3)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
-    plt.subplot(gs[0,-1])
+    plt.subplot(gs[1,1:])
     plot_histogram_and_model(rupture_forces,
                              rupture_forces_histograms[example_idx],
                              models[example_idx],fmt_error)
     PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","")
     # give the loading rate as an annotation
-    plt.text(x=np.mean(rupture_limits),y=np.mean(plt.ylim())*0.5,
-             s=df_dt_string+"={:.2g} pN/s".\
-             format(loading_rate_example_pN_per_s),fontsize=fontsize,
+    loading_rate_str = ("Simulation\n" + r"$\frac{dF}{dt}$" + "={:.2g} pN/s".\
+                        format(loading_rate_example_pN_per_s))
+    plt.text(x=np.mean(rupture_limits),y=np.mean(plt.ylim())*0.6,
+             s=loading_rate_str,fontsize=fontsize,
              horizontalalignment='center',
              verticalalignment='center')
     plt.xlim(rupture_limits)
-    plt.subplot(gs[1,-1])
+    plt.subplot(gs[2,1:])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
     PlotUtilities.lazyLabel(df_dt_string + " (pN/s)",
                             rupture_string + " (pN)","",
                             legend_kwargs=dict(handlelength=1))
-    # plot the 'extra' point specially, so it sticks out. 
-    mean = 1e12*np.mean(rupture_forces_histograms[example_idx])
-    stdev = 1e12*np.std(rupture_forces_histograms[example_idx])
-    plt.errorbar(x=loading_rate_histogram[example_idx]*1e12,
-                 y=mean,
-                 yerr=stdev,
-                 **fmt_error)
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
-    ax = plt.subplot(gs[2,-1])
+    ax = plt.subplot(gs[0,1:])
     plot_landscape(x,landscape)
     PlotUtilities.savefig(fig,"./diagram.png",
-                          subplots_adjust=dict(hspace=0.3))
+                          subplots_adjust=dict(hspace=0.4))
 
 if __name__ == "__main__":
     run()
