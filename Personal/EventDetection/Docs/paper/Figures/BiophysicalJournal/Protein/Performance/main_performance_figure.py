@@ -37,6 +37,7 @@ def run():
     xlim_dist = [1e-5,2]
     xlim_load = [1,1e5]
     xlim_rupture = [-5,300]
+    legend_locs = ['upper right','upper left','upper right']
     for i,m in enumerate(metrics):
         offset = n_rows * i
         # the first column gets the algorithm label; the first row gets the
@@ -55,7 +56,7 @@ def run():
             xlabel_rupture_force = "Rupture Force (pN)"
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
-        ylabel_dist = "{:s}\nCount".format(m.name)
+        ylabel_dist = "{:s}\nCount".format(m.name.title())
         color_pred=colors[i]
         color_true = 'g'
         # get the formatting dictionaries for the various plots 
@@ -80,7 +81,8 @@ def run():
         Plotting.histogram_event_distribution(use_q_number=True,
                                               **distance_histogram_kw)
         PlotUtilities.lazyLabel(xlabel_dist,ylabel_dist,title_dist,
-                                loc='best',frameon=True)      
+                                loc=legend_locs[i],legendBgColor='w',
+                                frameon=True)      
         plt.xlim(xlim_dist)                                   
         if not last_row:
             PlotUtilities.no_x_label()
