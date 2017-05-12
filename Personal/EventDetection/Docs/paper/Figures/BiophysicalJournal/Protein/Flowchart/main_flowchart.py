@@ -18,15 +18,95 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 import matplotlib.gridspec as gridspec
 
-def make_scale_bar(y_frac=0.2,x_frac=0.2,width=0.2,unit="s",mult=1):
+from matplotlib.ticker import FixedLocator
+
+def round_to_n_sig_figs(x,n=1):
+    """
+    Rounds 'x' to n significant figures
+
+    Args:
+         x: what to round
+         n: how many sig figs (e.g. n=1 means 51 --> 50, etc)
+    Returns: rounded number 
+    """
+    return round(x, (n-1)-int(np.floor(np.log10(abs(x)))))
+
+def make_scale_bar(mult=1000,unit="ms",y_frac=0.2,x_frac=0.2,width=0.2,
+                   fmt="{:.0f}",label_sig_figs=2,y_height_frac=0.15):
+    """
+    Makes an (x) scale bar. All parameters are relative to the graph size
+
+    Args:
+        mult: for the *label only*, what should we multiply the width to 
+        conver to <unit>
+
+        unit: of the label. width * diff(plt.xlim()) * mult should be in this
+        unit
+
+        <x/y>_frac: the fraction of the plot size to use for the width, height
+       
+        fmt: the format string to use on  width * diff(plt.xlim()) * mult. 
+        Defaults to juse a round number
+ 
+        label_sig_figs: how many significant figures should be used 
+
+        y_height_frac: fraction of the y limits that the scale bar should be
+        under
+    Returns:
+        tuple of <the text box, and the x and y coordinates of the line>
+    """
     xlim = plt.xlim()
     x_full = abs(np.diff(xlim))[0]
     width = width * x_full
     ylim = plt.ylim()
+    y_diff = abs(np.diff(ylim))
     y = np.max(ylim) - abs(np.diff(ylim))*y_frac
     x = np.min(xlim) + abs(x_full) * x_frac
-    s = "{:.1g}{:s}".format(width*mult,unit)
-    PlotUtilities.scale_bar_x(x=x,y=y,s=s,width=width,fontsize=18)
+    fmt_str = (fmt + "{:s}")
+    s = fmt_str.format(round_to_n_sig_figs(width*mult,n=label_sig_figs),unit)
+    box,x,y = PlotUtilities.scale_bar_x(x=x,y=y,s=s,width=width,fontsize=13,
+                                        style_line=True,
+                                        height=y_diff*y_height_frac)
+    return box,x,y
+
+def get_tick_locator_fixed(offset,width,lim=plt.xlim()):
+    """
+    given a (data-units) offset and width, returns tick so that
+    (1) offset is a tick
+    (2) each offset +/- (n * width) for n an integer within lim is a tick.
+
+    Useful for matching ticks to a scale bar 
+
+    Args:
+         offset: point which should have a tick on it
+         width: data units, length between ticks
+         lim: to determine where the ticks should be 
+    Returns:
+         FixedLocator parameter
+    """
+    xmin,xmax = lim
+    # determine how many widths to go before and after
+    n_widths_before = int(np.ceil((offset-xmin)/width))
+    width_before = n_widths_before * width
+    n_widths_after = int(np.ceil((xmax-offset)/width))
+    width_after = n_widths_after * width
+    ticks_after = np.arange(start=offset,stop=offset+width_after,
+                            step=width)
+    ticks_before = np.arange(start=offset,stop=offset+width_before,
+                             step=-width)
+    ticks = list(ticks_before) + list(ticks_after)
+    locator = FixedLocator(locs=ticks, nbins=None)
+    return locator
+
+
+def slice_window_around(event_idx,time_plot,fraction):
+    event_location = event_idx
+    extra_for_inset_plot = int(np.ceil(time_plot.size * fraction))
+    # add in some padding 
+    event_bounding_slice = slice(event_location-extra_for_inset_plot,
+                                 event_location+extra_for_inset_plot,1)
+    return event_bounding_slice
+    
 
 def run():
     """
@@ -63,13 +143,13 @@ def run():
     probabiity_kwargs = dict(color='r',linestyle="-")
     # for the probabilities, how far from the maximum y the scale bar should be
     # (units [0,1]
-    y_frac_prob = 0.7
+    y_frac_prob = 0.65
     n_cols = 1
     n_rows = 6
     ylim_force_pN = [-30,max(force_interp_plot)+1.1+35]
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
-    title_kwargs = dict(loc='left',fontsize=18,color='b')
+    title_kwargs = dict(loc='left',fontsize=16,color='b')
     kw = dict(title_kwargs=title_kwargs)
     arrow = "$\downarrow$"
     probability_label = "$\log_{10}$($P$)"
@@ -78,8 +158,8 @@ def run():
     n_rows = 6
     gs = gridspec.GridSpec(nrows=n_rows,ncols=n_cols,
                            width_ratios=[1 for _ in range(n_cols)],
-                           height_ratios=[2,1,1,1,3,3])
-    fig = PlotUtilities.figure(figsize=(5,10))
+                           height_ratios=[1,1,1,1,1,2])
+    fig = PlotUtilities.figure(figsize=(4,9))
     # plot the 'raw' force and spline
     ax_raw = plt.subplot(gs[0,:])
     plt.plot(time_plot,force_plot,label="Raw",**raw_force_kwargs)    
@@ -91,7 +171,9 @@ def run():
     PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="upper center",
                             legend_kwargs=dict(handlelength=1,fontsize=16))
     plt.xlim(xlim_time)
-    make_scale_bar()
+    box,x,y = make_scale_bar()
+    locator_x = get_tick_locator_fixed(offset=min(x),width=abs(np.diff(x)))
+    ax_raw.xaxis.set_major_locator(locator_x)
     # # plot the 'raw' probability
     ax_raw_prob = plt.subplot(gs[1,:])
     plt.plot(time_plot,to_prob_plot(info_no_domain_specific.cdf),
@@ -106,7 +188,7 @@ def run():
     ax_adhesion = plt.subplot(gs[2,:])
     plt.plot(time_plot,to_prob_plot(info_remove_adhesions.cdf),
              **probabiity_kwargs)    
-    title_adhesion = arrow + r"Supress adhesion and $\frac{dF}{dt}>0$"
+    title_adhesion = arrow + r"Supress adhesion & $\frac{dF}{dt}>0$"
     PlotUtilities.lazyLabel("",probability_label_post,title_adhesion,**kw)
     PlotUtilities.no_x_label(ax_adhesion)      
     plt.ylim(ylim_prob)
@@ -116,7 +198,7 @@ def run():
     ax_final_prob = plt.subplot(gs[3,:])
     plt.plot(time_plot,to_prob_plot(info_final.cdf),
              **probabiity_kwargs)    
-    title_consistent = (arrow + "Supress force changes near 0")
+    title_consistent = (arrow + "Supress $\sim$0 force changes")
     PlotUtilities.lazyLabel("",probability_label_post,title_consistent,**kw)
     PlotUtilities.no_x_label(ax_final_prob)      
     plt.ylim(ylim_prob)    
@@ -135,35 +217,44 @@ def run():
     PlotUtilities.lazyLabel("","Force (pN)",title_final,
                             loc = "upper center",**kw)
     plt.ylim(ylim_force_pN)                           
+
     plt.xlim(xlim_time)
     make_scale_bar()
     ylim_first_event = [-5,30]
     first_event_window_large = 0.02
     fraction_increase= 5
+    color_first = 'm'
     # get the event index, window pct to use, where to show a 'zoom', and the
     # y limits (if none, just all of it)
     event_idx_fudge_and_kw = \
-        [ [0 ,first_event_window_large   ,True,ylim_first_event],
+        [ [0 ,first_event_window_large   ,True,ylim_first_event,color_first],
           [0 ,first_event_window_large/fraction_increase,False,
-           ylim_first_event],
-          [-1,4e-3,True,[-50,None]]]
-    for i,(event_id,fudge,zoom_bool,ylim) in enumerate(event_idx_fudge_and_kw):
-        # determine the slice we want to use                 
+           ylim_first_event,color_first],
+          [-1,4e-3,True,[-50,None],'r']]
+    for i,(event_id,fudge,zoom_bool,ylim,c) in \
+        enumerate(event_idx_fudge_and_kw):
+        # get how the interpolated plot should be 
+        interp_force_kwargs_tmp = dict(**interp_force_kwargs)
+        interp_force_kwargs_tmp['color'] = c
+        interp_force_kwargs_tmp['linewidth'] = 2.5
+        # determine the slice we want to use       
         event_location = info_final.event_idx[event_id]
-        event_slice = info_final.event_slices_raw[event_id]
-        extra_for_inset_plot = int(np.ceil(time_plot.size * fudge))
-        event_bounding_slice = info_final.event_slices[event_id]
-        # add in some padding 
-        event_bounding_slice = \
-            slice(event_location-extra_for_inset_plot,
-                  event_location+extra_for_inset_plot,1)
+        event_bounding_slice = slice_window_around(event_location,
+                                                   time_plot,fraction=fudge)
         time_first_event_plot = time_plot[event_bounding_slice]
-        in_ax = plt.subplot(gs[-1,i])
         time_slice = time_first_event_plot
+        # # plot the interpolated on the *full plot* before we zoom in (so the
+        # # colors match)
+        plt.subplot(gs[-2,:])
+        plt.plot(time_slice,force_interp_plot[event_bounding_slice],
+                 **interp_force_kwargs_tmp)       
+        plt.ylim(ylim_force_pN)
+        # # next, plot the zoomed version
+        in_ax = plt.subplot(gs[-1,i])
         in_ax.plot(time_slice,force_plot[event_bounding_slice],
                    **raw_force_kwargs)
         in_ax.plot(time_slice,force_interp_plot[event_bounding_slice],
-                   **interp_force_kwargs)       
+                   **interp_force_kwargs_tmp)       
         PlotUtilities.no_x_anything(ax=in_ax)
         if (i == 0):
             ylabel = "Force (pN)"
@@ -172,7 +263,8 @@ def run():
         PlotUtilities.lazyLabel("Time (s)",ylabel,"")
         # determine if we need to add in 'guidelines' for zooming
         if (zoom_bool):
-            PlotUtilities.zoom_effect01(ax_final,in_ax,*in_ax.get_xlim())
+            PlotUtilities.zoom_effect01(ax_final,in_ax,*in_ax.get_xlim(),
+                                        color=c)
         else:
             # this is a 'second' zoom in...'
             PlotUtilities.no_y_label(in_ax)
@@ -183,7 +275,7 @@ def run():
                                           plot_y=force_plot,fudge_y=7,
                                           label=None,markersize=150)
         plt.ylim(ylim)
-        make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.2,unit="ms",mult=1000)
+        make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7,unit="ms",mult=1000)
     PlotUtilities.savefig(fig,"./flowchart.png",
                           subplots_adjust=dict(hspace=0.35))
     
