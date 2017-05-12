@@ -18,86 +18,6 @@ from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 import matplotlib.gridspec as gridspec
 
-from matplotlib.ticker import FixedLocator
-
-def round_to_n_sig_figs(x,n=1):
-    """
-    Rounds 'x' to n significant figures
-
-    Args:
-         x: what to round
-         n: how many sig figs (e.g. n=1 means 51 --> 50, etc)
-    Returns: rounded number 
-    """
-    return round(x, (n-1)-int(np.floor(np.log10(abs(x)))))
-
-def make_scale_bar(mult=1000,unit="ms",y_frac=0.2,x_frac=0.2,width=0.2,
-                   fmt="{:.0f}",label_sig_figs=2,y_height_frac=0.15):
-    """
-    Makes an (x) scale bar. All parameters are relative to the graph size
-
-    Args:
-        mult: for the *label only*, what should we multiply the width to 
-        conver to <unit>
-
-        unit: of the label. width * diff(plt.xlim()) * mult should be in this
-        unit
-
-        <x/y>_frac: the fraction of the plot size to use for the width, height
-       
-        fmt: the format string to use on  width * diff(plt.xlim()) * mult. 
-        Defaults to juse a round number
- 
-        label_sig_figs: how many significant figures should be used 
-
-        y_height_frac: fraction of the y limits that the scale bar should be
-        under
-    Returns:
-        tuple of <the text box, and the x and y coordinates of the line>
-    """
-    xlim = plt.xlim()
-    x_full = abs(np.diff(xlim))[0]
-    width = width * x_full
-    ylim = plt.ylim()
-    y_diff = abs(np.diff(ylim))
-    y = np.max(ylim) - abs(np.diff(ylim))*y_frac
-    x = np.min(xlim) + abs(x_full) * x_frac
-    fmt_str = (fmt + "{:s}")
-    s = fmt_str.format(round_to_n_sig_figs(width*mult,n=label_sig_figs),unit)
-    box,x,y = PlotUtilities.scale_bar_x(x=x,y=y,s=s,width=width,fontsize=13,
-                                        style_line=True,
-                                        height=y_diff*y_height_frac)
-    return box,x,y
-
-def get_tick_locator_fixed(offset,width,lim=plt.xlim()):
-    """
-    given a (data-units) offset and width, returns tick so that
-    (1) offset is a tick
-    (2) each offset +/- (n * width) for n an integer within lim is a tick.
-
-    Useful for matching ticks to a scale bar 
-
-    Args:
-         offset: point which should have a tick on it
-         width: data units, length between ticks
-         lim: to determine where the ticks should be 
-    Returns:
-         FixedLocator parameter
-    """
-    xmin,xmax = lim
-    # determine how many widths to go before and after
-    n_widths_before = int(np.ceil((offset-xmin)/width))
-    width_before = n_widths_before * width
-    n_widths_after = int(np.ceil((xmax-offset)/width))
-    width_after = n_widths_after * width
-    ticks_after = np.arange(start=offset,stop=offset+width_after,
-                            step=width)
-    ticks_before = np.arange(start=offset,stop=offset+width_before,
-                             step=-width)
-    ticks = list(ticks_before) + list(ticks_after)
-    locator = FixedLocator(locs=ticks, nbins=None)
-    return locator
-
 
 def slice_window_around(event_idx,time_plot,fraction):
     event_location = event_idx
@@ -144,6 +64,7 @@ def run():
     # for the probabilities, how far from the maximum y the scale bar should be
     # (units [0,1]
     y_frac_prob = 0.65
+    prob_scale_dict = dict(y_frac=y_frac_prob)
     n_cols = 1
     n_rows = 6
     ylim_force_pN = [-30,max(force_interp_plot)+1.1+35]
@@ -168,12 +89,11 @@ def run():
     PlotUtilities.x_label_on_top(ax_raw)
     PlotUtilities.no_x_label(ax_raw)
     plt.ylim(ylim_force_pN)                
-    PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="upper center",
-                            legend_kwargs=dict(handlelength=1,fontsize=16))
+    PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="center left",
+                            legend_kwargs=dict(handlelength=0.75,fontsize=12,
+                                               ncol=2))
     plt.xlim(xlim_time)
-    box,x,y = make_scale_bar()
-    locator_x = get_tick_locator_fixed(offset=min(x),width=abs(np.diff(x)))
-    ax_raw.xaxis.set_major_locator(locator_x)
+    PlotUtilities.x_scale_bar_and_ticks()
     # # plot the 'raw' probability
     ax_raw_prob = plt.subplot(gs[1,:])
     plt.plot(time_plot,to_prob_plot(info_no_domain_specific.cdf),
@@ -183,7 +103,7 @@ def run():
     PlotUtilities.no_x_label(ax_raw_prob)        
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)
-    make_scale_bar(y_frac=y_frac_prob)
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
     # # plot the adhesion-fixed probability
     ax_adhesion = plt.subplot(gs[2,:])
     plt.plot(time_plot,to_prob_plot(info_remove_adhesions.cdf),
@@ -193,7 +113,7 @@ def run():
     PlotUtilities.no_x_label(ax_adhesion)      
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)    
-    make_scale_bar(y_frac=y_frac_prob)
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
     # # plot the final probability
     ax_final_prob = plt.subplot(gs[3,:])
     plt.plot(time_plot,to_prob_plot(info_final.cdf),
@@ -203,7 +123,7 @@ def run():
     PlotUtilities.no_x_label(ax_final_prob)      
     plt.ylim(ylim_prob)    
     plt.xlim(xlim_time)
-    make_scale_bar(y_frac=y_frac_prob)
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
     # # plot the final event locations
     ax_final = plt.subplot(gs[4,:])
     plt.plot(time_plot,force_plot,**raw_force_kwargs)    
@@ -219,7 +139,7 @@ def run():
     plt.ylim(ylim_force_pN)                           
 
     plt.xlim(xlim_time)
-    make_scale_bar()
+    PlotUtilities.x_scale_bar_and_ticks()
     ylim_first_event = [-5,30]
     first_event_window_large = 0.02
     fraction_increase= 5
@@ -275,7 +195,7 @@ def run():
                                           plot_y=force_plot,fudge_y=7,
                                           label=None,markersize=150)
         plt.ylim(ylim)
-        make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7,unit="ms",mult=1000)
+        PlotUtilities.make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7)
     PlotUtilities.savefig(fig,"./flowchart.png",
                           subplots_adjust=dict(hspace=0.35))
     
