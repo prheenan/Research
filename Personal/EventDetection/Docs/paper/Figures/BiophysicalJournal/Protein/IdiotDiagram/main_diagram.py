@@ -104,10 +104,7 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     PlotUtilities.no_x_label(plt.gca())               
     max_time = max(time_plot)
     width = scale_fraction_width * max_time
-    label = "{:.1g}s".format(width)
-    PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
-                              y=np.max(plt.ylim())*0.7,s=label,
-                              width=width,fontsize=fontsize)  
+    PlotUtilities.x_scale_bar_and_ticks()
 
 def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=20,
                                         shrinkB=20,
@@ -208,13 +205,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     plt.text(event_time+dx/2,y_text,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
-    dx_zoom_full =abs(time_slice[-1]-time_slice[0])
-    width = scale_fraction_width * dx_zoom_full
-    label = "{:.1g}ms".format(1000*width)
-    x_text = time_slice[0] + dx_zoom_full*scale_fraction_offset
-    PlotUtilities.scale_bar_x(x=x_text,
-                              y=min(force_slice)*1.1,s=label,
-                              width=width,fontsize=fontsize)    
+    PlotUtilities.x_scale_bar_and_ticks(dict(y_frac=0.5,y_label_frac=0.1))
     PlotUtilities.lazyLabel("Time","Force (pN)","") 
     PlotUtilities.no_x_label(ax)
 
