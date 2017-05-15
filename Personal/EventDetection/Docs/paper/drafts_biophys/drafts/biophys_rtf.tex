@@ -44,7 +44,67 @@
 \renewcommand\thesubparagraph {\theparagraph.\@arabic\c@subparagraph}
 
 
-%% 653-700
+% 622 to end
+
+\newcommand\newblock{\hskip .11em\@plus.33em\@minus.07em}
+\let\@openbib@code\@empty
+\newenvironment{theindex}
+               {\if@twocolumn
+                  \@restonecolfalse
+                \else
+                  \@restonecoltrue
+                \fi
+                \twocolumn[\section*{\indexname}]%
+                \@mkboth{\MakeUppercase\indexname}%
+                        {\MakeUppercase\indexname}%
+                \thispagestyle{plain}\parindent\z@
+                \parskip\z@ \@plus .3\p@\relax
+                \columnseprule \z@
+                \columnsep 35\p@
+                \let\item\@idxitem}
+               {\if@restonecol\onecolumn\else\clearpage\fi}
+\newcommand\@idxitem{\par\hangindent 40\p@}
+\newcommand\subitem{\@idxitem \hspace*{20\p@}}
+\newcommand\subsubitem{\@idxitem \hspace*{30\p@}}
+\newcommand\indexspace{\par \vskip 10\p@ \@plus5\p@ \@minus3\p@\relax}
+\renewcommand\footnoterule{%
+  \kern-3\p@
+  \hrule\@width.4\columnwidth
+  \kern2.6\p@}
+\newcommand\@makefntext[1]{%
+    \parindent 1em%
+    \noindent
+    \hb@xt@1.8em{\hss\@makefnmark}#1}
+\newcommand\contentsname{Contents}
+\newcommand\listfigurename{List of Figures}
+\newcommand\listtablename{List of Tables}
+\newcommand\refname{References}
+\newcommand\indexname{Index}
+\newcommand\figurename{Figure}
+\newcommand\tablename{Table}
+\newcommand\partname{Part}
+\newcommand\appendixname{Appendix}
+\newcommand\abstractname{Abstract}
+\def\today{\ifcase\month\or
+  January\or February\or March\or April\or May\or June\or
+  July\or August\or September\or October\or November\or December\fi
+  \space\number\day, \number\year}
+\setlength\columnsep{10\p@}
+\setlength\columnseprule{0\p@}
+\pagestyle{headings}
+\pagenumbering{arabic}
+\if@twoside
+\else
+  \raggedbottom
+\fi
+\if@twocolumn
+  \twocolumn
+  \sloppy
+  \flushbottom
+\else
+  \onecolumn
+\fi
+
 
 %%For Graphics package image loading
 \RequirePackage{graphicx}
@@ -93,6 +153,19 @@
 \def\@tmpcropmark{Y}
 \long\def\ack#1{\fontsize{8}{10}\selectfont{#1}}
 
+\AtBeginDocument{
+\ifx\@tmpgridframe\@gridframe%
+\usepackage{showframe}
+\fi%
+\ifx\@tmpcropmark\@cropmark%
+\usepackage[cam]{crop}
+\paperwidth=570pt
+\paperheight=820pt
+\renewcommand*\CROP@horigin{-.8truein}
+\renewcommand*\CROP@vorigin{-.8truein}
+\fi%
+}%
+
 
 %%%%%%%%%%Running head for first page %%%%%%%%%%%
 \def\ps@opening{\let\@mkboth\@gobbletwo
@@ -111,7 +184,6 @@
       \def\@oddhead{\sffamily\footnotesize{\rightmark}\hfil\thepage}%
       \let\@mkboth\markboth}
 
-% lines 731 until end in biophys.cls
 
 %%%%Text area and margin setting - which is previously given%%%%%
 \setlength{\columnsep}{18pt}
