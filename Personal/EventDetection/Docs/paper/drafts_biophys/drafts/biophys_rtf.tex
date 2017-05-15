@@ -1,0 +1,116 @@
+\newcommand\@ptsize{}
+\newif\if@restonecol
+\@titlepagefalse
+\setlength\lineskip{1\p@}
+\setlength\normallineskip{1\p@}
+\renewcommand\baselinestretch{}
+\setlength\parskip{0\p@ \@plus \p@}
+\@lowpenalty   51
+\@medpenalty  151
+\@highpenalty 301
+\setcounter{topnumber}{2}
+\renewcommand\topfraction{.7}
+\setcounter{bottomnumber}{1}
+\renewcommand\bottomfraction{.3}
+\setcounter{totalnumber}{3}
+\renewcommand\textfraction{.2}
+\renewcommand\floatpagefraction{.5}
+\setcounter{dbltopnumber}{2}
+\renewcommand\dbltopfraction{.7}
+\renewcommand\dblfloatpagefraction{.5}
+
+%%%%Text area and margin setting - which is previously given%%%%%
+\setlength{\columnsep}{18pt}
+\setlength{\textwidth}{41.6pc}
+\setlength{\textheight}{54.85pc}
+\setlength{\oddsidemargin}{-2pc}
+\setlength{\evensidemargin}{-2pc}
+\setlength{\topmargin}{-42pt}
+\setlength{\headsep}{24.3pt}
+\setlength{\parindent}{15pt}
+\setlength{\footskip}{20pt}
+\setlength{\parskip}{0pt}
+\frenchspacing %%%Removing extra space after punctuation
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Set badness and tolerance
+\setlength{\vbadness}{9999}
+\setlength{\pretolerance}{-1}
+\tolerance=9999
+
+% Don't allow consecutive hyphens and hyphens at the bottom of the page.
+\renewcommand{\doublehyphendemerits}{100000}
+\renewcommand{\finalhyphendemerits}{1000000}
+
+% Disallow widows and orphans
+\renewcommand{\clubpenalty}{10000}
+\renewcommand{\widowpenalty}{10000}
+
+% Disable page breaks before equations, allow pagebreaks after
+% equations and discourage widow lines before equations.
+\renewcommand{\displaywidowpenalty}{500}
+\renewcommand{\predisplaypenalty  }{10000}
+\renewcommand{\postdisplaypenalty }{0}
+
+% Allow breaking the page in the middle of a paragraph
+\renewcommand{\interlinepenalty}{0}
+
+% Disallow breaking the page after a hyphenated line
+\renewcommand{\brokenpenalty}{10000}
+
+% Hyphenation; don't split words into less than three characters
+\renewcommand{\lefthyphenmin}{3}
+\renewcommand{\righthyphenmin}{3}
+
+% Float placement parameters
+
+% The total number of floats that can be allowed on a page.
+\setcounter{totalnumber}{10}
+% The maximum number of floats at the top and bottom of a page.
+\setcounter{topnumber}{5}
+\setcounter{bottomnumber}{5}
+% The maximum part of the top or bottom of a text page that can be
+% occupied by floats. This is set so that at least four lines of text
+% fit on the page.
+\renewcommand\topfraction{.921}
+\renewcommand\bottomfraction{.921}
+% The minimum amount of a text page that must be occupied by text.
+% This should accomodate four lines of text.
+\renewcommand\textfraction{.079}
+% The minimum amount of a float page that must be occupied by floats.
+\renewcommand\floatpagefraction{.887}
+
+% The same parameters repeated for double column output
+\renewcommand\dbltopfraction{.88}
+\renewcommand\dblfloatpagefraction{.88}
+
+% Space between floats
+\setlength\floatsep    {12\p@ \@plus 2\p@ \@minus 2\p@}
+% Space between floats and text
+\setlength\textfloatsep{24\p@ \@plus 2\p@ \@minus 4\p@}
+% Space above and below an inline figure
+\setlength\intextsep   {18\p@ \@plus 2\p@ \@minus 2\p@}
+
+% For double column floats
+\setlength\dblfloatsep    {12\p@ \@plus 2\p@ \@minus 2\p@}
+\setlength\dbltextfloatsep{20\p@ \@plus 2\p@ \@minus 4\p@}
+
+% Space left at top, bottom and inbetween floats on a float page.
+\setlength\@fptop{\z@}          % no space above float page figures
+\setlength\@fpsep{12\p@ \@plus 1fil}
+\setlength\@fpbot{\z@ \@plus 1fil}
+
+% The same for double column
+\setlength\@dblfptop{\z@}
+\setlength\@dblfpsep{12\p@ \@plus 1fil}
+\setlength\@dblfpbot{\z@ \@plus 1fil}
+\RequirePackage{multicol}
+\RequirePackage{ulem,color}
+\RequirePackage{dcolumn}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%% End of Standard Settings %%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagestyle{headings}
+

@@ -41,8 +41,8 @@ def generate_rupture_histograms():
     num_loading_rates = 10
     np.random.seed(42)
     kbT =  4.1e-21
-    delta_G_ddagger = 10 *kbT
-    x_ddagger= 0.3e-9
+    delta_G_ddagger = 20 *kbT
+    x_ddagger= 0.6e-9
     k0 = 0.1
     nu = 2/3
     beta = 1/kbT
@@ -60,7 +60,7 @@ def generate_rupture_histograms():
     stdev_rupture_forces = Dudko2007.stdev_rupture_force(loading_rates,
                                                          **common_kwargs)
     models = []    
-    x = np.linspace(start=-x_ddagger*0.8,stop=x_ddagger*1.2)
+    x = np.linspace(start=-x_ddagger*1.0,stop=x_ddagger*0.8)
     landscape = Dudko2007.free_energy_landscape(x=x,**basic_kwargs)
     for loading_rate in loading_rates:
         model = Dudko2007.normalized_model(loading_rate,rupture_forces,
@@ -107,8 +107,8 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     width = scale_fraction_width * max_time
     PlotUtilities.x_scale_bar_and_ticks()
 
-def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=20,
-                                        shrinkB=20,
+def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=4,
+                                        shrinkB=4,linewidth=1,
                                         connectionstyle="arc3")):
     return  dict(xycoords='data',
                  textcoords='data',
@@ -240,14 +240,14 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     landscape -= min(landscape)
     landscape /= 4.1e-21
     x *= 1e9
-    plt.plot(x,landscape,color='k',linewidth=2)
+    plt.plot(x,landscape,color='k',linewidth=1.5)
     PlotUtilities.no_x_label(ax)
     # determine where to put all the annotations
-    max_idx = np.argmax(landscape)
     min_idx =np.argmin(landscape)
+    max_idx = min_idx + np.argmax(landscape[min_idx:])
     x_max = x[max_idx]
     x_min = x[min_idx]
-    y_low_plot = -2
+    y_low_plot = -3
     y_max = landscape[max_idx]
     # make the x_dagger annotation
     dagger_props = common_arrow_kwargs()
@@ -257,9 +257,11 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     # make the delta_G_dagger annotation
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
                 **dagger_props)
-    plt.ylim(-4,max(plt.ylim()))
-    PlotUtilities.no_y_anything(ax=ax)
-    PlotUtilities.no_x_anything(ax=ax)
+    plt.ylim(y_low_plot*2,max(plt.ylim()))
+    PlotUtilities.no_y_ticks(ax=ax)
+    PlotUtilities.no_x_ticks(ax=ax)
+    PlotUtilities.no_y_label(ax=ax)
+    PlotUtilities.no_x_label(ax=ax)
 
 def cantilever_image_plot(image_location):
     in_ax = plt.gca()
@@ -302,19 +304,22 @@ def run():
     force_plot = split_fec.retract.Force * 1e12
     force_interp_plot = split_fec.retract_spline_interpolator()(time) * 1e12
     # plot everything
-    n_cols = 4
-    n_rows = 6
-    gs = gridspec.GridSpec(n_rows, n_cols)
+    n_cols = 2
+    n_rows = 3
+    # 'master' grid spec is 2x1
+    gs0 = gridspec.GridSpec(2,1)
+    gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
+                                          hspace=0.5,wspace=0.4)
     ylim_force_pN = [-35,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
     fig = PlotUtilities.figure(figsize=(4,9))
     # # plot the experimental image
-    in_ax = plt.subplot(gs[:2,:2])
+    in_ax = plt.subplot(gs[:2,0])
     cantilever_image_plot(image_location)
-    # # plot the cartoon
-    ax_fec = plt.subplot(gs[0,2:])
+    # # plot the cartoon of the fec
+    ax_fec = plt.subplot(gs[0,1])
     # define the regions where we are attached to the molecule...
     slice_tuples = [ [slice(0,0.05),0.08],
                      [slice(0,0.2),0.25],
@@ -325,41 +330,34 @@ def run():
     n_cartoon = 500
     x_cartoon = np.linspace(0,1.0,num=n_cartoon)
     f = np.zeros(x_cartoon.size)
+    slice_starts = [0]
     for slice_active,L0 in slice_tuples:
         slice_tmp = slice(int(slice_active.start * n_cartoon),
                           int(slice_active.stop * n_cartoon))
+        slice_starts.append(slice_tmp.stop)
         f[slice_tmp] += WlcNonExtensible(ext=x_cartoon[slice_tmp],
                                          kbT=1,Lp=max(x)/30,L0=L0)
-    plt.plot(x_cartoon,f)
+    colors = ['b','r','r','r','r','g']
+    slice_starts.append(None)
+    for i in range(len(slice_starts)-2):
+        slice_tmp = slice(slice_starts[i],slice_starts[i+1]+1,1)
+        plt.plot(x_cartoon[slice_tmp],f[slice_tmp],color=colors[i])
     PlotUtilities.lazyLabel("Time","Force","Analysis Scheme",**lazy_kwargs )
     PlotUtilities.no_x_label(ax_fec)
     PlotUtilities.no_x_ticks(ax_fec)
     PlotUtilities.no_y_label(ax_fec)
     PlotUtilities.no_y_ticks(ax_fec)
-    ax1 = plt.subplot(gs[3,:])
-    # # plot the 'raw' force
-    ax1 = plt.subplot(gs[3,:])
-    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
-                    arrow_kwargs)
-    PlotUtilities.lazyLabel("","Force (pN)","Extracting Rupture properties",
-                            **lazy_kwargs)
-    xlim = plt.xlim()
-    plt.ylim(ylim_force_pN)
-    # # plot the 'zoomed' axis
-    ax_zoom = plt.subplot(gs[4:,:])
-    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
-    PlotUtilities.lazyLabel("Time","Force (pN)","",**lazy_kwargs)
-    PlotUtilities.no_x_label(ax_zoom)
+    # # plot the loading rate stuff
     fmt_error = dict(marker='v',color='k',markersize=10,linewidth=3)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
-    plt.subplot(gs[1,2:])
+    plt.subplot(gs[1,1])
     plot_histogram_and_model(rupture_forces,
                              rupture_forces_histograms[example_idx],
                              models[example_idx],fmt_error,
                              loading_rate_example_pN_per_s)
     PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","",**lazy_kwargs)
-    plt.subplot(gs[2,2:])
+    plt.subplot(gs[2,1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
@@ -367,8 +365,26 @@ def run():
                             rupture_string + " (pN)","",**lazy_kwargs)
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations, as an inset 
-    in_ax = plt.subplot(gs[2,:2])
+    in_ax = plt.subplot(gs[2,0])
     plot_landscape(x,landscape,ax=in_ax)
+    PlotUtilities.lazyLabel("Extension","Free Energy","",**lazy_kwargs)
+    # # # Second gridspec (se we can more easily control wasted space)
+    gs_data = gridspec.GridSpecFromSubplotSpec(3,1, 
+                                               subplot_spec=gs0[1])
+    # # plot the 'raw' force
+    ax1 = plt.subplot(gs_data[0,:])
+    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
+                    arrow_kwargs)
+    PlotUtilities.lazyLabel("","Force (pN)","Extracting rupture properties",
+                            **lazy_kwargs)
+    xlim = plt.xlim()
+    plt.ylim(ylim_force_pN)
+    # # plot the 'zoomed' axis
+    ax_zoom = plt.subplot(gs_data[1:,:])
+    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
+    PlotUtilities.lazyLabel("Time","Force (pN)","",**lazy_kwargs)
+    PlotUtilities.no_x_label(ax_zoom)
+
     PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":
