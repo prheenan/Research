@@ -8,8 +8,6 @@
 \def\DeclareOldFontCommand #1#2#3{\DeclareRobustCommand #1{\@fontswitch {#2}{#3}}}
 \setlength{\p@}{1pt}
 
-
-
 \newcommand\@ptsize{}
 \newif\if@restonecol
 \newif\if@titlepage
@@ -158,7 +156,8 @@
   \end{titlepage}%
   \setcounter{footnote}{0}%
   \global\let\thanks\relax
-  \global\let\maketitle\relax
+  % XXX next line borks latex2rtf due to recursion
+  %\global\let\maketitle\relax
   \global\let\@thanks\@empty
   \global\let\@author\@empty
   \global\let\@date\@empty
@@ -192,7 +191,8 @@
   \endgroup
   \setcounter{footnote}{0}%
   \global\let\thanks\relax
-  \global\let\maketitle\relax
+  % XXX next line borks latex2rtf due to recursion
+  %\global\let\maketitle\relax
   \global\let\@maketitle\relax
   \global\let\@thanks\@empty
   \global\let\@author\@empty
