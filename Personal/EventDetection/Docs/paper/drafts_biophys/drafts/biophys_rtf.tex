@@ -46,8 +46,8 @@
         ##1}}{}}%
     \def\subsectionmark##1{%
       \markright {%
-        \ifnum \c@secnumdepth >\@ne
-          \thesubsection\quad
+        \ifnum \c@secnumdepth >\@ne%
+          \thesubsection\quad%
         \fi
         ##1}}}
 \else
@@ -57,8 +57,8 @@
     \let\@mkboth\markboth
     \def\sectionmark##1{%
       \markright {\MakeUppercase{%
-        \ifnum \c@secnumdepth >\m@ne
-          \thesection\quad
+        \ifnum \c@secnumdepth >\m@ne%
+          \thesection\quad% 
         \fi
         ##1}}}}
 \fi
@@ -82,42 +82,42 @@
         \vskip 3em%
                {\large \lineskip .75em%
                  \begin{tabular}[t]{c}%
-                   \@author
+                   \@author%
                  \end{tabular}\par}%
                \vskip 1.5em%
          {\large \@date \par}%       % Set date in \large size.
       \end{center}\par
-      \@thanks
-      \vfil\null
+      \@thanks%
+      \vfil\null%
     \end{titlepage}}%
 \else
     \newcommand\maketitle{\par
         \col@number=\tw@
-        \begingroup
+        \begingroup%
             \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
             \def\@makefnmark{\rlap{\@textsuperscript{\normalfont\@thefnmark}}}%
-            \long\def\@makefntext##1{\parindent 1em\noindent
+            \long\def\@makefntext##1{\parindent 1em\noindent%
             \hb@xt@1.8em{%
             \hss\@textsuperscript{\normalfont\@thefnmark}}##1}%
-            \if@twocolumn
-                \ifnum \col@number=\@ne
-                    \@maketitle
-                \else
+            \if@twocolumn%
+                \ifnum \col@number=\@ne% 
+                    \@maketitle% 
+                \else%
                     \twocolumn[\@maketitle]%
-                \fi
+                \fi%
             \else
-                \newpage
+                \newpage%
                 \global\@topnum\z@   % Prevents figures from going to top
-                \@maketitle
+                \@maketitle%
             \fi
             \thispagestyle{opening}\@thanks
-       \endgroup
+       \endgroup% 
        \setcounter{footnote}{0}%
-       \@bsphack
+       \@bsphack% 
        \protected@write\@auxout{}%
        {\string\gdef\string\@firstpage{\thepage}}%
-       \@esphack
-}
+       \@esphack%
+    }% 
 \global\let\thanks\relax
 \global\let\maketitle\relax
 \global\let\@maketitle\relax
@@ -140,7 +140,7 @@
     {\large
       \lineskip .5em%
       %\begin{tabular}[t]{c}%
-        \@author
+        \@author% 
      % \end{tabular}
 \par}%
     \vskip 1em%
