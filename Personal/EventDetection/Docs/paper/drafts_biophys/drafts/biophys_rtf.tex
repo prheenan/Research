@@ -36,14 +36,15 @@
 \newcounter {subsubsection}[subsection]
 \newcounter {paragraph}[subsubsection]
 \newcounter {subparagraph}[paragraph]
-\renewcommand \thepart {\@Roman\c@part}
-\renewcommand \thesection {\@arabic\c@section}
-\renewcommand\thesubsection   {\thesection.\@arabic\c@subsection}
-\renewcommand\thesubsubsection{\thesubsection.\@arabic\c@subsubsection}
-\renewcommand\theparagraph    {\thesubsubsection.\@arabic\c@paragraph}
-\renewcommand\thesubparagraph {\theparagraph.\@arabic\c@subparagraph}
+\renewcommand{\thepart}{\@Roman\c@part}
+\renewcommand{\thesection}{\@arabic\c@section}
+\renewcommand{\thesubsection   }{\thesection.\@arabic\c@subsection}
+\renewcommand{\thesubsubsection}{\thesubsection.\@arabic\c@subsubsection}
+\renewcommand{\theparagraph    }{\thesubsubsection.\@arabic\c@paragraph}
+\renewcommand{\thesubparagraph}{\theparagraph.\@arabic\c@subparagraph}
 
 
+\setlength{\z@}{0}
 % 517 to end
 \newcommand\@pnumwidth{1.55em}
 \newcommand\@tocrmarg{2.55em}
@@ -107,10 +108,10 @@
       \list{\@biblabel{\@arabic\c@enumiv}}%
            {\settowidth\labelwidth{\@biblabel{#1}}%
             \leftmargin\labelwidth
-\itemsep=0pt
-\partopsep=0pt
-\parskip=0pt
-\parsep=0pt
+\setlength{\itemsep}{0pt}
+\setlength{\partopsep}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\parsep}{0pt}
             \advance\leftmargin\labelsep
             \@openbib@code
             \usecounter{enumiv}%
