@@ -2,6 +2,11 @@
 % latex2rtf can understand. 
 
 % downloaded 2017-5
+% needed in the case of latex2rtf
+\setlength{\z@}{0pt}
+\def\null{\hbox{}}
+\def\DeclareOldFontCommand #1#2#3{\DeclareRobustCommand #1{\@fontswitch {#2}{#3}}}
+\setlength{\p@}{1pt}
 
 \newcommand\@ptsize{}
 \newif\if@restonecol
@@ -85,18 +90,68 @@
       \@thanks
       \vfil\null
     \end{titlepage}}%
-  \setcounter{footnote}{0}
-  \global\let\thanks\relax
-  \global\let\maketitle\relax
-  \global\let\@thanks\@empty
-  \global\let\@author\@empty
-  \global\let\@date\@empty
-  \global\let\@title\@empty
-  \global\let\title\relax
-  \global\let\author\relax
-  \global\let\date\relax
-  \global\let\and\relax
+\else
+    \newcommand\maketitle{\par
+        \col@number=\tw@
+        \begingroup
+            \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
+            \def\@makefnmark{\rlap{\@textsuperscript{\normalfont\@thefnmark}}}%
+            \long\def\@makefntext##1{\parindent 1em\noindent
+            \hb@xt@1.8em{%
+            \hss\@textsuperscript{\normalfont\@thefnmark}}##1}%
+            \if@twocolumn
+                \ifnum \col@number=\@ne
+                    \@maketitle
+                \else
+                    \twocolumn[\@maketitle]%
+                \fi
+            \else
+                \newpage
+                \global\@topnum\z@   % Prevents figures from going to top
+                \@maketitle
+            \fi
+            \thispagestyle{opening}\@thanks
+       \endgroup
+       \setcounter{footnote}{0}%
+       \@bsphack
+       \protected@write\@auxout{}%
+       {\string\gdef\string\@firstpage{\thepage}}%
+       \@esphack
+}
+\global\let\thanks\relax
+\global\let\maketitle\relax
+\global\let\@maketitle\relax
+\global\let\@thanks\@empty
+\global\let\@author\@empty
+\global\let\@date\@empty
+\global\let\@title\@empty
+\global\let\title\relax
+\global\let\author\relax
+\global\let\date\relax
+\global\let\and\relax
+\def\@maketitle{%
+  \newpage
+  \null
+  \vskip 2em%
+  \begin{center}%
+  \let \footnote \thanks
+    {\LARGE \@title \par}%
+    \vskip 1.5em%
+    {\large
+      \lineskip .5em%
+      %\begin{tabular}[t]{c}%
+        \@author
+     % \end{tabular}
+\par}%
+    \vskip 1em%
+    {\large \@address}%
+    \vskip 1em%
+\unvbox\abstractbox
+  \end{center}%
+  \par
+  \vskip 1.5em}
 \fi
+
 
 
 %% 247 to 260
@@ -115,11 +170,6 @@
 \renewcommand{\theparagraph    }{\thesubsubsection.\@arabic\c@paragraph}
 \renewcommand{\thesubparagraph}{\theparagraph.\@arabic\c@subparagraph}
 
-
-\setlength{\z@}{0}
-
-% needed in the case of latex2rtf
-\def\DeclareOldFontCommand #1#2#3{\DeclareRobustCommand #1{\@fontswitch {#2}{#3}}}
 
 \DeclareOldFontCommand{\rm}{\normalfont\rmfamily}{\mathrm}
 \DeclareOldFontCommand{\sf}{\normalfont\sffamily}{\mathsf}
