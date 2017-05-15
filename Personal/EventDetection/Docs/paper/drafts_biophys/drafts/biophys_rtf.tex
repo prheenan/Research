@@ -1,3 +1,8 @@
+% trying to convert biophys.cls into something that
+% latex2rtf can understand. 
+
+% downloaded 2017-5
+
 \newcommand\@ptsize{}
 \newif\if@restonecol
 \@titlepagefalse
@@ -18,6 +23,95 @@
 \setcounter{dbltopnumber}{2}
 \renewcommand\dbltopfraction{.7}
 \renewcommand\dblfloatpagefraction{.5}
+
+
+
+
+%% 247 to 260
+
+\setcounter{secnumdepth}{3}
+\newcounter {part}
+\newcounter {section}
+\newcounter {subsection}[section]
+\newcounter {subsubsection}[subsection]
+\newcounter {paragraph}[subsubsection]
+\newcounter {subparagraph}[paragraph]
+\renewcommand \thepart {\@Roman\c@part}
+\renewcommand \thesection {\@arabic\c@section}
+\renewcommand\thesubsection   {\thesection.\@arabic\c@subsection}
+\renewcommand\thesubsubsection{\thesubsection.\@arabic\c@subsubsection}
+\renewcommand\theparagraph    {\thesubsubsection.\@arabic\c@paragraph}
+\renewcommand\thesubparagraph {\theparagraph.\@arabic\c@subparagraph}
+
+
+%% 653-700
+
+%%For Graphics package image loading
+\RequirePackage{graphicx}
+\RequirePackage{epstopdf}
+
+%%% Front matter information setting%%%%
+\def\@firstpage{0}
+\def\lastpage@lastpage{0}
+\RequirePackage{lastpage}
+\def\@vol{00}
+\def\@iss{00}
+\def\@fpage{\@firstpage}
+\def\@lpage{\lastpage@lastpage}
+\def\fpage#1{\gdef\@fpage{#1}}
+\def\lpage#1{\gdef\@lpage{#1}}
+\def\@pmonth{Month}
+\def\@pyear{Year}
+\def\volume#1{\gdef\@vol{#1}}
+\def\issue#1{\gdef\@iss{#1}}
+\def\Month#1{\gdef\@pmonth{#1}}
+\def\Year#1{\gdef\@pyear{#1}}
+\def\@jno{0000}
+\def\jno#1{\gdef\@jno{#1}}
+
+\def\@gridframe{Y}
+\def\gridframe#1{\gdef\@gridframe{#1}}
+
+
+\def\@cropmark{Y}
+\def\cropmark#1{\gdef\@cropmark{#1}}
+\def\@doi{}
+\def\doi#1{\gdef\@doi{#1}}
+\def\@address{}
+\def\address#1{\gdef\@address{#1}}
+\def\authdagger{\textsuperscript{$\dagger$}}
+\def\addrdagger{\textsuperscript{$\dagger$}}
+\def\doiline{\@doi}
+\def\@journalname{Biophysical Journal}
+\def\journalname#1{\gdef\@journalname{#1}}
+\def\@catchline{\@journalname\quad Volume:\ \@vol\quad\@pmonth\ \@pyear\ \@fpage--\@lpage}
+\def\catchline#1{\gdef\@catchline{#1}}
+\def\@catchlinerunfoot{\@journalname\ \@vol(\@iss)\ \@fpage--\@lpage}
+\def\copyinfoa{$\copyright$\ 2013\ The Authors}
+\def\copyinfob{0006-3495/08/09/2624/12\quad \$2.00}
+\def\@tmpgridframe{Y}
+\def\@tmpcropmark{Y}
+\long\def\ack#1{\fontsize{8}{10}\selectfont{#1}}
+
+
+%%%%%%%%%%Running head for first page %%%%%%%%%%%
+\def\ps@opening{\let\@mkboth\@gobbletwo
+\def\@oddhead{\sffamily\footnotesize\@catchline\hfil\thepage}\def\@evenhead{\sffamily\footnotesize\@catchline\hfil}
+\def\@oddfoot{\vbox to0pt{\baselineskip=10pt\hbox to\textwidth{\sffamily\footnotesize\copyinfoa\reset@font\hfil
+     \vrule width155\p@ height.5\p@}
+\hbox to\textwidth{\sffamily\footnotesize\reset@font\copyinfob\hfil
+\doiline}}}\let\@evenfoot\@oddfoot}
+\let\@leftmark\@firstoftwo
+\let\@rightmark\@secondoftwo
+
+%%%%%running head excluding first page%%%%%%
+\def\ps@headings{%
+      \def\@oddfoot{\hfil\sffamily\footnotesize\@catchlinerunfoot}\def\@evenfoot{\sffamily\footnotesize\@catchlinerunfoot\hfil}
+      \def\@evenhead{\sffamily\footnotesize\thepage\hfil\leftmark}%
+      \def\@oddhead{\sffamily\footnotesize{\rightmark}\hfil\thepage}%
+      \let\@mkboth\markboth}
+
+% lines 731 until end in biophys.cls
 
 %%%%Text area and margin setting - which is previously given%%%%%
 \setlength{\columnsep}{18pt}
