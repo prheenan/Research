@@ -118,34 +118,34 @@
 \def\@iss{00}
 \def\@fpage{\@firstpage}
 \def\@lpage{\lastpage@lastpage}
-\def\fpage#1{\gdef\@fpage{#1}}
-\def\lpage#1{\gdef\@lpage{#1}}
+\def\fpage#1{\global\def\@fpage{#1}}
+\def\lpage#1{\global\def\@lpage{#1}}
 \def\@pmonth{Month}
 \def\@pyear{Year}
-\def\volume#1{\gdef\@vol{#1}}
-\def\issue#1{\gdef\@iss{#1}}
-\def\Month#1{\gdef\@pmonth{#1}}
-\def\Year#1{\gdef\@pyear{#1}}
+\def\volume#1{\global\def\@vol{#1}}
+\def\issue#1{\global\def\@iss{#1}}
+\def\Month#1{\global\def\@pmonth{#1}}
+\def\Year#1{\global\def\@pyear{#1}}
 \def\@jno{0000}
-\def\jno#1{\gdef\@jno{#1}}
+\def\jno#1{\global\def\@jno{#1}}
 
 \def\@gridframe{Y}
-\def\gridframe#1{\gdef\@gridframe{#1}}
+\def\gridframe#1{\global\def\@gridframe{#1}}
 
 
 \def\@cropmark{Y}
-\def\cropmark#1{\gdef\@cropmark{#1}}
+\def\cropmark#1{\global\def\@cropmark{#1}}
 \def\@doi{}
-\def\doi#1{\gdef\@doi{#1}}
+\def\doi#1{\global\def\@doi{#1}}
 \def\@address{}
-\def\address#1{\gdef\@address{#1}}
+\def\address#1{\global\def\@address{#1}}
 \def\authdagger{\textsuperscript{$\dagger$}}
 \def\addrdagger{\textsuperscript{$\dagger$}}
 \def\doiline{\@doi}
 \def\@journalname{Biophysical Journal}
-\def\journalname#1{\gdef\@journalname{#1}}
+\def\journalname#1{\global\def\@journalname{#1}}
 \def\@catchline{\@journalname\quad Volume:\ \@vol\quad\@pmonth\ \@pyear\ \@fpage--\@lpage}
-\def\catchline#1{\gdef\@catchline{#1}}
+\def\catchline#1{\global\def\@catchline{#1}}
 \def\@catchlinerunfoot{\@journalname\ \@vol(\@iss)\ \@fpage--\@lpage}
 \def\copyinfoa{$\copyright$\ 2013\ The Authors}
 \def\copyinfob{0006-3495/08/09/2624/12\quad \$2.00}
