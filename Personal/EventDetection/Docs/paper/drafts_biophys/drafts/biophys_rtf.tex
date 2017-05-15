@@ -23,6 +23,40 @@
 \setcounter{dbltopnumber}{2}
 \renewcommand\dbltopfraction{.7}
 \renewcommand\dblfloatpagefraction{.5}
+\def\@firstpage{}
+\newlength{\fulltextwidth}
+\setlength{\fulltextwidth}{41.6pc}
+\global\newbox\abstractbox
+\if@twoside
+  \def\ps@headings{%
+      \let\@oddfoot\@empty\let\@evenfoot\@empty
+      \def\@evenhead{\thepage\hfil\slshape\leftmark}%
+      \def\@oddhead{{\slshape\rightmark}\hfil\thepage}%
+      \let\@mkboth\markboth
+    \def\sectionmark##1{%
+      \markboth {\MakeUppercase{%
+        \ifnum \c@secnumdepth >\z@
+          \thesection\quad
+        \fi
+        ##1}}{}}%
+    \def\subsectionmark##1{%
+      \markright {%
+        \ifnum \c@secnumdepth >\@ne
+          \thesubsection\quad
+        \fi
+        ##1}}}
+\else
+  \def\ps@headings{%
+    \let\@oddfoot\@empty
+    \def\@oddhead{{\slshape\rightmark}\hfil\thepage}%
+    \let\@mkboth\markboth
+    \def\sectionmark##1{%
+      \markright {\MakeUppercase{%
+        \ifnum \c@secnumdepth >\m@ne
+          \thesection\quad
+        \fi
+        ##1}}}}
+\fi
 
 
 
@@ -45,6 +79,19 @@
 
 
 \setlength{\z@}{0}
+
+% needed in the case of latex2rtf
+\def\DeclareOldFontCommand #1#2#3{\DeclareRobustCommand #1{\@fontswitch {#2}{#3}}}
+
+\DeclareOldFontCommand{\rm}{\normalfont\rmfamily}{\mathrm}
+\DeclareOldFontCommand{\sf}{\normalfont\sffamily}{\mathsf}
+\DeclareOldFontCommand{\tt}{\normalfont\ttfamily}{\mathtt}
+\DeclareOldFontCommand{\bf}{\normalfont\bfseries}{\mathbf}
+\DeclareOldFontCommand{\it}{\normalfont\itshape}{\mathit}
+\DeclareOldFontCommand{\sl}{\normalfont\slshape}{\@nomath\sl}
+\DeclareOldFontCommand{\sc}{\normalfont\scshape}{\@nomath\sc}
+\DeclareRobustCommand*\cal{\@fontswitch\relax\mathcal}
+\DeclareRobustCommand*\mit{\@fontswitch\relax\mathnormal}
 % 517 to end
 \newcommand\@pnumwidth{1.55em}
 \newcommand\@tocrmarg{2.55em}
@@ -378,8 +425,8 @@
 
 % The same for double column
 \setlength{\@dblfptop}{\z@}
-\setlength{\@dblfpsep}{12\p@ plus 1fil}
-\setlength{\@dblfpbot}{\z@ plus 1fil}
+\setlength{\@dblfpsep}{12\p@ \@plus 1fil}
+\setlength{\@dblfpbot}{\z@ \@plus 1fil}
 \RequirePackage{multicol}
 \RequirePackage{ulem,color}
 \RequirePackage{dcolumn}
