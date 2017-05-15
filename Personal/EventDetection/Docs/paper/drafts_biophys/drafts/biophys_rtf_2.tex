@@ -5,6 +5,7 @@
 % needed in the case of latex2rtf
 \setlength{\z@}{0pt}
 \def\null{\hbox{}}
+\def\gdef{\global\def}
 \def\DeclareOldFontCommand #1#2#3{\DeclareRobustCommand #1{\@fontswitch {#2}{#3}}}
 \setlength{\p@}{1pt}
 
@@ -734,8 +735,8 @@
 \setlength{\tolerance}{9999}
 
 % Don't allow consecutive hyphens and hyphens at the bottom of the page.
-\doublehyphendemerits100000
-\finalhyphendemerits1000000
+\renewcommand{\doublehyphendemerits}{100000}
+\renewcommand{\finalhyphendemerits}{1000000}
 
 % Disallow widows and orphans
 \clubpenalty10000
@@ -743,19 +744,19 @@
 
 % Disable page breaks before equations, allow pagebreaks after
 % equations and discourage widow lines before equations.
-\displaywidowpenalty500
-\predisplaypenalty10000
-\postdisplaypenalty0
+\renewcommand{\displaywidowpenalty}{500}
+\renewcommand{\predisplaypenalty}{10000}
+\renewcommand{\postdisplaypenalty}{0}
 
 % Allow breaking the page in the middle of a paragraph
 \interlinepenalty0
 
 % Disallow breaking the page after a hyphenated line
-\brokenpenalty10000
+\renewcommand{\brokenpenalty}{10000}
 
 % Hyphenation; don't split words into less than three characters
-\lefthyphenmin3
-\righthyphenmin3
+\renewcommand{\lefthyphenmin}{3}
+\renewcommand{\righthyphenmin}{3}
 
 % Float placement parameters
 
