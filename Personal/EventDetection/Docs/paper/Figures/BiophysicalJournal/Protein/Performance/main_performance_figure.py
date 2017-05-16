@@ -30,22 +30,29 @@ def run():
     metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
                                                 Offline.get_best_metrics,False,
                                                 data_file)
-    fig = PlotUtilities.figure(figsize=(18,12))
+    fig = PlotUtilities.figure(figsize=(7,4))
     colors = Plotting.algorithm_colors()
     n_rows = 3
     n_cols = 3
     xlim_dist = [1e-5,2]
     xlim_load = [1,1e5]
     xlim_rupture = [-5,300]
-    legend_locs = ['upper right','center left','center left']
+    legend_locs = ['upper right','upper left','upper left']
+    titles = ["FEATHER","Fovea","Wavelet"]
+    title_kwargs = [dict(color='m'),
+                    dict(color='k'),
+                    dict(color='g')]
     for i,m in enumerate(metrics):
         offset = n_rows * i
         # the first column gets the algorithm label; the first row gets the
         # metric label
+        title_kwargs_tmp = title_kwargs[i]
+        kw_tmp = dict(title_kwargs=title_kwargs_tmp,
+                      legend_kwargs=dict(fontsize=8,handlelength=0.75))
         if offset == 0:
             title_dist = "Location Error"
-            title_load = "Loading Rate Histogram"
-            title_rupture_force = "Rupture Force Histogram"
+            title_load = "Loading Rate"
+            title_rupture_force = "Rupture Force"
         else:
             title_dist,title_load,title_rupture_force = "","",""
         # only have an x label on the last row
@@ -56,7 +63,7 @@ def run():
             xlabel_rupture_force = "Rupture Force (pN)"
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
-        ylabel_dist = (r"$N_{\mathrm{" + "{:s}".format(m.name.title()) + "}}$")
+        ylabel_dist = (r"$N_{\mathrm{" + "{:s}".format(titles[i]) + "}}$")
         color_pred=colors[i]
         color_true = 'g'
         # get the formatting dictionaries for the various plots 
@@ -83,7 +90,7 @@ def run():
                                               **distance_histogram_kw)
         PlotUtilities.lazyLabel(xlabel_dist,ylabel_dist,title_dist,
                                 loc=legend_locs[i],legendBgColor='w',
-                                frameon=False)      
+                                frameon=False,**kw_tmp)      
         plt.xlim(xlim_dist)                                   
         if not last_row:
             PlotUtilities.no_x_label(ax_dist)
@@ -97,7 +104,7 @@ def run():
         plt.yscale('log')
         PlotUtilities.lazyLabel(xlabel_load,"",title_load,
                                 legendBgColor='w',
-                                loc='upper left',frameon=False)
+                                loc='lower left',frameon=False,**kw_tmp)
         plt.xlim(xlim_load)               
         if not last_row:
             PlotUtilities.no_x_label(ax_load)
@@ -110,7 +117,7 @@ def run():
                                         **true_style_histogram)
         plt.yscale('log')
         PlotUtilities.lazyLabel(xlabel_rupture_force,"",title_rupture_force,
-                                useLegend=False)       
+                                useLegend=False,**kw_tmp)       
         plt.xlim(xlim_rupture)                                                 
         if not last_row:
             PlotUtilities.no_x_label(ax_rupture)     

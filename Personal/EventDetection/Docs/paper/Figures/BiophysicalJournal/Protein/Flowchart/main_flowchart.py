@@ -70,17 +70,18 @@ def run():
     ylim_force_pN = [-30,max(force_interp_plot)+1.1+35]
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
-    title_kwargs = dict(loc='left',fontsize=16,color='b')
-    kw = dict(title_kwargs=title_kwargs)
+    title_kwargs = dict(loc='left',fontsize=12,color='b')
+    kwargs_axis = dict(fontsize=12)
+    kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\downarrow$"
-    probability_label = "$\log_{10}$($P$)"
-    probability_label_post = ""
+    probability_label = "log$_{\mathrm{10}}$(P)"
+    probability_label_post = probability_label
     n_cols = 3
     n_rows = 6
     gs = gridspec.GridSpec(nrows=n_rows,ncols=n_cols,
                            width_ratios=[1 for _ in range(n_cols)],
-                           height_ratios=[1,1,1,1,1,2])
-    fig = PlotUtilities.figure(figsize=(4,9))
+                           height_ratios=[1,1,1,1,1,1])
+    fig = PlotUtilities.figure(figsize=(3.25,6))
     # plot the 'raw' force and spline
     ax_raw = plt.subplot(gs[0,:])
     plt.plot(time_plot,force_plot,label="Raw",**raw_force_kwargs)    
@@ -89,11 +90,11 @@ def run():
     PlotUtilities.x_label_on_top(ax_raw)
     PlotUtilities.no_x_label(ax_raw)
     plt.ylim(ylim_force_pN)                
-    PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="center left",
-                            legend_kwargs=dict(handlelength=0.75,fontsize=12,
-                                               ncol=2))
+    PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="upper center",
+                            legend_kwargs=dict(handlelength=0.75,fontsize=11,
+                                               ncol=2),**kw)
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks()
+    PlotUtilities.x_scale_bar_and_ticks(dict(y_frac=0.5))
     # # plot the 'raw' probability
     ax_raw_prob = plt.subplot(gs[1,:])
     plt.plot(time_plot,to_prob_plot(info_no_domain_specific.cdf),
@@ -108,7 +109,7 @@ def run():
     ax_adhesion = plt.subplot(gs[2,:])
     plt.plot(time_plot,to_prob_plot(info_remove_adhesions.cdf),
              **probabiity_kwargs)    
-    title_adhesion = arrow + r"Supress adhesion & $\frac{dF}{dt}>0$"
+    title_adhesion = arrow + r"Supress adhesion, stretching"
     PlotUtilities.lazyLabel("",probability_label_post,title_adhesion,**kw)
     PlotUtilities.no_x_label(ax_adhesion)      
     plt.ylim(ylim_prob)
@@ -176,11 +177,11 @@ def run():
         in_ax.plot(time_slice,force_interp_plot[event_bounding_slice],
                    **interp_force_kwargs_tmp)       
         PlotUtilities.no_x_anything(ax=in_ax)
+        # removing  y label on all of them..
         if (i == 0):
             ylabel = "Force (pN)"
         else:
             ylabel = ""
-        PlotUtilities.lazyLabel("Time (s)",ylabel,"")
         # determine if we need to add in 'guidelines' for zooming
         if (zoom_bool):
             PlotUtilities.zoom_effect01(ax_final,in_ax,*in_ax.get_xlim(),
@@ -188,8 +189,8 @@ def run():
         else:
             # this is a 'second' zoom in...'
             PlotUtilities.no_y_label(in_ax)
-            ylab = (r"$\downarrow${:d}x").format(fraction_increase)
-            PlotUtilities.ylabel(ylab)
+            ylabel = (r"$\downarrow${:d}x").format(fraction_increase)
+        PlotUtilities.lazyLabel("Time (s)",ylabel,"",**kw)
         # plot an arrow over the (single) event
         Plotting.plot_arrows_above_events([event_location],plot_x=time_plot,
                                           plot_y=force_plot,fudge_y=7,

@@ -35,7 +35,7 @@ scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
 df_dt_string = r"dF/dt"
 rupture_string = r"F$_{\mathrm{r}}$"
-fontsize=12
+fontsize=8
 
 def generate_rupture_histograms():
     num_loading_rates = 10
@@ -151,7 +151,8 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     event_force = rupture_force
     event_time = time_plot[event_zoom]
     arrow_kw_thick = common_arrow_kwargs()
-    arrow_kw_thick['arrowprops']['linewidth'] = 3
+    linewidth_common = 1.5
+    arrow_kw_thick['arrowprops']['linewidth'] = linewidth_common
     arrow_kw_thick['arrowprops']['arrowstyle'] = '->'
     zoom_event_only = [event_zoom]
     # get the x locations of two predicted events
@@ -160,7 +161,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     ylim = plt.ylim()
     predicted_x = [xlim[0] + (xlim[1]-xlim[0]) * r for r in predicted_x_fracs]
     # plot them as lines
-    style_predicted = dict(linestyle='-.',color='c',linewidth=3)
+    style_predicted = dict(linestyle='-.',color='c',linewidth=linewidth_common)
     style_arrow_predicted = dict(**arrow_kw_thick)
     style_arrow_predicted['color'] = 'b'
     for x in predicted_x:
@@ -169,7 +170,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
     plt.text(x=np.mean(predicted_x),
-             y=np.mean(ylim)+abs(np.diff(ylim))*0.13,backgroundcolor='c',
+             y=np.mean(ylim)+abs(np.diff(ylim))*0.1,backgroundcolor='c',
              bbox=dict(linestyle='-.',color='c'),color='w',
              s="Predicted Events",rotation=90,zorder=10,**text_box_kwargs)
     # plot a text box for the event
@@ -187,7 +188,8 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
              color='g',**text_box_kwargs)
     plt.annotate("", xytext=(event_time, event_force), 
                  xy=(closest_x, event_force),
-                arrowprops=dict(arrowstyle="->",color='g',linewidth=2))
+                 arrowprops=dict(arrowstyle="->",color='g',
+                                 linewidth=linewidth_common))
     # plot arrows from the predictions to the actual
     # see:
     # matplotlib.org/api/pyplot_api.html?highlight=arrow#matplotlib.pyplot.arrow
@@ -197,7 +199,8 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     plot_y = [y_text*1.07,y_text*1.12]
     for x,plot_y_tmp in zip(predicted_x,plot_y):
         ax.annotate("", xy=(event_time, plot_y_tmp), xytext=(x, plot_y_tmp),
-                    arrowprops=dict(arrowstyle="->",color='c',linewidth=3,
+                    arrowprops=dict(arrowstyle="->",color='c',
+                                    linewidth=linewidth_common,
                                     linestyle="-."))
     plt.text(event_time+dx/2,y_text,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
@@ -228,7 +231,7 @@ def plot_histogram_and_model(rupture_forces,rupture,model,kwargs_errorbar,
                              loading_rate_pN_per_s,bins=25):
     rupture_plot = rupture*1e12
     n,_,_ = plt.hist(rupture_plot,alpha=0.5,bins=bins,edgecolor='k',linewidth=1)
-    plt.plot(rupture_forces*1e12,model*max(n)/max(model),linewidth=3)
+    plt.plot(rupture_forces*1e12,model*max(n)/max(model),**kwargs_errorbar)
     plt.xlim([min(rupture_plot),max(rupture_plot)])
     xlim = plt.xlim()
     ylim = plt.ylim()
@@ -291,9 +294,7 @@ def run():
     mean_rupture_lower = 0
     mean_rupture_upper = np.max(mean_rupture_forces+stdev_rupture_forces)
     rupture_limits = np.array([mean_rupture_lower,mean_rupture_upper])*1e12
-    lazy_kwargs = dict(title_kwargs=dict(fontsize=14),
-                       axis_kwargs=dict(fontsize=12),
-                       tick_kwargs=dict(fontsize=10))
+    lazy_kwargs = dict()
     data_file = "../_Data/example_protein.pkl"
     image_location =  "../_Data/JILA_PFC_PRH_Edi.png"
     data = CheckpointUtilities.lazy_load(data_file)
@@ -309,15 +310,18 @@ def run():
     # 'master' grid spec is 2x1
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
-                                          hspace=0.5,wspace=0.4)
+                                          hspace=0.65,wspace=0.5)
     ylim_force_pN = [-35,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
-    fig = PlotUtilities.figure(figsize=(4,9))
+    fig = PlotUtilities.figure(figsize=(3.25,6))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:2,0])
     cantilever_image_plot(image_location)
+    # remove its border
+    for spine in in_ax.spines.values():
+        spine.set_visible(False)
     # # plot the cartoon of the fec
     ax_fec = plt.subplot(gs[0,1])
     # define the regions where we are attached to the molecule...
@@ -348,7 +352,7 @@ def run():
     PlotUtilities.no_y_label(ax_fec)
     PlotUtilities.no_y_ticks(ax_fec)
     # # plot the loading rate stuff
-    fmt_error = dict(marker='v',color='k',markersize=10,linewidth=3)
+    fmt_error = dict(linewidth=1.5)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
     plt.subplot(gs[1,1])

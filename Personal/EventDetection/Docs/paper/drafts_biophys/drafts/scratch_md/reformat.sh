@@ -17,17 +17,18 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 # Returns:
 
 output=heenan_2017_ms_sed.tex 
+output_tmp=heenan_2017_ms_sed_tmp.tex 
 # replace things like \citePRH{<XXX>} with just @
-gsed -E "s/cite[a-zA-Z]*\{([^}]+)\}/@\1/g" heenan_2017_ms.tex > $output
+sed -E "s/cite[a-zA-Z]*\{([^}]+)\}/@\1/g" heenan_2017_ms.tex > $output
+sed -E "s/ValUnit{([^}]+)}{([^}]+)}/\1\2/g" $output > $output_tmp
 
 # replace \singlemol{} with SMFS
-gsed -iE "s/singlemol{}/SMFS/g" $output 
+sed -iE "s/singlemol{}/SMFS/g" $output_tmp
 # replace \name{} with FEATHER
-gsed -iE "s/name{}/FEATHER/g" $output 
-# remove all the backslashes
-gsed -i 's/\\//g' $output 
+sed -iE "s/name{}/FEATHER/g" $output_tmp
 # replace \ValUnit{}{} with just the actual words
-#gsed -ir "s/ValUnit\{([^}]+)\}\{([^}]+)\}/\1 \2/g" $output 
+# remove all the backslashes
+sed -i 's/\/ /g' $output_tmp
 
 
 cat $output

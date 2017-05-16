@@ -533,7 +533,7 @@ def _histogram_true_style(color_true=color_true_def,label="True"):
 
 def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
     style_pred = dict(color=color_pred,label=label,fill=False,
-                      histtype='step',alpha=1,linewidth=3)
+                      histtype='step',alpha=1,linewidth=1)
     return style_pred
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
