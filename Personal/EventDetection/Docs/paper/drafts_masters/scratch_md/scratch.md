@@ -7,10 +7,7 @@ $$
 $$ \label{pi}
 
 
+![**Figure {#f:flowchart}.** Algorithm flowchart](flowchart.png)
 
-[flowchart]: flowchart.png ""
-
-![Alt text][flowchart]
-
-A reference to the [blah](#flowchart). Here is a citation @dudko_theory_2008
+A reference to Figure {#f:flowchart}. Here is a citation @dudko_theory_2008
 
