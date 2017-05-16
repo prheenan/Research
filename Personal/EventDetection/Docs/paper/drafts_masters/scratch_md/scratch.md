@@ -12,5 +12,5 @@ $$ \label{pi}
 
 ![Alt text][flowchart]
 
-A reference to the [blah](#flowchart).
+A reference to the [blah](#flowchart). Here is a citation @dudko_theory_2008
 
