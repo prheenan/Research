@@ -107,14 +107,17 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     width = scale_fraction_width * max_time
     PlotUtilities.x_scale_bar_and_ticks()
 
-def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=4,
-                                        shrinkB=4,linewidth=1,
+def common_text_kwargs():
+    return dict(xycoords='data',
+                textcoords='data',
+                verticalalignment='center',
+                horizontalalignment='center')
+
+def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=0,
+                                        shrinkB=0,linewidth=1,
                                         connectionstyle="arc3")):
-    return  dict(xycoords='data',
-                 textcoords='data',
-                 verticalalignment='center',
-                 horizontalalignment='center',fontsize=fontsize,
-                 arrowprops=arrowprops)
+    return  dict(fontsize=fontsize,
+                 arrowprops=arrowprops,**common_text_kwargs())
 
 def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # determine the second event (zoom index)
@@ -250,17 +253,25 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     max_idx = min_idx + np.argmax(landscape[min_idx:])
     x_max = x[max_idx]
     x_min = x[min_idx]
+    x_range = x_max-x_min
     y_low_plot = -3
     y_max = landscape[max_idx]
+    y_range = y_max - landscape[min_idx]
     # make the x_dagger annotation
     dagger_props = common_arrow_kwargs()
+    text_kwargs = dict(horizontalalignment='center',
+                       verticalalignment='center',fontsize=10)
     dagger_props['arrowprops']['arrowstyle'] = '<->'
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
-                s=r"x$^{\ddag}$",**dagger_props)
+                s=r"",**dagger_props)
+    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.05,s="x$^{\ddag}$")
     # make the delta_G_dagger annotation
-    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
-                **dagger_props)
-    plt.ylim(y_low_plot*2,max(plt.ylim()))
+    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"",**dagger_props)
+    ax.text(x=x_max+x_range*0.4,y=np.mean(landscape)*0.7,
+            s="$\Delta$G$^{\ddag}$",**text_kwargs)
+    plt.ylim(y_low_plot*3,max(plt.ylim()))
+    xlim = plt.xlim()
+    plt.xlim(xlim[0],xlim[1]+x_range * 0.4)
     PlotUtilities.no_y_ticks(ax=ax)
     PlotUtilities.no_x_ticks(ax=ax)
     PlotUtilities.no_y_label(ax=ax)
@@ -310,7 +321,7 @@ def run():
     # 'master' grid spec is 2x1
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
-                                          hspace=0.65,wspace=0.5)
+                                          hspace=0.75,wspace=0.5)
     ylim_force_pN = [-35,max(force_interp_plot)*1.2]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
@@ -388,7 +399,6 @@ def run():
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
     PlotUtilities.lazyLabel("Time","Force (pN)","",**lazy_kwargs)
     PlotUtilities.no_x_label(ax_zoom)
-
     PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":

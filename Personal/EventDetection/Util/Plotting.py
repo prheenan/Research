@@ -62,7 +62,7 @@ def plot_autocorrelation_log(x,*args):
     tol = 1e-6
     x_plot = x- min(x)
     # auto_norm goes from 0 to 1
-    style_fit = dict(color='r',linestyle='--',linewidth=2)
+    style_fit = dict(color='r',linestyle='--',linewidth=1.25)
     style_auto = dict(color='k',alpha=0.3,marker='.')
     xlim_zoomed = [0,3*tau]
     highlight_fit_range = lambda y: \
@@ -176,7 +176,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(time_interpolated_plot,interpolated_force_plot,color='b',
-             linewidth=2,label="2-spline")
+             linewidth=1.25,label="2-spline")
     plt.axvline(x[surface_index],label="Surface\n(pred)")
     highlight_events(event_slices,x,force_plot,**style_events)
     PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)
@@ -335,17 +335,17 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
          Nothing
     """
     if (style_predicted is None):
-        style_predicted = dict(label="predicted",linewidth=2,
+        style_predicted = dict(label="predicted",linewidth=1.25,
                                **_style_pred_def('k'))
     if (style_true is None):
         style_true = dict(label="true",**_style_true_def('g'))
     marker_size = 4
     style_true_marker = dict(**style_true)
     style_true_marker['alpha'] = 0.5
-    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle='None',
+    _plot_rupture_objects(predicted,marker='x',linewidth=1.25,linestyle='None',
                           markersize=marker_size,color=style_predicted['color'],
                           label=style_predicted['label'])
-    _plot_rupture_objects(true,marker='o',linewidth=4,markersize=marker_size,
+    _plot_rupture_objects(true,marker='o',linewidth=1.25,markersize=marker_size,
                           markerfacecolor="None",markeredgecolor='g',
                           linestyle='None',**style_true_marker)
     PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
@@ -533,7 +533,7 @@ def _histogram_true_style(color_true=color_true_def,label="True"):
 
 def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
     style_pred = dict(color=color_pred,label=label,fill=False,
-                      histtype='step',alpha=1,linewidth=1)
+                      histtype='step',alpha=1,linewidth=1.25)
     return style_pred
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
@@ -571,7 +571,7 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
                 xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred,
                 q=q,label_bool=label_bool)
 
-def plot_label_for_true(label,color,linewidth=3,**kwargs):
+def plot_label_for_true(label,color,linewidth=1.25,**kwargs):
     plt.plot([],[],linewidth=linewidth,label=label,color=color)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
@@ -596,7 +596,10 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     if (to_pred.size > 0):
         to_ret = plt.hist(rel_pred,log=True,bins=bins,**style_true)
     if (to_true.size > 0):
-        to_ret = plt.hist(rel_true,log=True,bins=bins,**style_pred)
+        style_pred_no_label = dict(**style_pred)
+        style_pred_no_label['label'] = ''
+        to_ret = plt.hist(rel_true,log=True,bins=bins,**style_pred_no_label)
+        plot_label_for_true(**style_pred)
     if (q is not None):
         cat = np.concatenate([rel_pred,rel_true])
         q_num = np.percentile(cat,q)
@@ -605,7 +608,7 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
         if (use_q_number):
             q_label += "={:.2g}".format(q_num)
     label = q_label if label_bool else ""
-    plt.axvline(q_num,label=label,linestyle='--',linewidth=2,
+    plt.axvline(q_num,label=label,linestyle='--',linewidth=1.25,
                 color='k')
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
@@ -625,7 +628,15 @@ def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
     if len(to_bin) == 0:
         return [],[],[]
-    return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+    if (kwargs['fill']):
+        return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+    else:
+        kwargs_no_label = dict(**kwargs)
+        kwargs_no_label['label'] = ""
+        to_ret = plt.hist(to_bin,alpha=alpha,linewidth=linewidth,
+                          **kwargs_no_label)
+        plot_label_for_true(**kwargs)
+        return to_ret 
 
 def rupture_force_histogram(objs,**kwargs):
     """

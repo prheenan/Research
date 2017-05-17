@@ -39,15 +39,11 @@ def run():
     xlim_rupture = [-5,300]
     legend_locs = ['upper right','upper left','upper left']
     titles = ["FEATHER","Fovea","Wavelet"]
-    title_kwargs = [dict(color='m'),
-                    dict(color='k'),
-                    dict(color='g')]
     for i,m in enumerate(metrics):
         offset = n_rows * i
         # the first column gets the algorithm label; the first row gets the
         # metric label
-        title_kwargs_tmp = title_kwargs[i]
-        kw_tmp = dict(title_kwargs=title_kwargs_tmp,
+        kw_tmp = dict(title_kwargs=dict(fontweight='bold',color='b'),
                       legend_kwargs=dict(fontsize=8,handlelength=0.75))
         if offset == 0:
             title_dist = "Location Error"
@@ -63,7 +59,8 @@ def run():
             xlabel_rupture_force = "Rupture Force (pN)"
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
-        ylabel_dist = (r"$N_{\mathrm{" + "{:s}".format(titles[i]) + "}}$")
+        ylabel_dist = \
+            (r"N$_{\mathrm{" + "{:s}".format(titles[i]) + "}}$")
         color_pred=colors[i]
         color_true = 'g'
         # get the formatting dictionaries for the various plots 
