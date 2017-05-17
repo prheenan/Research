@@ -528,7 +528,7 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
 def _histogram_true_style(color_true=color_true_def,label="True"):
     style_true = dict(color=color_true,label=label,edgecolor=color_true,
                       histtype='stepfilled',fill=True,hatch= true_hatch(),
-                      facecolor=color_true,alpha=0.4)
+                      facecolor=color_true,alpha=0.2)
     return style_true
 
 def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
@@ -571,6 +571,8 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
                 xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred,
                 q=q,label_bool=label_bool)
 
+def plot_label_for_true(label,color,linewidth=3,**kwargs):
+    plt.plot([],[],linewidth=linewidth,label=label,color=color)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
