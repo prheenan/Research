@@ -9,7 +9,7 @@ Received for publication "Staff will complete"  and in final form "Staff will co
 
 # Introduction {#s:Intro}
 
-In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes,@comstock_direct_2015 protein-ligand bond strength, @yuan_energy_2000 and the energy landscapes of proteins and nucleic acids @dudko_Theory_2008. The location and properties of the *ruptures* in the data (see Figure {#f:Rupture}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
+In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes,@comstock_direct_2015 protein-ligand bond strength, @yuan_energy_2000 and the energy landscapes of proteins and nucleic acids @dudko_theory_2008 . The location and properties of the *ruptures* in the data (see Figure {#f:Rupture}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
 
 Atomic force microscopy (AFM) is a powerful tool for studying the mechanical 
 properties of molecules.  AFM as an imaging technique can resolve sub-nanometer
@@ -19,7 +19,7 @@ DNA,@ido_beyond_2013 lattice structure of membrane-bound proteins,
 @ando_high-speed_2013. As a force spectroscopy technique, AFM is capable of
  dynamic experiments such as measuring the unfolding and refolding kinetics 
 of single proteins,@he_direct_2015 unzipping double-stranded 
-DNA, @krautbauer_Unzipping_2003 and determining the unfolding and refolding 
+DNA, @krautbauer_unzipping_2003 and determining the unfolding and refolding 
 pathways for membrane proteins @yu_hidden_2017. The viability of AFM in a wide
  range of temperatures, solvents, and other environmental variables makes it 
 attractive for studying biological systems. 
