@@ -9,54 +9,41 @@ Received for publication "Staff will complete"  and in final form "Staff will co
 
 # Introduction {#s:Intro}
 
-In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes,@comstock_direct_2015 protein-ligand bond strength, @yuan_energy_2000 and the energy landscapes of proteins and nucleic acids @dudko_theory_2008 . The location and properties of the *ruptures* in the data (see Figure {#f:Rupture}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
+In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (see Figure {#f:Rupture}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
 
-Atomic force microscopy (AFM) is a powerful tool for studying the mechanical 
-properties of molecules.  AFM as an imaging technique can resolve sub-nanometer
- molecular structure such as the major and minor grooves of 
-DNA,@ido_beyond_2013 lattice structure of membrane-bound proteins,
-@muller_surface_1999 and real-time motion of motor proteins
-@ando_high-speed_2013. As a force spectroscopy technique, AFM is capable of
- dynamic experiments such as measuring the unfolding and refolding kinetics 
-of single proteins,@he_direct_2015 unzipping double-stranded 
-DNA, @krautbauer_unzipping_2003 and determining the unfolding and refolding 
+Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of molecules.  AFM as an imaging technique can resolve sub-nanometer  molecular structure such as the major and minor grooves of DNA @ido_beyond_2013, lattice structure of membrane-bound proteins @muller_surface_1999, and real-time motion of motor proteins @ando_high-speed_2013. As a force spectroscopy technique, AFM is capable of dynamic experiments such as measuring the unfolding and refolding kinetics of single proteins @he_direct_2015, unzipping double-stranded 
+DNA @krautbauer_unzipping_2003, and determining the unfolding and refolding 
 pathways for membrane proteins @yu_hidden_2017. The viability of AFM in a wide
  range of temperatures, solvents, and other environmental variables makes it 
 attractive for studying biological systems. 
 
 During an SMFS-AFM experiment, a cantilever-bound tip with a nanometer-sized radius interacts with a sample (Figure {#f:Cartoon}). The interaction is measured via an optical lever arm system @meyer_novel_1998 in which the displacement of the tip is recorded via deflection of a laser focused on the cantilever. A calibrated tip measures interaction forces from piconewtons to nanonewtons. 
 
-![**Figure {#f:diagram}.** Algorithm flowchart So that
-blah blah blah
-linebreak
-blah blah](figures/diagram.png)
+--------------------------
+![{#f:diagram}](figures/diagram.png) 
+**Figure {#f:diagram}.** Idiot Diagram 
+--------------------------
 
-The analysis and interpretation of SMFS experiments is dependent on the attachment of the probe to the molecule of interest. In AFM, quality attachments between the tip and the sample may occur less than one curve in tens of thousands.@bosshart_reference-free_2012 Strategies exist to improve attachment rates by coating the AFM tip with a molecule that binds readily to the sample of interest.@walder_robert_rapid_nodate However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting SMFS data and locating possible events (see Figure {#f:Rupture}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in SMFS data management and analysis.
+The analysis and interpretation of SMFS experiments is dependent on the attachment of the probe to the molecule of interest. In AFM, quality attachments between the tip and the sample may occur less than one curve in tens of thousands @bosshart_reference-free_2012. Strategies exist to improve attachment rates by coating the AFM tip with a molecule that binds readily to the sample of interest @walder_robert_rapid_nodate. However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting SMFS data and locating possible events (see Figure {#f:Rupture}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in SMFS data management and analysis.
 
-Methods exist to automate detecting events within SMFS data. Automation removes the burden of manual data filtering and improves scientific reproducibility. Techniques for automated event detection in \fec{}s include aligning by the contour length at each extension by applying polymer models;@bosshart_reference-free_2012,kuhn_automated_2005 thresholding based on signal or noise characteristics;@gergely_semi-automatized_2001,roduit_openfovea:_2012 and classification based on transformations of the data into frequency or derivative spaces @kasas_fuzzy_2000,garcia-masso_automated_2016,benitez_searching_2017. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization. Specifically, contour-length alignment algorithms bias results towards dominant features and necessarily require a polymer model for the contour length (as a function of force and extension). In SMFS studies of molecules with no existing polymer model or which exhibit rare behavior, alignment algorithms have limited use.  Thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As shown below, these methods do not generalize well to the typical range of SMFS data (Figure {#f:Performance}).
+Methods exist to automate detecting events within SMFS data. Automation removes the burden of manual data filtering and improves scientific reproducibility. Techniques for automated event detection in \fec{}s include aligning by the contour length at each extension by applying polymer models @bosshart_reference-free_2012 @kuhn_automated_2005 thresholding based on signal or noise characteristics;@gergely_semi-automatized_2001, @roduit_openfovea:_2012 and classification based on transformations of the data into frequency or derivative spaces @kasas_fuzzy_2000 @garcia-masso_automated_2016 @benitez_searching_2017. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization. Specifically, contour-length alignment algorithms bias results towards dominant features and necessarily require a polymer model for the contour length (as a function of force and extension). In SMFS studies of molecules with no existing polymer model or which exhibit rare behavior, alignment algorithms have limited use.  Thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As shown below, these methods do not generalize well to the typical range of SMFS data (Figure {#f:Performance}).
 
 This thesis describes a new method for detecting events in \fec{}s.  The algorithm, named FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), requires no \textit{a priori} knowledge of the polymer under study, does not bias data interpretation towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well. FEATHER is designed to make few assumptions about the data, operate over a wide range of SMFS experimental conditions, and require a small time footprint compared to existing techniques.  
 
-Chapter 2 of this thesis describes the sample preparation and data acquisition used to measure the \fec{}s of functionalized double-stranded DNA pulled by functionalized AFM cantilevers (Figure {#f:Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see \tRef{statistics}). Finally, the details and improved performance of FEATHER are described. 
+Chapter 2 of this thesis describes the sample preparation and data acquisition used to measure the \fec{}s of functionalized double-stranded DNA pulled by functionalized AFM cantilevers (Figure {#f:Cartoon}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see XXX \tRef{statistics}). Finally, the details and improved performance of FEATHER are described. 
 
 
 # Materials and Methods
 
 ## Sample Preparation
 
-Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere.@walder_robert_rapid_nodate Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
+Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere @walder_robert_rapid_nodate. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
 
 ## Atomic force microscopy
 
-All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method.@hutter_calibration_1993 All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 25}{\textmu{}m} grids at points separated by 1}{\textmu{}m}. The stage was translated to a new grid point after measuring three force-extension curves. 
+All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 25}{\textmu{}m} grids at points separated by 1}{\textmu{}m}. The stage was translated to a new grid point after measuring three force-extension curves. 
 
 ## Data Annotation
-
-![**Figure {#f:flowchart}.** Algorithm flowchart So that
-blah blah blah
-linebreak
-blah blah](figures/flowchart.png)
-
 
 Two hundred force-extension curves with events were obtained at three pulling velocities (100 nm/s, 500 nm/s, 1000nm/s). The start and end of each event in a curve were obtained through manual annotation. More statistical information on the data, including curve lengths and number of events per curve, is given in Table {#t:statistics}.
 
@@ -70,6 +57,11 @@ All timing and tuning results were obtained using a desktop with 16 GB of RAM, a
 
 FEATHER improves on previous methods by using information present in the approach of the AFM cantilever to the surface-bound molecules (Figure {#f:FeatherExample}).  Figure {#f:Code} lists the pseudocode for the method. The algorithm is based on a probabilistic model of a signal lacking any events, called the *no-event model*, described in {#s:DesignDetails}. The algorithm has the following basic steps:
 
+--------------------------
+![{#f:flowchart}](figures/flowchart.png)
+**Figure {#f:flowchart}.** Algorithm flowchart
+--------------------------
+
 
 1. Estimate the no-event parameters (see Figure {#f:FeatherExample}) from the approach curve.
 2. Fit the no-event model to the retract curve.
@@ -80,18 +72,20 @@ FEATHER improves on previous methods by using information present in the approac
 
  FEATHER calculates an upper bound on the probability of no event occurring at each time point, using parameters estimated from the approach portion of the curve (see Section {#s:DesignDetails}) and a smoothing parameter from the user (see Table {#t:Parameters}). The probability at each point is iteratively updated to remove the effect of adhesions and other false positives. This last step is the only step requiring knowledge specific to SMFS. As shown in Figure {#f:FeatherExample}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#t:Parameters} and Section {#s:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in Section {#s:Annotation}.
 
-Name       Meaning                            Value used in this work|
+Name       Meaning                            Value used in this work
 --------   --------------                     ----------------
 $\tau$     Number of points for spline grid   2% of curve length
 threshold  Probability used to reject events  Determined by Tuning (Figure {#f:Tuning})
+
 [Table Caption]
+
 ## Choice of methods for comparison
 
 The following two algorithms were chosen for comparison to FEATHER: 
 
 - The AFM-specific 'event_find' routine from the OpenFovea AFM analysis package.@roduit_openfovea:_2012
 - The general-purpose 'find_peaks_cwt' method from the Scientific Python package. 
-@Jones_SciPy:_2001
+@jones_scipy:_2001
 
  These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable (see Figure {#f:Timing}) for analyzing hundreds of force-extension curves with millions of points each. These baselines represent two common approaches to event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method uses wavelet transformations. 
 
@@ -120,8 +114,10 @@ All three algorithms were tuned using 5-fold cross validation. Cross validation 
 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for FEATHER, see Figure {#f:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#t:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure {#f:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
-
-![**Figure {#f:performance}.** Algorithm flowchart So that blah blah blah linebreak blah blah](figures/performance.png)
+---------
+![{#f:performance}](figures/performance.png)
+**Figure {#f:performance}.** Performance figure
+---------
 
 
 # Results and Discussion
