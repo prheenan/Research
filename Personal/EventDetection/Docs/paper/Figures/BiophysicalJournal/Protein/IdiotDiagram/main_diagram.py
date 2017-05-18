@@ -379,7 +379,7 @@ def run():
     PlotUtilities.lazyLabel(df_dt_string + " (pN/s)",
                             rupture_string + " (pN)","",**lazy_kwargs)
     plt.ylim(rupture_limits)
-    # # plot the energy landscape with annotations, as an inset 
+    # # plot the energy landscape with annotations
     in_ax = plt.subplot(gs[2,0])
     plot_landscape(x,landscape,ax=in_ax)
     PlotUtilities.lazyLabel("Extension","Free Energy","",**lazy_kwargs)

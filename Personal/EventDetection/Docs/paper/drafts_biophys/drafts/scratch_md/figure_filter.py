@@ -10,7 +10,7 @@ credit to: blog.hartleygroup.org/2015/11/08/numbering-figures-schemes-and-charts
 from pandocfilters import toJSONFilter, Str
 import re
 
-REF_PAT = re.compile('(.*)\{#([a-z]):(\w*)\}(.*)')
+REF_PAT = re.compile('(.*)\{#(fig|eq|tbl|sec):(\w*)\}(.*)')
 
 known_labels = {}
 

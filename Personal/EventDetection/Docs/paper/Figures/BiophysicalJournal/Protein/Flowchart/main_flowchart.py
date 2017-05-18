@@ -67,11 +67,11 @@ def run():
     prob_scale_dict = dict(y_frac=y_frac_prob)
     n_cols = 1
     n_rows = 6
-    ylim_force_pN = [-30,max(force_interp_plot)+1.1+35]
+    ylim_force_pN = [-35,max(force_interp_plot)+1.1+35]
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
-    title_kwargs = dict(loc='left',fontsize=12,color='b')
-    kwargs_axis = dict(fontsize=12)
+    title_kwargs = dict(loc='left',fontsize=10,color='b')
+    kwargs_axis = dict(fontsize=10)
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\downarrow$"
     probability_label = "log$_{\mathrm{10}}$(P)"
@@ -80,8 +80,8 @@ def run():
     n_rows = 6
     gs = gridspec.GridSpec(nrows=n_rows,ncols=n_cols,
                            width_ratios=[1 for _ in range(n_cols)],
-                           height_ratios=[1,1,1,1,1,1])
-    fig = PlotUtilities.figure(figsize=(3.25,6))
+                           height_ratios=[0.75,0.75,0.75,0.75,1,1])
+    fig = PlotUtilities.figure(figsize=(3.25,5))
     # plot the 'raw' force and spline
     ax_raw = plt.subplot(gs[0,:])
     plt.plot(time_plot,force_plot,label="Raw",**raw_force_kwargs)    
@@ -91,8 +91,8 @@ def run():
     PlotUtilities.no_x_label(ax_raw)
     plt.ylim(ylim_force_pN)                
     PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="upper center",
-                            legend_kwargs=dict(handlelength=0.75,fontsize=11,
-                                               ncol=2),**kw)
+                            legend_kwargs=dict(handlelength=0.75,ncol=2,
+                                               fontsize=9),**kw)
     plt.xlim(xlim_time)
     PlotUtilities.x_scale_bar_and_ticks(dict(y_frac=0.5))
     # # plot the 'raw' probability
@@ -109,7 +109,7 @@ def run():
     ax_adhesion = plt.subplot(gs[2,:])
     plt.plot(time_plot,to_prob_plot(info_remove_adhesions.cdf),
              **probabiity_kwargs)    
-    title_adhesion = arrow + r"Supress adhesion, stretching"
+    title_adhesion = arrow + r"Suppress adhesion, stretching"
     PlotUtilities.lazyLabel("",probability_label_post,title_adhesion,**kw)
     PlotUtilities.no_x_label(ax_adhesion)      
     plt.ylim(ylim_prob)
