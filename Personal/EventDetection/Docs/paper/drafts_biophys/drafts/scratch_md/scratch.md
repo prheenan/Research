@@ -9,7 +9,7 @@ Received for publication "Staff will complete"  and in final form "Staff will co
 
 # Introduction {#s:Intro}
 
-In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (\fRef{Cartoon}). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (see Figure {#f:Rupture}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
+In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (XXX ). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (see Figure {#f:Rupture}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
 
 Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of molecules.  AFM as an imaging technique can resolve sub-nanometer  molecular structure such as the major and minor grooves of DNA @ido_beyond_2013, lattice structure of membrane-bound proteins @muller_surface_1999, and real-time motion of motor proteins @ando_high-speed_2013. As a force spectroscopy technique, AFM is capable of dynamic experiments such as measuring the unfolding and refolding kinetics of single proteins @he_direct_2015, unzipping double-stranded 
 DNA @krautbauer_unzipping_2003, and determining the unfolding and refolding 
@@ -20,8 +20,8 @@ attractive for studying biological systems.
 During an SMFS-AFM experiment, a cantilever-bound tip with a nanometer-sized radius interacts with a sample (Figure {#f:Cartoon}). The interaction is measured via an optical lever arm system @meyer_novel_1998 in which the displacement of the tip is recorded via deflection of a laser focused on the cantilever. A calibrated tip measures interaction forces from piconewtons to nanonewtons. 
 
 --------------------------
-![{#f:diagram}](figures/diagram.png) 
-**Figure {#f:diagram}.** Idiot Diagram 
+![{#f:diagram}](figures/diagram.png)
+**Figure {#f:diagram}.** Idiot Diagram
 --------------------------
 
 The analysis and interpretation of SMFS experiments is dependent on the attachment of the probe to the molecule of interest. In AFM, quality attachments between the tip and the sample may occur less than one curve in tens of thousands @bosshart_reference-free_2012. Strategies exist to improve attachment rates by coating the AFM tip with a molecule that binds readily to the sample of interest @walder_robert_rapid_nodate. However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting SMFS data and locating possible events (see Figure {#f:Rupture}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in SMFS data management and analysis.
@@ -114,10 +114,10 @@ All three algorithms were tuned using 5-fold cross validation. Cross validation 
 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for FEATHER, see Figure {#f:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#t:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure {#f:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
----------
+-----
 ![{#f:performance}](figures/performance.png)
 **Figure {#f:performance}.** Performance figure
----------
+-----
 
 
 # Results and Discussion
