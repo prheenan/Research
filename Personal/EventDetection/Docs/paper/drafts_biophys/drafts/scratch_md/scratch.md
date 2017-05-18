@@ -114,10 +114,8 @@ All three algorithms were tuned using 5-fold cross validation. Cross validation 
 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for FEATHER, see Figure {#f:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#t:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure {#f:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
------
 ![{#f:performance}](figures/performance.png)
 **Figure {#f:performance}.** Performance figure
------
 
 
 # Results and Discussion
