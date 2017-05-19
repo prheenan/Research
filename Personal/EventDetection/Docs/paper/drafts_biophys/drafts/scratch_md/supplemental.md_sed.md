@@ -1,4 +1,4 @@
-# {#sec:SampleDetails} Sample and cantilever preparation
+#Sample and cantilever preparation [{#sec:SampleDetails}]
 
 ## {#sec:Surface} Azide-functionalized surfaces
 
@@ -39,13 +39,13 @@ This section details the event-detection algorithm. The following conventions ar
 
 ##Defining the no-event hypothesis
 
-\FEATHER defines an event as a discontinuity in piecewise-continuous time series data. In \SMFS, events occur when the force applied to a molecule exhibits a discontinuity as the molecule passes over an energy barrier. \FEATHER assumes that events take place on time scales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time '$t$' and finds where the probability of a measurement is low. Hereafter, the definition of an event and these assumptions will be referred to as the \emph{no-event hypothesis}. 
+FEATHER defines an event as a discontinuity in piecewise-continuous time series data. In \SMFS, events occur when the force applied to a molecule exhibits a discontinuity as the molecule passes over an energy barrier. FEATHER assumes that events take place on time scales much smaller than the response time of the probe. If this is not true, the data is assumed smoothed until this condition is reached. The algorithm models the data assuming no event is occurring at a given time '$t$' and finds where the probability of a measurement is low. Hereafter, the definition of an event and these assumptions will be referred to as the \emph{no-event hypothesis}. 
 
 ##Mathematical background for testing the no-event hypothesis
 
-Under the no-event hypothesis, the noise-dependent distribution of force 'F$_t$' for a discrete series of forces sampled at time points 't' can be well-approximated by the sum of a smooth signal and a noise distribution ({#fig:FeatherExample}):
+Under the no-event hypothesis, the noise-dependent distribution of force '$F_t$' for a discrete series of forces sampled at time points 't' can be well-approximated by the sum of a smooth signal and a noise distribution ({#fig:FeatherExample}):
 
-\eqs{ F_t = g_t + X(0,\sigma^2) }
+$F_t = g_t + X(0,\sigma^2)$
 
 where $g_t$ is a smooth function with a continuous first derivative and X is a random variable with zero mean and variance $\sigma^2$. The closed form of the smooth signal and the noise distribution are assumed unknown and can vary from one \fec{} to the next. If '$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then the error distribution $R_t$ is defined such that: 
 
@@ -53,29 +53,29 @@ $R_t \equiv F_t - g^{*}_t = \epsilon_t + X(0,\sigma)$
 
 where
 
-$E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2$ {#eq:feathersigma}
+$E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2$ ({#eq:feathersigma})
 
 and 
 
-$|E[R_t]| = \epsilon_t \le E[|R_t|]$ {#eq:featherepsilon}
+$|E[R_t]| = \epsilon_t \le E[|R_t|]$   ({#eq:featherepsilon})
 
 Under these assumptions, the probability 'P' of measuring $r_t$ is bounded by Chebyshev's inequality:
 
 $P( |R_t-\epsilon_t| \ge |r_t-\epsilon_t| ) \le
-(\frac{\sigma}{|r_t-\epsilon_t|})^2$ {#eq:featherprobability}
+(\frac{\sigma}{|r_t-\epsilon_t|})^2$ ({#eq:featherprobability})
 
 
-For \emph{any} noise distribution, {#eq:featherprobability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by {#eq:featherepsilon} and {#eq:feathersigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
+For \emph{any} noise distribution, Equation {#eq:featherprobability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by Equation {#eq:featherepsilon} and Equation {#eq:feathersigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
 
 ##Accurate estimators for hypothesis testing
 
-To obtain an accurate estimator for $g_t$, the data must be smoothed. The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline @dierckx_algorithm_1975 to the force versus time curve. The spline is second-order to ensure a continuous first derivative ({#fig:FeatherExample}), and the spline knots are spaced uniformly at intervals of  the user-specified $\tau$ (see {#tbl:Parameters}). {#fig:FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  {#eq:error}.
+To obtain an accurate estimator for $g_t$, the data must be smoothed. The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline @dierckx_algorithm_1975 to the force versus time curve. The spline is second-order to ensure a continuous first derivative ({#fig:FeatherExample}), and the spline knots are spaced uniformly at intervals of  the user-specified $\tau$ (see {#tbl:Parameters}). {#fig:FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  Equation {#eq:error}.
 
-Using $r_t$ as shown in {#eq:feather-epsilon} does not provide a strong signal in the presence of an event (see {#fig:FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations '$\Sigma$'. $\Sigma$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{4},\frac{\tau}{4}]$. Using $\Sigma$ instead of $r_t$ provides a much stronger signal in the presence of an event (see {#fig:FeatherExample}).  
+Using $r_t$ as shown in Equation {#eq:featherepsilon} does not provide a strong signal in the presence of an event (see {#fig:FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations '$\Sigma$'. $\Sigma$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{4},\frac{\tau}{4}]$. Using $\Sigma$ instead of $r_t$ provides a much stronger signal in the presence of an event (see {#fig:FeatherExample}).  
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\Sigma$ on the region of the approach curve where the AFM tip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\Sigma$, and $\hat{\epsilon}_t$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these pseudo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
 
-The quality of \FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in {#fig:Code}. The calculation of each of these probabilities is exactly the same as {#eq:feather-probability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
+The quality of FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in {#fig:Code}. The calculation of each of these probabilities is exactly the same as Equation {#eq:featherprobability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
 
 
 v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{Curve Size}}$ | $N_{\mathrm{e}= 1}$ | $N_{\mathrm{e}= 2}$ | $N_{\mathrm{e}= 3}$ | $N_{\mathrm{e}\ge4}$ 
@@ -89,7 +89,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 
 
 \begin{figure}[htpb]
-\caption[Algorithm performance]{\noindent\fLabel{Performance} Performance of \FEATHER compared to the baseline algorithms. This figure is the concatenation of {#fig:PerformanceFEATHER}, {#fig:PerformanceFovea}, and {#fig:PerformanceScipy}. The range of the loading rate and rupture force scatter plots and histograms are set to encompass the predicted data range all algorithms.}
+\caption[Algorithm performance]{\noindent\fLabel{Performance} Performance of FEATHER compared to the baseline algorithms. This figure is the concatenation of {#fig:PerformanceFEATHER}, {#fig:PerformanceFovea}, and {#fig:PerformanceScipy}. The range of the loading rate and rupture force scatter plots and histograms are set to encompass the predicted data range all algorithms.}
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
 \end{figure}
@@ -97,7 +97,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 
 
 \begin{figure}[htp]
-\caption[Performance of \FEATHER on larger data set]{\noindent\fLabel{LargeDataset} This figure is identical to {#fig:Performance}, except it details the performance of only \FEATHER on the full data set listed in {#tbl:statistics}, instead of merely the highest loading rate.   }
+\caption[Performance of FEATHER on larger data set]{\noindent\fLabel{LargeDataset} This figure is identical to {#fig:Performance}, except it details the performance of only FEATHER on the full data set listed in {#tbl:statistics}, instead of merely the highest loading rate.   }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/FEATHER_full.pdf}% Here is how to import EPS art
 \end{figure}
@@ -110,7 +110,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 
 
 \begin{figure}[htp]
-\caption[Cross validation of algorithms and optimal parameters]{\noindent\fLabel{Tuning} Details of tuning experiments. \subref{A} The \BccLong{} metric versus tuning parameter for \FEATHER. \subref{B} As (A), but for the OpenFovea method. \subref{C} As (A), but for the Scientific Python method. In all subplots, only tuning points which return at least one prediction are plotted. }
+\caption[Cross validation of algorithms and optimal parameters]{\noindent\fLabel{Tuning} Details of tuning experiments. \subref{A} The \BccLong{} metric versus tuning parameter for FEATHER. \subref{B} As (A), but for the OpenFovea method. \subref{C} As (A), but for the Scientific Python method. In all subplots, only tuning points which return at least one prediction are plotted. }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/tuning.pdf}% Here is how to import EPS art
 \end{figure}
@@ -118,11 +118,8 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 
 
 \begin{figure}
-\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details} The runtime of the three methods versus loading rate and number of points. \subref{A} \FEATHER's total runtime versus number of curves analyzed for the curve sizes, N, listed. \subref{B} The runtime per curve versus number of curve points, N. The runtimes at each N are obtained by the slope of the relevant line in (A).  \subref{C,D} As (A,B), but for the Open Fovea method. \subref{E,F} As (A,B), but for the Scientific Python method.  }
+\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details} The runtime of the three methods versus loading rate and number of points. \subref{A} FEATHER's total runtime versus number of curves analyzed for the curve sizes, N, listed. \subref{B} The runtime per curve versus number of curve points, N. The runtimes at each N are obtained by the slope of the relevant line in (A).  \subref{C,D} As (A,B), but for the Open Fovea method. \subref{E,F} As (A,B), but for the Scientific Python method.  }
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
 \end{figure}
 
- One    | Two		|
-------- | ------------	|
- Three  Four		| 
