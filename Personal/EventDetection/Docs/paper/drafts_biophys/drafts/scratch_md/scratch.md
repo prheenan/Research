@@ -116,9 +116,10 @@ All three algorithms were tuned using 5-fold cross validation. Cross validation 
 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for FEATHER, see Figure XXX {#fig:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure XXX {#fig:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
-![{#fig:performance}](figures/performance.png)
-**Figure {#fig:performance}.** Performance figure
-
+--------------------------------------------------- 
+![{#fig:performance}](figures/performance.png)      
+**Figure {#fig:performance}.** Performance figure   
+--------------------------------------------------- 
 
 # Results and Discussion
 
@@ -130,6 +131,14 @@ For FEATHER, the distributions of the two types of relative distance errors, as 
 The baselines do not perform as well as FEATHER. In Figure {#fig:performance}, OpenFovea's relative distance error distribution is heavily skewed towards one and asymmetric between the two error types, indicating many false positives. The same distribution for Scientific Python is more symmetric between error types, indicating fewer false positives than OpenFovea. However, the distance error distribution for Scientific Python has many points near 1, indicating a high error in predicted event locations. Neither baseline accurately reproduces the expected and predicted distribution over rupture forces and loading rates.
 
 As defined by Table {#tbl:metrics}, relative to the best baseline FEATHER improves the relative and absolute event error by a factor of about XXX and improves the Bhattacharya coefficient's complement by a factor of about XXX. For completeness, Figure {#fig:performance} lists the performance of all three algorithms on a single page.
+
+Name 	      	    | Rupture BCC ($\downarrow$) | Relative event error $P_{95}$ ($\downarrow$)
+------------------- | ------------| --------------------------------
+FEATHER             | **0.00501** | **0.00648**
+OpenFovea 	    | 0.287 	  | 0.421
+Scientific Python   | 0.0257 	  | 0.201
+[{#tbl:Performance}]
+
 
 # Conclusion
 

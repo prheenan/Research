@@ -16,6 +16,46 @@ from GeneralUtil.python import CheckpointUtilities
 from Research.Personal.EventDetection.Util import Offline,Plotting,Learning
 
 
+def coeff_str(i,j,c,coeffs_array,func):
+    to_ret = "{:.3g}".format(c)
+    if (func(coeffs_array[:,j]) == i):
+        to_ret = r"**" + to_ret + "**"
+    return to_ret
+
+def write_coeffs_file(out_file,coeffs):
+    opt_low = lambda x: np.argmin(x)
+    opt_high = lambda x: np.argmax(x)
+    funcs_names_values = []
+    for c in coeffs:
+        q = c.q
+        err_str =  (r"Relative event error $P_{" + "{:d}".format(q) + \
+                    r"}$ ($\downarrow$)")
+        tmp =[ [opt_low,r"Rupture BCC ($\downarrow$)",
+                1-c.bc_2d],
+               [opt_low,err_str,c.cat_relative_q]]
+        funcs_names_values.append(tmp)
+    # only get the funcs nad names from the first (redudant to avoid typos
+    funcs = [coeff_tmp[0] for coeff_tmp in funcs_names_values[0] ]
+    coeff_names = [coeff_tmp[1] for coeff_tmp in funcs_names_values[0] ]
+    plot_dict = Plotting.algorithm_title_dict()
+    method_names = [plot_dict[c.name] for c in coeffs]
+    # get the list of coefficients
+    coeffs = [[f[2] for f in coeff_tmp] for coeff_tmp in funcs_names_values ]
+    coeffs_array = np.array(coeffs)
+    join_str = " | "
+    str_v = join_str + join_str.join(coeff_names) 
+    for i,(name,c) in enumerate(zip(method_names,coeffs)): 
+        str_v += "\n"
+        str_v += "{:s}{:s}".format(name,join_str)
+        str_v += join_str.join([coeff_str(i,j,c_tmp,coeffs_array,funcs[j]) 
+                                for j,c_tmp in enumerate(c)])
+    # add the preamble...
+    final = "{:s}\n".format(str_v) + r"[{#tbl:Performance}]" + "\n"
+    with open(out_file,'w') as f:
+        f.write(final)
+
+
+
 def run():
     """
     <Description>
@@ -30,6 +70,8 @@ def run():
     metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
                                                 Offline.get_best_metrics,False,
                                                 data_file)
+    coeffs_compare = [m.coefficients() for m in metrics]
+    write_coeffs_file("./coeffs.txt",coeffs_compare)
     fig = PlotUtilities.figure(figsize=(7,4))
     colors = Plotting.algorithm_colors()
     n_rows = 3
@@ -43,12 +85,12 @@ def run():
         offset = n_rows * i
         # the first column gets the algorithm label; the first row gets the
         # metric label
-        kw_tmp = dict(title_kwargs=dict(fontweight='bold',color='b'),
+        kw_tmp = dict(title_kwargs=dict(fontweight='bold',color='b',fontsize=9),
                       legend_kwargs=dict(fontsize=8,handlelength=0.75))
         if offset == 0:
             title_dist = "Location Error"
-            title_load = "Loading Rate"
-            title_rupture_force = "Rupture Force"
+            title_load = r"Loading Rate (NuG2 + $\mathrm{\alpha}_3$D)"
+            title_rupture_force = r"Rupture Force (NuG2 + $\mathrm{\alpha}_3$D)"
         else:
             title_dist,title_load,title_rupture_force = "","",""
         # only have an x label on the last row
@@ -80,7 +122,7 @@ def run():
         _lim_force_plot,_bins_rupture_plot,_lim_load_plot,_bins_load_plot = \
             Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                     loading_true,loading_pred,
-                                                    limit=0.01)            
+                                                    limit=0.02)            
         # make the 'just the distance' figures
         ax_dist = plt.subplot(n_rows,n_cols,(offset+1))
         Plotting.histogram_event_distribution(use_q_number=True,
