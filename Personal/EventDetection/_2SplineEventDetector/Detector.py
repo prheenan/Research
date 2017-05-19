@@ -14,6 +14,17 @@ from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
 from Research.Personal.EventDetection._2SplineEventDetector import _no_event
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
+    """
+    Given a data set, an offset into that data set, and a list of slices
+    relative to that offset, picks the slice giving the largest value
+
+    Args:
+        interp_sliced: the data to choose from
+        offset: the absolute offset for each slice. If 0, then absolute
+        slice_list: list of slice object
+    Returns:
+        s in slice_list giving the maximum value in interp_sliced
+    """
     value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
                  for e in slice_list]
     return np.argmax(value_max)

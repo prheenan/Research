@@ -1004,3 +1004,19 @@ def plot_format(time_sep_force):
     x_plot -= min(x_plot)
     y_plot = time_sep_force.Force.copy() * 1e12
     return x_plot,y_plot
+
+
+
+def debug_plot_approach_no_event(approach_force_sliced,
+                                 approach_force_interp_sliced,epsilon,sigma,
+                                 stdevs):
+    plt.subplot(2,1,1)
+    plt.plot(approach_force_sliced * 1e12,color='k',alpha=0.3)
+    plt.plot(approach_force_interp_sliced * 1e12)
+    PlotUtilities.lazyLabel("","force [pN]","")
+    plt.subplot(2,1,2)
+    plt.plot(stdevs*1e12,color='k',alpha=0.3)
+    plt.axhline(epsilon*1e12)
+    plt.axhline((epsilon-sigma)*1e12)
+    plt.axhline((epsilon+sigma)*1e12)
+    PlotUtilities.lazyLabel("idx","Residual [pN]","")

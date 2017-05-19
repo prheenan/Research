@@ -24,6 +24,7 @@ from FitUtil.EnergyLandscapes.Rupture_Dudko2007.Python.Code import Dudko2007
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
 from FitUtil.WormLikeChain.Python.Code.WLC_Utils import WlcNonExtensible
+from mpl_toolkits.axes_grid.inset_locator import inset_axes
 
 
 # plotting constants    
@@ -260,7 +261,7 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     # make the x_dagger annotation
     dagger_props = common_arrow_kwargs()
     text_kwargs = dict(horizontalalignment='center',
-                       verticalalignment='center',fontsize=10)
+                       verticalalignment='center',fontsize=8)
     dagger_props['arrowprops']['arrowstyle'] = '<->'
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
                 s=r"",**dagger_props)
@@ -328,7 +329,7 @@ def run():
                         markersize=75)
     fig = PlotUtilities.figure(figsize=(3.25,6))
     # # plot the experimental image
-    in_ax = plt.subplot(gs[:2,0])
+    in_ax = plt.subplot(gs[:,0])
     cantilever_image_plot(image_location)
     # remove its border
     for spine in in_ax.spines.values():
@@ -380,9 +381,13 @@ def run():
                             rupture_string + " (pN)","",**lazy_kwargs)
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
-    in_ax = plt.subplot(gs[2,0])
-    plot_landscape(x,landscape,ax=in_ax)
-    PlotUtilities.lazyLabel("Extension","Free Energy","",**lazy_kwargs)
+    in_ax_landscape = inset_axes(in_ax,
+                                 width="70%", # width = 30% of parent_bbox
+                                 height="25%",
+                                 loc=6)
+    plot_landscape(x,landscape,ax=in_ax_landscape)
+    energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
+    PlotUtilities.lazyLabel("Extension","Free Energy","",**energy_kwargs)
     # # # Second gridspec (se we can more easily control wasted space)
     gs_data = gridspec.GridSpecFromSubplotSpec(3,1, 
                                                subplot_spec=gs0[1])
