@@ -49,20 +49,20 @@ Under the no-event hypothesis, the noise-dependent distribution of force 'F$_t$'
 
 where $g_t$ is a smooth function with a continuous first derivative and X is a random variable with zero mean and variance $\sigma^2$. The closed form of the smooth signal and the noise distribution are assumed unknown and can vary from one \fec{} to the next. If '$g^{*}_t$' is a function with a continuous first derivative approximately equal to $g_t$ such that $\forall t,\epsilon_t\equiv|g^{*}_t-g_t|$ for real $\epsilon_t\ge 0$, then the error distribution $R_t$ is defined such that: 
 
-$$ R_t \equiv F_t - g^{*}_t = \epsilon_t + X(0,\sigma) $$ {#eq:error}
+$R_t \equiv F_t - g^{*}_t = \epsilon_t + X(0,\sigma)$
 
 where
 
-$$ E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2 $$ {#eq:feathersigma}
+$E[R_t^2] -E[R_t]^2 = [(g_t-g^{*}_t)^2 + E[X(0,\sigma)^2]] - (g_t-g^{*}_t)^2  = \sigma^2$ {#eq:feathersigma}
 
 and 
 
-$$ |E[R_t]| = \epsilon_t \le E[|R_t|] $$ {#eq:featherepsilon}
+$|E[R_t]| = \epsilon_t \le E[|R_t|]$ {#eq:featherepsilon}
 
 Under these assumptions, the probability 'P' of measuring $r_t$ is bounded by Chebyshev's inequality:
 
-$$ P( |R_t-\epsilon_t| \ge |r_t-\epsilon_t| ) \le
-(\frac{\sigma}{|r_t-\epsilon_t|})^2 $$ {#eq:featherprobability}
+$P( |R_t-\epsilon_t| \ge |r_t-\epsilon_t| ) \le
+(\frac{\sigma}{|r_t-\epsilon_t|})^2$ {#eq:featherprobability}
 
 
 For \emph{any} noise distribution, {#eq:featherprobability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by {#eq:featherepsilon} and {#eq:feathersigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
@@ -123,11 +123,6 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 \includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
 \end{figure}
 
-
-
-\end{document}
-
-%
-
-%
-% ****** End of file aipsamp.tex ******
+ One    | Two		|
+------- | ------------	|
+ Three  Four		| 
