@@ -26,7 +26,7 @@ def parse_and_run():
     parser = argparse.ArgumentParser(description=description)
     common = dict(required=True)
     parser.add_argument('-threshold', metavar='threshold', 
-                        type=float,help='probability threshold (between 0 and 1)',
+                        type=float,help='probability threshold (0 and 1)',
                         **common)
     parser.add_argument('-file_input',metavar="file_input",type=str,
                         help="path to the '.pxp' with the force, separation",

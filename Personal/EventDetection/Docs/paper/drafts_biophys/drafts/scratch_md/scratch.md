@@ -142,5 +142,3 @@ FEATHER could be used in different scientific domains than SMFS. To reduce the r
 # Acknowledgments
 
 # References
-
-# Supplemental Material
