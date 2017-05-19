@@ -381,10 +381,8 @@ def run():
                             rupture_string + " (pN)","",**lazy_kwargs)
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
-    in_ax_landscape = inset_axes(in_ax,
-                                 width="70%", # width = 30% of parent_bbox
-                                 height="25%",
-                                 loc=6)
+    # add axes is [left,bottom,width,height]
+    in_ax_landscape= fig.add_axes([0.085,0.75,0.225,0.1])
     plot_landscape(x,landscape,ax=in_ax_landscape)
     energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
     PlotUtilities.lazyLabel("Extension","Free Energy","",**energy_kwargs)
