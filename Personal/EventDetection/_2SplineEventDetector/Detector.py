@@ -724,7 +724,7 @@ def predict(example,threshold=1e-2,add_offsets=False,**kwargs):
     Args:
         example: TimeSepForce
         threshold: maximum probability under the no-event hypothesis
-        add_offsets: if true, offset into the entire array. otherwise, we offset
+        add_offsets: if true, indices are absolute. otherwise, we offset
         into just the retract portion (after splitting into the approach,
         dwell, and retract)
     Returns:
