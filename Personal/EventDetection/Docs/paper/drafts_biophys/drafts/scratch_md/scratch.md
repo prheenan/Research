@@ -42,7 +42,7 @@ Site-specific chemistry is used to improve the acquisition rate and quality of d
 
 ## Atomic force microscopy
 
-All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research}{Cypher ES}. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 25}{\textmu{}m} grids at points separated by 1}{\textmu{}m}. The stage was translated to a new grid point after measuring three force-extension curves. 
+All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research Cypher ES. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 30 $\mathrm{\mu}$m grids at points separated by 1 $\mathrm{\mu}$m. The stage was translated to a new grid point after measuring three force-extension curves. 
 
 ## Data Annotation
 
@@ -74,13 +74,6 @@ FEATHER improves on previous methods by using information present in the approac
 
  FEATHER calculates an upper bound on the probability of no event occurring at each time point, using parameters estimated from the approach portion of the curve (see Section {#sec:DesignDetails}) and a smoothing parameter from the user (see Table {#tbl:Parameters}). The probability at each point is iteratively updated to remove the effect of adhesions and other false positives. This last step is the only step requiring knowledge specific to SMFS. As shown in Figure {#fig:flowchart}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#tbl:Parameters} and Section {#sec:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in Section {#sec:Annotation}.
 
-Name       Meaning                            Value used in this work
---------   --------------                     ----------------
-$\tau$     Number of points for spline grid   2% of curve length
-threshold  Probability used to reject events  Determined by parameter sweep
-
-[Table Caption]
-
 ## Choice of methods for comparison
 
 The following two algorithms were chosen for comparison to FEATHER: 
@@ -90,6 +83,14 @@ The following two algorithms were chosen for comparison to FEATHER:
 @jones_scipy:_2001
 
  These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable for analyzing hundreds of force-extension curves with millions of points each. These baselines represent two common approaches to event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method uses wavelet transformations. 
+
+Name       Meaning                            Value used in this work
+--------   --------------                     ----------------
+$\tau$     Number of points for spline grid   2% of curve length
+threshold  Probability used to reject events  Determined by parameter sweep
+
+[Table Caption]
+
 
 ## Performance metrics
 
@@ -111,10 +112,10 @@ $d_{(\nu,F),i}$ | joint histogram of $\nu_i$ and $F_i$ divided by K  | -      | 
 
 ## Algorithm tuning
 
-All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (Figure XXX {#fig:Tuning}). The parameter value minimizing the Bhattacharya coefficient's complement for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
+All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (Figure XXX). The parameter value minimizing the Bhattacharya coefficient's complement for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
 
 
-Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx$1.5 cpu-days for FEATHER, see Figure XXX {#fig:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure XXX {#fig:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
+Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx 1.5$ cpu-days for FEATHER, see Figure XXX {#fig:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure XXX {#fig:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
 --------------------------------------------------- 
 ![{#fig:performance}](figures/performance.png)      
