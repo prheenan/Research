@@ -83,7 +83,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 100   | 200 | 667000 | 47000 | 159 | 33 | 5 | 3  
 500   | 200 | 200000 | 1000  | 140 | 40 | 8 | 12  
 1000  | 200 | 117000 | 7000  | 174 | 25 | 1 | 0  
-[Data set statistical information]{\tLabel{statistics} For each loading rate v in the data set, this table lists the number of curves $N_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events $N_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. }
+[Data set statistical information \tLabel{statistics} For each loading rate v in the data set, this table lists the number of curves $N_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events $N_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. ]
 
 
 

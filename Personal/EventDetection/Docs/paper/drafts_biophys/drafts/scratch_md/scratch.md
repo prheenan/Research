@@ -97,8 +97,8 @@ threshold  Probability used to reject events  Determined by parameter sweep
 Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table {#tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces. 
 
 
-Name            | Notation			           | Range | Optimum 
-------------------- |---------------------------------     |----|----
+Name             | Notation			           | Range | Optimum 
+---------------- |--------------------------------------   | ---   | ---
 K     | number of curves				| -     | -
 $N_k$ | points in curve k				| -     | -
 $d_{i\rightarrow j,k}$ | distribution of pointwise distances in 'k' from 'i' ruptures to the closest 'j' rupture or $N_k$ if none    	      	| -      | -
