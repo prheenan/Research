@@ -5,19 +5,23 @@ Attribute wrap_table.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.Macro3"
 ' wrap_table Macro
 '
 '
-    ' Make an index array
+    ' Make an index array; only want to align the first N tables
     '
+    Selection.WholeStory
     Dim i As Integer
     i = 0
-    Dim myarray(1 To 3) As Integer
+    ' Loop through each table
+    '
     Dim t As Table
     For Each t In ActiveDocument.Tables
         i = i + 1
-        t.Rows.WrapAroundText = True
-        t.Rows.HorizontalPosition = wdTableLeft
-        t.Rows.VerticalPosition = InchesToPoints(1)
-        t.Rows.RelativeVerticalPosition = wdRelativeVerticalPositionPage
-        t.Rows.AllowOverlap = False
+        If (i = 1 Or i = 2 Or i = 3) Then
+            t.Rows.WrapAroundText = True
+            t.Rows.HorizontalPosition = wdTableLeft
+            t.Rows.VerticalPosition = InchesToPoints(1)
+            t.Rows.RelativeVerticalPosition = wdRelativeVerticalPositionPage
+            t.Rows.AllowOverlap = False
+        End If
     Next
     Selection.ParagraphFormat.Alignment = wdAlignParagraphJustify
 End Sub
