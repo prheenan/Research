@@ -577,7 +577,7 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     if (len(idx_above_predicted) == 0):
         return local_max_idx
     return idx_above_predicted[-1]
-
+    
 def make_event_parameters_from_split_fec(split_fec,**kwargs):
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)    

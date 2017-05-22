@@ -8,11 +8,16 @@ import sys,re
 sys.path.append("../../../../../../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
+    FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
+
+import cProfile 
+   
+
 
 def run():
     """
@@ -26,11 +31,10 @@ def run():
     """
     base = FEC_Util.default_data_root()
     # XXX use Haos...
-    absolute_data_dir = base + \
-        "4Patrick/Scratch/Tmp_Data_Scratch/hao-data-cache/"  
-    downsample_n = 100
+    absolute_data_dir = base + "4Patrick/BRFEC/FEC_3ums/"
+    downsample_n = 1
     fraction_for_vel = 0.1    
-    limit = 10
+    limit = 3
     force_sample = False
     force= False
     cache_directory = "./"
@@ -42,14 +46,25 @@ def run():
                                                  cache_directory,
                                                  absolute_data_dir,limit=limit)
     data_iwt = [IoUtilHao.get_retract_pulling_region(d) for d in retracts]
+    fig = PlotUtilities.figure()
+    FEC_Plot.heat_map_fec(data_iwt)
+    PlotUtilities.savefig(fig,"heatmap.png")
     # POST: they are all set. get the IWT 
     num_bins = 250
+    pr = cProfile.Profile()
+    pr.enable()
     LandscapeObj =  InverseWeierstrass.\
         FreeEnergyAtZeroForce(data_iwt,NumBins=num_bins)
-    fig = PlotUtilities.figure(figsize=(12,12))
-    IWT_Plot.plot_single_landscape(LandscapeObj,force_one_half_N=15e-12,
-                                   add_meta_half=False,add_meta_free=False)  
-    PlotUtilities.savefig(fig,out_base + "IWT.pdf")
+    pr.disable()
+    pr.print_stats(sort='time')
+    force_N = [1e-12,5e-12,10e-12,20e-12,40e-12,100e-12,250e-12,500e-12]
+    for i,f in enumerate(force_N):
+        fig = PlotUtilities.figure(figsize=(12,12))
+
+        IWT_Plot.plot_single_landscape(LandscapeObj,f_one_half_N=f,
+                                       add_meta_half=False,add_meta_free=False) 
+        out_name= out_base + "IWT{:d}_{:.1g}.png".format(i,f*1e12)   
+        PlotUtilities.savefig(fig,out_name)
 
 
 if __name__ == "__main__":

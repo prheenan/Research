@@ -113,7 +113,7 @@ def _add_meta_half(Obj):
              label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
     
 def plot_single_landscape(LandscapeObj,min_landscape_kT=None,
-                          max_landscape_kT=None,force_one_half_N=10e-12,
+                          max_landscape_kT=None,f_one_half_N=10e-12,
                           add_meta_half=False,add_meta_free=False):
     """
     Plots a detailed energy landscape, and saves
@@ -125,7 +125,8 @@ def plot_single_landscape(LandscapeObj,min_landscape_kT=None,
     Returns:
         nothing
     """                          
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj)
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
+                                    f_one_half_N=f_one_half_N)
     plt.subplot(2,1,1)
     plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
     if (add_meta_free):

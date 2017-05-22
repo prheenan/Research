@@ -12,6 +12,9 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
+from Research.Personal.EventDetection.Util import Analysis
+from Research.Personal.EventDetection._2SplineEventDetector import _no_event
+
     
 def hao_grouping_function(str_v):
     pattern = r"""
@@ -40,7 +43,7 @@ def get_downsampled_data(downsample_n,force,cache_directory,
     return data
     
 def get_retract_pulling_region(d,fraction_for_vel=0.1,fraction_fudge=0.02,
-                               n_std=3):
+                               n_std=3,fraction_zero_retract=0.05):
     # get just the retract regions
     # get after the surface invols
     r = FEC_Util.GetFECPullingRegion(d,FlipSign=False,Correct=True)
@@ -59,11 +62,16 @@ def get_retract_pulling_region(d,fraction_for_vel=0.1,fraction_fudge=0.02,
     # want to have a (small) amount after the last index, so use fudge
     fudge = lambda x: int(np.ceil(x.Force.size* fraction_fudge))
     # slice the retract object to just where we care about
-    retract = \
-        FEC_Util.MakeTimeSepForceFromSlice(r,slice(0,last_idx+fudge(r),1))
+    idx_f = last_idx+fudge(r)
+    retract = FEC_Util.MakeTimeSepForceFromSlice(r,slice(0,idx_f,1))
+    effective_approach_feather = \
+        FEC_Util.MakeTimeSepForceFromSlice(r,slice(idx_f,None,1))
     # comes in pN/nm, convert to N/m
     retract.Force *= 1e-12
     retract.Separation *= 1e-9
+    # zero by the bottom P%...
+    retract.Separation -= np.percentile(retract.Separation,
+                                        fraction_zero_retract)
     data_iwt = IWT_Util.ToIWTObject(retract)
     # set all the effective velocities
     IWT_Util.set_separation_velocity_by_first_frac(data_iwt,fraction_for_vel)
