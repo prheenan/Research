@@ -12,7 +12,7 @@ from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 
 
-def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
+def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,f_one_half_N=0e-12):
     # get a forward and reverse
     ToX = lambda x: x * 1e9
     ToForceY = lambda y: y * 1e12
@@ -41,7 +41,7 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,bounds):
                            text_x=x_text_dict,text_y=y_text_dict)
     PlotUtilities.legend(loc=[0.4,0.8],**fontdict)
     plt.subplot(1,2,2)
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,bounds)
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half_N)
     plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT)
     plt.xlim([56,69])
     plt.ylim([-1,4])
@@ -112,7 +112,7 @@ def _add_meta_half(Obj):
              linestyle='--',color='r',linewidth=4,
              label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
     
-def plot_single_landscape(LandscapeObj,bounds=None,min_landscape_kT=None,
+def plot_single_landscape(LandscapeObj,min_landscape_kT=None,
                           max_landscape_kT=None,force_one_half_N=10e-12,
                           add_meta_half=False,add_meta_free=False):
     """
@@ -120,17 +120,12 @@ def plot_single_landscape(LandscapeObj,bounds=None,min_landscape_kT=None,
 
     Args:
         LandscapeObj: energy landscape object (untilted)
-        bounds: Where to 'zoom' in the plot, Iwt_Util.BoundsObj instance
         Bins: how many bins to use in the energy landscape plots
         <min/max>_landscape_kT: bounds on the landscape
     Returns:
         nothing
     """                          
-    if (bounds is None):
-        all = [0,np.inf]
-        bounds = IWT_Util.BoundsObj(all,all,all,force_one_half_N)
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
-                                    bounds)
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj)
     plt.subplot(2,1,1)
     plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
     if (add_meta_free):
@@ -149,7 +144,7 @@ def plot_single_landscape(LandscapeObj,bounds=None,min_landscape_kT=None,
     PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2 [kT]","",
                             frameon=True)
                             
-def InTheWeedsPlot(OutBase,UnfoldObj,bounds=None,RefoldObj=[],Example=None,
+def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj=[],Example=None,
                    Bins=[50,75,100,150,200,500,1000],**kwargs):
     """
     Plots a detailed energy landscape, and saves
@@ -157,7 +152,6 @@ def InTheWeedsPlot(OutBase,UnfoldObj,bounds=None,RefoldObj=[],Example=None,
     Args:
         OutBase: where to start the save
         UnfoldObj: unfolding objects
-        bounds: Where to 'zoom' in the plot, Iwt_Util.BoundsObj instance
         RefoldObj: refolding objects
         Bins: how many bins to use in the energy landscape plots
         <min/max>_landscape_kT: bounds on the landscape
@@ -181,7 +175,7 @@ def InTheWeedsPlot(OutBase,UnfoldObj,bounds=None,RefoldObj=[],Example=None,
         # get the distance to the transition state etc
         print("DeltaG_Dagger is {:.1f}kT".format(Obj.DeltaGDagger))
         fig = PlotUtilities.figure(figsize=(12,12))
-        plot_single_landscape(LandscapeObj,bounds=bounds,add_meta_half=True,
+        plot_single_landscape(LandscapeObj,add_meta_half=True,
                               add_meta_free=True,**kwargs)
         PlotUtilities.savefig(fig,OutBase + "1_{:d}IWT.pdf".format(b))
 

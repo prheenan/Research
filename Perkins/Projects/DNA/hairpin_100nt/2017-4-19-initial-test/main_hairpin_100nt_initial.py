@@ -69,7 +69,34 @@ def slice_retract(r,inf,n_pairs,slice_rel):
     slice_obj = FEC_Util.MakeTimeSepForceFromSlice(r,slice_v)
     return slice_obj
    
-
+def get_ramps_unfolds_and_refolds(just_ramping_portions,pred_info,n_pairs):
+    unfold_per_obj,refold_per_obj = [],[]
+    real_ramps = []
+    for ramp in just_ramping_portions:
+        try:
+            unfold_tmp,refold_tmp = IWT_Util.\
+                get_unfold_and_refold_objects_by_sep(ramp,
+                                                     number_of_pairs=n_pairs,
+                                                     flip_forces=False,
+                                                     fraction_for_vel=0.1)
+        except IndexError as e:
+            print(e)
+            continue
+        unfold_per_obj.append(unfold_tmp)
+        refold_per_obj.append(refold_tmp)
+        real_ramps.append(ramp)
+        """
+        for u,r in zip(unfold_tmp,refold_tmp):
+            plt.subplot(2,1,1)
+            plt.plot(ramp.Time,ramp.Force,color='k',alpha=0.3)                
+            plt.plot(u.Time,u.Force)
+            plt.subplot(2,1,2)
+            plt.plot(ramp.Time,ramp.Force,color='k',alpha=0.3)                            
+            plt.plot(r.Time,r.Force)
+            plt.show()
+        """    
+    return real_ramps,unfold_per_obj,refold_per_obj
+   
 def analyze_hairpin(abs_dir,force=False,**kw):
     id = "np={:d}_".format(kw["n_pairs"])
     cache_name = "./cache/cache{:s}.pkl".format(id)
@@ -97,32 +124,7 @@ def analyze_hairpin(abs_dir,force=False,**kw):
         just_ramp_tmp = slice_retract(r,inf,**kw)
         just_ramping_portions.append(just_ramp_tmp)
     # get split into unfolding and refolding regions...
-    unfold,refold = [],[]
-    unfold_per_obj,refold_per_obj = [],[]
-    for ramp in just_ramping_portions:
-        try:
-            unfold_tmp,refold_tmp = IWT_Util.\
-                get_unfold_and_refold_objects_by_sep(ramp,
-                                                     number_of_pairs=kw['n_pairs'],
-                                                     flip_forces=False,
-                                                     fraction_for_vel=0.1)
-        except IndexError as e:
-            print(e)
-            continue
-        unfold.extend(unfold_tmp)
-        refold.extend(refold_tmp)
-        unfold_per_obj.append(unfold_tmp)
-        refold_per_obj.append(refold_tmp)
-        """
-        for u,r in zip(unfold_tmp,refold_tmp):
-            plt.subplot(2,1,1)
-            plt.plot(ramp.Time,ramp.Force,color='k',alpha=0.3)                
-            plt.plot(u.Time,u.Force)
-            plt.subplot(2,1,2)
-            plt.plot(ramp.Time,ramp.Force,color='k',alpha=0.3)                            
-            plt.plot(r.Time,r.Force)
-            plt.show()
-        """
+real_ramps,unfold_per_obj,refold_per_obj = 
  
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(just_ramping_portions,separation_max=100,
