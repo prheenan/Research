@@ -71,7 +71,7 @@ def run():
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
     title_kwargs = dict(loc='left',fontsize=10,color='b')
-    kwargs_axis = dict(fontsize=10)
+    kwargs_axis = dict()
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\downarrow$"
     probability_label = "log$_{\mathrm{10}}$(P)"
@@ -197,6 +197,10 @@ def run():
                                           label=None,markersize=150)
         plt.ylim(ylim)
         PlotUtilities.make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7)
+    loc_major = [-0.1,1.2]
+    loc_minor = [-0.15,1.1]
+    locs = [loc_major for _ in range(5)] + [loc_minor for _ in range(3)]
+    PlotUtilities.label_tom(fig,loc=locs)
     PlotUtilities.savefig(fig,"./flowchart.png",
                           subplots_adjust=dict(hspace=0.35))
     

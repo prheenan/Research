@@ -402,6 +402,15 @@ def run():
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
     PlotUtilities.lazyLabel("Time","Force (pN)","",**lazy_kwargs)
     PlotUtilities.no_x_label(ax_zoom)
+    axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
+    loc_subplot = [-0.35,1.05]
+    locs = [ [-0.15,1.0],
+             loc_subplot,
+             loc_subplot,
+             loc_subplot,
+             [-0.15,1.15],
+             [-0.15,0.95]]
+    PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
     PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("../../../../../../")
+from GeneralUtil.python import PlotUtilities
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from Research.Personal.EventDetection.Util import Analysis,Plotting 
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
@@ -25,10 +26,13 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    data = FEC_Util.ReadInData("./Graph3.pxp")
+    data = FEC_Util.ReadInData("./Hold.pxp")
     split,info = Detector._predict_full(data[0],threshold=0.5)
+    fig = PlotUtilities.figure(figsize=(4,8))
     Plotting.plot_prediction_info(split,info)
-    plt.show()
+    PlotUtilities.savefig(fig,"./out.png")
+    
+    
 
 if __name__ == "__main__":
     run()

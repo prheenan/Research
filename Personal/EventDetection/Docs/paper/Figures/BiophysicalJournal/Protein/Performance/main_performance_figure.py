@@ -167,6 +167,9 @@ def run():
         ylim_new = [0.5,max_limit*1.1]
         for r in axes_counts:
             r.set_ylim(ylim_new)
+    axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
+    PlotUtilities.label_tom(fig,axis_func=axis_func,
+                            loc=(-0.05,1.1))
     PlotUtilities.savefig(fig,"./performance.png")
     
 
