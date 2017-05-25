@@ -72,10 +72,8 @@ def get_retract_pulling_region(d,fraction_for_vel=0.1,fraction_fudge=0.02,
     # zero by the bottom P%...
     retract.Separation -= np.percentile(retract.Separation,
                                         fraction_zero_retract)
-    data_iwt = IWT_Util.ToIWTObject(retract)
-    # set all the effective velocities
-    IWT_Util.set_separation_velocity_by_first_frac(data_iwt,fraction_for_vel)
-    return data_iwt
+
+    return retract
 
 
 if __name__ == "__main__":
