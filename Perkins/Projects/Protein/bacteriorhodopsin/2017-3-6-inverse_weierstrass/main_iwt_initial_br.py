@@ -46,14 +46,11 @@ def get_first_peak_slices(absolute_data_dir):
         data_iwt.append(tmp_iwt)
     return data_iwt
     
-def get_contour_lengths(data_iwt):
+def get_contour_lengths(data_iwt,kwargs_fit):
     contour_lengths = []
     for reference in data_iwt:
         max_ext = max(reference.Extension)
         brute_dict = dict(ranges=[ [max_ext/2,max_ext*2] ],Ns=15)
-        kwargs_fit = dict(kbT = 4.11e-21,
-                          Lp=0.3e-9,
-                          K0=1000e-12)
         sep,force = reference.Separation,reference.Force                      
         x0,y = WLC.fit(sep,force,brute_dict=brute_dict,
                        **kwargs_fit)
@@ -78,11 +75,20 @@ def run():
     data_iwt = CheckpointUtilities.getCheckpoint("./peaks.pkl",
                                                  get_first_peak_slices,False,
                                                  absolute_data_dir)
+    kwargs_fit = dict(kbT = 4.11e-21,
+                      Lp=0.3e-9,
+                      K0=1000e-12)                                                 
     # get the contour lengths                                                 
     contour_lengths = \
-        CheckpointUtilities.getCheckpoint("./contour.pkl",
+        CheckpointUtilities.getCheckpoint("./contour.pkl",kwargs_fit,
                                           get_contour_lengths,False,data_iwt)
-    
+    for r,x0 in enumerate(data_iwt,contour_lengths):
+        sep,force = r.Separation,r.Force
+        grid_x,grid_y,predicted_force = \
+            inverted_wlc(sep,force,x0,**kwargs_fit)
+        plt.plot(sep,force,color='k',alpha=0.3)
+        plt.plot(grid_x,grid_y,color='r')
+        plt.show()
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(data_iwt)
     PlotUtilities.savefig(fig,"heatmap.png")                 
