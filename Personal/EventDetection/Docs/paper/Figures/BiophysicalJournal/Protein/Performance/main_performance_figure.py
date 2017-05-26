@@ -86,11 +86,12 @@ def run():
         # the first column gets the algorithm label; the first row gets the
         # metric label
         kw_tmp = dict(title_kwargs=dict(fontweight='bold',color='b',fontsize=9),
-                      legend_kwargs=dict(fontsize=8,handlelength=0.75))
+                      legend_kwargs=dict(fontsize=8,handlelength=0.75,
+                                         handletextpad=0.25))
         if offset == 0:
-            title_dist = "Location Error"
-            title_load = r"Loading Rate (NuG2 + $\mathrm{\alpha}_3$D)"
-            title_rupture_force = r"Rupture Force (NuG2 + $\mathrm{\alpha}_3$D)"
+            title_dist = "Location error"
+            title_load = r"Loading rate (NuG2 + $\mathrm{\alpha}_3$D)"
+            title_rupture_force = r"Rupture force (NuG2 + $\mathrm{\alpha}_3$D)"
         else:
             title_dist,title_load,title_rupture_force = "","",""
         # only have an x label on the last row
@@ -98,11 +99,11 @@ def run():
         if (last_row):
             xlabel_dist = "Relative Error (x$_k$)"
             xlabel_load = "Loading Rate (pN/s)"
-            xlabel_rupture_force = "Rupture Force (pN)"
+            xlabel_rupture_force = "F$_R$ (pN)"
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
         ylabel_dist = \
-            (r"N$_{\mathrm{" + "{:s}".format(titles[i]) + "}}$")
+            (r"$N_{\mathrm{" + "{:s}".format(titles[i]) + "}}$")
         color_pred=colors[i]
         color_true = 'g'
         # get the formatting dictionaries for the various plots 
@@ -168,8 +169,9 @@ def run():
         for r in axes_counts:
             r.set_ylim(ylim_new)
     axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
-    PlotUtilities.label_tom(fig,axis_func=axis_func,
-                            loc=(-0.05,1.1))
+    loc_last_two = [-0.05,1.1]
+    locs = [ [-0.25,1.1], loc_last_two,loc_last_two]
+    PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
     PlotUtilities.savefig(fig,"./performance.png")
     
 

@@ -59,25 +59,27 @@ def run():
         split_fec_no_domain_specific.retract_spline_interpolator()(time) * 1e12
     # plot everything
     raw_force_kwargs = dict(color='k',alpha=0.3)
-    interp_force_kwargs = dict(color='b',linewidth=1.5)
-    probabiity_kwargs = dict(color='r',linestyle="-")
+    interp_force_kwargs = dict(color='b',linewidth=1.25)
+    probability_kwargs = dict(color='r',linestyle="-",linewidth=0.75)
     # for the probabilities, how far from the maximum y the scale bar should be
     # (units [0,1]
     y_frac_prob = 0.65
-    prob_scale_dict = dict(y_frac=y_frac_prob)
+    prob_scale_dict = dict(y_frac=y_frac_prob,y_label_frac=0.2)
+    fec_scale_dict = dict(y_frac=0.45,y_label_frac=0.2)
     n_cols = 1
     n_rows = 6
     ylim_force_pN = [-35,max(force_interp_plot)+1.1+35]
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
-    title_kwargs = dict(loc='left',fontsize=10,color='b')
+    title_kwargs = dict(loc='left',color='b')
     kwargs_axis = dict()
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
-    arrow = "$\downarrow$"
+    arrow = "$\Downarrow$"
     probability_label = "log$_{\mathrm{10}}$(P)"
     probability_label_post = probability_label
     n_cols = 3
     n_rows = 6
+    force_label = "F (pN)"
     gs = gridspec.GridSpec(nrows=n_rows,ncols=n_cols,
                            width_ratios=[1 for _ in range(n_cols)],
                            height_ratios=[0.75,0.75,0.75,0.75,1,1])
@@ -90,16 +92,16 @@ def run():
     PlotUtilities.x_label_on_top(ax_raw)
     PlotUtilities.no_x_label(ax_raw)
     plt.ylim(ylim_force_pN)                
-    PlotUtilities.lazyLabel("Time (s)","Force (pN)","",loc="upper center",
-                            legend_kwargs=dict(handlelength=0.75,ncol=2,
-                                               fontsize=9),**kw)
+    PlotUtilities.lazyLabel("Time (s)",force_label,"",loc="upper center",
+                            legend_kwargs=dict(handlelength=0.75,ncol=2),
+                            **kw)
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks(dict(y_frac=0.5))
+    PlotUtilities.x_scale_bar_and_ticks(fec_scale_dict)
     # # plot the 'raw' probability
     ax_raw_prob = plt.subplot(gs[1,:])
     plt.plot(time_plot,to_prob_plot(info_no_domain_specific.cdf),
-             **probabiity_kwargs)    
-    title_prob = arrow + "Get probability of no event"
+             **probability_kwargs)    
+    title_prob = arrow + "Determine probability of no event"
     PlotUtilities.lazyLabel("",probability_label,title_prob,**kw)
     PlotUtilities.no_x_label(ax_raw_prob)        
     plt.ylim(ylim_prob)
@@ -108,7 +110,7 @@ def run():
     # # plot the adhesion-fixed probability
     ax_adhesion = plt.subplot(gs[2,:])
     plt.plot(time_plot,to_prob_plot(info_remove_adhesions.cdf),
-             **probabiity_kwargs)    
+             **probability_kwargs)
     title_adhesion = arrow + r"Suppress adhesion, stretching"
     PlotUtilities.lazyLabel("",probability_label_post,title_adhesion,**kw)
     PlotUtilities.no_x_label(ax_adhesion)      
@@ -118,8 +120,8 @@ def run():
     # # plot the final probability
     ax_final_prob = plt.subplot(gs[3,:])
     plt.plot(time_plot,to_prob_plot(info_final.cdf),
-             **probabiity_kwargs)    
-    title_consistent = (arrow + "Supress $\sim$0 force changes")
+             **probability_kwargs)    
+    title_consistent = (arrow + "Supress small force change events")
     PlotUtilities.lazyLabel("",probability_label_post,title_consistent,**kw)
     PlotUtilities.no_x_label(ax_final_prob)      
     plt.ylim(ylim_prob)    
@@ -135,14 +137,14 @@ def run():
     Plotting.plot_arrows_above_events(event_starts,plot_x=time_plot,
                                       plot_y=force_plot,fudge_y=25,
                                       label=None)
-    PlotUtilities.lazyLabel("","Force (pN)",title_final,
+    PlotUtilities.lazyLabel("",force_label,title_final,
                             loc = "upper center",**kw)
     plt.ylim(ylim_force_pN)                           
 
     plt.xlim(xlim_time)
     PlotUtilities.x_scale_bar_and_ticks()
     ylim_first_event = [-5,30]
-    first_event_window_large = 0.02
+    first_event_window_large = 0.045
     fraction_increase= 5
     color_first = 'm'
     # get the event index, window pct to use, where to show a 'zoom', and the
@@ -157,7 +159,7 @@ def run():
         # get how the interpolated plot should be 
         interp_force_kwargs_tmp = dict(**interp_force_kwargs)
         interp_force_kwargs_tmp['color'] = c
-        interp_force_kwargs_tmp['linewidth'] = 2.5
+        interp_force_kwargs_tmp['linewidth'] = 1.25
         # determine the slice we want to use       
         event_location = info_final.event_idx[event_id]
         event_bounding_slice = slice_window_around(event_location,
@@ -179,30 +181,34 @@ def run():
         PlotUtilities.no_x_anything(ax=in_ax)
         # removing  y label on all of them..
         if (i == 0):
-            ylabel = "Force (pN)"
+            ylabel = force_label
         else:
             ylabel = ""
         # determine if we need to add in 'guidelines' for zooming
         if (zoom_bool):
             PlotUtilities.zoom_effect01(ax_final,in_ax,*in_ax.get_xlim(),
                                         color=c)
+            PlotUtilities.lazyLabel("Time (s)",ylabel,"",**kw)
         else:
             # this is a 'second' zoom in...'
             PlotUtilities.no_y_label(in_ax)
-            ylabel = (r"$\downarrow${:d}x").format(fraction_increase)
-        PlotUtilities.lazyLabel("Time (s)",ylabel,"",**kw)
+            ylabel = ("{:d}x\n".format(fraction_increase)) + \
+                      r"$\rightarrow$"
+            PlotUtilities.lazyLabel("Time (s)",ylabel,"",**kw)
+            PlotUtilities.ylabel(ylabel,rotation=0,labelpad=2)
         # plot an arrow over the (single) event
         Plotting.plot_arrows_above_events([event_location],plot_x=time_plot,
                                           plot_y=force_plot,fudge_y=7,
                                           label=None,markersize=150)
         plt.ylim(ylim)
-        PlotUtilities.make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7)
-    loc_major = [-0.1,1.2]
+        PlotUtilities.make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7,
+                                     label_sig_figs=1)
+    loc_major = [-0.2,1.2]
     loc_minor = [-0.15,1.1]
     locs = [loc_major for _ in range(5)] + [loc_minor for _ in range(3)]
     PlotUtilities.label_tom(fig,loc=locs)
     PlotUtilities.savefig(fig,"./flowchart.png",
-                          subplots_adjust=dict(hspace=0.35))
+                          subplots_adjust=dict(hspace=0.4))
     
 
 if __name__ == "__main__":

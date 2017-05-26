@@ -34,9 +34,10 @@ probabiity_kwargs = dict(color='r')
 # how big the scale bars are
 scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
-df_dt_string = r"dF/dt"
-rupture_string = r"F$_{\mathrm{r}}$"
+df_dt_string = r"$\mathrm{\partial}$F/$\mathrm{\partial}$t"
+rupture_string = r"F$_{\mathrm{R}}$"
 fontsize=8
+scale_line_width=1.5
 
 def generate_rupture_histograms():
     num_loading_rates = 10
@@ -101,12 +102,13 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     PlotUtilities.lazyLabel("","Force (pN)","")
     # plot arrows above the events
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
-                                      fudge_y=20,**arrow_kwargs)
+                                      fudge_y=30,**arrow_kwargs)
     # add a scale bar
     PlotUtilities.no_x_label(plt.gca())               
     max_time = max(time_plot)
     width = scale_fraction_width * max_time
-    PlotUtilities.x_scale_bar_and_ticks()
+    scale_bar_dict = dict(y_label_frac=0.2,linewidth=scale_line_width)
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=scale_bar_dict)
 
 def common_text_kwargs():
     return dict(xycoords='data',
@@ -145,7 +147,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     plt.xlim(xlim)
     ax_zoom = plt.gca()
     PlotUtilities.zoom_effect01(ax1, ax_zoom, *xlim,linestyle=':',
-                                color='m',alpha=0.4)
+                                color='m')
     # plot annotations showing the loading rate
     bbox_props = dict(boxstyle="rarrow,pad=0.3",linestyle='--',
                       fc=color_loading_line,ec=color_loading_line,
@@ -165,24 +167,25 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     ylim = plt.ylim()
     predicted_x = [xlim[0] + (xlim[1]-xlim[0]) * r for r in predicted_x_fracs]
     # plot them as lines
-    style_predicted = dict(linestyle='-.',color='c',linewidth=linewidth_common)
+    style_predicted = dict(linestyle=':',color='c',linewidth=linewidth_common)
     style_arrow_predicted = dict(**arrow_kw_thick)
     style_arrow_predicted['color'] = 'b'
     for x in predicted_x:
         plt.axvline(x,**style_predicted)
-    text_box_kwargs = dict(horizontalalignment='center',
+    text_box_kwargs = dict(horizontalalignment='center',fontweight='bold',
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
+    predicted_line_style = ":"
     plt.text(x=np.mean(predicted_x),
              y=np.mean(ylim)+abs(np.diff(ylim))*0.1,backgroundcolor='c',
-             bbox=dict(linestyle='-.',color='c'),color='w',
-             s="Predicted Events",rotation=90,zorder=10,**text_box_kwargs)
+             bbox=dict(linestyle=predicted_line_style,color='c'),color='w',
+             s="Predicted events",rotation=90,zorder=10,**text_box_kwargs)
     # plot a text box for the event
     plt.axvline(event_time,color='g')
     plt.text(x=event_time-abs(np.diff(plt.xlim()))*0.05,
              y=np.mean(ylim),backgroundcolor='g',
              bbox=dict(linestyle='-',color='g'),color='w',
-             s="True Event",rotation=90,zorder=10,**text_box_kwargs)
+             s="True event",rotation=90,zorder=10,**text_box_kwargs)
     # plot an from the event to the closest x 
     closest_x_idx = np.argmin(np.abs(predicted_x-event_time))
     closest_x = predicted_x[closest_x_idx]
@@ -205,11 +208,13 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
         ax.annotate("", xy=(event_time, plot_y_tmp), xytext=(x, plot_y_tmp),
                     arrowprops=dict(arrowstyle="->",color='c',
                                     linewidth=linewidth_common,
-                                    linestyle="-."))
+                                    linestyle=predicted_line_style))
     plt.text(event_time+dx/2,y_text,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
-    PlotUtilities.x_scale_bar_and_ticks(dict(y_frac=0.5,y_label_frac=0.1))
+    scale_bar_kwargs = dict(dict(y_frac=0.5,y_label_frac=0.1,
+                                 linewidth=scale_line_width))
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_kwargs)
 
 
 def plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
@@ -323,7 +328,7 @@ def run():
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
                                           hspace=0.75,wspace=0.5)
-    ylim_force_pN = [-35,max(force_interp_plot)*1.2]
+    ylim_force_pN = [-35,max(force_interp_plot)*1.3]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
@@ -382,9 +387,12 @@ def run():
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
     # add axes is [left,bottom,width,height]
-    in_ax_landscape= fig.add_axes([0.085,0.75,0.225,0.1])
+    in_ax_landscape= fig.add_axes([0.085,0.72,0.225,0.17])
     plot_landscape(x,landscape,ax=in_ax_landscape)
     energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
+    # remove the upper and right part of the frames
+    in_ax_landscape.spines['right'].set_visible(False)
+    in_ax_landscape.spines['top'].set_visible(False)
     PlotUtilities.lazyLabel("Extension","Free Energy","",**energy_kwargs)
     # # # Second gridspec (se we can more easily control wasted space)
     gs_data = gridspec.GridSpecFromSubplotSpec(3,1, 
@@ -393,23 +401,24 @@ def run():
     ax1 = plt.subplot(gs_data[0,:])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs)
-    PlotUtilities.lazyLabel("","Force (pN)","Extracting rupture properties",
+    PlotUtilities.lazyLabel("","F (pN)",
+                            "Extracting rupture properties",
                             **lazy_kwargs)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis
     ax_zoom = plt.subplot(gs_data[1:,:])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
-    PlotUtilities.lazyLabel("Time","Force (pN)","",**lazy_kwargs)
+    PlotUtilities.lazyLabel("Time","F (pN)","",**lazy_kwargs)
     PlotUtilities.no_x_label(ax_zoom)
     axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
-    loc_subplot = [-0.35,1.05]
-    locs = [ [-0.15,1.0],
+    loc_subplot = [-0.5,1.1]
+    locs = [ [-0.43,1.0],
              loc_subplot,
              loc_subplot,
              loc_subplot,
-             [-0.15,1.15],
-             [-0.15,0.95]]
+             [-0.18,1.15],
+             [-0.18,0.95]]
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
     PlotUtilities.savefig(fig,"./diagram.png")
 
