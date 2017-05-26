@@ -195,7 +195,7 @@ def run():
             ylabel = ("{:d}x\n".format(fraction_increase)) + \
                       r"$\rightarrow$"
             PlotUtilities.lazyLabel("Time (s)",ylabel,"",**kw)
-            PlotUtilities.ylabel(ylabel,rotation=0,labelpad=2)
+            PlotUtilities.ylabel(ylabel,rotation=0,labelpad=5)
         # plot an arrow over the (single) event
         Plotting.plot_arrows_above_events([event_location],plot_x=time_plot,
                                           plot_y=force_plot,fudge_y=7,
@@ -208,7 +208,7 @@ def run():
     locs = [loc_major for _ in range(5)] + [loc_minor for _ in range(3)]
     PlotUtilities.label_tom(fig,loc=locs)
     PlotUtilities.savefig(fig,"./flowchart.png",
-                          subplots_adjust=dict(hspace=0.4))
+                          subplots_adjust=dict(hspace=0.4,wspace=0.35))
     
 
 if __name__ == "__main__":
