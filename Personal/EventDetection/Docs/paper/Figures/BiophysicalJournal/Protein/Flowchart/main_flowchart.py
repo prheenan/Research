@@ -28,6 +28,10 @@ def slice_window_around(event_idx,time_plot,fraction):
     return event_bounding_slice
     
 
+def tick_style(num_major=3):
+    ax = plt.gca()
+    PlotUtilities.tom_ticks(ax=ax,num_major=num_major,change_x=False)
+
 def run():
     """
     <Description>
@@ -64,18 +68,20 @@ def run():
     # for the probabilities, how far from the maximum y the scale bar should be
     # (units [0,1]
     y_frac_prob = 0.65
-    prob_scale_dict = dict(y_frac=y_frac_prob,y_label_frac=0.2)
-    fec_scale_dict = dict(y_frac=0.45,y_label_frac=0.2)
+    common_scale_dict = dict(x_frac=0.15)
+    prob_scale_dict = dict(y_frac=y_frac_prob,y_label_frac=0.2,
+                           **common_scale_dict)
+    fec_scale_dict = dict(y_frac=0.45,y_label_frac=0.2,**common_scale_dict)
     n_cols = 1
     n_rows = 6
-    ylim_force_pN = [-35,max(force_interp_plot)+1.1+35]
+    ylim_force_pN = [-35,max(force_interp_plot)+1.1+50]
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
     title_kwargs = dict(loc='left',color='b')
     kwargs_axis = dict()
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\Downarrow$"
-    probability_label = "log$_{\mathrm{10}}$(P)"
+    probability_label = "log$_{\mathbf{10}}$(P)"
     probability_label_post = probability_label
     n_cols = 3
     n_rows = 6
@@ -97,6 +103,7 @@ def run():
                             **kw)
     plt.xlim(xlim_time)
     PlotUtilities.x_scale_bar_and_ticks(fec_scale_dict)
+    tick_style()
     # # plot the 'raw' probability
     ax_raw_prob = plt.subplot(gs[1,:])
     plt.plot(time_plot,to_prob_plot(info_no_domain_specific.cdf),
@@ -107,6 +114,7 @@ def run():
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)
     PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
+    tick_style()
     # # plot the adhesion-fixed probability
     ax_adhesion = plt.subplot(gs[2,:])
     plt.plot(time_plot,to_prob_plot(info_remove_adhesions.cdf),
@@ -117,6 +125,7 @@ def run():
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)    
     PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
+    tick_style()
     # # plot the final probability
     ax_final_prob = plt.subplot(gs[3,:])
     plt.plot(time_plot,to_prob_plot(info_final.cdf),
@@ -127,6 +136,7 @@ def run():
     plt.ylim(ylim_prob)    
     plt.xlim(xlim_time)
     PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
+    tick_style()
     # # plot the final event locations
     ax_final = plt.subplot(gs[4,:])
     plt.plot(time_plot,force_plot,**raw_force_kwargs)    
@@ -142,7 +152,8 @@ def run():
     plt.ylim(ylim_force_pN)                           
 
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks()
+    PlotUtilities.x_scale_bar_and_ticks(fec_scale_dict)
+    tick_style()
     ylim_first_event = [-5,30]
     first_event_window_large = 0.045
     fraction_increase= 5
@@ -205,7 +216,8 @@ def run():
                                      label_sig_figs=1)
     loc_major = [-0.2,1.2]
     loc_minor = [-0.15,1.1]
-    locs = [loc_major for _ in range(5)] + [loc_minor for _ in range(3)]
+    locs = [loc_major for _ in range(5)] + \
+           [loc_minor for _ in range(3)]
     PlotUtilities.label_tom(fig,loc=locs)
     PlotUtilities.savefig(fig,"./flowchart.png",
                           subplots_adjust=dict(hspace=0.4,wspace=0.35))

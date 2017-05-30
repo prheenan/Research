@@ -378,6 +378,7 @@ def run():
                              models[example_idx],fmt_error,
                              loading_rate_example_pN_per_s)
     PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","",**lazy_kwargs)
+    PlotUtilities.tom_ticks(num_major=2)
     plt.subplot(gs[2,1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
@@ -404,6 +405,7 @@ def run():
     PlotUtilities.lazyLabel("","F (pN)",
                             "Extracting rupture properties",
                             **lazy_kwargs)
+    PlotUtilities.tom_ticks(num_major=3,change_x=False)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis
@@ -420,6 +422,12 @@ def run():
              [-0.18,1.15],
              [-0.18,0.95]]
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
+    # make the cartoon force versus time slighlty larger in height (last
+    # position element)
+    # see (e.g.)
+    """
+stackoverflow.com/questions/24535393/matplotlib-getting-subplots-to-fill-figure
+    """
     PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":
