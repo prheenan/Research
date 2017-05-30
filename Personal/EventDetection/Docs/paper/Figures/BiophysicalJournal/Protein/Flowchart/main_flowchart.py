@@ -28,7 +28,7 @@ def slice_window_around(event_idx,time_plot,fraction):
     return event_bounding_slice
     
 
-def tick_style(num_major=5):
+def tick_style(num_major=4):
     ax = plt.gca()
     PlotUtilities.tom_ticks(ax=ax,num_major=num_major,change_x=False)
 

@@ -270,7 +270,8 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     dagger_props['arrowprops']['arrowstyle'] = '<->'
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
                 s=r"",**dagger_props)
-    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.05,s="x$^{\ddag}$")
+    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.1,s="x$^{\ddag}$",
+            **text_kwargs)
     # make the delta_G_dagger annotation
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"",**dagger_props)
     ax.text(x=x_max+x_range*0.4,y=np.mean(landscape)*0.7,
@@ -378,7 +379,7 @@ def run():
                              models[example_idx],fmt_error,
                              loading_rate_example_pN_per_s)
     PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","",**lazy_kwargs)
-    PlotUtilities.tom_ticks(num_major=2)
+    PlotUtilities.tom_ticks(num_major=3,change_x=False)
     plt.subplot(gs[2,1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
@@ -405,7 +406,7 @@ def run():
     PlotUtilities.lazyLabel("","F (pN)",
                             "Extracting rupture properties",
                             **lazy_kwargs)
-    PlotUtilities.tom_ticks(num_major=3,change_x=False)
+    PlotUtilities.tom_ticks(num_major=5,change_x=False)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis
@@ -413,6 +414,7 @@ def run():
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
     PlotUtilities.lazyLabel("Time","F (pN)","",**lazy_kwargs)
     PlotUtilities.no_x_label(ax_zoom)
+    PlotUtilities.tom_ticks(num_major=5,change_x=False)
     axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
     loc_subplot = [-0.5,1.1]
     locs = [ [-0.43,1.0],

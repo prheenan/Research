@@ -55,8 +55,7 @@ def write_coeffs_file(out_file,coeffs):
         f.write(final)
 
 def tick_style_log(**kwargs):
-    PlotUtilities.tom_ticks(plt.gca(),num_major=6,num_minor=0,**kwargs)
-
+    PlotUtilities.tom_ticks(plt.gca(),num_major=6,**kwargs)
 
 
 def run():
