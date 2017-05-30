@@ -54,6 +54,9 @@ def write_coeffs_file(out_file,coeffs):
     with open(out_file,'w') as f:
         f.write(final)
 
+def tick_style_log(**kwargs):
+    PlotUtilities.tom_ticks(plt.gca(),num_major=6,num_minor=0,**kwargs)
+
 
 
 def run():
@@ -124,7 +127,7 @@ def run():
             Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                     loading_true,loading_pred,
                                                     limit=0.02)            
-        # make the 'just the distance' figures
+        # # make the 'just the distance' figures
         ax_dist = plt.subplot(n_rows,n_cols,(offset+1))
         Plotting.histogram_event_distribution(use_q_number=True,
                                               **distance_histogram_kw)
@@ -134,7 +137,8 @@ def run():
         plt.xlim(xlim_dist)                                   
         if not last_row:
             PlotUtilities.no_x_label(ax_dist)
-        # make the loading rate histogram      
+        tick_style_log()
+        # # make the loading rate histogram      
         ax_load = plt.subplot(n_rows,n_cols,(offset+2))
         Plotting.loading_rate_histogram(pred,bins=_bins_load_plot,
                                         **pred_style_histogram)
@@ -144,12 +148,13 @@ def run():
         plt.yscale('log')
         PlotUtilities.lazyLabel(xlabel_load,"",title_load,
                                 legendBgColor='w',
-                                loc='lower left',frameon=False,**kw_tmp)
+                                loc='upper left',frameon=False,**kw_tmp)
         plt.xlim(xlim_load)               
         if not last_row:
             PlotUtilities.no_x_label(ax_load)
         PlotUtilities.no_y_label(ax_load)
-        # make the rupture force histogram
+        tick_style_log()
+        # # make the rupture force histogram
         ax_rupture = plt.subplot(n_rows,n_cols,(offset+3))
         Plotting.rupture_force_histogram(pred,bins=_bins_rupture_plot,
                                         **pred_style_histogram)
@@ -161,18 +166,20 @@ def run():
         plt.xlim(xlim_rupture)                                                 
         if not last_row:
             PlotUtilities.no_x_label(ax_rupture)     
-        PlotUtilities.no_y_label(ax_rupture)                           
+        PlotUtilities.no_y_label(ax_rupture)                
+        tick_style_log(change_x=False)           
         # set all the y limits for this row
         axes_counts = [ax_rupture,ax_load,ax_dist]
         max_limit = np.max([r.get_ylim() for r in axes_counts])
-        ylim_new = [0.5,max_limit*1.1]
+        ylim_new = [0.5,max_limit*1.6]
         for r in axes_counts:
             r.set_ylim(ylim_new)
     axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
     loc_last_two = [-0.05,1.1]
     locs = [ [-0.25,1.1], loc_last_two,loc_last_two]
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-    PlotUtilities.savefig(fig,"./performance.png")
+    PlotUtilities.savefig(fig,"./performance.png",
+                          subplots_adjust=dict(hspace=0.1,wspace=0.1))
     
 
 if __name__ == "__main__":
