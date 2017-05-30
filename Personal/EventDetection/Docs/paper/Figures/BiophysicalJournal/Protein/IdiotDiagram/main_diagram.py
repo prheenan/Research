@@ -34,8 +34,8 @@ probabiity_kwargs = dict(color='r')
 # how big the scale bars are
 scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
-df_dt_string = r"$\mathrm{\partial}$F/$\mathrm{\partial}$t"
-rupture_string = r"F$_{\mathrm{R}}$"
+df_dt_string = r"$\mathbf{\partial}$F/$\mathbf{\partial}$t"
+rupture_string = r"F$_{\mathbf{R}}$"
 fontsize=8
 scale_line_width=1.5
 
@@ -208,7 +208,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
         ax.annotate("", xy=(event_time, plot_y_tmp), xytext=(x, plot_y_tmp),
                     arrowprops=dict(arrowstyle="->",color='c',
                                     linewidth=linewidth_common,
-                                    linestyle=predicted_line_style))
+                                    linestyle='-'))
     plt.text(event_time+dx/2,y_text,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
@@ -276,7 +276,16 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"",**dagger_props)
     ax.text(x=x_max+x_range*0.4,y=np.mean(landscape)*0.7,
             s="$\Delta$G$^{\ddag}$",**text_kwargs)
-    plt.ylim(y_low_plot*3,max(plt.ylim()))
+    # make the k0 annotation
+    fudge = (x_max-x_min)*0.5
+    y_k0 = y_max * 0.95
+    ax.annotate('',
+                xy=(x_max+fudge, y_k0), xycoords='data',
+                xytext=(x_max-fudge, y_k0), textcoords='data',
+                arrowprops=dict(arrowstyle="->",shrinkA=0,shrinkB=0,
+                                connectionstyle="angle3,angleA=45,angleB=-45"))
+    ax.text(x=x_max,y=y_k0*1.25,s="k$_0$",**text_kwargs)
+    plt.ylim(y_low_plot*2,max(plt.ylim())*1.1)
     xlim = plt.xlim()
     plt.xlim(xlim[0],xlim[1]+x_range * 0.4)
     PlotUtilities.no_y_ticks(ax=ax)
@@ -340,8 +349,8 @@ def run():
     # remove its border
     for spine in in_ax.spines.values():
         spine.set_visible(False)
-    # # plot the cartoon of the fec
-    ax_fec = plt.subplot(gs[0,1])
+    # # plot the cartoon of the fec; easier to just call out the axis
+    ax_fec = plt.axes([0.635,0.86,0.31,0.105])
     # define the regions where we are attached to the molecule...
     slice_tuples = [ [slice(0,0.05),0.08],
                      [slice(0,0.2),0.25],
@@ -416,20 +425,14 @@ def run():
     PlotUtilities.no_x_label(ax_zoom)
     PlotUtilities.tom_ticks(num_major=5,change_x=False)
     axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
-    loc_subplot = [-0.5,1.1]
-    locs = [ [-0.43,1.0],
+    loc_subplot = [-0.5,1.17]
+    locs = [ [-0.45,1.02],
              loc_subplot,
              loc_subplot,
              loc_subplot,
              [-0.18,1.15],
              [-0.18,0.95]]
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-    # make the cartoon force versus time slighlty larger in height (last
-    # position element)
-    # see (e.g.)
-    """
-stackoverflow.com/questions/24535393/matplotlib-getting-subplots-to-fill-figure
-    """
     PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":

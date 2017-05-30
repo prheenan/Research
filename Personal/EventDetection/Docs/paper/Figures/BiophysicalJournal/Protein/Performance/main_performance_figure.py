@@ -99,7 +99,7 @@ def run():
         # only have an x label on the last row
         last_row = (offset/n_rows == n_rows-1)
         if (last_row):
-            xlabel_dist = "Relative Error (x$_k$)"
+            xlabel_dist = "Relative Error ($\mathbf{x_k}$)"
             xlabel_load = "Loading Rate (pN/s)"
             xlabel_rupture_force = "F$_R$ (pN)"
         else:
@@ -132,7 +132,8 @@ def run():
                                               **distance_histogram_kw)
         PlotUtilities.lazyLabel(xlabel_dist,ylabel_dist,title_dist,
                                 loc=legend_locs[i],legendBgColor='w',
-                                frameon=False,**kw_tmp)      
+                                frameon=False,**kw_tmp)
+        PlotUtilities.ylabel(ylabel_dist,fontweight='bold')
         plt.xlim(xlim_dist)                                   
         if not last_row:
             PlotUtilities.no_x_label(ax_dist)
