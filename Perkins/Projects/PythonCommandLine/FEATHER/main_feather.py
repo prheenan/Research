@@ -25,11 +25,27 @@ def parse_and_run():
     description = 'Predict event locations in a .pxp '
     parser = argparse.ArgumentParser(description=description)
     common = dict(required=True)
+    # # feathers options
+    parser.add_argument('-tau', metavar='tau', 
+                        type=float,help='tau fraction of curve (0,1)',
+                        required=False,default=1e-2)
     parser.add_argument('-threshold', metavar='threshold', 
-                        type=float,help='probability threshold (0 and 1)',
+                        type=float,help='probability threshold (0,1)',
                         **common)
+    # # 'meta' variables
+    parser.add_argument('-spring_constant', metavar='spring_constant', 
+                        type=float,help='spring constant of the probe',
+                        **common)
+    parser.add_argument('-trigger_time', metavar='trigger_time', 
+                        type=float,help='time at which approach ends',
+                        **common)
+    parser.add_argument('-dwell_time', metavar='dwell_time', 
+                        type=float,
+                        help='time between end of approach and retract start',
+                        **common)
+    # path to the file
     parser.add_argument('-file_input',metavar="file_input",type=str,
-                        help="path to the '.pxp' with the force, separation",
+                        help="path to the force-extension curve file",
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
