@@ -1,5 +1,8 @@
 *.i
 *.hg/*
+*.mat
+*.md*
+*.nb
 *~
 *.pse
 *.pdb
