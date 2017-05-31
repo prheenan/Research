@@ -111,20 +111,46 @@ def parse_and_run():
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
+    # parse all the inputs
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
-    threshold = args.threshold
-    tau = args.tau
+    # get the indices
+    event_indices = run_feather(in_file=in_file,
+                                threshold=args.threshold,
+                                tau=args.tau,
+                                spring_constant=args.spring_constant,
+                                dwell_time=args.dwell_time,
+                                trigger_time=args.trigger_time)
+    # done with the log file...
+    np.savetxt(fname=out_file,delimiter=",",newline="\n",fmt="%d",
+               header="(C) PRH 2017\nEvent Indices",
+               X=event_indices)
+
+def run_feather(in_file,threshold,tau,spring_constant,dwell_time,
+                trigger_time):
+    """
+    Runs feather on the given input file
+    
+    Args:
+        in_file:  the input file to use
+        threshold: see  Detector.predict
+        tau: see  Detector.predict
+        spring_constant: spring constant of the probe
+        dwell_time: time from the end of the approach to the start of the dwell
+        trigger_time: length of the approach
+    Returns:
+        see Detector.predict
+    """
     assert tau > 0 , "FEATHER yau must be greater than 0"
     assert threshold > 0 , "FEATHER threshold must be greater than 0"
     assert args.spring_constant > 0 , \
         "FEATHER spring constant must be greater than 0"
     # POST: parameters in bounds. try to get the actual data
     example = get_force_extension_curve(in_file,
-                                        K=args.spring_constant,
-                                        DwellTime=args.dwell_time,
-                                        TriggerTime=args.trigger_time,
+                                        K=spring_constant,
+                                        DwellTime=dwell_time,
+                                        TriggerTime=trigger_time,
                                         Name=in_file,
                                         # set these to one; aren't interested
                                         # in volts (feather works with FECs)
@@ -133,10 +159,7 @@ def parse_and_run():
     # have the data, predict where the events are. 
     event_indices = Detector.predict(example,threshold=threshold,
                                      add_offsets=True,tau_fraction=tau)
-    # done with the log file...
-    np.savetxt(fname=out_file,delimiter=",",newline="\n",fmt="%d",
-               header="(C) PRH 2017\nEvent Indices",
-               X=event_indices)
+    return event_indices
 
 def run():
     try:

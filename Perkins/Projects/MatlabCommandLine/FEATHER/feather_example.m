@@ -29,9 +29,9 @@ function []=feather_example()
     disp(indices)
     clf;
     hold all;
-    plot(obj.time,obj.force)
+    plot(obj.time,obj.force*-1)
     for i=1:length(indices)
-        plot(obj.time(indices(i)),obj.force(indices(i)),'ro')
+        plot(obj.time(indices(i)),obj.force(indices(i))*-1,'ro')
     end
         
 end
