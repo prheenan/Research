@@ -146,7 +146,7 @@ def stdev_dist_per_param(scores,**kwargs):
     return _walk_scores(scores,func_fold =func_fold,
                         func_param=safe_median,func_top=np.array)
 
-def rupture_objects(scores,get_true):
+def rupture_objects(scores,get_true,slice_v=slice(0,None,1)):
     """
     get the rupture objects associated with the scores
 

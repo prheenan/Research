@@ -92,8 +92,8 @@ def run():
                                          handletextpad=0.25))
         if offset == 0:
             title_dist = "Location error"
-            title_load = r"Loading rate (NuG2 + $\mathrm{\alpha}_3$D)"
-            title_rupture_force = r"Rupture force (NuG2 + $\mathrm{\alpha}_3$D)"
+            title_load = r"Loading rate (NuG2 + $\mathbf{\alpha_3}$D)"
+            title_rupture_force = r"Rupture force (NuG2 + $\mathbf{\alpha_3}$D)"
         else:
             title_dist,title_load,title_rupture_force = "","",""
         # only have an x label on the last row
