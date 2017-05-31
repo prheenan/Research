@@ -1,4 +1,9 @@
 function []=feather_example()
+    %{
+    example which uses FEATHER.
+
+    Path must be set properly 
+    %}
     base = '/Users/patrickheenan/src_prh/Research/Perkins/Projects/';
     base_path = [base,'PythonCommandLine/FEATHER/'];
     % read the input file
@@ -18,9 +23,8 @@ function []=feather_example()
     % get the feather-specific options to use
     threshold = 1e-3;
     tau = 2e-2;
-    surface_position_from_approach = 0;
-    opt = feather_options(threshold,tau,base_path,...
-                          surface_position_from_approach);
+    opt = feather_options(threshold,tau,base_path);
+    % get the predicted event locations
     indices = feather(obj,opt); 
     disp(indices)
     clf;

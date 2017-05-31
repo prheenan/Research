@@ -1,10 +1,20 @@
 function [indices] = feather(fec_obj,opt)
+    %{
+    interface to call FEATHER
+
+    Args:
+        fec_obj: 'fec.m' object
+        opt    : 'feather_options.m' object
+    Returns:
+        indices: list of indices into fec_obj.Time at which an event
+        is predicted
+    %}
     % save out the fec 
     struct_to_save = {};
     struct_to_save.time = fec_obj.time;
     struct_to_save.separation = fec_obj.separation;
     struct_to_save.force = fec_obj.force;
-    % XXX approach, retract velocities, spring constant
+    % create the temporary files
     matlab_file = [opt.base_path,'tmp.mat'];
     output_file = [opt.base_path,'out.csv'];
     input_file = [opt.base_path,'main_feather.py'];
@@ -24,15 +34,34 @@ function [indices] = feather(fec_obj,opt)
                               '-file_input',matlab_file);                          
     command = append_argument(command,...
                               '-file_output',output_file);                             
-    [~,cmdout] = system(command);
+    [~,~] = system(command);
     % read, skipping the first two rows 
     indices = csvread(output_file,2,0);
 end
     
 function[output]=append_numeric(output,name,value)
-    output = append_argument(output,name,num2str(value,'%15.3g'));
+    %{
+    Append a numeric argument to a string
+
+    Args:
+        see : append_argument, execpt converts value to a numeric
+    Returns:
+        see append_argument
+    %}
+    output = append_argument(output,name,num2str(value,'%15.7g'));
 end
 
 function[output]=append_argument(output,name,value)
+    %{
+    Append an argument to a string
+
+    Args:
+        output: what to append to
+        name: name to append to 
+    
+        value: what to add after name
+    Returns:
+        like <output><space><name><space><value>
+    %}
     output = [output,' ',name,' ',value];
 end
