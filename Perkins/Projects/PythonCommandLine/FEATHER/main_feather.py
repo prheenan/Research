@@ -67,8 +67,12 @@ def get_force_extension_curve(in_file,**kwargs):
             assert d in RawData[name] , "FEATHER .pxp needs {:s} wave".format(d)
         # POST: all the data we need exist
         time,separation,force = [RawData[name][d].DataY for d in data_needed]
-    elif (in_file.endswith(".mat") or in_file.endswidth(".m")):
+    elif (in_file.endswith(".mat") or in_file.endswith(".m")):
         time,separation,force = read_matlab_file_into_fec(in_file)
+    elif (in_file.endswith(".csv")):
+        # assume just simple columns
+        data = np.loadtxt(in_file,delimiter=',',skiprows=0)
+        time,separation,force = data[:,0],data[:,1],data[:,2]
     else:
         assert False , "FEATHER given file name it doesn't understand"
     # POST: have time, separation, and force
@@ -144,7 +148,7 @@ def run_feather(in_file,threshold,tau,spring_constant,dwell_time,
     """
     assert tau > 0 , "FEATHER yau must be greater than 0"
     assert threshold > 0 , "FEATHER threshold must be greater than 0"
-    assert args.spring_constant > 0 , \
+    assert spring_constant > 0 , \
         "FEATHER spring constant must be greater than 0"
     # POST: parameters in bounds. try to get the actual data
     example = get_force_extension_curve(in_file,

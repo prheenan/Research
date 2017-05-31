@@ -33,5 +33,4 @@ function []=feather_example()
     for i=1:length(indices)
         plot(obj.time(indices(i)),obj.force(indices(i))*-1,'ro')
     end
-        
 end

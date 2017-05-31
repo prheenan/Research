@@ -37,6 +37,9 @@ function [indices] = feather(fec_obj,opt)
     [~,~] = system(command);
     % read, skipping the first two rows 
     indices = csvread(output_file,2,0);
+    % clean up the intermediates
+    delete(matlab_file);
+    delete(output_file);
 end
     
 function[output]=append_numeric(output,name,value)
