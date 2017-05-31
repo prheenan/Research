@@ -39,6 +39,28 @@ def read_matlab_file_into_fec(input_file):
     return time,separation,force
     
 
+def make_fec(time,separation,force,**kwargs):
+    """
+    given time,sep, and force and 'meta' keywords, returns the fec that FEATHER
+    can use
+
+    Args:
+        time,separation,force: the time, separation, and force associated
+        with the fec
+
+        **kwargs: see run_feather
+    Returns:
+         force extension curve object which FEATHER can use
+    """
+    meta_dict = dict(**kwargs)
+    data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
+                                                        sep=separation,
+                                                        force=force,
+                                                        meta_dict=meta_dict)
+    to_ret = TimeSepForceObj.TimeSepForceObj()
+    to_ret.LowResData = data
+    return to_ret
+
 def get_force_extension_curve(in_file,**kwargs):
     """
     given an input file and meta information, returns the associated force 
@@ -46,6 +68,7 @@ def get_force_extension_curve(in_file,**kwargs):
 
     Args:
          input_file: file name, must have time, separation, and force
+         **kwargs: see run_feather
     Returns:
          force extension curve object which FEATHER can use
     """
@@ -76,16 +99,7 @@ def get_force_extension_curve(in_file,**kwargs):
     else:
         assert False , "FEATHER given file name it doesn't understand"
     # POST: have time, separation, and force
-    meta_dict = dict(**kwargs)
-    data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
-                                                        sep=separation,
-                                                        force=force,
-                                                        meta_dict=meta_dict)
-    to_ret = TimeSepForceObj.TimeSepForceObj()
-    to_ret.LowResData = data
-    return to_ret 
-
-
+    return make_fec(time,separation,force,**kwargs)
 
 def parse_and_run():
     description = 'Predict event locations in a data file'
