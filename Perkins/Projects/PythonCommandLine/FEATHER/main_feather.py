@@ -9,7 +9,6 @@ import os, sys,traceback
 path = os.path.abspath(os.path.dirname(__file__))
 os.chdir(path)
 sys.path.append('../../../../../')
-from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
@@ -31,7 +30,8 @@ def read_matlab_file_into_fec(input_file):
         tuple of time,separation,force
     """
     f = h5py.File(input_file,'r') 
-    get = lambda x: f[x].value
+    # the 'get' function should flatten all the arrays
+    get = lambda x: f[x].value.flatten()
     # get the FEC data
     time = get('time')
     separation = get('separation')
@@ -45,7 +45,7 @@ def get_force_extension_curve(in_file,**kwargs):
     extension curve
 
     Args:
-         input_file: .pxp or .m file 
+         input_file: file name, must have time, separation, and force
     Returns:
          force extension curve object which FEATHER can use
     """
@@ -67,8 +67,11 @@ def get_force_extension_curve(in_file,**kwargs):
             assert d in RawData[name] , "FEATHER .pxp needs {:s} wave".format(d)
         # POST: all the data we need exist
         time,separation,force = [RawData[name][d].DataY for d in data_needed]
-    elif (in_file.endswidth(".mat") or in_file.endswidth(".m")):
-        time,separation,force = read_matlab_file_into_fec(input_file)
+    elif (in_file.endswith(".mat") or in_file.endswidth(".m")):
+        time,separation,force = read_matlab_file_into_fec(in_file)
+    else:
+        assert False , "FEATHER given file name it doesn't understand"
+    # POST: have time, separation, and force
     meta_dict = dict(**kwargs)
     data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
                                                         sep=separation,
@@ -127,6 +130,7 @@ def parse_and_run():
                                         # in volts (feather works with FECs)
                                         DwellSetting=1,
                                         Invols=1)
+    # have the data, predict where the events are. 
     event_indices = Detector.predict(example,threshold=threshold,
                                      add_offsets=True,tau_fraction=tau)
     # done with the log file...

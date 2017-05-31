@@ -560,10 +560,10 @@ def slice_func_fec(fec,slice_v):
     """
     to_ret = copy.deepcopy(fec)
     slice_f = lambda x: x[slice_v]
-    to_ret.Force = to_ret.Force[slice_v]
-    to_ret.Separation = to_ret.Separation[slice_v]
-    to_ret.ZSnsr = to_ret.ZSnsr[slice_v]
-    to_ret.Time = to_ret.Time[slice_v]
+    to_ret.Force = slice_f(to_ret.Force)
+    to_ret.Separation = slice_f(to_ret.Separation)
+    to_ret.ZSnsr = slice_f(to_ret.ZSnsr)
+    to_ret.Time = slice_f(to_ret.Time)
     return to_ret
         
 def split_FEC_by_meta(time_sep_force_obj):
