@@ -3,7 +3,6 @@ function []=feather()
     base_path = [base,'PythonCommandLine/FEATHER/'];
     input_file = [base_path,'main_feather.py'];
     % read the input file
-    [status,cmdout] =system('pwd');
     input_csv = 'example.csv';
     data = csvread(input_csv,2,0);
     % get the individual columns, for plotting purposes
@@ -46,9 +45,17 @@ function []=feather()
                               '-file_input',matlab_file);                          
     command = append_argument(command,...
                               '-file_output',output_file);                             
-    [status,cmdout] = system(command);
-    disp(command);
-    disp(cmdout);
+    [~,cmdout] = system(command);
+    % read, skipping the first two rows 
+    indices = csvread(output_file,2,0);
+    disp(indices)
+    clf;
+    hold all;
+    plot(obj.time,obj.force)
+    for i=1:length(indices)
+        plot(obj.time(indices(i)),obj.force(indices(i)),'ro')
+    end
+        
 end
 
 function[output]=append_numeric(output,name,value)
