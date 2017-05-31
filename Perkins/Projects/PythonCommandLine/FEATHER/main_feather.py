@@ -14,7 +14,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from GeneralUtil.python import GenUtilities
-from IgorUtil.PythonAdapter import PxpLoader
+from IgorUtil.PythonAdapter import PxpLoader,TimeSepForceObj
 import argparse,h5py
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
@@ -54,21 +54,28 @@ def get_force_extension_curve(in_file,**kwargs):
     # # POST: input file exists
     # go ahead and read it
     if (in_file.endswith(".pxp")):
-        RawData = FEC_Util.ReadInData(in_file,Limit=1)
+        RawData = PxpLoader.LoadPxp(in_file)
+        names = RawData.keys()
         # POST: file read sucessfully. should just have the one
-        if (not len(RawData) == 1):
-            write_and_close("Need exactly one Force/Separation".\
+        if (len(names) != 1):
+            write_and_close("Need exactly one Force/Separation in pxp".\
                             format(in_file))
         # POST: have one. Go ahead and use FEATHER to predict the locations
-        to_ret = RawData[0]
+        name = names[0]
+        data_needed = ['time','sep','force']
+        for d in data_needed:
+            assert d in RawData[name] , "FEATHER .pxp needs {:s} wave".format(d)
+        # POST: all the data we need exist
+        time,separation,force = [RawData[name][d].DataY for d in data_needed]
     elif (in_file.endswidth(".mat") or in_file.endswidth(".m")):
         time,separation,force = read_matlab_file_into_fec(input_file)
-        data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
-                                                            sep=separation,
-                                                            force=force,
-                                                            meta_dict=meta_dict)
-        to_ret = TimeSepForceObj.TimeSepForceObj()
-        to_ret.LowResData = data
+    meta_dict = dict(**kwargs)
+    data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
+                                                        sep=separation,
+                                                        force=force,
+                                                        meta_dict=meta_dict)
+    to_ret = TimeSepForceObj.TimeSepForceObj()
+    to_ret.LowResData = data
     return to_ret 
 
 
@@ -106,12 +113,16 @@ def parse_and_run():
     in_file = os.path.normpath(args.file_input)
     threshold = args.threshold
     tau = args.tau
-    assert tau > 0 , "FEATHER Tau must be greater than 0"
+    assert tau > 0 , "FEATHER yau must be greater than 0"
     assert threshold > 0 , "FEATHER threshold must be greater than 0"
+    assert args.spring_constant > 0 , \
+        "FEATHER spring constant must be greater than 0"
+    # POST: parameters in bounds. try to get the actual data
     example = get_force_extension_curve(in_file,
                                         K=args.spring_constant,
                                         DwellTime=args.dwell_time,
                                         TriggerTime=args.trigger_time,
+                                        Name=in_file,
                                         # set these to one; aren't interested
                                         # in volts (feather works with FECs)
                                         DwellSetting=1,
