@@ -15,14 +15,66 @@ from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from GeneralUtil.python import GenUtilities
 from IgorUtil.PythonAdapter import PxpLoader
-import argparse
+import argparse,h5py
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
 def write_and_close(string):
     raise RuntimeError(string)
 
+def read_matlab_file_into_fec(input_file):
+    """
+    Reads a matlab file into a force extension curve
+
+    Args:
+        input_file: '.mat' file, formatted like -v7.3
+    Returns:
+        tuple of time,separation,force
+    """
+    f = h5py.File(input_file,'r') 
+    get = lambda x: f[x].value
+    # get the FEC data
+    time = get('time')
+    separation = get('separation')
+    force = get('force')
+    return time,separation,force
+    
+
+def get_force_extension_curve(in_file,**kwargs):
+    """
+    given an input file and meta information, returns the associated force 
+    extension curve
+
+    Args:
+         input_file: .pxp or .m file 
+    Returns:
+         force extension curve object which FEATHER can use
+    """
+    if (not GenUtilities.isfile(in_file)):
+        write_and_close("File {:s} doesn't exist".format(in_file))
+    # # POST: input file exists
+    # go ahead and read it
+    if (in_file.endswith(".pxp")):
+        RawData = FEC_Util.ReadInData(in_file,Limit=1)
+        # POST: file read sucessfully. should just have the one
+        if (not len(RawData) == 1):
+            write_and_close("Need exactly one Force/Separation".\
+                            format(in_file))
+        # POST: have one. Go ahead and use FEATHER to predict the locations
+        to_ret = RawData[0]
+    elif (in_file.endswidth(".mat") or in_file.endswidth(".m")):
+        time,separation,force = read_matlab_file_into_fec(input_file)
+        data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
+                                                            sep=separation,
+                                                            force=force,
+                                                            meta_dict=meta_dict)
+        to_ret = TimeSepForceObj.TimeSepForceObj()
+        to_ret.LowResData = data
+    return to_ret 
+
+
+
 def parse_and_run():
-    description = 'Predict event locations in a .pxp '
+    description = 'Predict event locations in a data file'
     parser = argparse.ArgumentParser(description=description)
     common = dict(required=True)
     # # feathers options
@@ -53,19 +105,19 @@ def parse_and_run():
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
     threshold = args.threshold
-    if (not GenUtilities.isfile(in_file)):
-        write_and_close("File {:s} doesn't exist".format(in_file))
-    # # POST: input file exists
-    # go ahead and read it
-    RawData = FEC_Util.ReadInData(in_file,Limit=1)
-    # POST: file read sucessfully. should just have the one
-    if (not len(RawData) == 1):
-        write_and_close("Need exactly one Force/Separation".\
-                        format(in_file))
-    # POST: have just one. Go ahead and using FEATHER to predict the locations
-    example = RawData[0]
+    tau = args.tau
+    assert tau > 0 , "FEATHER Tau must be greater than 0"
+    assert threshold > 0 , "FEATHER threshold must be greater than 0"
+    example = get_force_extension_curve(in_file,
+                                        K=args.spring_constant,
+                                        DwellTime=args.dwell_time,
+                                        TriggerTime=args.trigger_time,
+                                        # set these to one; aren't interested
+                                        # in volts (feather works with FECs)
+                                        DwellSetting=1,
+                                        Invols=1)
     event_indices = Detector.predict(example,threshold=threshold,
-                                     add_offsets=True)
+                                     add_offsets=True,tau_fraction=tau)
     # done with the log file...
     np.savetxt(fname=out_file,delimiter=",",newline="\n",fmt="%d",
                header="(C) PRH 2017\nEvent Indices",
