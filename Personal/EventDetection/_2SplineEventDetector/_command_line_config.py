@@ -35,7 +35,8 @@ def read_matlab_file_into_fec(input_file):
     return time,separation,force
     
 
-def make_fec(time,separation,force,**kwargs):
+def make_fec(time,separation,force,spring_constant,trigger_time,dwell_time,
+             name="",DwellSetting=1,Invols=1,**kwargs):
     """
     given time,sep, and force and 'meta' keywords, returns the fec that FEATHER
     can use
@@ -44,11 +45,17 @@ def make_fec(time,separation,force,**kwargs):
         time,separation,force: the time, separation, and force associated
         with the fec
 
-        **kwargs: see run_feather
+        **kwargs, others: see run_feather
     Returns:
          force extension curve object which FEATHER can use
     """
-    meta_dict = dict(**kwargs)
+    meta_dict = dict(K=spring_constant,
+                     Name=name,
+                     Invols=1,
+                     TriggerTime=trigger_time,
+                     DwellTime=dwell_time,
+                     DwellSetting=DwellSetting,
+                     **kwargs)
     data = TimeSepForceObj.data_obj_by_columns_and_dict(time=time,
                                                         sep=separation,
                                                         force=force,
@@ -97,6 +104,10 @@ def get_force_extension_curve(in_file,**kwargs):
     # POST: have time, separation, and force
     return make_fec(time,separation,force,**kwargs)
 
+def predict_indices(fec,add_offsets=True,**kwargs):
+    return Detector.predict(fec,add_offsets=add_offsets,**kwargs)
+    
+
 def run_feather(in_file,threshold,tau,spring_constant,dwell_time,
                 trigger_time):
     """
@@ -118,14 +129,10 @@ def run_feather(in_file,threshold,tau,spring_constant,dwell_time,
         "FEATHER spring constant must be greater than 0"
     # POST: parameters in bounds. try to get the actual data
     example = get_force_extension_curve(in_file,
-                                        K=spring_constant,
-                                        DwellTime=dwell_time,
-                                        TriggerTime=trigger_time,
-                                        Name=in_file,
-                                        # set these to one; aren't interested
-                                        # in volts (feather works with FECs)
-                                        DwellSetting=1,
-                                        Invols=1)
+                                        spring_constant=spring_constant,
+                                        dwell_time=dwell_time,
+                                        trigger_time=trigger_time,
+                                        name=in_file)
     # have the data, predict where the events are. 
     event_indices = Detector.predict(example,threshold=threshold,
                                      add_offsets=True,tau_fraction=tau)
