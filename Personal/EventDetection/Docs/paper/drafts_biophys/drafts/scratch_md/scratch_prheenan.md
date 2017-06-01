@@ -36,20 +36,6 @@ Chapter 2 of this thesis describes the sample preparation and data acquisition u
 
 # Materials and Methods
 
-## Sample Preparation
-
-Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere @walder_robert_rapid_nodate. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
-
-## Atomic force microscopy
-
-All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research Cypher ES. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 30 $\mathrm{\mu}$m grids at points separated by 1 $\mathrm{\mu}$m. The stage was translated to a new grid point after measuring three force-extension curves. 
-
-## Data Annotation
-
-Two hundred force-extension curves with events were obtained at three pulling velocities (100 nm/s, 500 nm/s, 1000nm/s). The start and end of each event in a curve were obtained through manual annotation. More statistical information on the data, including curve lengths and number of events per curve, is given in Table {#tbl:statistics}.
-
-The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in Figure {#fig:diagram}. The region leading up to the event start was fit by a line, with the region length set to $\tau$ (see Table {#tbl:Parameters}). The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line where the data in the region was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in Figure {#fig:performance}. 
-
 ## Algorithm design and analysis
 
 All timing and tuning results were obtained using a desktop with 16 GB of RAM, a 3.7 GHz i7 CPU, and a 1 TB hard drive. 
@@ -96,26 +82,6 @@ threshold  Probability used to reject events  Determined by parameter sweep
 
 Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table {#tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces. 
 
-
-Name             | Notation			           | Range | Optimum 
----------------- |--------------------------------------   | ---   | ---
-K     | number of curves				| -     | -
-$N_k$ | points in curve k				| -     | -
-$d_{i\rightarrow j,k}$ | distribution of pointwise distances in 'k' from 'i' ruptures to the closest 'j' rupture or $N_k$ if none    	      	| -      | -
-$P_{x}$ |  the 'x'-th percentile of the concatenation of $\frac{1}{N_k}d_{t\rightarrow p,k}$ and $\frac{1}{N_k}d_{p\rightarrow t,k}$ over all k | -      |  -
-$\nu_i$ | histogram of 'i' loading rates over all k     | -	 | - 
-$F_i$ | histogram of 'i' rupture forces over all k      | -	 | - 
-$d_{(\nu,F),i}$ | joint histogram of $\nu_i$ and $F_i$ divided by K  | -      | -
-**relative event error** | $P_{95}$     	        | [0,1]  | 0 
-**rupture BCC** | 1-$<d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}>$ | [0,1] | 0 
-[Table Caption]
-
-## Algorithm tuning
-
-All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (Figure XXX). The parameter value minimizing the Bhattacharya coefficient's complement for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
-
-
-Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx 1.5$ cpu-days for FEATHER, see Figure XXX {#fig:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure XXX {#fig:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
 --------------------------------------------------- 
 ![{#fig:performance}](figures/performance.png)      
