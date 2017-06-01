@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append("../../../../../../")
 
-from Research.Perkins.Projects.PythonCommandLine.FEATHER import main_feather
+from Research.Personal.EventDetection._2SplineEventDetector import \
+    _command_line_config
 
 def run():
     """
@@ -24,12 +25,12 @@ def run():
     """
     data = np.loadtxt('example.csv',delimiter=',',skiprows=3)
     time,sep,force = data[:,0],data[:,1],data[:,2]
-    event_indices = main_feather.run_feather(in_file='example.csv',
-                                             threshold=1e-2,
-                                             tau=1e-2,
-                                             spring_constant=6.7e-3,
-                                             trigger_time = 0.382,
-                                             dwell_time = 0.992)
+    event_indices = _command_line_config.run_feather(in_file='example.csv',
+                                                     threshold=1e-2,
+                                                     tau=1e-2,
+                                                     spring_constant=6.7e-3,
+                                                     trigger_time = 0.382,
+                                                     dwell_time = 0.992)
     plt.plot(time,force)
     for i in event_indices:
         plt.axvline(time[i])
