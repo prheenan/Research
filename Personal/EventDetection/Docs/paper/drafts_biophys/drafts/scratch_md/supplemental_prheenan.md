@@ -110,6 +110,12 @@ All three algorithms were tuned using 5-fold cross validation. Cross validation 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx 1.5$ cpu-days for FEATHER, see Figure XXX {#fig:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure XXX {#fig:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.
 
 
+Name       Meaning                            Value used in this work
+--------   --------------                     ----------------
+$\tau$     Number of points for spline grid   2% of curve length
+threshold  Probability used to reject events  Determined by parameter sweep
+
+
 ## Performance metrics
 
 
@@ -128,6 +134,8 @@ $d_{(\nu,F),i}$ | joint histogram of $\nu_i$ and $F_i$ divided by K  | -      | 
 
 
 ## {#sec:Timing} Algorithmic time complexity}
+
+All timing and tuning results were obtained using a desktop with 16 GB of RAM, a 3.7 GHz i7 CPU, and a 1 TB hard drive. 
 
 Figure \fRef{Timing} compares the runtimes, T(N), of FEATHER and the baselines. The runtime of each algorithm is linear with curve size. FEATHER has a roughly tenfold better asymptotic slope than the baselines.  
 
@@ -173,4 +181,32 @@ Figure \fRef{Timing} compares the runtimes, T(N), of FEATHER and the baselines. 
 \centering
 \includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
 \end{figure}
+
+## Extra text
+
+### AFM
+
+Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of molecules.  AFM as an imaging technique can resolve sub-nanometer  molecular structure such as the major and minor grooves of DNA @ido_beyond_2013, lattice structure of membrane-bound proteins @muller_surface_1999, and real-time motion of motor proteins @ando_high-speed_2013. As a force spectroscopy technique, AFM is capable of dynamic experiments such as measuring the unfolding and refolding kinetics of single proteins @he_direct_2015, unzipping double-stranded 
+DNA @krautbauer_unzipping_2003, and determining the unfolding and refolding 
+pathways for membrane proteins @yu_hidden_2017. The viability of AFM in a wide
+ range of temperatures, solvents, and other environmental variables makes it 
+attractive for studying biological systems. 
+
+During an SMFS-AFM experiment, a cantilever-bound tip with a nanometer-sized radius interacts with a sample (Figure {#fig:diagram}). The interaction is measured via an optical lever arm system @meyer_novel_1998 in which the displacement of the tip is recorded via deflection of a laser focused on the cantilever. A calibrated tip measures interaction forces from piconewtons to nanonewtons. 
+
+
+## FEATHER details
+
+
+FEATHER improves on previous methods by using information present in the approach of the AFM cantilever to the surface-bound molecules (Figure {#fig:diagram}). The algorithm is based on a probabilistic model of a signal lacking any events, called the *no-event model*, described in {#sec:DesignDetails}. The algorithm has the following basic steps:
+
+
+
+1. Estimate the no-event parameters (see Figure {#fig:FeatherExample}) from the approach curve.
+2. Fit the no-event model to the retract curve.
+3. Calculate the upper bound on the probability of each retract point given the model.
+4. Iteratively update the probability to remove false positives.
+5. Report contiguous regions with probabilities lower than a user-specific threshold as events.
+
+
 

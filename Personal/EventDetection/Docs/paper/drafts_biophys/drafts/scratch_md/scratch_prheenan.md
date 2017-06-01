@@ -11,31 +11,19 @@ Received for publication "Staff will complete"  and in final form "Staff will co
 
 In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time (XXX ). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (see Figure {#fig:diagram}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
 
-Atomic force microscopy (AFM) is a powerful tool for studying the mechanical properties of molecules.  AFM as an imaging technique can resolve sub-nanometer  molecular structure such as the major and minor grooves of DNA @ido_beyond_2013, lattice structure of membrane-bound proteins @muller_surface_1999, and real-time motion of motor proteins @ando_high-speed_2013. As a force spectroscopy technique, AFM is capable of dynamic experiments such as measuring the unfolding and refolding kinetics of single proteins @he_direct_2015, unzipping double-stranded 
-DNA @krautbauer_unzipping_2003, and determining the unfolding and refolding 
-pathways for membrane proteins @yu_hidden_2017. The viability of AFM in a wide
- range of temperatures, solvents, and other environmental variables makes it 
-attractive for studying biological systems. 
-
-During an SMFS-AFM experiment, a cantilever-bound tip with a nanometer-sized radius interacts with a sample (Figure {#fig:diagram}). The interaction is measured via an optical lever arm system @meyer_novel_1998 in which the displacement of the tip is recorded via deflection of a laser focused on the cantilever. A calibrated tip measures interaction forces from piconewtons to nanonewtons. 
-
 ----
 ![](figures/diagram.png){#fig:diagram}
 **Figure** {#fig:diagram} Idiot Diagram
 ----
 
 
-The analysis and interpretation of SMFS experiments is dependent on the attachment of the probe to the molecule of interest. In AFM, quality attachments between the tip and the sample may occur less than one curve in tens of thousands @bosshart_reference-free_2012. Strategies exist to improve attachment rates by coating the AFM tip with a molecule that binds readily to the sample of interest @walder_robert_rapid_nodate. However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting SMFS data and locating possible events (see Figure {#fig:flowchart}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in SMFS data management and analysis.
+The analysis and interpretation of SMFS experiments is dependent on the attachment of the probe to the molecule of interest. Quality attachments between the probe and the sample may occur less than one curve in tens of thousands @bosshart_reference-free_2012. Strategies exist to improve attachment rates by coating the force probe with a molecule that binds readily to the sample of interest @walder_robert_rapid_nodate. However, the majority of data is still uninterpretable and must be removed. Although a trained human is capable of sorting SMFS data and locating possible events (see Figure {#fig:flowchart}), this process is time-consuming and not scientifically reproducible. Excluding data without events and identifying the locations of events is a major challenge in SMFS data management and analysis.
 
 Methods exist to automate detecting events within SMFS data. Automation removes the burden of manual data filtering and improves scientific reproducibility. Techniques for automated event detection in \fec{}s include aligning by the contour length at each extension by applying polymer models [@bosshart_reference-free_2012; @kuhn_automated_2005] thresholding based on signal or noise characteristics;[@gergely_semi-automatized_2001; @roduit_openfovea:_2012] and classification based on transformations of the data into frequency or derivative spaces [@kasas_fuzzy_2000; @garcia-masso_automated_2016; @benitez_searching_2017]. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization. Specifically, contour-length alignment algorithms bias results towards dominant features and necessarily require a polymer model for the contour length (as a function of force and extension). In SMFS studies of molecules with no existing polymer model or which exhibit rare behavior, alignment algorithms have limited use.  Thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As shown below, these methods do not generalize well to the typical range of SMFS data (Figure {#fig:performance}).
 
 This work describes a new method for detecting events in \fec{}s.  The algorithm, named FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), requires no \textit{a priori} knowledge of the polymer under study, does not bias data interpretation towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well.
 
 # Materials and Methods
-
-## Algorithm design and analysis
-
-All timing and tuning results were obtained using a desktop with 16 GB of RAM, a 3.7 GHz i7 CPU, and a 1 TB hard drive. 
 
 --------------------------
 ![{#fig:flowchart}](figures/flowchart.png)
@@ -44,36 +32,17 @@ All timing and tuning results were obtained using a desktop with 16 GB of RAM, a
 
 ## Algorithm description
 
-FEATHER improves on previous methods by using information present in the approach of the AFM cantilever to the surface-bound molecules (Figure {#fig:diagram}). The algorithm is based on a probabilistic model of a signal lacking any events, called the *no-event model*, described in {#sec:DesignDetails}. The algorithm has the following basic steps:
-
-
-
-1. Estimate the no-event parameters (see Figure {#fig:FeatherExample}) from the approach curve.
-2. Fit the no-event model to the retract curve.
-3. Calculate the upper bound on the probability of each retract point given the model.
-4. Iteratively update the probability to remove false positives.
-5. Report contiguous regions with probabilities lower than a user-specific threshold as events.
-
-
  FEATHER calculates an upper bound on the probability of no event occurring at each time point, using parameters estimated from the approach portion of the curve (see Section {#sec:DesignDetails}) and a smoothing parameter from the user (see Table {#tbl:Parameters}). The probability at each point is iteratively updated to remove the effect of adhesions and other false positives. This last step is the only step requiring knowledge specific to SMFS. As shown in Figure {#fig:flowchart}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#tbl:Parameters} and Section {#sec:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in Section {#sec:Annotation}.
 
 ## Choice of methods for comparison
 
 The following two algorithms were chosen for comparison to FEATHER: 
 
-- The AFM-specific 'event_find' routine from the OpenFovea AFM analysis package.@roduit_openfovea:_2012
-- The general-purpose 'find_peaks_cwt' method from the Scientific Python package. 
+- The thresholding 'event_find' routine from the OpenFovea AFM analysis package.@roduit_openfovea:_2012
+- The wavelet-based 'find_peaks_cwt' method from Scientific Python. 
 @jones_scipy:_2001
 
- These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis. Unlike quadratic alignment algorithms in contour length space, these methods scale like O(N) and O(N$\cdot\log$(N)) respectively, where N is the length of a curve to be analyzed. Linear or near-linear scaling is desirable for analyzing hundreds of force-extension curves with millions of points each. These baselines represent two common approaches to event detection in AFM, since the OpenFovea method is a thresholding algorithm, and the Scientific Python method uses wavelet transformations. 
-
-Name       Meaning                            Value used in this work
---------   --------------                     ----------------
-$\tau$     Number of points for spline grid   2% of curve length
-threshold  Probability used to reject events  Determined by parameter sweep
-
-[Table Caption]
-
+ These methods were chosen to provide a representative sample of the viable techniques used in AFM data analysis, since they utilize thresholding and wavelet transformation, two classes of event-detection techniques. 
 
 ## Performance metrics
 
