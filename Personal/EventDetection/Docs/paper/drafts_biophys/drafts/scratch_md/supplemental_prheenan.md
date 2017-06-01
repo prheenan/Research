@@ -1,4 +1,4 @@
-#Sample and cantilever preparation [{#sec:SampleDetails}]
+#Sample and cantilever preparation {#sec:SampleDetails}
 
 ## {#sec:Surface} Azide-functionalized surfaces
 
@@ -125,6 +125,18 @@ $d_{(\nu,F),i}$ | joint histogram of $\nu_i$ and $F_i$ divided by K  | -      | 
 **relative event error** | $P_{95}$     	        | [0,1]  | 0 
 **rupture BCC** | 1-$<d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}>$ | [0,1] | 0 
 [Table Caption]
+
+
+## {#sec:Timing} Algorithmic time complexity}
+
+Figure \fRef{Timing} compares the runtimes, T(N), of FEATHER and the baselines. The runtime of each algorithm is linear with curve size. FEATHER has a roughly tenfold better asymptotic slope than the baselines.  
+
+\begin{figure}[htpb]
+\caption{\fLabel{Timing} Big-O runtime of each algorithm is approximately linear. *(A)* The runtime per curve versus number of points in the curve, T(N), is reported for each algorithm. Lines around each algorithm show upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n, where a$_0$ and a$_1$ are coefficients to the least-squares fit of the runtime. *(B)* This plot shows the asymptotic runtime per data point, a$_1$, for each algorithm from (A). }
+\centering
+\includegraphics[width=\figwidth]{timing.pdf}% Here is how to import EPS art
+\end{figure}
+
 
 
 \begin{figure}[htpb]
