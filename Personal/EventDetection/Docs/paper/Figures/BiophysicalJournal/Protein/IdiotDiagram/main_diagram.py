@@ -373,7 +373,7 @@ def run():
     for i in range(len(slice_starts)-2):
         slice_tmp = slice(slice_starts[i],slice_starts[i+1]+1,1)
         plt.plot(x_cartoon[slice_tmp],f[slice_tmp],color=colors[i])
-    PlotUtilities.lazyLabel("Time","Force","Analysis Scheme",**lazy_kwargs )
+    PlotUtilities.lazyLabel("Time","Force","Analysis scheme",**lazy_kwargs )
     PlotUtilities.no_x_label(ax_fec)
     PlotUtilities.no_x_ticks(ax_fec)
     PlotUtilities.no_y_label(ax_fec)
