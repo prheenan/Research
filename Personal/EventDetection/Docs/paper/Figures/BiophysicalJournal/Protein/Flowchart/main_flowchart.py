@@ -28,7 +28,7 @@ def slice_window_around(event_idx,time_plot,fraction):
     return event_bounding_slice
     
 
-def tick_style(num_major=4):
+def tick_style(num_major=3):
     ax = plt.gca()
     PlotUtilities.tom_ticks(ax=ax,num_major=num_major,change_x=False)
 
@@ -89,7 +89,7 @@ def run():
     gs = gridspec.GridSpec(nrows=n_rows,ncols=n_cols,
                            width_ratios=[1 for _ in range(n_cols)],
                            height_ratios=[0.75,0.75,0.75,0.75,1,1])
-    fig = PlotUtilities.figure(figsize=(3.25,5))
+    fig = PlotUtilities.figure(figsize=(3.25,4.25))
     # plot the 'raw' force and spline
     ax_raw = plt.subplot(gs[0,:])
     plt.plot(time_plot,force_plot,label="Raw",**raw_force_kwargs)    
@@ -220,7 +220,7 @@ def run():
            [loc_minor for _ in range(3)]
     PlotUtilities.label_tom(fig,loc=locs)
     PlotUtilities.savefig(fig,"./flowchart.png",
-                          subplots_adjust=dict(hspace=0.4,wspace=0.35))
+                          subplots_adjust=dict(hspace=0.48,wspace=0.35))
     
 
 if __name__ == "__main__":

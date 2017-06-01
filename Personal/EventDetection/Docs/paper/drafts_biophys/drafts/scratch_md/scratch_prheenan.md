@@ -29,10 +29,7 @@ The analysis and interpretation of SMFS experiments is dependent on the attachme
 
 Methods exist to automate detecting events within SMFS data. Automation removes the burden of manual data filtering and improves scientific reproducibility. Techniques for automated event detection in \fec{}s include aligning by the contour length at each extension by applying polymer models [@bosshart_reference-free_2012; @kuhn_automated_2005] thresholding based on signal or noise characteristics;[@gergely_semi-automatized_2001; @roduit_openfovea:_2012] and classification based on transformations of the data into frequency or derivative spaces [@kasas_fuzzy_2000; @garcia-masso_automated_2016; @benitez_searching_2017]. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization. Specifically, contour-length alignment algorithms bias results towards dominant features and necessarily require a polymer model for the contour length (as a function of force and extension). In SMFS studies of molecules with no existing polymer model or which exhibit rare behavior, alignment algorithms have limited use.  Thresholding and classification-based algorithms generally require optimizing many hard-to-interpret parameters. As shown below, these methods do not generalize well to the typical range of SMFS data (Figure {#fig:performance}).
 
-This thesis describes a new method for detecting events in \fec{}s.  The algorithm, named FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), requires no \textit{a priori} knowledge of the polymer under study, does not bias data interpretation towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well. FEATHER is designed to make few assumptions about the data, operate over a wide range of SMFS experimental conditions, and require a small time footprint compared to existing techniques.  
-
-Chapter 2 of this thesis describes the sample preparation and data acquisition used to measure the \fec{}s of functionalized double-stranded DNA pulled by functionalized AFM cantilevers (Figure {#fig:diagram}).  The unbinding events in the force-extension curves are then manually annotated at multiple pulling velocities, effective contour lengths, and events per curve (see XXX \tRef{statistics}). Finally, the details and improved performance of FEATHER are described. 
-
+This work describes a new method for detecting events in \fec{}s.  The algorithm, named FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), requires no \textit{a priori} knowledge of the polymer under study, does not bias data interpretation towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well.
 
 # Materials and Methods
 
@@ -80,7 +77,7 @@ threshold  Probability used to reject events  Determined by parameter sweep
 
 ## Performance metrics
 
-Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table {#tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces. 
+Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table {#tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces.  (XXX label )
 
 
 --------------------------------------------------- 
@@ -118,3 +115,12 @@ FEATHER could be used in different scientific domains than SMFS. To reduce the r
 # Acknowledgments
 
 # References
+
+[//]: # (see: 
+stackoverflow.com/questions/16427637/pandoc-insert-appendix-after-bibliography)
+
+<div id="refs"></div>
+
+# Supplemental Information
+
+\newpage

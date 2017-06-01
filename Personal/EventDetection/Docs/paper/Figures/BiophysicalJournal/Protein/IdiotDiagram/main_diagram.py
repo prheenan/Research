@@ -176,14 +176,15 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
     predicted_line_style = ":"
+    y_fudge = abs(np.diff(ylim))
     plt.text(x=np.mean(predicted_x),
-             y=np.mean(ylim)+abs(np.diff(ylim))*0.1,backgroundcolor='c',
+             y=np.mean(ylim)+y_fudge*0.1,backgroundcolor='c',
              bbox=dict(linestyle=predicted_line_style,color='c'),color='w',
-             s="Predicted events",rotation=90,zorder=10,**text_box_kwargs)
+             s="Predicted\nevents",rotation=90,zorder=10,**text_box_kwargs)
     # plot a text box for the event
     plt.axvline(event_time,color='g')
-    plt.text(x=event_time-abs(np.diff(plt.xlim()))*0.05,
-             y=np.mean(ylim),backgroundcolor='g',
+    plt.text(x=event_time-abs(np.diff(plt.xlim()))*0.04,
+             y=np.mean(ylim)- y_fudge*0.1,backgroundcolor='g',
              bbox=dict(linestyle='-',color='g'),color='w',
              s="True event",rotation=90,zorder=10,**text_box_kwargs)
     # plot an from the event to the closest x 
@@ -342,7 +343,7 @@ def run():
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
-    fig = PlotUtilities.figure(figsize=(3.25,6))
+    fig = PlotUtilities.figure(figsize=(3.25,5.5))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:,0])
     cantilever_image_plot(image_location)
@@ -350,7 +351,7 @@ def run():
     for spine in in_ax.spines.values():
         spine.set_visible(False)
     # # plot the cartoon of the fec; easier to just call out the axis
-    ax_fec = plt.axes([0.635,0.86,0.31,0.105])
+    ax_fec = plt.axes([0.635,0.87,0.31,0.095])
     # define the regions where we are attached to the molecule...
     slice_tuples = [ [slice(0,0.05),0.08],
                      [slice(0,0.2),0.25],
@@ -415,7 +416,7 @@ def run():
     PlotUtilities.lazyLabel("","F (pN)",
                             "Extracting rupture properties",
                             **lazy_kwargs)
-    PlotUtilities.tom_ticks(num_major=5,change_x=False)
+    PlotUtilities.tom_ticks(num_major=4,change_x=False)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis

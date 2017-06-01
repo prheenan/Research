@@ -55,7 +55,7 @@ def write_coeffs_file(out_file,coeffs):
         f.write(final)
 
 def tick_style_log(**kwargs):
-    PlotUtilities.tom_ticks(plt.gca(),num_major=6,**kwargs)
+    PlotUtilities.tom_ticks(plt.gca(),num_major=3,**kwargs)
 
 
 def run():
@@ -74,7 +74,7 @@ def run():
                                                 data_file)
     coeffs_compare = [m.coefficients() for m in metrics]
     write_coeffs_file("./coeffs.txt",coeffs_compare)
-    fig = PlotUtilities.figure(figsize=(7,4))
+    fig = PlotUtilities.figure(figsize=(7,3))
     colors = Plotting.algorithm_colors()
     n_rows = 3
     n_cols = 3
@@ -83,13 +83,14 @@ def run():
     xlim_rupture = [-5,300]
     legend_locs = ['upper right','upper left','upper left']
     titles = ["FEATHER","Fovea","Wavelet"]
+    legend_loading = [None,(0.1,0.05),None]
+    legend_kwargs_style = dict(fontsize=8,handlelength=0.75,handletextpad=0.25)
     for i,m in enumerate(metrics):
         offset = n_rows * i
         # the first column gets the algorithm label; the first row gets the
         # metric label
         kw_tmp = dict(title_kwargs=dict(fontweight='bold',color='b',fontsize=9),
-                      legend_kwargs=dict(fontsize=8,handlelength=0.75,
-                                         handletextpad=0.25))
+                      legend_kwargs=legend_kwargs_style)
         if offset == 0:
             title_dist = "Location error"
             title_load = r"Loading rate (NuG2 + $\mathbf{\alpha_3}$D)"
@@ -101,7 +102,7 @@ def run():
         if (last_row):
             xlabel_dist = "Relative Error ($\mathbf{x_k}$)"
             xlabel_load = "Loading Rate (pN/s)"
-            xlabel_rupture_force = "F$_R$ (pN)"
+            xlabel_rupture_force = "F$_\mathbf{R}$ (pN)"
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
         ylabel_dist = \
@@ -152,6 +153,9 @@ def run():
         plt.xlim(xlim_load)               
         if not last_row:
             PlotUtilities.no_x_label(ax_load)
+        # get the locations
+        if legend_loading[i] is not None:
+            PlotUtilities.legend(loc=(legend_loading[i]),**legend_kwargs_style)
         PlotUtilities.no_y_label(ax_load)
         tick_style_log()
         # # make the rupture force histogram
