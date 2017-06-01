@@ -12,6 +12,8 @@ sys.path.append('../../../../../')
 from Research.Personal.EventDetection._2SplineEventDetector import \
     _command_line_config
 
+import argparse
+
 def parse_and_run():
     """
     uses argparse to get the arguments _command_line_config.run_feather needs

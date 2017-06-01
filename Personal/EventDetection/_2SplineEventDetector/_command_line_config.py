@@ -12,7 +12,7 @@ import sys
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import GenUtilities
 from IgorUtil.PythonAdapter import PxpLoader,TimeSepForceObj
-import argparse,h5py
+import h5py
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 
 

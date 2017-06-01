@@ -8,7 +8,7 @@ function []=feather_example()
     base_path = [base,'PythonCommandLine/FEATHER/'];
     % read the input file
     input_csv = 'example.csv';
-    data = csvread(input_csv,2,0);
+    data = csvread(input_csv);
     % get the individual columns, for plotting purposes
     time = data(:,1);
     separation = data(:,2);

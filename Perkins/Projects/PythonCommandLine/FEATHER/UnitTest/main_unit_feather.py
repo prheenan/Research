@@ -27,8 +27,8 @@ def run():
     # # (1) through an intermediate '.csv' file
     data = np.loadtxt('example.csv',delimiter=',',skiprows=0)
     time,sep,force = data[:,0],data[:,1],data[:,2]
-    threshold = 1e-2
-    tau = 1e-2
+    threshold = 1e-3
+    tau = 2e-2
     meta_dict = dict(threshold=threshold,
                      tau=tau,
                      spring_constant=6.7e-3,
@@ -52,6 +52,7 @@ def run():
     for i in event_indices_1:
         plt.axvline(time[i])
     plt.show()
+    print("Found events at indices: {:s}".format(event_indices_1))
     
 
 if __name__ == "__main__":
