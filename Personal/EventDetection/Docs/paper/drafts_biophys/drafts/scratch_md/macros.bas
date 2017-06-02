@@ -23,5 +23,9 @@ Attribute wrap_table.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.Macro3"
             t.Rows.AllowOverlap = False
         End If
     Next
+    'Biophysical journal wants...
+    ' (1) justified paragraphs
     Selection.ParagraphFormat.Alignment = wdAlignParagraphJustify
+    ' (2) Time New Roman Font
+    Selection.Font.Name = "Times New Roman"
 End Sub
