@@ -226,7 +226,8 @@ def run():
         PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
         # sav out the plot
         PlotUtilities.savefig(fig,plot_name,
-                              subplots_adjust=dict(hspace=0.1,wspace=0.1))
+                              subplots_adjust=dict(hspace=0.1,wspace=0.1,
+                                                   bottom=0.02,top=0.98))
     
 
 if __name__ == "__main__":
