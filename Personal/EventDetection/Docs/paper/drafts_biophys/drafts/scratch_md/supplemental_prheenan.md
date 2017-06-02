@@ -209,4 +209,10 @@ FEATHER improves on previous methods by using information present in the approac
 5. Report contiguous regions with probabilities lower than a user-specific threshold as events.
 
 
+## Probe attachment
+
+The analysis and interpretation of SMFS experiments is dependent on the attachment of the probe to the molecule of interest. Quality attachments between the probe and the sample may occur less than one curve in tens of thousands @bosshart_reference-free_2012. Strategies exist to improve attachment rates by coating the force probe with a molecule that binds readily to the sample of interest @walder_robert_rapid_nodate. However, the majority of data is still uninterpretable and must be removed. Excluding data without events and identifying the locations of events is a major challenge in SMFS data management and analysis.
+
+
+
 
