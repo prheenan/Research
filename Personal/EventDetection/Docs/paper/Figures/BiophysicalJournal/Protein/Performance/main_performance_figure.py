@@ -62,14 +62,14 @@ def tick_style_log(**kwargs):
 
 def make_metric_plot(metrics,
                      xlim_dist=[1e-5,2],
-                     xlim_load=[1,1e5],
-                     xlim_rupture=[-5,300]):
+                     xlim_load=[1e-3,1e5],
+                     xlim_rupture=[-120,320]):
     colors = Plotting.algorithm_colors()
     n_rows = 3
     n_cols = 3
     legend_locs = ['upper right','upper left','upper left']
     titles = ["FEATHER","Fovea","Wavelet"]
-    legend_loading = [None,(0.1,0.05),None]
+    legend_loading = [None,None,None]
     legend_kwargs_style = dict(fontsize=8,handlelength=0.75,handletextpad=0.25)
     for i,m in enumerate(metrics):
         offset = n_rows * i
@@ -112,7 +112,7 @@ def make_metric_plot(metrics,
         _lim_force_plot,_bins_rupture_plot,_lim_load_plot,_bins_load_plot = \
             Learning.limits_and_bins_force_and_load(ruptures_pred,ruptures_true,
                                                     loading_true,loading_pred,
-                                                    limit=0.02)            
+                                                    limit=False)            
         # # make the 'just the distance' figures
         ax_dist = plt.subplot(n_rows,n_cols,(offset+1))
         Plotting.histogram_event_distribution(use_q_number=True,
@@ -152,7 +152,7 @@ def make_metric_plot(metrics,
                                         **true_style_histogram)
         PlotUtilities.lazyLabel(xlabel_rupture_force,"",title_rupture_force,
                                 useLegend=False,**kw_tmp)       
-        plt.xlim(xlim_rupture)        
+        plt.xlim(xlim_rupture)                                                 
         plt.yscale('log')
         if not last_row:
             PlotUtilities.no_x_label(ax_rupture)     
