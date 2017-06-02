@@ -150,10 +150,10 @@ def make_metric_plot(metrics,
                                         **pred_style_histogram)
         Plotting.rupture_force_histogram(true,bins=_bins_rupture_plot,
                                         **true_style_histogram)
-        plt.yscale('log')
         PlotUtilities.lazyLabel(xlabel_rupture_force,"",title_rupture_force,
                                 useLegend=False,**kw_tmp)       
-        plt.xlim(xlim_rupture)                                                 
+        plt.xlim(xlim_rupture)        
+        plt.yscale('log')
         if not last_row:
             PlotUtilities.no_x_label(ax_rupture)     
         PlotUtilities.no_y_label(ax_rupture)                
@@ -166,16 +166,12 @@ def make_metric_plot(metrics,
             r.set_ylim(ylim_new)
     
 def get_only_nug2_ruptures(scores):
-    true = scores.ruptures_true
-    pred = scores.ruptures_false
+    # get the indices, sorting the true
+    sort_idx = np.argsort(scores.idx_true)
+    true = np.array([scores.idx_true[i] for i in sort_idx]).reshape(-1,1)
+    pred = np.array(scores.idx_predicted).reshape(-1,1)
     # not interested in anything with just two ruptures
     if (len(true) < 3 or len(pred) < 3):
-        scores.true_x = []
-        scores.pred_x = []
-        scores.ruptures_true = []
-        scores.ruptures_pred = []
-        scores.idx_true = []
-        scores.idx_pred = []
         return scores
     # POST: something to do; at least 3 ruptures
     # pairwise_distances_argmin_min:
@@ -185,15 +181,18 @@ def get_only_nug2_ruptures(scores):
                                                                        Y=pred)
     # only interested from the second to the next to last, since the 6 ruptures 
     # are: alpha3D, NUG2 (4 of these), biotin/streptavidin
-    slice_we_care_about = slice(1,-1,None)
-    idx_we_want = idx_closest_pred_to_true[slice_we_care_about]
-    scores.ruptures_true = scores.ruptures_true[slice_we_care_about]
-    scores.ruptures_pred = scores.rutpures_pred[idx_we_want]
+    logical_fec_slice = slice(1,-1,None)
+    slice_true = sort_idx[logical_fec_slice]
+    idx_we_want = idx_closest_pred_to_true[logical_fec_slice]
+    pred_slice = lambda x: [x[i] for i in idx_we_want]
+    true_slice = lambda x: [x[i] for i in slice_true]
+    scores.ruptures_true = true_slice(scores.ruptures_true)
+    scores.ruptures_predicted = pred_slice(scores.ruptures_predicted)
     # also update all the indices and such
-    scores.true_x = scores.true_x[slice_we_care_about]
-    scores.pred_x = scores.pred_x[slice_we_care_about]
-    scores.idx_true = scores.idx_true[slice_we_care_about]
-    scores.idx_pred = scores.idx_pred[slice_we_care_about]
+    scores.true_x = true_slice(scores.true_x)
+    scores.pred_x = pred_slice(scores.pred_x)
+    scores.idx_true = true_slice(scores.idx_true)
+    scores.idx_predicted = pred_slice(scores.idx_predicted)
     return scores
 
 def run():
@@ -207,19 +206,27 @@ def run():
         This is a description of what is returned.
     """
     data_file = "../_Data/Scores.pkl"
-    metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
-                                                Offline.get_best_metrics,False,
-                                                data_file)
-    coeffs_compare = [m.coefficients() for m in metrics]
-    write_coeffs_file("./coeffs.txt",coeffs_compare)
-    fig = PlotUtilities.figure(figsize=(7,3))
-    make_metric_plot(metrics)
-    axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
-    loc_last_two = [-0.05,1.1]
-    locs = [ [-0.25,1.1], loc_last_two,loc_last_two]
-    PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-    PlotUtilities.savefig(fig,"./performance.png",
-                          subplots_adjust=dict(hspace=0.1,wspace=0.1))
+    kw = dict(score_tx_func=get_only_nug2_ruptures)
+    runs = [ ["./cache.pkl",dict(),"performance.png"],
+             ["./cache_nug2.pkl",kw,"performance_nug2.png"]]
+    for cache_name,keywords,plot_name in runs:
+        # get the metrics we care about
+        metrics = CheckpointUtilities.getCheckpoint(cache_name,
+                                                    Offline.get_best_metrics,
+                                                    False,data_file,
+                                                    **keywords)
+        coeffs_compare = [m.coefficients() for m in metrics]
+        write_coeffs_file("./coeffs.txt",coeffs_compare)
+        # make the plot we want
+        fig = PlotUtilities.figure(figsize=(7,3))
+        make_metric_plot(metrics)
+        axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
+        loc_last_two = [-0.05,1.1]
+        locs = [ [-0.25,1.1], loc_last_two,loc_last_two]
+        PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
+        # sav out the plot
+        PlotUtilities.savefig(fig,plot_name,
+                              subplots_adjust=dict(hspace=0.1,wspace=0.1))
     
 
 if __name__ == "__main__":

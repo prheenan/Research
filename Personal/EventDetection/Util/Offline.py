@@ -65,7 +65,7 @@ class plotting_metrics:
     def safe_concat(self,x):
         flat = []
         for v in x:
-            if (isinstance(v,float)):
+            if (isinstance(v,float) or isinstance(v,np.int64)):
                 flat.append([v])
             else:
                 flat.append(list(v))
@@ -233,7 +233,7 @@ def get_metric_list(data_file):
     return metric_list    
 
 
-def get_best_metrics(data_file):
+def get_best_metrics(data_file,**kw):
     """
     Get the best metrics, given a data file with a list of learners
     (e.g. Scores.pkl)
@@ -244,6 +244,6 @@ def get_best_metrics(data_file):
         best metric for each learner
     """
     learners = CheckpointUtilities.lazy_load(data_file)
-    metrics = [best_metric_from_learner(l) for l in learners]
+    metrics = [best_metric_from_learner(l,**kw) for l in learners]
     return metrics
     
