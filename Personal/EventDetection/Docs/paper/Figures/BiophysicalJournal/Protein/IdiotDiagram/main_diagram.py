@@ -178,21 +178,21 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     predicted_line_style = ":"
     y_fudge = abs(np.diff(ylim))
     plt.text(x=np.mean(predicted_x),
-             y=np.mean(ylim)+y_fudge*0.1,backgroundcolor='c',
-             bbox=dict(linestyle=predicted_line_style,color='c'),color='w',
+             y=np.mean(ylim),backgroundcolor='c',
+             bbox=dict(color='c'),color='w',
              s="Predicted\nevents",rotation=90,zorder=10,**text_box_kwargs)
     # plot a text box for the event
     plt.axvline(event_time,color='g')
-    plt.text(x=event_time-abs(np.diff(plt.xlim()))*0.04,
+    plt.text(x=event_time-abs(np.diff(plt.xlim()))*0.06,
              y=np.mean(ylim)- y_fudge*0.1,backgroundcolor='g',
              bbox=dict(linestyle='-',color='g'),color='w',
-             s="True event",rotation=90,zorder=10,**text_box_kwargs)
+             s="True\nevent",rotation=90,zorder=10,**text_box_kwargs)
     # plot an from the event to the closest x 
     closest_x_idx = np.argmin(np.abs(predicted_x-event_time))
     closest_x = predicted_x[closest_x_idx]
     dx = closest_x-event_time
     dy = 0
-    plt.text(event_time+dx/2,event_force*0.95,r"d$_{t\rightarrow p}$",
+    plt.text(event_time+dx/2,event_force*0.90,r"d$_{t\rightarrow p}$",
              color='g',**text_box_kwargs)
     plt.annotate("", xytext=(event_time, event_force), 
                  xy=(closest_x, event_force),
@@ -203,14 +203,14 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # matplotlib.org/api/pyplot_api.html?highlight=arrow#matplotlib.pyplot.arrow
     # we need to use arowstyle 
     ax = plt.gca()
-    y_text= np.mean(ylim)*1.07
+    y_text= np.mean(ylim)*1
     plot_y = [y_text*1.07,y_text*1.12]
     for x,plot_y_tmp in zip(predicted_x,plot_y):
         ax.annotate("", xy=(event_time, plot_y_tmp), xytext=(x, plot_y_tmp),
                     arrowprops=dict(arrowstyle="->",color='c',
                                     linewidth=linewidth_common,
                                     linestyle='-'))
-    plt.text(event_time+dx/2,y_text,r"d$_{p\rightarrow t}$",
+    plt.text(event_time+dx/2,y_text*0.95,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
     scale_bar_kwargs = dict(dict(y_frac=0.5,y_label_frac=0.1,
@@ -285,7 +285,7 @@ def plot_landscape(x,landscape,ax=plt.gca()):
                 xytext=(x_max-fudge, y_k0), textcoords='data',
                 arrowprops=dict(arrowstyle="->",shrinkA=0,shrinkB=0,
                                 connectionstyle="angle3,angleA=45,angleB=-45"))
-    ax.text(x=x_max,y=y_k0*1.25,s="k$_0$",**text_kwargs)
+    ax.text(x=x_max,y=y_k0*1.35,s="k$_0$",**text_kwargs)
     plt.ylim(y_low_plot*2,max(plt.ylim())*1.1)
     xlim = plt.xlim()
     plt.xlim(xlim[0],xlim[1]+x_range * 0.4)
@@ -338,12 +338,12 @@ def run():
     # 'master' grid spec is 2x1
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
-                                          hspace=0.75,wspace=0.5)
+                                          hspace=0.9,wspace=0.5)
     ylim_force_pN = [-35,max(force_interp_plot)*1.3]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
-    fig = PlotUtilities.figure(figsize=(3.25,5.5))
+    fig = PlotUtilities.figure(figsize=(3.25,4.25))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:,0])
     cantilever_image_plot(image_location)
@@ -389,17 +389,18 @@ def run():
                              models[example_idx],fmt_error,
                              loading_rate_example_pN_per_s)
     PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","",**lazy_kwargs)
-    PlotUtilities.tom_ticks(num_major=3,change_x=False)
+    PlotUtilities.tom_ticks(num_major=2,change_y=False)
     plt.subplot(gs[2,1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
-    PlotUtilities.lazyLabel(df_dt_string + " (pN/s)",
-                            rupture_string + " (pN)","",**lazy_kwargs)
+    xlabel = df_dt_string + " (pN/s)"
+    PlotUtilities.lazyLabel("",rupture_string + " (pN)","",**lazy_kwargs)
+    PlotUtilities.xlabel(xlabel,y=-0.8)
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
     # add axes is [left,bottom,width,height]
-    in_ax_landscape= fig.add_axes([0.085,0.72,0.225,0.17])
+    in_ax_landscape= fig.add_axes([0.085,0.73,0.225,0.17])
     plot_landscape(x,landscape,ax=in_ax_landscape)
     energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
     # remove the upper and right part of the frames
@@ -407,7 +408,7 @@ def run():
     in_ax_landscape.spines['top'].set_visible(False)
     PlotUtilities.lazyLabel("Extension","Free Energy","",**energy_kwargs)
     # # # Second gridspec (se we can more easily control wasted space)
-    gs_data = gridspec.GridSpecFromSubplotSpec(3,1, 
+    gs_data = gridspec.GridSpecFromSubplotSpec(2,1,hspace=0.15, 
                                                subplot_spec=gs0[1])
     # # plot the 'raw' force
     ax1 = plt.subplot(gs_data[0,:])
@@ -427,7 +428,7 @@ def run():
     PlotUtilities.tom_ticks(num_major=5,change_x=False)
     axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
     loc_subplot = [-0.5,1.17]
-    locs = [ [-0.45,1.02],
+    locs = [ [-0.45,1.04],
              loc_subplot,
              loc_subplot,
              loc_subplot,
