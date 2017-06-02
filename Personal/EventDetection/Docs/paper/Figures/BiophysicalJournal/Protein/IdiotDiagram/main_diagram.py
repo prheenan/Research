@@ -107,7 +107,7 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     PlotUtilities.no_x_label(plt.gca())               
     max_time = max(time_plot)
     width = scale_fraction_width * max_time
-    scale_bar_dict = dict(y_label_frac=0.2,linewidth=scale_line_width)
+    scale_bar_dict = dict(linewidth=scale_line_width)
     PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=scale_bar_dict)
 
 def common_text_kwargs():
@@ -213,7 +213,7 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     plt.text(event_time+dx/2,y_text*0.95,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
-    scale_bar_kwargs = dict(dict(y_frac=0.5,y_label_frac=0.1,
+    scale_bar_kwargs = dict(dict(y_frac=0.5,
                                  linewidth=scale_line_width))
     PlotUtilities.x_scale_bar_and_ticks(scale_bar_kwargs)
 
@@ -271,7 +271,7 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     dagger_props['arrowprops']['arrowstyle'] = '<->'
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
                 s=r"",**dagger_props)
-    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.1,s="x$^{\ddag}$",
+    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.125,s="x$^{\ddag}$",
             **text_kwargs)
     # make the delta_G_dagger annotation
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"",**dagger_props)
@@ -285,7 +285,7 @@ def plot_landscape(x,landscape,ax=plt.gca()):
                 xytext=(x_max-fudge, y_k0), textcoords='data',
                 arrowprops=dict(arrowstyle="->",shrinkA=0,shrinkB=0,
                                 connectionstyle="angle3,angleA=45,angleB=-45"))
-    ax.text(x=x_max,y=y_k0*1.35,s="k$_0$",**text_kwargs)
+    ax.text(x=x_max,y=y_k0*1.25,s="k$_0$",**text_kwargs)
     plt.ylim(y_low_plot*2,max(plt.ylim())*1.1)
     xlim = plt.xlim()
     plt.xlim(xlim[0],xlim[1]+x_range * 0.4)
@@ -338,11 +338,12 @@ def run():
     # 'master' grid spec is 2x1
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
-                                          hspace=0.9,wspace=0.5)
+                                          hspace=0.5,wspace=0.5)
     ylim_force_pN = [-35,max(force_interp_plot)*1.3]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
+    ylabel_subplot = lambda ax : ax.yaxis.set_label_coords(-0.25, 0.5) 
     fig = PlotUtilities.figure(figsize=(3.25,4.25))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:,0])
@@ -351,8 +352,7 @@ def run():
     for spine in in_ax.spines.values():
         spine.set_visible(False)
     # # plot the cartoon of the fec; easier to just call out the axis
-    ax_fec = plt.axes([0.635,0.87,0.31,0.095])
-    # define the regions where we are attached to the molecule...
+    ax_fec = plt.subplot(gs[0,1])
     slice_tuples = [ [slice(0,0.05),0.08],
                      [slice(0,0.2),0.25],
                      [slice(0,0.4),0.5],
@@ -379,28 +379,34 @@ def run():
     PlotUtilities.no_x_ticks(ax_fec)
     PlotUtilities.no_y_label(ax_fec)
     PlotUtilities.no_y_ticks(ax_fec)
+    ylabel_subplot(ax_fec)
     # # plot the loading rate stuff
+    ax_rupture = plt.subplot(gs[1,1])
     fmt_error = dict(linewidth=1.5)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
-    plt.subplot(gs[1,1])
     plot_histogram_and_model(rupture_forces,
                              rupture_forces_histograms[example_idx],
                              models[example_idx],fmt_error,
                              loading_rate_example_pN_per_s)
-    PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","",**lazy_kwargs)
-    PlotUtilities.tom_ticks(num_major=2,change_y=False)
-    plt.subplot(gs[2,1])
+    x_label = rupture_string+ " (pN)"
+    PlotUtilities.lazyLabel(x_label,"Count","",**lazy_kwargs)
+    # tuck the x label up into the rupture force
+    plt.xticks([10,40])
+    ax_rupture.xaxis.set_label_coords(0.6, -0.1) 
+    ylabel_subplot(ax_rupture)
+    ax_log_loading = plt.subplot(gs[2,1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
     xlabel = df_dt_string + " (pN/s)"
-    PlotUtilities.lazyLabel("",rupture_string + " (pN)","",**lazy_kwargs)
-    PlotUtilities.xlabel(xlabel,y=-0.8)
+    PlotUtilities.lazyLabel(xlabel,rupture_string + " (pN)","",**lazy_kwargs)
+    ax_log_loading.xaxis.set_label_coords(0.5, -0.2) 
+    ylabel_subplot(ax_log_loading)
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
     # add axes is [left,bottom,width,height]
-    in_ax_landscape= fig.add_axes([0.085,0.73,0.225,0.17])
+    in_ax_landscape= fig.add_axes([0.085,0.555,0.225,0.25])
     plot_landscape(x,landscape,ax=in_ax_landscape)
     energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
     # remove the upper and right part of the frames
@@ -423,7 +429,8 @@ def run():
     # # plot the 'zoomed' axis
     ax_zoom = plt.subplot(gs_data[1:,:])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
-    PlotUtilities.lazyLabel("Time","F (pN)","",**lazy_kwargs)
+    PlotUtilities.lazyLabel("","F (pN)","",**lazy_kwargs)
+    PlotUtilities.xlabel("Time",labelpad=0)
     PlotUtilities.no_x_label(ax_zoom)
     PlotUtilities.tom_ticks(num_major=5,change_x=False)
     axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
@@ -435,7 +442,9 @@ def run():
              [-0.18,1.15],
              [-0.18,0.95]]
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-    PlotUtilities.savefig(fig,"./diagram.png")
+    PlotUtilities.savefig(fig,"./diagram.png",
+                          subplots_adjust=dict(top=0.95,bottom=0.035,
+                                               hspace=0.25))
 
 if __name__ == "__main__":
     run()
