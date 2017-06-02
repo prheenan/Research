@@ -56,9 +56,20 @@ class learning_curve:
         self.list_of_folds = folds
     def set_validation_folds(self,folds):
         self.validation_folds = folds
-    def _scores_by_params(self,train=True):
+    def _scores_by_params(self,train=True,score_tx_func=lambda x: x):
+        """
+        Returns a nested list; first lever is parameter, second level is 
+        folds, third level is all scores in the fold
+
+        Args:
+             train: wherher to get the training or validaiton folds
+             score_tx_func: takes in a scoring object, should also return one
+             useful for (e.g.) only looking at subsets of data
+        Returns:
+             nested list as desribed
+        """
         fold_list = self.list_of_folds if train else self.validation_folds
-        scores_by_params = [ [[s for s in fold.scores]
+        scores_by_params = [ [[score_tx_func(s) for s in fold.scores]
                               for fold in folds_by_param]
                              for folds_by_param in fold_list]
         return scores_by_params
@@ -217,19 +228,20 @@ def get_rupture_in_pN_and_loading_in_pN_per_s(objs):
     loading_rate_pN_per_s = np.array([to_pN(obj.loading_rate) for obj in objs])
     return rupture_forces_pN,loading_rate_pN_per_s
 
-def get_true_and_predicted_ruptures_per_param(learner):
+def get_true_and_predicted_ruptures_per_param(learner,**kw):
     """
     gets the truee and preicted rupture objects for the *validation* folds
     of each learner object 
 
     Args:
          learner: the learner_curve obect to use
+         **kw: passed to _scores_by_params
     Returns:
          tuple of validation true, predicted ruptures
     """
-    train_scores = learner._scores_by_params(train=True)
-    valid_scores = learner._scores_by_params(train=False)
-    # get the validation ruptures (both truee and predicted)
+    train_scores = learner._scores_by_params(train=True,**kw)
+    valid_scores = learner._scores_by_params(train=False,**kw)
+    # get the validation ruptures (both true and predicted)
     ruptures_valid_true = rupture_objects(valid_scores,get_true=True)
     ruptures_valid_pred = rupture_objects(valid_scores,get_true=False)
     return ruptures_valid_true,ruptures_valid_pred

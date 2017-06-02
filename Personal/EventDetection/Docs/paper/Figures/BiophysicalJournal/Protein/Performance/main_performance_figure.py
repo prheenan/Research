@@ -14,6 +14,7 @@ from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities
 
 from Research.Personal.EventDetection.Util import Offline,Plotting,Learning
+from sklearn import metrics
 
 
 def coeff_str(i,j,c,coeffs_array,func):
@@ -58,29 +59,14 @@ def tick_style_log(**kwargs):
     PlotUtilities.tom_ticks(plt.gca(),num_major=3,**kwargs)
 
 
-def run():
-    """
-    <Description>
 
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    data_file = "../_Data/Scores.pkl"
-    metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
-                                                Offline.get_best_metrics,False,
-                                                data_file)
-    coeffs_compare = [m.coefficients() for m in metrics]
-    write_coeffs_file("./coeffs.txt",coeffs_compare)
-    fig = PlotUtilities.figure(figsize=(7,3))
+def make_metric_plot(metrics,
+                     xlim_dist=[1e-5,2],
+                     xlim_load=[1,1e5],
+                     xlim_rupture=[-5,300]):
     colors = Plotting.algorithm_colors()
     n_rows = 3
     n_cols = 3
-    xlim_dist = [1e-5,2]
-    xlim_load = [1,1e5]
-    xlim_rupture = [-5,300]
     legend_locs = ['upper right','upper left','upper left']
     titles = ["FEATHER","Fovea","Wavelet"]
     legend_loading = [None,(0.1,0.05),None]
@@ -178,6 +164,56 @@ def run():
         ylim_new = [0.5,max_limit*1.6]
         for r in axes_counts:
             r.set_ylim(ylim_new)
+    
+def get_only_nug2_ruptures(scores):
+    true = scores.ruptures_true
+    pred = scores.ruptures_false
+    # not interested in anything with just two ruptures
+    if (len(true) < 3 or len(pred) < 3):
+        scores.true_x = []
+        scores.pred_x = []
+        scores.ruptures_true = []
+        scores.ruptures_pred = []
+        scores.idx_true = []
+        scores.idx_pred = []
+        return scores
+    # POST: something to do; at least 3 ruptures
+    # pairwise_distances_argmin_min:
+    # for each row in X (true), the index of the row of Y (pred) which
+    # is closest (according to the specified distance).
+    idx_closest_pred_to_true,_ = metrics.pairwise_distances_argmin_min(X=true,
+                                                                       Y=pred)
+    # only interested from the second to the next to last, since the 6 ruptures 
+    # are: alpha3D, NUG2 (4 of these), biotin/streptavidin
+    slice_we_care_about = slice(1,-1,None)
+    idx_we_want = idx_closest_pred_to_true[slice_we_care_about]
+    scores.ruptures_true = scores.ruptures_true[slice_we_care_about]
+    scores.ruptures_pred = scores.rutpures_pred[idx_we_want]
+    # also update all the indices and such
+    scores.true_x = scores.true_x[slice_we_care_about]
+    scores.pred_x = scores.pred_x[slice_we_care_about]
+    scores.idx_true = scores.idx_true[slice_we_care_about]
+    scores.idx_pred = scores.idx_pred[slice_we_care_about]
+    return scores
+
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    data_file = "../_Data/Scores.pkl"
+    metrics = CheckpointUtilities.getCheckpoint("./cache.pkl",
+                                                Offline.get_best_metrics,False,
+                                                data_file)
+    coeffs_compare = [m.coefficients() for m in metrics]
+    write_coeffs_file("./coeffs.txt",coeffs_compare)
+    fig = PlotUtilities.figure(figsize=(7,3))
+    make_metric_plot(metrics)
     axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
     loc_last_two = [-0.05,1.1]
     locs = [ [-0.25,1.1], loc_last_two,loc_last_two]

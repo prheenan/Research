@@ -199,17 +199,18 @@ def update_limits(previous,new,floor=None):
     to_update_max = np.max(cat_max)
     return [to_update_min,to_update_max]
     
-def best_metric_from_learner(l):
+def best_metric_from_learner(l,**kw):
     """
     returns the best metric from the learner l
 
     Args:
         l: learning_curve object
+        **kw: passed to Learning.get_true_and_predicted_ruptures_per_param
     Returns:
         *best* plotting_metrics
     """
     ruptures_valid_true,ruptures_valid_pred = \
-        Learning.get_true_and_predicted_ruptures_per_param(l)
+        Learning.get_true_and_predicted_ruptures_per_param(l,**kw)
     ret  = [metrics(true,pred) \
             for true,pred in zip(ruptures_valid_true,ruptures_valid_pred)]
     return plotting_metrics(l,ret)
