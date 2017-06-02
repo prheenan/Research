@@ -204,13 +204,13 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # we need to use arowstyle 
     ax = plt.gca()
     y_text= np.mean(ylim)*1
-    plot_y = [y_text*1.07,y_text*1.12]
+    plot_y = [y_text*1.0,y_text*1.12]
     for x,plot_y_tmp in zip(predicted_x,plot_y):
         ax.annotate("", xy=(event_time, plot_y_tmp), xytext=(x, plot_y_tmp),
                     arrowprops=dict(arrowstyle="->",color='c',
                                     linewidth=linewidth_common,
                                     linestyle='-'))
-    plt.text(event_time+dx/2,y_text*0.95,r"d$_{p\rightarrow t}$",
+    plt.text(event_time+dx*0.67,y_text*0.85,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
     scale_bar_kwargs = dict(dict(y_frac=0.5,
@@ -409,7 +409,7 @@ def run():
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
     # add axes is [left,bottom,width,height]
-    in_ax_landscape= fig.add_axes([0.085,0.555,0.225,0.25])
+    in_ax_landscape= fig.add_axes([0.085,0.545,0.225,0.25])
     plot_landscape(x,landscape,ax=in_ax_landscape)
     energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
     # remove the upper and right part of the frames
