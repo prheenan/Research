@@ -343,6 +343,7 @@ def run():
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
                         markersize=75)
+    # want all the subplots to have aligned y labels
     ylabel_subplot = lambda ax : ax.yaxis.set_label_coords(-0.25, 0.5) 
     fig = PlotUtilities.figure(figsize=(3.25,4.25))
     # # plot the experimental image
@@ -424,6 +425,7 @@ def run():
                             "Extracting rupture properties",
                             **lazy_kwargs)
     PlotUtilities.tom_ticks(num_major=4,change_x=False)
+    ylabel_subplot(ax1)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
     # # plot the 'zoomed' axis
@@ -441,6 +443,7 @@ def run():
              loc_subplot,
              [-0.18,1.15],
              [-0.18,0.95]]
+    ylabel_subplot(ax_zoom)
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
     PlotUtilities.savefig(fig,"./diagram.png",
                           subplots_adjust=dict(top=0.95,bottom=0.035,
