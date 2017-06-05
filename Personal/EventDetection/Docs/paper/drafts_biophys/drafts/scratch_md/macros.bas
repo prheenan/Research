@@ -15,12 +15,29 @@ Attribute wrap_table.VB_ProcData.VB_Invoke_Func = "Normal.NewMacros.Macro3"
     Dim t As Table
     For Each t In ActiveDocument.Tables
         i = i + 1
-        If (i = 1 Or i = 2 Or i = 3) Then
+        If (i <= 3) Then
             t.Rows.WrapAroundText = True
             t.Rows.HorizontalPosition = wdTableLeft
             t.Rows.VerticalPosition = InchesToPoints(1)
             t.Rows.RelativeVerticalPosition = wdRelativeVerticalPositionPage
             t.Rows.AllowOverlap = False
+            t.Rows.AllowBreakAcrossPages = False
+            ' Make first two tables one-column by default
+            If (i <= 2) Then
+                With t
+                    .TopPadding = InchesToPoints(0)
+                    .BottomPadding = InchesToPoints(0)
+                    .LeftPadding = InchesToPoints(0.02)
+                    .RightPadding = InchesToPoints(0.02)
+                    .Spacing = 0
+                    .AllowPageBreaks = False
+                    .AllowAutoFit = False
+                End With
+                t.PreferredWidthType = wdPreferredWidthPoints
+                t.PreferredWidth = InchesToPoints(3.5)
+                t.Columns.PreferredWidthType = wdPreferredWidthPoints
+                t.Columns.PreferredWidth = InchesToPoints(3.25)
+            End If
         End If
     Next
     'Biophysical journal wants...

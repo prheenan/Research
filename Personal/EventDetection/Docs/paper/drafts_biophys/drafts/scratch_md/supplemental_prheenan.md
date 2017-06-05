@@ -1,5 +1,11 @@
-
 #Sample and cantilever preparation {#sec:SampleDetails}
+
+Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere @walder_robert_rapid_nodate. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
+
+## Atomic force microscopy
+
+All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research Cypher ES. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 30 $\mathrm{\mu}$m grids at points separated by 1 $\mathrm{\mu}$m. The stage was translated to a new grid point after measuring three force-extension curves. 
+
 
 ## {#sec:Surface} Azide-functionalized surfaces
 
@@ -85,14 +91,6 @@ The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution 
 The quality of FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in {#fig:Code}. The calculation of each of these probabilities is exactly the same as Equation {#eq:featherprobability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
 
 
-
-## Sample Preparation
-
-Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere @walder_robert_rapid_nodate. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
-
-## Atomic force microscopy
-
-All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research Cypher ES. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 30 $\mathrm{\mu}$m grids at points separated by 1 $\mathrm{\mu}$m. The stage was translated to a new grid point after measuring three force-extension curves. 
 
 --------------------------------------------------- 
 ![{#fig:prep}](figures/prep.pdf.png)      
