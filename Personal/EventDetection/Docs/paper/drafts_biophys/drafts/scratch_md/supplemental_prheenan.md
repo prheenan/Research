@@ -1,3 +1,4 @@
+
 #Sample and cantilever preparation {#sec:SampleDetails}
 
 ## {#sec:Surface} Azide-functionalized surfaces
@@ -36,6 +37,12 @@ This section details the event-detection algorithm. The following conventions ar
  \item All variables with lowercase letters are either instances of the corresponding uppercase random variables (\textit{i.e.}, measurements) or pure functions.
  \item All variables with a hat (\textit{e.g.}, $\hat{\epsilon}_t$) are estimators of a variable.
 \end{enumerate}
+
+--------------------------------------------------- 
+![{#fig:prep}](figures/algorithm.pdf.png)      
+**Figure {#fig:algorithm_details}.** 
+--------------------------------------------------- 
+
 
 ##Defining the no-event hypothesis
 
@@ -87,6 +94,12 @@ Site-specific chemistry is used to improve the acquisition rate and quality of d
 
 All atomic force microscopy (AFM) measurements were carried out using an Asylum Cypher Asylum Research Cypher ES. The spring constant and sensitivity were determined using the equipartition theorem method @hutter_calibration_1993. All measurements were carried out with a 2 second pause at the surface. To promote molecular attachments to the tip, measurements were taken over a series of square, 30 $\mathrm{\mu}$m grids at points separated by 1 $\mathrm{\mu}$m. The stage was translated to a new grid point after measuring three force-extension curves. 
 
+--------------------------------------------------- 
+![{#fig:prep}](figures/prep.pdf.png)      
+**Figure {#fig:prep}.** Purity of the sample preparation. **(A)** 2\% electrophoretic agarose gel, showing a major band just below 2kbp, as expected. **(B)** A false-color AFM image of the DNA bound to mica. 
+--------------------------------------------------- 
+
+
 ## Data Annotation
 
 Two hundred force-extension curves with events were obtained at three pulling velocities (100 nm/s, 500 nm/s, 1000nm/s). The start and end of each event in a curve were obtained through manual annotation. More statistical information on the data, including curve lengths and number of events per curve, is given in Table {#tbl:statistics}.
@@ -101,6 +114,13 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 1000  | 200 | 117000 | 7000  | 174 | 25 | 1 | 0  
 [Data set statistical information \tLabel{statistics} For each loading rate v in the data set, this table lists the number of curves $N_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events $N_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. ]
 
+
+
+
+--------------------------------------------------- 
+![{#fig:DNA}](figures/landscape.pdf.png)
+**Figure {#fig:DNA}.** 
+--------------------------------------------------- 
 
 ## Algorithm tuning
 
@@ -139,48 +159,11 @@ All timing and tuning results were obtained using a desktop with 16 GB of RAM, a
 
 Figure \fRef{Timing} compares the runtimes, T(N), of FEATHER and the baselines. The runtime of each algorithm is linear with curve size. FEATHER has a roughly tenfold better asymptotic slope than the baselines.  
 
-\begin{figure}[htpb]
-\caption{\fLabel{Timing} Big-O runtime of each algorithm is approximately linear. *(A)* The runtime per curve versus number of points in the curve, T(N), is reported for each algorithm. Lines around each algorithm show upper and lower bounds of the form T$_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n, where a$_0$ and a$_1$ are coefficients to the least-squares fit of the runtime. *(B)* This plot shows the asymptotic runtime per data point, a$_1$, for each algorithm from (A). }
-\centering
-\includegraphics[width=\figwidth]{timing.pdf}% Here is how to import EPS art
-\end{figure}
+--------------------------------------------------- 
+![{#fig:timing}](figures/timing.pdf.png)      
+**Figure {#fig:timing}.** Big-O runtime of each algorithm is approximately linear. **(A)** The runtime per curve versus number of points in the curve, T(N), is reported for each algorithm. Lines around each algorithm show upper and lower bounds of the form $T_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n, where a$_0$ and a$_1$ are coefficients to the least-squares fit of the runtime. **(B)** This plot shows the asymptotic runtime per data point, a$_1$, for each algorithm from (A).
+--------------------------------------------------- 
 
-
-
-\begin{figure}[htpb]
-\caption[Algorithm performance]{\noindent\fLabel{Performance} Performance of FEATHER compared to the baseline algorithms. This figure is the concatenation of {#fig:PerformanceFEATHER}, {#fig:PerformanceFovea}, and {#fig:PerformanceScipy}. The range of the loading rate and rupture force scatter plots and histograms are set to encompass the predicted data range all algorithms.}
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/landscape.pdf}% Here is how to import EPS art
-\end{figure}
-
-
-
-\begin{figure}[htp]
-\caption[Performance of FEATHER on larger data set]{\noindent\fLabel{LargeDataset} This figure is identical to {#fig:Performance}, except it details the performance of only FEATHER on the full data set listed in {#tbl:statistics}, instead of merely the highest loading rate.   }
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/FEATHER_full.pdf}% Here is how to import EPS art
-\end{figure}
-
-\begin{figure}[htp]
-\caption[Verification of sample purity]{\noindent\fLabel{Prep} Purity of the sample preparation. \subref{A} 2\% electrophoretic agarose gel, showing a major band just below 2kbp, as expected. \subref{B} A false-color AFM image of the DNA bound to mica.  }
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/prep.pdf}% Here is how to import EPS art
-\end{figure}
-
-
-\begin{figure}[htp]
-\caption[Cross validation of algorithms and optimal parameters]{\noindent\fLabel{Tuning} Details of tuning experiments. \subref{A} The \BccLong{} metric versus tuning parameter for FEATHER. \subref{B} As (A), but for the OpenFovea method. \subref{C} As (A), but for the Scientific Python method. In all subplots, only tuning points which return at least one prediction are plotted. }
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/tuning.pdf}% Here is how to import EPS art
-\end{figure}
-
-
-
-\begin{figure}
-\caption[Algorithmic runtime versus loading rate]{\noindent\fLabel{Timing_Details} The runtime of the three methods versus loading rate and number of points. \subref{A} FEATHER's total runtime versus number of curves analyzed for the curve sizes, N, listed. \subref{B} The runtime per curve versus number of curve points, N. The runtimes at each N are obtained by the slope of the relevant line in (A).  \subref{C,D} As (A,B), but for the Open Fovea method. \subref{E,F} As (A,B), but for the Scientific Python method.  }
-\centering
-\includegraphics[width=\figwidth]{../Figures/Finals/supplemental.pdf}% Here is how to import EPS art
-\end{figure}
 
 ## Extra text
 

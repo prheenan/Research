@@ -126,15 +126,15 @@ def make_main_figure(output_path,trials):
         trials: the pickled timing trials information
     """
     # make the figure for the presentation
-    fig = PlotUtilities.figure(figsize=(12,6))
+    fig = PlotUtilities.figure(figsize=(6,3))
     _main_figure(trials)
     plt.xlim([-1,3])
     PlotUtilities.savefig(fig,output_path.replace(".pdf","_pres.pdf"))
     # make the figure for the paper
-    fig = PlotUtilities.figure(figsize=(16,6))
+    fig = PlotUtilities.figure(figsize=(8,3))
     _main_figure(trials)
     PlotUtilities.label_tom(fig,loc=(-0.05,1))
-    PlotUtilities.savefig(fig,output_path)
+    PlotUtilities.save_twice(fig,output_path + ".png",output_path + ".svg")
 
 def run(base="./"):
     """

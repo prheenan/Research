@@ -87,7 +87,7 @@ def run(base="./"):
     out_names = []
     colors_pred =  algorithm_colors()
     # make a giant figure, 3 rows (one per algorithm)
-    fig = PlotUtilities.figure(figsize=(16,18))
+    fig = PlotUtilities.figure(figsize=(7,8))
     entire_figure = gridspec.GridSpec(3,1)
     title_dict = Plotting.algorithm_title_dict()
     for i,m in enumerate(metric_list):
@@ -106,7 +106,7 @@ def run(base="./"):
         gs = gridspec.GridSpecFromSubplotSpec(2, 3, width_ratios=[2,2,1],
                                               height_ratios=[2,1],
                                               subplot_spec=entire_figure[i],
-                                              wspace=0.3,hspace=0.4)
+                                              wspace=0.35,hspace=0.4)
         # plot the metric plot
         Plotting.rupture_plot(true,pred,
                               lim_plot_load=lim_load_max,
@@ -115,8 +115,8 @@ def run(base="./"):
                               count_limit=[0.5,count_max*5],use_legend=(i==0),
                               distance_histogram=distance_kw,gs=gs,
                               fig=fig)
-        plt.title(title_dict[name],fontsize=25,x=-2,y=3.85,color=color_pred,
-                  alpha=1)
+        PlotUtilities.title(title_dict[name],x=-2,y=3.85,color=color_pred,
+                            alpha=1)
     # individual plot labels
     n_subplots = 5
     n_categories = len(metric_list)
@@ -124,11 +124,12 @@ def run(base="./"):
     letters = [ ["{:s}{:d}".format(s,n+1) for n in range(n_subplots)]
                  for s in letters]
     flat_letters = [v for list_of_v in letters for v in list_of_v]
-    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.14),fontsize=18)
+    PlotUtilities.label_tom(fig,flat_letters,loc=(-0.22,1.14))
     final_out_path = out_base + "landscape.pdf"
-    PlotUtilities.savefig(fig,final_out_path,
-                          subplots_adjust=dict(left=0.10,
-                                               hspace=0.3,wspace=0.2,top=0.95))
+    PlotUtilities.save_twice(fig,final_out_path + ".png",final_out_path +".svg",
+                             subplots_adjust=dict(left=0.10,
+                                                  hspace=0.4,
+                                                  wspace=0.2,top=0.95))
 
 
 

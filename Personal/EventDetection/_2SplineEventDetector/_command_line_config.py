@@ -76,7 +76,7 @@ def get_force_extension_curve(in_file,**kwargs):
          force extension curve object which FEATHER can use
     """
     if (not GenUtilities.isfile(in_file)):
-        write_and_close("File {:s} doesn't exist".format(in_file))
+        assert False, "File {:s} doesn't exist".format(in_file)
     # # POST: input file exists
     # go ahead and read it
     if (in_file.endswith(".pxp")):
@@ -107,7 +107,6 @@ def get_force_extension_curve(in_file,**kwargs):
 def predict_indices(fec,add_offsets=True,**kwargs):
     return Detector.predict(fec,add_offsets=add_offsets,**kwargs)
     
-
 def run_feather(in_file,threshold,tau,spring_constant,dwell_time,
                 trigger_time):
     """
@@ -134,7 +133,7 @@ def run_feather(in_file,threshold,tau,spring_constant,dwell_time,
                                         trigger_time=trigger_time,
                                         name=in_file)
     # have the data, predict where the events are. 
-    event_indices = Detector.predict(example,threshold=threshold,
-                                     add_offsets=True,tau_fraction=tau)
+    event_indices = predict_indices(example,threshold=threshold,
+                                    tau_fraction=tau)
     return event_indices
 
