@@ -119,7 +119,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 
 --------------------------------------------------- 
 ![{#fig:DNA}](figures/landscape.pdf.png)
-**Figure {#fig:DNA}.** 
+**Figure {#fig:DNA}.** Performance of  compared to the baseline algorithms. **(A1)** The distribution of distances from predicted to true points, $d_{\mathrm{p}\rightarrow\mathrm{t}}$, and from true to predicted points, $d_{\mathrm{t}\rightarrow\mathrm{p}}$, for FEATHER. **(A2)** FEATHER's two-dimensional distribution of true and predicted rupture forces and loading rates, as defined in (XXX). The range of the plot is limited to the middle 98 percent of the data. **(A3,A4)** The histograms of rupture forces and loading rates, respectively, for FEATHER. The range of these plots are limited as in (B). **(A5)** The metrics defined in (XXX) applied to FEATHER.. **(B1-B5)** As A1-A5, except for the Open Fovea baseline. **(C1-C5)** As A1-A5, except for the Scientific Python baseline.
 --------------------------------------------------- 
 
 ## Algorithm tuning
@@ -161,7 +161,7 @@ Figure \fRef{Timing} compares the runtimes, T(N), of FEATHER and the baselines. 
 
 --------------------------------------------------- 
 ![{#fig:timing}](figures/timing.pdf.png)      
-**Figure {#fig:timing}.** Big-O runtime of each algorithm is approximately linear. **(A)** The runtime per curve versus number of points in the curve, T(N), is reported for each algorithm. Lines around each algorithm show upper and lower bounds of the form $T_{\mathrm{upper}}$(n) = a$_0$ + 2a$_1$n  and T$_{\mathrm{lower}}$(n) = a$_0$ + $\frac{1}{2}$a$_1$n, where a$_0$ and a$_1$ are coefficients to the least-squares fit of the runtime. **(B)** This plot shows the asymptotic runtime per data point, a$_1$, for each algorithm from (A).
+**Figure {#fig:timing}.** Big-O runtime of each algorithm is approximately linear. **(A)** The runtime per curve versus number of points in the curve, T(N), is reported for each algorithm. Lines around each algorithm show upper and lower bounds of the form $T_{\mathrm{upper}}$(n) = $a_0$ + 2$a_1$n  and $T_{\mathrm{lower}}$(n) = $a_0$ + $\frac{1}{2}a_1$n, where $a_0$ and $a_1$ are coefficients to the least-squares fit of the runtime. **(B)** This plot shows the asymptotic runtime per data point, $a_1$, for each algorithm from (A).
 --------------------------------------------------- 
 
 
