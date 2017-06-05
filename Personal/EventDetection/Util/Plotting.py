@@ -107,7 +107,7 @@ def plot_autocorrelation(example_split):
     # plot everything
     plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
 
-def highlight_events(idx_events,x,y,label=None,**kwargs):
+def highlight_events(idx_events,x,y,label=None,linewidth=0.75,**kwargs):
     """
     highlights x and y at the indices given by idx_events:
     
@@ -120,7 +120,7 @@ def highlight_events(idx_events,x,y,label=None,**kwargs):
     for i in idx_events:
         # only label the first
         label_tmp = label if i == 0 else None
-        plt.plot(x[i],y[i],label=label_tmp,**kwargs)
+        plt.plot(x[i],y[i],label=label_tmp,linewidth=linewidth,**kwargs)
 
         
 def plot_prediction_info(ex,info,xlabel="Time",
