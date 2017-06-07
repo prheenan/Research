@@ -46,9 +46,10 @@ This section details the event-detection algorithm. The following conventions ar
 
 --------------------------------------------------- 
 ![{#fig:prep}](figures/algorithm.pdf.png)      
-**Figure {#fig:algorithm_details}.** 
+**Figure S{#fig:algorithm_details}.** 
 --------------------------------------------------- 
 
+FEATHER uses a probabilistic model for the portion of the force-extension curve where force is applied to the molecule of interest, referred to as the 'retract', based on the portion of the force-extension curve when the probe is not in contact with the molecule, referred to as the 'approach'. The algorithm fits and subtracts a smoothing spline from the approach, yielding an expected mean and variance of the residual's standard deviation within a window of $\pm\tau$. Applying this procedure to the retract yields a residual mean standard deviation at each point in time. This residual is transformed into a probability using Chebyshev's inequality and the expected mean and variance from the approach (see XXX). This probability at each point is iteratively updated to remove the effect of adhesions and other false positives. As shown in Figure {#fig:flowchart}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#tbl:Parameters} and Section {#sec:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in XXX Section {#sec:Annotation}.
 
 ##Defining the no-event hypothesis
 
@@ -94,7 +95,7 @@ The quality of FEATHER's results are improved by multiplying the no-event probab
 
 --------------------------------------------------- 
 ![{#fig:prep}](figures/prep.pdf.png)      
-**Figure {#fig:prep}.** Purity of the sample preparation. **(A)** 2\% electrophoretic agarose gel, showing a major band just below 2kbp, as expected. **(B)** A false-color AFM image of the DNA bound to mica. 
+**Figure S{#fig:prep}.** Purity of the sample preparation. **(A)** 2\% electrophoretic agarose gel, showing a major band just below 2kbp, as expected. **(B)** A false-color AFM image of the DNA bound to mica. 
 --------------------------------------------------- 
 
 
@@ -117,12 +118,12 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 
 --------------------------------------------------- 
 ![{#fig:DNA}](figures/landscape.pdf.png)
-**Figure {#fig:DNA}.** Performance of  compared to the baseline algorithms. **(A1)** The distribution of distances from predicted to true points, $d_{\mathrm{p}\rightarrow\mathrm{t}}$, and from true to predicted points, $d_{\mathrm{t}\rightarrow\mathrm{p}}$, for FEATHER. **(A2)** FEATHER's two-dimensional distribution of true and predicted rupture forces and loading rates, as defined in (XXX). The range of the plot is limited to the middle 98 percent of the data. **(A3,A4)** The histograms of rupture forces and loading rates, respectively, for FEATHER. The range of these plots are limited as in (B). **(A5)** The metrics defined in (XXX) applied to FEATHER.. **(B1-B5)** As A1-A5, except for the Open Fovea baseline. **(C1-C5)** As A1-A5, except for the Scientific Python baseline.
+**Figure S{#fig:DNA}.** On the dsDNA dataset, Feather has orders-of-magnitude better performance compared to the baseline algorithms. **(A1)** The distribution of distances from predicted to true points, $d_{\mathrm{p}\rightarrow\mathrm{t}}$, and from true to predicted points, $d_{\mathrm{t}\rightarrow\mathrm{p}}$, for FEATHER. **(A2)** FEATHER's two-dimensional distribution of true and predicted rupture forces and loading rates, as defined in (XXX). The range of the plot is limited to the middle 98 percent of the data. **(A3,A4)** The histograms of rupture forces and loading rates, respectively, for FEATHER. The range of these plots are limited as in (B). **(A5)** The metrics defined in (XXX) applied to FEATHER.. **(B1-B5)** As A1-A5, except for the Open Fovea baseline. **(C1-C5)** As A1-A5, except for the Scientific Python baseline.
 --------------------------------------------------- 
 
 ## Algorithm tuning
 
-All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms (Figure XXX). The parameter value minimizing the Bhattacharya coefficient's complement for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
+All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms. The parameter value minimizing the Bhattacharya coefficient's complement for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
 
 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx 1.5$ cpu-days for FEATHER, see Figure XXX {#fig:Timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see Table {#tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper (Figure XXX {#fig:LargeDataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.

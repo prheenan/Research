@@ -3,13 +3,13 @@
 P. Heenan, R. Frongillo, J. Boyd-Graber, T. Perkins
 
 
-ABSTRACT In single-molecule force spectroscopy (SMFS) experiments, mechanical forces are applied to individual biomolecules via a probe such as a bead or cantilever. Experiments which mechanically dissociate the secondary or tertiary structures of molecules are known as unfolding experiments. In unfolding experiments, a molecule binds to the probe, is pulled and possibly unfolded, and finally unbinds from the probe. The force on the molecule and its time derivative just before an unfolding or unbinding event are known as the event's rupture force and loading rate, respectively. The rupture force and loading rate at each event need to be known for common SMFS analyses. Identifying events in SMFS data is hindered by the presence of noise. This paper introduces a new algorithm, FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), to identify the locations of events in SMFS data. FEATHER features a relative event location error of XXX, a XXX-fold improvement relative to the best baseline, and a XXX for the distribution of loading rates and rupture forces of XXX, a factor of XXX improvement relative to the best baseline. As a linear-time algorithm for reproducible event identification, FEATHER improves the quality of analysis of SMFS data.  
+ABSTRACT In single-molecule force spectroscopy (SMFS) experiments, mechanical forces are applied to individual biomolecules via a probe such as a bead or cantilever. Experiments which mechanically dissociate the secondary or tertiary structures of molecules are known as unfolding experiments. In unfolding experiments, a molecule binds to the probe, is pulled and possibly unfolded, and finally unbinds from the probe. The force on the molecule and its time derivative just before an unfolding or unbinding event are known as the event's rupture force and loading rate, respectively. The rupture force and loading rate at each event need to be known for common SMFS analyses. Identifying events in SMFS data is hindered by the presence of noise. This paper introduces a new algorithm, FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), to identify the locations of events in SMFS data. FEATHER features a relative event location error of 0.006, a 30-fold improvement relative to the best baseline, and a Bhattacharya coefficient's complement for the distribution of loading rates and rupture forces of 0.005, a factor of 5 improvement relative to the best baseline. As a linear-time algorithm for reproducible event identification, FEATHER improves the quality of analysis of SMFS data.  
 
 
 # Introduction {#sec:Intro}
 
 
-In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time, known as a force-extension curve (XXX ). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (see Figure {#fig:diagram}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
+In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time, known as a force-extension curve (Figure {#fig:diagram}). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (Figure {#fig:diagram}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
 
 
 ----
@@ -24,25 +24,23 @@ This work describes a new method for detecting events in force-extension curves.
 
 # Materials and Methods
 
-## Data used to determine performance
+## Data used to determine performance {#sec:datasets}
 
 The following two data sets were hand-annotated for the purposes of determining algorithm event detection performance:
 
 - A publically available polyprotein dataset (XXX)
-- A 650nm dsDNA dataset taken for this paper (see XXX). 
+- A 650nm dsDNA dataset taken for this paper (see Section {#sec:SampleDetails}). 
 
-Statistics on the data sets and the annotated events are in XXX
+Statistics on the data sets and the annotated events are in Section {#sec:SampleDetails}
 
 ## Description of FEATHER
 
- FEATHER calculates an upper bound on the probability of no event occurring at each time point, using a smoothing parameter $\tau\in[0,1]$ from the user (see Table {#tbl:Parameters}) and parameters the force-extesnion curve (see XXX). This process is illustrated in Figure {#fig:flowchart} and described in more detail in XXX.
-
-FEATHER uses a probabilistic model for the portion of the force-extension curve where force is applied to the molecule of interest, referred to as the 'retract', based on the portion of the force-extension curve when the probe is not in contact with the molecule, referred to as the 'approach'. The algorithm fits and subtracts a smoothing spline from the approach, yielding an expected mean and variance of the residual's standard deviation within a window of $\pm\tau$. Applying this procedure to the retract yields a residual mean standard deviation at each point in time. This residual is transformed into a probability using Chebyshev's inequality and the expected mean and variance from the approach (see XXX). This probability at each point is iteratively updated to remove the effect of adhesions and other false positives. As shown in Figure {#fig:flowchart}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#tbl:Parameters} and Section {#sec:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in XXX Section {#sec:Annotation}.
+ FEATHER calculates an upper bound on the probability of no event occurring at each time point, using a smoothing parameter $\tau\in[0,1]$ from the user (see Table {#tbl:Parameters}), a threshold probability defining the minimum probability a non-event can have, and parameters determined from the force versus time curve (see Figure S{#fig:algorithm_details}). This process is illustrated in Figure {#fig:flowchart} and described in more detail in Section S{#sec:DesignDetails}.
 
 
 --------------------------
 ![{#fig:flowchart}](figures/flowchart.png)
-**Figure {#fig:flowchart}.** FEATHER’s algorithmic identification of rupture events in force. **(A)** A force versus time curve with a spline fit overlayed. **(B)** The probability of no event obtained by applying Chebychev's inequality to (A), as described in the text. **(C)** Transforming (B) to remove regions near the surface or with positive force derivatives. **(D)** Transforming (C) to remove regions where the force change is negligible, as described in XXX. **(E-H)** The events and magnified regions obtained from each region less than a user-specified threshold (D). Plotting conventions are as in Figure {#fig:diagram}.
+**Figure {#fig:flowchart}.** FEATHER’s algorithmic identification of rupture events in force. **(A)** A force versus time curve with a spline fit overlayed. **(B)** The probability of no event obtained by applying Chebychev's inequality to (A), as described in the text. **(C)** Transforming (B) to remove regions near the surface or with positive force derivatives. **(D)** Transforming (C) to remove regions where the force change is negligible, as described in {#sec:DesignDetails}. **(E-H)** The events and magnified regions obtained from each region less than a user-specified threshold (D). Plotting conventions are as in Figure {#fig:diagram}.
 --------------------------
 
 
@@ -58,7 +56,7 @@ The following algorithms were chosen for comparison to FEATHER:
 
 ## Performance metrics
 
-Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table {#tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces.  (XXX label )
+Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table {#tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces.
 
 
 --------------------------------------------------- 
@@ -68,7 +66,7 @@ Two metrics were used for comparing the event-finding performance of FEATHER wit
 
 # Results and Discussion
 
-Table {#tbl:AppliedMetrics} lists the performance metrics for each algorithm on he polyprotein dataset. Figure {#fig:performance} shows the event detection performance of each algorithm. As defined by Table {#tbl:metrics}, relative to the best baseline FEATHER improves the relative and absolute event error by a factor of about XXX and improves the Bhattacharya coefficient's complement by a factor of about XXX. Additional tests on the dsDNA dataset (XXX reference) show even greater performance gains. FEATHER's performance detecting events in polyprotein and dsDNA data demonstrate FEATHER's general applicability and order-of-magnitude improvements relative to the baselines presented. 
+Table {#tbl:AppliedMetrics} lists the performance metrics for each algorithm on he polyprotein dataset. Figure {#fig:performance} shows the event detection performance of each algorithm. As defined by Table {#tbl:metrics}, relative to the best baseline FEATHER improves the relative and absolute event error by a factor of about 30 and improves the Bhattacharya coefficient's complement by a factor of about 5. Additional tests on the dsDNA dataset (See Section {#sec:datasets} and Figure {#fig:DNA}) show even greater performance gains. FEATHER's performance detecting events in polyprotein and dsDNA data demonstrate FEATHER's general applicability and order-of-magnitude improvements relative to the baselines presented. 
 
 
 Name 	      	    | Rupture BCC ($\downarrow$) | Relative event error $P_{95}$ ($\downarrow$)
