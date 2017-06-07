@@ -19,9 +19,9 @@ def run():
     # stock concentration
     Stock = 311
     # Desired concentrations
-    Desired = [15,9,3]
+    Desired = [40,20,9]
     # desired volumes (for each)
-    Volumes = [20,20,20,20]
+    Volumes = [20 for d in Desired]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,sorted(Desired)[::-1],
                                   ConcString="ng/uL",BufferString="TE")
     

@@ -1006,7 +1006,6 @@ def plot_format(time_sep_force):
     return x_plot,y_plot
 
 
-
 def debug_plot_approach_no_event(approach_force_sliced,
                                  approach_force_interp_sliced,epsilon,sigma,
                                  stdevs):
