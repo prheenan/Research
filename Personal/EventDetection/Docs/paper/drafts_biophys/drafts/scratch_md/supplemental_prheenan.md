@@ -1,4 +1,4 @@
-#Sample and cantilever preparation {#label_sec:SampleDetails}
+# {#label_sec:SampleDetails} Sample and cantilever preparation 
 
 Site-specific chemistry is used to improve the acquisition rate and quality of data. The procedure for surface, sample, and cantilever preparation is described briefly in Appendix A and in detail elsewhere @walder_robert_rapid_nodate. Briefly, through polymerase chain reaction, double-stranded DNA is functionalized with dibenzocyclooctyl (DBCO) at the 5' end of one DNA strand to ensure a covalent bond with an azide-functionalized surface. The DNA is also functionalized with biotin at the other 5' end to ensure a specific but reversible bond with a streptavidin-coated cantilever. These two bonds ensure the tip-DNA bond is broken before the surface-DNA bond, preventing tip contamination. 
 
@@ -45,11 +45,11 @@ This section details the event-detection algorithm. The following conventions ar
 \end{enumerate}
 
 --------------------------------------------------- 
-![{#label_fig:prep}](figures/algorithm.pdf.png)      
+![{#label_fig:algorithm_details}](figures/algorithm.pdf.png)      
 **Figure S{#ref_fig:algorithm_details}.** 
 --------------------------------------------------- 
 
-FEATHER uses a probabilistic model for the portion of the force-extension curve where force is applied to the molecule of interest, referred to as the 'retract', based on the portion of the force-extension curve when the probe is not in contact with the molecule, referred to as the 'approach'. The algorithm fits and subtracts a smoothing spline from the approach, yielding an expected mean and variance of the residual's standard deviation within a window of $\pm\tau$. Applying this procedure to the retract yields a residual mean standard deviation at each point in time. This residual is transformed into a probability using Chebyshev's inequality and the expected mean and variance from the approach (see XXX). This probability at each point is iteratively updated to remove the effect of adhesions and other false positives. As shown in Figure {#ref_fig:flowchart}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#label_tbl:Parameters} and Section {#sec:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in XXX Section {#label_sec:Annotation}.
+FEATHER uses a probabilistic model for the portion of the force-extension curve where force is applied to the molecule of interest, referred to as the 'retract', based on the portion of the force-extension curve when the probe is not in contact with the molecule, referred to as the 'approach'. The algorithm fits and subtracts a smoothing spline from the approach, yielding an expected mean and variance of the residual's standard deviation within a window of $\pm\tau$. Applying this procedure to the retract yields a residual mean standard deviation at each point in time. This residual is transformed into a probability using Chebyshev's inequality and the expected mean and variance from the approach (see XXX). This probability at each point is iteratively updated to remove the effect of adhesions and other false positives. As shown in Figure {#ref_fig:flowchart}, the result is a probability at each time point which drops from one towards zero near events. A threshold probability is set by the user or optimized by a tuning routine (see Table {#label_tbl:Parameters} and Section {#ref_sec:Tuning}). Contiguous regions of time with probabilities below the threshold are considered having a single event, and the rupture properties are determined within each region as described in XXX Section {#label_sec:Annotation}.
 
 ##Defining the no-event hypothesis
 
@@ -57,7 +57,7 @@ FEATHER defines an event as a discontinuity in piecewise-continuous time series 
 
 ##Mathematical background for testing the no-event hypothesis
 
-Under the no-event hypothesis, the noise-dependent distribution of force '$F_t$' for a discrete series of forces sampled at time points 't' can be well-approximated by the sum of a smooth signal and a noise distribution ({#ref_fig:FeatherExample}):
+Under the no-event hypothesis, the noise-dependent distribution of force '$F_t$' for a discrete series of forces sampled at time points 't' can be well-approximated by the sum of a smooth signal and a noise distribution ({#ref_fig:algorithm_details}):
 
 $F_t = g_t + X(0,\sigma^2)$
 
@@ -76,20 +76,20 @@ $|E[R_t]| = \epsilon_t \le E[|R_t|]$   ({#label_eq:featherepsilon})
 Under these assumptions, the probability 'P' of measuring $r_t$ is bounded by Chebyshev's inequality:
 
 $P( |R_t-\epsilon_t| \ge |r_t-\epsilon_t| ) \le
-(\frac{\sigma}{|r_t-\epsilon_t|})^2$ ({#eq:featherprobability})
+(\frac{\sigma}{|r_t-\epsilon_t|})^2$ ({#label_eq:featherprobability})
 
 
 For \emph{any} noise distribution, Equation {#ref_eq:featherprobability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by Equation {#ref_eq:featherepsilon} and Equation {#eq:feathersigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
 
 ##Accurate estimators for hypothesis testing
 
-To obtain an accurate estimator for $g_t$, the data must be smoothed. The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline @dierckx_algorithm_1975 to the force versus time curve. The spline is second-order to ensure a continuous first derivative ({#ref_fig:FeatherExample}), and the spline knots are spaced uniformly at intervals of  the user-specified $\tau$ (see {#ref_tbl:Parameters}). {#ref_fig:FeatherExample} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$ by  Equation {#ref_eq:error}.
+To obtain an accurate estimator for $g_t$, the data must be smoothed. The approximation to the noiseless force $g^{*}_t$ is obtained by fitting a least-squares second-order basis spline @dierckx_algorithm_1975 to the force versus time curve. The spline is second-order to ensure a continuous first derivative ({#ref_fig:algorithm_details}), and the spline knots are spaced uniformly at intervals of  the user-specified $\tau$ (see {#ref_tbl:Parameters}). {#ref_fig:algorithm_details} is a representative demonstration of the spline fitting. Determining  $g^{*}_t$ immediately gives $\hat{r}_t$.
 
-Using $r_t$ as shown in Equation {#ref_eq:featherepsilon} does not provide a strong signal in the presence of an event (see {#ref_fig:FeatherExample}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations '$\Sigma$'. $\Sigma$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{4},\frac{\tau}{4}]$. Using $\Sigma$ instead of $r_t$ provides a much stronger signal in the presence of an event (see {#ref_fig:FeatherExample}).  
+Using $r_t$ as shown in Equation {#ref_eq:featherepsilon} does not provide a strong signal in the presence of an event (see {#ref_fig:algorithm_details}). In order to improve the method, $r_t$ was replaced by the distribution of windowed standard deviations '$\Sigma$'. $\Sigma$ is defined as the standard deviation of $r_t$ centered at t with a window of $[-\frac{\tau}{4},\frac{\tau}{4}]$. Using $\Sigma$ instead of $r_t$ provides a much stronger signal in the presence of an event (see {#ref_fig:algorithm_details}).  
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\Sigma$ on the region of the approach curve where the AFM tip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\Sigma$, and $\hat{\epsilon}_t$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these pseudo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
 
-The quality of FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. This is explicitly detailed in {#ref_fig:Code}. The calculation of each of these probabilities is exactly the same as Equation {#eq:featherprobability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
+The quality of FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. The calculation of each of these probabilities is exactly the same as Equation {#eq:featherprobability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
 
 
 
@@ -101,7 +101,7 @@ The quality of FEATHER's results are improved by multiplying the no-event probab
 
 ## Data Annotation
 
-Two hundred force-extension curves with events were obtained at three pulling velocities (100 nm/s, 500 nm/s, 1000nm/s). The start and end of each event in a curve were obtained through manual annotation. More statistical information on the data, including curve lengths and number of events per curve, is given in Table {#tbl:statistics}.
+Two hundred force-extension curves with events were obtained at three pulling velocities (100 nm/s, 500 nm/s, 1000nm/s). The start and end of each event in a curve were obtained through manual annotation. More statistical information on the data, including curve lengths and number of events per curve, is given in Table {#ref_tbl:statistics}.
 
 The expected rupture forces and loading rates were calculated from the annotated data. This process is shown graphically in Figure {#ref_fig:diagram}. The region leading up to the event start was fit by a line, with the region length set to $\tau$ (see Table {#ref_tbl:Parameters}). The loading rate was assigned to the line's slope, and the rupture force was calculated by the value of the line where the data in the region was last above the line. This is the same procedure used to calculate the loading rate and rupture force of predicted events in Figure {#ref_fig:performance}. 
 
@@ -111,7 +111,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 100   | 200 | 667000 | 47000 | 159 | 33 | 5 | 3  
 500   | 200 | 200000 | 1000  | 140 | 40 | 8 | 12  
 1000  | 200 | 117000 | 7000  | 174 | 25 | 1 | 0  
-[{#ref_tbl:statistics} Data set statistical information For each loading rate v in the data set, this table lists the number of curves $N_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events $N_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. ]
+[{#label_tbl:statistics} Data set statistical information For each loading rate v in the data set, this table lists the number of curves $N_{\mathrm{curves}}$; mean and standard deviation of curve sizes, $\mu_{\mathrm{Curve Size}}$ and $\sigma_{\mathrm{Curve Size}}$, in data points; the number of curves with `x' events $N_{\mathrm{e=x}}$ for x$\in\{1,2,3\}$; and the number of curves with greater than or equal to 4 events, $N_{\mathrm{e}\ge4}$. ]
 
 
 
@@ -121,7 +121,7 @@ v (nm/s) | $N_\mathrm{curves}$ | $\mu_{\mathrm{Curve Size}}$ | $\sigma_{\mathrm{
 **Figure S{#ref_fig:DNA}.** On the dsDNA dataset, Feather has orders-of-magnitude better performance compared to the baseline algorithms. **(A1)** The distribution of distances from predicted to true points, $d_{\mathrm{p}\rightarrow\mathrm{t}}$, and from true to predicted points, $d_{\mathrm{t}\rightarrow\mathrm{p}}$, for FEATHER. **(A2)** FEATHER's two-dimensional distribution of true and predicted rupture forces and loading rates, as defined in (XXX). The range of the plot is limited to the middle 98 percent of the data. **(A3,A4)** The histograms of rupture forces and loading rates, respectively, for FEATHER. The range of these plots are limited as in (B). **(A5)** The metrics defined in (XXX) applied to FEATHER.. **(B1-B5)** As A1-A5, except for the Open Fovea baseline. **(C1-C5)** As A1-A5, except for the Scientific Python baseline.
 --------------------------------------------------- 
 
-## Algorithm tuning
+## {#label_sec:tuning} Algorithm tuning
 
 All three algorithms were tuned using 5-fold cross validation. Cross validation was performed at fifteen log-spaced parameters over the useful parameter range of the algorithms. The parameter value minimizing the Bhattacharya coefficient's complement for an algorithm was considered the algorithm's best parameter. Data shown in the results consists of the concatenation of all validation folds for each algorithm's best parameter. 
 
@@ -149,10 +149,10 @@ $F_i$ | histogram of 'i' rupture forces over all k      | -	 | -
 $d_{(\nu,F),i}$ | joint histogram of $\nu_i$ and $F_i$ divided by K  | -      | -
 **relative event error** | $P_{95}$     	        | [0,1]  | 0 
 **rupture BCC** | 1-$<d_{(\nu,F),t}^{\frac{1}{2}}|d_{(\nu,F),p}^{\frac{1}{2}}>$ | [0,1] | 0 
-[Table Caption]
+[{#label_tbl:metrics}]
 
 
-## {#label_sec:Timing} Algorithmic time complexity}
+## {#label_sec:Timing} Algorithmic time complexity
 
 All timing and tuning results were obtained using a desktop with 16 GB of RAM, a 3.7 GHz i7 CPU, and a 1 TB hard drive. 
 
@@ -184,7 +184,7 @@ FEATHER improves on previous methods by using information present in the approac
 
 
 
-1. Estimate the no-event parameters (see Figure {#ref_fig:FeatherExample}) from the approach curve.
+1. Estimate the no-event parameters (see Figure {#ref_fig:algorithm_details}) from the approach curve.
 2. Fit the no-event model to the retract curve.
 3. Calculate the upper bound on the probability of each retract point given the model.
 4. Iteratively update the probability to remove false positives.
