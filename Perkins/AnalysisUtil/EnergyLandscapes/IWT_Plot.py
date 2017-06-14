@@ -65,85 +65,42 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,f_one_half_N=0e-12):
     np.savetxt(X=np.c_[FoldX,FoldY],fname=OutBase+"Fold"+ext,**common)
     np.savetxt(X=np.c_[Obj.landscape_ext_nm,Obj.OffsetTilted_kT],
                fname=OutBase+"Landscape"+ext,**common)
-               
-def _add_meta_free(Obj):
-    """
-    Plots the meta information associated with G0 (only really useful for
-    a single-well system)
 
-    Args:
-        Obj: energy landscape object (tilted)
-    Returns:
-        nothing
-    """  
-    plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
-                linestyle='--',
-        label=(r"$\Delta x^{\ddag}$=" +
-               "{:.1f}nm".format(Obj.DeltaXDagger) ))
-    plt.axhline(Obj.DeltaGDagger,linewidth=4,color='b',
-                linestyle='--',
-                label=(r"$\Delta G^{\ddag}}$=" +
-                       "{:.1f}kT".format(Obj.DeltaGDagger) ))               
-               
-def _add_meta_half(Obj):
-    """
-    Plots the meta information associated with the landscape tilted by f_1/2 
-    (only really useful for a single-well system)
-
-    Args:
-        Obj: energy landscape object (tilted)
-    Returns:
-        nothing
-    """  
-    plt.axvline(Obj.landscape_ext_nm[Obj.ext_idx],linewidth=4,color='g',
-                linestyle='--',
-        label=(r"$\Delta x^{\ddag}$=" +
-               "{:.1f}nm".format(Obj.DeltaXDagger) ))
-    plt.plot(Obj.pred_fold_x,
-             np.polyval(Obj.coeffs_fold,Obj.pred_fold_x)-Obj.Offset,
-             linestyle='--',color='r',linewidth=4,
-             label="Folded State at {:.1f}nm".format(Obj.x0_fold))
-    plt.plot(Obj.pred_tx_x,
-             np.polyval(Obj.coeffs_tx,Obj.pred_tx_x)-Obj.Offset,
-             linestyle='--',color='g',linewidth=4,
-             label="Transition State at {:.1f}nm".format(Obj.x0_tx))
-    plt.plot(Obj.pred_unfold_x,
-             np.polyval(Obj.coeffs_unfold,Obj.pred_unfold_x)-Obj.Offset,
-             linestyle='--',color='r',linewidth=4,
-             label="Unfolding State at {:.1f}nm".format(Obj.x0_unfold))
-    
-def plot_single_landscape(LandscapeObj,min_landscape_kT=None,
-                          max_landscape_kT=None,f_one_half_N=10e-12,
-                          add_meta_half=False,add_meta_free=False):
-    """
-    Plots a detailed energy landscape, and saves
-
-    Args:
-        LandscapeObj: energy landscape object (untilted)
-        Bins: how many bins to use in the energy landscape plots
-        <min/max>_landscape_kT: bounds on the landscape
-    Returns:
-        nothing
-    """                          
+def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
+                          fmt_f_label="{:.1g}",
+                          max_landscape_kT=None,f_one_half_N=10e-12):         
     Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
                                     f_one_half_N=f_one_half_N)
-    plt.subplot(2,1,1)
-    plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
-    if (add_meta_free):
-        _add_meta_free(Obj)
-    plt.ylim([-0.5,max(Obj.Landscape_kT)*1.05])
-    PlotUtilities.lazyLabel("","Landscape at F=0 [kT]","",frameon=True)
-    plt.subplot(2,1,2)
     plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT,color='b',alpha=0.7)
-    if (add_meta_half):
-        _add_meta_half(Obj)
     if (max_landscape_kT is None):
         max_landscape_kT = max(Obj.OffsetTilted_kT)*1.5
     if (min_landscape_kT is None):
         min_landscape_kT = np.percentile(Obj.OffsetTilted_kT,5)-2
     plt.ylim( min_landscape_kT,max_landscape_kT)
-    PlotUtilities.lazyLabel("Extension [nm]","Landscape at F1/2 [kT]","",
-                            frameon=True)
+    ylabel = ("Tilted (F=" + fmt_f_label + "pN) [kT]").format(f_one_half_N*1e12)
+    PlotUtilities.lazyLabel("Extension [nm]",ylabel,"",frameon=True)
+                            
+def plot_free_landscape(LandscapeObj,**kwargs):
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,**kwargs)
+    plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
+    range = max(Obj.Landscape_kT) - min(Obj.Landscape_kT)
+    plt.ylim([-range/10,np.max(Obj.Landscape_kT)*1.05])
+    PlotUtilities.lazyLabel("","Landscape at F=0 [kT]","",frameon=True)           
+                            
+def plot_single_landscape(LandscapeObj,**kwargs):
+    """
+    Plots a detailed energy landscape, and saves
+
+    Args:
+        LandscapeObj: energy landscape object (untilted)
+        **kwargs: passed to plot_tilted_landscape
+    Returns:
+        nothing
+    """                          
+    plt.subplot(2,1,1)
+    plot_free_landscape(LandscapeObj,**kwargs)  
+    plt.subplot(2,1,2)
+    plot_tilted_landscape(LandscapeObj,**kwargs)
                             
 def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj=[],Example=None,
                    Bins=[50,75,100,150,200,500,1000],**kwargs):

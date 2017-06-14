@@ -175,6 +175,34 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
+def slice_by_time(obj,time_min=-np.inf,time_max=np.inf):
+    """
+    slices the given object by a minimum and maximum time
+    
+    Args:
+        obj: see MakeTimeSepForceFromSlice
+        time_<min/max>: the maximum and minimum time to use
+        By default, we just slice everything.
+    """
+    time = obj.Time
+    idx_greater_than_min = np.where(time >= time_min)[0]
+    idx_less_than_max = np.where(time <= time_max)[0]
+    # determine where to put the indices
+    n_greater = idx_greater_than_min.size 
+    n_less = idx_less_than_max.size
+    if (n_greater== 0):
+        idx_first = 0
+    else: 
+        idx_first = idx_greater_than_min[0]
+
+    if (n_less == 0):
+        idx_last = None
+    else: 
+        idx_last = idx_less_than_max[-1]
+    assert n_greater + n_less > 0 , "couldn't find a proper slice"
+    # POST: have something to slice
+    return MakeTimeSepForceFromSlice(obj,slice(idx_first,idx_last,1))
+    
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
     Given a TimeSepForceObject and a slice, gets a new object using just the 

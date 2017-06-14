@@ -80,6 +80,31 @@ def FEC_AlreadySplit(Appr,Retr,
     PlotUtilities.lazyLabel(XLabel,YLabel,"")
     PlotUtilities.legend(**LegendOpts)
     
+def z_sensor_vs_time(time_sep_force,**kwargs):
+    """
+    plots z sensor versus time. See force_versus_time
+    """
+    plot_labels = dict(x_func=lambda x : x.Time,
+                       y_func=lambda x : x.ZSnsr)
+    FEC(time_sep_force,
+        PlotLabelOpts=plot_labels,
+        XLabel="Time (s)",
+        YLabel="ZSnsr (nm)",**kwargs)
+        
+def force_versus_time(time_sep_force,**kwargs):
+    """
+    Plots force versus time
+    
+    Args:
+        **kwargs: see FEC
+    """
+    plot_labels = dict(x_func=lambda x : x.Time,
+                       y_func=lambda x: x.Force)
+    FEC(time_sep_force,
+        PlotLabelOpts=plot_labels,
+        XLabel="Time (s)",
+        YLabel="Force (pN)",**kwargs)
+    
 def FEC(TimeSepForceObj,NFilterPoints=50,
         PreProcessDict=dict(),
         **kwargs):
@@ -96,10 +121,10 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
                                       NFilterPoints=NFilterPoints,
                                       **PreProcessDict)
     # plot the approach and retract with the appropriate units
-    FEC_AlreadySplit(Appr,Retr,**kwargs)
+    FEC_AlreadySplit(Appr,Retr,NFilterPoints=NFilterPoints,**kwargs)
     
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
-                 separation_max = None,n_filter_func=None,
+                 separation_max = None,n_filter_func=None,use_colorbar=True,
                  ConversionOpts=def_conversion_opts,cmap='afmhot'):
     """
     Plots a force extension curve. Splits the curve into approach and 
@@ -112,6 +137,8 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
         versuon of the objects given, with n_filter_func being a function
         taking in the TimeSepForce object and returning an integer number of 
         points
+        
+        use_colorbar: if true, add a color bar
         
         separation_max: if not None, only histogram up to and including this
         separation. should be in units *after* conversion (default: nanometers)
@@ -140,10 +167,11 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
                                                bins=num_bins,cmap=cmap)
     PlotUtilities.lazyLabel("Separation [nm]",
                             "Force [pN]",
-                            "Two-Dimensional Force-Separation Histogram")
-    cbar = plt.colorbar()
-    label = '# of points in (Force,Separation) Bin'
-    cbar.set_label(label,labelpad=10,rotation=270) 
+                            "Force-Extension Heatmap")
+    if (use_colorbar): 
+        cbar = plt.colorbar()
+        label = '# of points in (Force,Separation) Bin'
+        cbar.set_label(label,labelpad=10,rotation=270) 
 
 def _n_rows_and_cols(processed,n_cols=3):
     n_rows = int(np.ceil(len(processed)/n_cols))    

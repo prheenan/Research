@@ -511,6 +511,9 @@ def split_by_max_sep(obj,fraction_smooth=0.02):
     return unfold_start_idx,unfold_stop_idx,refold_stop_idx
     
     
+def kT_to_kcal_per_mol(x):
+    return x * 0.593
+    
 def get_unfold_and_refold_objects_by_sep(data,f_split=None,**kwargs):   
     """
     Gets the unfolding and refolding segemnds of a single TimeSepForce object,
