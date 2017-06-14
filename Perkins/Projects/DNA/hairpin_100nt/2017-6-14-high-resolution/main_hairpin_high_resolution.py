@@ -20,8 +20,7 @@ from Research.Perkins.AnalysisUtil.EnergyLandscapes import \
    IWT_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass   
-    
-   
+
 def run():
     """
     <Description>
@@ -39,6 +38,11 @@ def run():
     dicts = [dict(time_min=5.73,time_max=7.73),
              dict(time_min=5.99,time_max=7.17)]
     for i,ex in enumerate(examples):
+        fec_pred,pred = Detector._predict_full(ex,threshold=1e-1,
+                                               tau_fraction=0.005)
+        fig = PlotUtilities.figure()
+        Plotting.plot_prediction_info(fec_pred,pred)
+        PlotUtilities.savefig(fig,"./pred{:d}.png".format(i))
         fig = PlotUtilities.figure()
         plt.subplot(2,1,1)
         FEC_Plot.force_versus_time(ex,NFilterPoints=n_filter)
