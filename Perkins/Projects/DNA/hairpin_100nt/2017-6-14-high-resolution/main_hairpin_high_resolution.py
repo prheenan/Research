@@ -12,15 +12,26 @@ import sys,cProfile,os
 sys.path.append("../../../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
-from Research.Personal.EventDetection.Util import Analysis,Plotting
-from Research.Personal.EventDetection._2SplineEventDetector import Detector
-from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
 from FitUtil.FreelyJointedChain.Python.Code import FJC
-from Research.Perkins.AnalysisUtil.EnergyLandscapes import \
-   IWT_Util
-from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass   
+from GeneralUtil.python import PlotUtilities
 
+
+def hairpin_plots(example,filter_fraction,out_path):
+    n_filter = int(np.ceil(example.Force.size * filter_fraction))
+    # make a plot vs time 
+    fig = PlotUtilities.figure()
+    plt.subplot(2,1,1)
+    FEC_Plot.force_versus_time(example,NFilterPoints=n_filter)
+    plt.show()
+    plt.subplot(2,1,2)
+    FEC_Plot.z_sensor_vs_time(example,NFilterPoints=n_filter)
+    PlotUtilities.savefig(fig,out_path + "vs_time.png")
+    # make a force-extension plot
+    fig = PlotUtilities.figure()
+    FEC_Plot.FEC(example,NFilterPoints=n_filter)
+    PlotUtilities.savefig(fig,out_path + "vs_sep.png")
+        
+    
 def run():
     """
     <Description>
@@ -32,34 +43,36 @@ def run():
         This is a description of what is returned.
     """
     abs_dir = "./"
-    _, examples = FEC_Util.read_and_cache_pxp(abs_dir,force=False,
-                                              cache_name="./cache.pkl")                    
-    n_filter = 400                                          
-    dicts = [dict(time_min=5.73,time_max=7.73),
-             dict(time_min=5.99,time_max=7.17)]
-    for i,ex in enumerate(examples):
-        fec_pred,pred = Detector._predict_full(ex,threshold=1e-1,
-                                               tau_fraction=0.005)
-        fig = PlotUtilities.figure()
-        Plotting.plot_prediction_info(fec_pred,pred)
-        PlotUtilities.savefig(fig,"./pred{:d}.png".format(i))
-        fig = PlotUtilities.figure()
-        plt.subplot(2,1,1)
-        FEC_Plot.force_versus_time(ex,NFilterPoints=n_filter)
-        plt.subplot(2,1,2)
-        FEC_Plot.z_sensor_vs_time(ex,NFilterPoints=n_filter)
-        PlotUtilities.savefig(fig,"./out{:d}.png".format(i))
-        # slice just the region we care about...
-        ex = FEC_Util.slice_by_time(ex,**dicts[i])
-        ex.Separation -= min(ex.Separation)
-        ex.Force -= min(ex.Force)
-        ex.Force *= -1
-    # POST: examples are sliced
-    # get the unfolding and refolding objects
-    unfold,refold = [IWT_Util.get_unfold_and_refold_objects(e,number_of_pairs=1) 
-                     for e in examples]
-    # concatenate all of the refolding objects
-
+    examples = FEC_Util.\
+        cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
+                                            cache_dir="./cache/",limit=1)
+    ### XXX TODO
+    # (1) correct for interference artifact
+    # (2) get regions for WLC fit
+    # (3) fit WLC to regions
+    # (4) Invert WLC, determine dsDNA and ssDNA contour lengths at each force 
+    region_fit = [8.1,8.9]
     
+    for i,ex in enumerate(examples):
+        _,processed = FEC_Util.PreProcessFEC(ex)
+        # XXX be more clever.
+        sep_offset = 13e-9
+        force_offset = 8e-12
+        processed.Separation -= sep_offset
+        processed.Force -= force_offset
+        for_wlc_fit = FEC_Util.slice_by_time(processed,*region_fit) 
+        wlc_params = dict(K0=2000e-12,Lp=0.2e-9,kbT=4.1e-21)
+        fit_dict = dict(brute_dict=dict(Ns=20,ranges=[(10e-9,90e-9)]),
+                        **wlc_params)
+        x_raw,y_raw = for_wlc_fit.Separation,for_wlc_fit.Force
+        x0,model_x,model_y = FJC.fit_fjc_contour(x_raw,y_raw,**fit_dict)
+        print(x0)
+        plt.plot(x_raw,y_raw)
+        plt.plot(model_x,model_y)
+        plt.show()
+    return 
+    for i,ex in enumerate(examples):
+        hairpin_plots(ex,filter_fraction=1e-3,out_path="./out/{:d}".format(i))
+        
 if __name__ == "__main__":
     run()

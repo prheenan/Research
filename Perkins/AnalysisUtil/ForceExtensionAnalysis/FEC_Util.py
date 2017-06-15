@@ -175,6 +175,40 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
+def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
+                                        force=False,**kwargs):
+    """
+    reads in all pxp files in a directory, caching their waves 
+    (as TimeSepForce objects) to cache_dir, returning a list of TimeSepForce
+    objects
+
+    Args:
+        <pxp/cache>_dir: where the input pxps live, where to put the cached
+        files
+        
+        limit: maximum number to read out of the cached dir. will cache 
+        as many waves in the pxp as it can, but will only return up to limit 
+        
+        force: if true, force re-reading. 
+        
+        **kwargs: passed to concatenate_fec_from_single_directory
+    Returns:
+        list of TimeSepForce objects
+    """
+    GenUtilities.ensureDirExists(cache_dir)
+    files = GenUtilities.getAllFiles(cache_dir,ext=".pkl")
+    if (len(files) > 0 and not force):
+        return [CheckpointUtilities.lazy_load(f) for f in files[:limit]]
+    # get all the fecs
+    _, examples = concatenate_fec_from_single_directory(pxp_dir,**kwargs)                    
+    # save them all out individually
+    base_path = "./cache/"
+    for i,e in enumerate(examples):
+        name = "{:s}{:s}_{:s}{:d}.pkl".format(base_path,e.Meta.SourceFile,
+                                              e.Meta.Name,i)
+        CheckpointUtilities.lazy_save(name,e)
+    return examples[:limit]
+    
 def slice_by_time(obj,time_min=-np.inf,time_max=np.inf):
     """
     slices the given object by a minimum and maximum time
