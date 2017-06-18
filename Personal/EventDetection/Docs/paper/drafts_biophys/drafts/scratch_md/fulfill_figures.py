@@ -8,17 +8,27 @@ credit to: blog.hartleygroup.org/2015/11/08/numbering-figures-schemes-and-charts
 """
 
 
-from pandocfilters import toJSONFilter, Str
+from pandocfilters import toJSONFilter, Str,Strong
 import re,pickle
 
 import figure_util
 
+def label_text(kind,label,known_labels):
+    default_fmt = "{:s} {:s}."
+    num = known_labels[kind][label]
+    kind_to_label = dict(fig=default_fmt.format("Figure",num),
+                         eq=default_fmt.format("Equation",num),
+                         tbl=default_fmt.format("Table",num),
+                         sec="{:s} {:s}:".format("Section",num))
+    return [Strong([Str(kind_to_label[kind])])]
+                         
+
 def fulfill_references(key,val,fmt,meta,known_labels):
-    if key == 'Str' and figure_util.REF_PAT.match(val):
+    if (key == 'Str') and figure_util.REF_PAT.match(val):
         start, label_or_ref,kind, label, end = figure_util.match_pattern(val)
         if (label_or_ref is not None) and ("label" in label_or_ref):
-            # labels dont get numbers
-            content = [Str("")]
+            # format labels as we want...
+            content = label_text(kind,label,known_labels)
         elif ( (kind  not in known_labels) or 
              (label not in known_labels[kind])):
             # couldnt find the kind or the label for the reference

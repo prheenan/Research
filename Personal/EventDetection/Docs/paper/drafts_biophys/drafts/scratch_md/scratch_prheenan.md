@@ -9,22 +9,20 @@ ABSTRACT In single-molecule force spectroscopy (SMFS) experiments, mechanical fo
 # {#label_sec:Intro} Introduction 
 
 
+----
+![](figures/diagram.png)
+{#label_fig:diagram} FEATHER facilitates energy landscape characterization of molecular unfolding.  **(A)** A cartoon of a single-barrier energy potential and the polyprotein construct from @walder_robert_rapid_nodate used as test data for this work. **(B)** An illustrative force versus time curve for the cartoon shown in (A). **(C)** An cartoon distribution of rupture forces, $F_\mathbf{R}$, from (B) with a model fit overlayed @dudko_theory_2008. **(D)** Applying the model from (C) to rupture force and loading rate yields the energetic parameters illustrated in (A). **(E)** An experimental force versus time curve of the polyprotiein from (A), with events marked by green arrows. Many such curves were used in this study to test algorithmic performance. **(F)** A detailed subplot of a single event from (E), defining $d_{t\rightarrow p}$, the distance from a 'true' (annotated) event to the closest predicted event, and $d_{p\rightarrow t}$, the distance from a predicted event to the closest true event. Predicted events are for illustrative purposes only.
+----
+
 In single-molecule force spectroscopy (SMFS) experiments, a force probe attaches to a molecule and stretches it while measuring force and extension over time, known as a force-extension curve (Figure {#ref_fig:diagram}). These data are transformed into information such as kinetic rates of processive enzymes @comstock_direct_2015, protein-ligand bond strength @yuan_energy_2000, and the energy landscapes of proteins and nucleic acids @dudko_theory_2008. The location and properties of the *ruptures* in the data (Figure {#ref_fig:diagram}) are required for many common  analyses, such as applying polymer models and determining the molecular energy landscape.
-
-
-----
-![](figures/diagram.png){#label_fig:diagram}
-**Figure {#ref_fig:diagram}** Energy landscape characterization of protein unfolding.  **(A)** A cartoon of a single-barrier energy potential and the polyprotein construct from (XXX). **(B)** An illustrative force versus time curve for the cartoon shown in (A). **(C)** An cartoon distribution of rupture forces, $F_\mathbf{R}$, with a model fit overlayed @dudko_theory_2008. **(D)** Applying the model from (C) to rupture force and loading rate yields the energetic parameters illustrated in (A). **(E)** An experimental force versus time curve of the polyprotiein from (A), with events marked by green arrows. Many such curves were used in this study to test algorithmic performance. **(F)** A detailed subplot of a single event from (E), defining $d_{t\rightarrow p}$, the distance from a 'true' (annotated) event to the closest predicted event, and $d_{p\rightarrow t}$, the distance from a predicted event to the closest true event. Predicted events are for illustrative purposes only.
-----
-
 
 Methods exist to automate detecting events within SMFS data. Automation removes the burden of manual data filtering and improves scientific reproducibility. Techniques for automated event detection in SMFS data include aligning by the contour length at each extension by applying polymer models [@bosshart_reference-free_2012; @kuhn_automated_2005] thresholding based on signal or noise characteristics;[@gergely_semi-automatized_2001; @roduit_openfovea:_2012] and classification based on transformations of the data into frequency or derivative spaces [@kasas_fuzzy_2000; @garcia-masso_automated_2016; @benitez_searching_2017]. These methods do provide an increased degree of autonomy, but their use is limited by their lack of generalization. Thresholding or transmformation algorithms typicaly recquire optimizing many hard-to-interpret parameters, and contour-length alignment algorithms bias results towards dominant features and necessarily require a model for the contour length.
 
 This work describes a new method for detecting events in force-extension curves.  The algorithm, named FEATHER (**F**orce **E**xtension **A**nalysis using a **T**estable **H**yptothesis for **E**vent **R**ecognition), requires no \textit{a priori} knowledge of the polymer under study, does not bias data interpretation towards the dominant behavior of the data, and has two easy-to-interpret parameters which generalize well to typical SMFS data.
 
-# Materials and Methods
+# {#label_sec:datasets} Materials and Methods
 
-## {#label_sec:datasets} Data used to determine performance 
+## Data used to determine performance 
 
 The following two data sets were hand-annotated for the purposes of determining algorithm event detection performance:
 
@@ -39,8 +37,8 @@ Statistics on the data sets and the annotated events are in Section S{#ref_sec:S
 
 
 --------------------------
-![{#label_fig:flowchart}](figures/flowchart.png)
-**Figure {#ref_fig:flowchart}.** FEATHER’s algorithmic identification of rupture events in force. **(A)** A force versus time curve with a spline fit overlayed. **(B)** The probability of no event obtained by applying Chebychev's inequality to (A), as described in the text. **(C)** Transforming (B) to remove regions near the surface or with positive force derivatives. **(D)** Transforming (C) to remove regions where the force change is negligible, as described in Section S{#sec:DesignDetails}. **(E-H)** The events and magnified regions obtained from each region in (D) with a probability less than a user-specified threshold. Plotting conventions are as in Figure {#ref_fig:diagram}.
+![](figures/flowchart.png)
+{#label_fig:flowchart} FEATHER’s algorithmic identification of rupture events in force spectrosopy data. **(A)** A force versus time curve with a spline fit overlayed. **(B)** The probability of no event obtained by applying Chebychev's inequality to (A), as described in Section S{#sec:DesignDetails}. **(C)** Transforming (B) to remove regions near the surface or with positive force derivatives. **(D)** Transforming (C) to remove regions where the force change is negligible, as described in Section S{#sec:DesignDetails}. **(E-H)** The events and magnified regions obtained from each region in (D) with a probability less than a user-specified threshold. Plotting conventions are as in Figure {#ref_fig:diagram}.
 --------------------------
 
 
@@ -56,12 +54,12 @@ The following algorithms were chosen for comparison to FEATHER:
 
 ## Performance metrics
 
-Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are listed in Table S{#ref_tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#ref_fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces. Both metrics are between 0 and 1, with 0 being optimal (see Table S{#ref_tbl:metrics}).
+Two metrics were used for comparing the event-finding performance of FEATHER with the human-annotated data. The metrics reported are defined mathmatically in Table S{#ref_tbl:metrics}. The event error metric, $P_{95}$, is the 95th percentile of relative error between predicted and true event locations (see Figure {#ref_fig:diagram}). The rupture Bhattacharya coefficient's complement reports the mismatch between the true and predicted distribution over loading rates and rupture forces. Both metrics are between 0 and 1, with 0 being optimal.
 
 
 --------------------------------------------------- 
-![{#label_fig:performance}](figures/performance.png)      
-**Figure {#ref_fig:performance}.** Figure reporting FEATHER's 30-fold performance gains. **(A)** The histogram of relative errors between expected and predicted event locations for FEATHER, Open Fovea, and Scientific Python. Distributions skewed towards one indicate high error. The dotted line gives the 95% percentile of error. **(B)** The histogram of predicted and expected loading rates for FEATHER, Open Fovea, and Scienctific Python. **(C)** As (B), but for rupture forces. All expected values are from human-annotated data.
+![](figures/performance.png)      
+{#label_fig:performance} Figure reporting FEATHER's 30-fold performance gains. **(A)** The histogram of relative errors between expected and predicted event locations for FEATHER, Open Fovea, and Scientific Python. Distributions skewed towards one indicate high error. The dotted line gives the 95% percentile of error. **(B)** The histogram of predicted and expected loading rates for FEATHER, Open Fovea, and Scienctific Python. **(C)** As (B), but for rupture forces. All expected values are from human-annotated data.
 --------------------------------------------------- 
 
 # Results and Discussion
@@ -74,7 +72,7 @@ Name 	      	    | Rupture BCC ($\downarrow$) | Relative event error $P_{95}$ ($
 FEATHER             | **0.00501** | **0.00648**
 OpenFovea 	    | 0.287 	  | 0.421
 Scientific Python   | 0.0257 	  | 0.201
-[{#label_tbl:performance} Table {#ref_tbl:performance}. The performance metrics for each algorithm.]
+[{#label_tbl:performance} The performance metrics for each algorithm.]
 
 
 # Conclusion
