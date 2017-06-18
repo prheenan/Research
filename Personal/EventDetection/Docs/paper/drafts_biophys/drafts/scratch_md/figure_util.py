@@ -10,16 +10,16 @@ import matplotlib.pyplot as plt
 import sys,re,pickle
 
 file_cache = "./tmp.pkl"
-REF_PAT = re.compile('(.*)\{#(label_|ref_)?((?:S_)?fig|eq|tbl|sec):(\w*)\}(.*)')
+REF_PAT = re.compile('(.*)\{#(label_|ref_)(fig|eq|tbl|sec):(S_)?(\w*)\}(.*)')
 
 
 def match_pattern(val):
-    start, label_or_ref,kind, label, end = REF_PAT.match(val).groups()
+    start, label_or_ref,kind, supp,label, end = REF_PAT.match(val).groups()
     # make the king case-insensitive
     sanit = lambda x : str(x.lower().strip())
     kind = sanit(kind)
     label = sanit(label)
-    return start,label_or_ref,kind,label,end
+    return start,label_or_ref,kind,supp,label,end
 
 def write_cache(labels):
     with open(file_cache,'wb') as f:
