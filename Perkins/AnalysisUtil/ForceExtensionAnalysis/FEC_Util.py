@@ -79,7 +79,7 @@ def read_ibw_directory(directory,grouping_function,limit=None):
     return _groups_to_time_sep_force(data,limit=limit)
     
 def cache_ibw_directory(cache_directory,in_directory,limit=None,force=False,
-                        *args,**kwargs):
+                        **kwargs):
     """
     reads a directory of ibw files, caching each TimeSepForce object 
     *individually* (which is critical for huge ibw's)
@@ -91,23 +91,12 @@ def cache_ibw_directory(cache_directory,in_directory,limit=None,force=False,
     Returns:
         list of TimeSepForce objects, after properly cachine
     """
-    in_base = GenUtilities.getFileFromPath(in_directory)
-    file_base = "{:s}{:s}".format(cache_directory,in_base)
-    files = GenUtilities.getAllFiles(cache_directory,ext=".pkl")
-    # make sure these are the files we want
-    files_cached = [f for f in files][:limit]
-    # POST: files is a list of all files with the base we want
-    if (force or (len(files_cached) == 0)):
-        # then read everything back in 
-        data = read_ibw_directory(in_directory,*args,limit=limit,**kwargs)
-        # cache all the files
-        cached_names = [(file_base + d.Meta.Name +".pkl") for d in data]
-        for file_name,data_tmp in zip(cached_names,data):
-            CheckpointUtilities.lazy_save(file_name,data_tmp)
-    else:
-        # just read all the (cached) files
-        data = [CheckpointUtilities.lazy_load(f) for f in files_cached]
-    return data 
+    return cache_individual_waves_in_directory(pxp_dir=in_directory,
+                                               cache_dir=cache_directory,
+                                               limit=limit,
+                                               load_func = read_ibw_directory,
+                                               force=force,**kwargs) 
+
 
 def ReadInData(FullName,Limit=None,**kwargs):
     """
@@ -176,7 +165,7 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
     return d
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
-                                        force=False,**kwargs):
+                                        force=False,load_func=None,**kwargs):
     """
     reads in all pxp files in a directory, caching their waves 
     (as TimeSepForce objects) to cache_dir, returning a list of TimeSepForce
@@ -191,16 +180,25 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
         
         force: if true, force re-reading. 
         
-        **kwargs: passed to concatenate_fec_from_single_directory
+        load_func: which function to use. if none, defaults to pxp. must accept
+        the directory as its first argument, and return a list of TimeSepForce
+        objects
+        
+        **kwargs: passed to load_func
     Returns:
         list of TimeSepForce objects
     """
+    if (load_func is None):
+        # by default, we read the pxps in the directory
+        # and get the last return (TimeSepForce)
+        load_func = lambda *args,**kwargs: \
+            concatenate_fec_from_single_directory(*args,**kwargs)[-1]
     GenUtilities.ensureDirExists(cache_dir)
     files = GenUtilities.getAllFiles(cache_dir,ext=".pkl")
     if (len(files) > 0 and not force):
         return [CheckpointUtilities.lazy_load(f) for f in files[:limit]]
     # get all the fecs
-    _, examples = concatenate_fec_from_single_directory(pxp_dir,**kwargs)                    
+    examples = load_func(pxp_dir,**kwargs)                    
     # save them all out individually
     base_path = "./cache/"
     for i,e in enumerate(examples):

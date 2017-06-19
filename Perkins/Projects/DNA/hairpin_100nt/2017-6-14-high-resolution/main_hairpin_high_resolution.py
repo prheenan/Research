@@ -127,6 +127,7 @@ def run():
     # make a heat map 
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec([r.retract for r in good_splits])
+    PlotUtilities.title("FEC Heat map, aligned by L0, N={:d}".format(len(good_splits)))
     PlotUtilities.savefig(fig,"./heat.png")
     for i,ex in enumerate(examples):
         hairpin_plots(ex,filter_fraction=1e-3,out_path="./out/{:d}".format(i))
