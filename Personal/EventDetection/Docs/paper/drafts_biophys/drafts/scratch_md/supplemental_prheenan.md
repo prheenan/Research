@@ -90,7 +90,7 @@ $P( |R_t-\epsilon_t| \ge |r_t-\epsilon_t| ) \le
 (\frac{\sigma}{|r_t-\epsilon_t|})^2$ {#label_eq:featherprobability}
 
 
-For \emph{any} noise distribution, {#ref_eq:featherprobability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by {#ref_eq:featherepsilon} and Equation {#eq:feathersigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
+For \emph{any} noise distribution, {#ref_eq:featherprobability} bounds the probability of a measurement under the no-event hypothesis, given the force approximation $g^{*}_t$ (which in turn yields the estimator error $\hat{\epsilon}$ and the noise $\hat{\sigma}$ by {#ref_eq:featherepsilon} and Equation {#ref_eq:feathersigma}). A low probability at a given time implies the measurement is unlikely under the no-event hypothesis. 
 
 ##Accurate estimators for hypothesis testing
 
@@ -100,7 +100,7 @@ Using $r_t$ as shown in {#ref_eq:featherepsilon} does not provide a strong signa
 
 The noise variables $\sigma$ and $\epsilon$ are estimated from the distribution of standard deviations $\Sigma$ on the region of the approach curve where the AFM tip is not in contact with the surface. From this distribution, $\hat{\sigma}$ is set to the standard deviation of $\Sigma$, and $\hat{\epsilon}_t$ is approximated by the median. The median is used instead of the mean to remove the influence of possible false positive events in the approach. The removal of these pseudo-events is necessary to ensure accurate estimators for $\sigma$ and $\epsilon$, which are based on the no-event hypothesis. 
 
-The quality of FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilities. The calculation of each of these probabilities is exactly the same as Equation {#eq:featherprobability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
+The quality of FEATHER's results are improved by multiplying the no-event probability, as discussed above, by the integral force, force derivative, and force differential Chebyshev probabilitiesjdiasjodjasidiasjdas. The calculation of each of these probabilities is exactly the same as Equation {#ref_eq:featherprobability}, with the variables changed appropriately. Specifically, the relevant operation (integration, differentiation, or force difference) is applied to the approach, estimates for the operation-specific $\epsilon$ and $\sigma$ are obtained, yielding the operation-specific probability.
 
 
 

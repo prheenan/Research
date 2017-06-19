@@ -335,8 +335,8 @@ def run():
     # plot everything
     n_cols = 2
     n_rows = 3
-    # 'master' grid spec is 2x1
-    gs0 = gridspec.GridSpec(2,1)
+    # 'master' grid spec is 1 row, 2 cols
+    gs0 = gridspec.GridSpec(1,2)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
                                           hspace=0.5,wspace=0.5)
     ylim_force_pN = [-35,max(force_interp_plot)*1.3]
@@ -347,7 +347,7 @@ def run():
     # different fraction.
     y_fec_label = -0.1
     ylabel_subplot = lambda ax,x=-0.25 : ax.yaxis.set_label_coords(x, 0.5) 
-    fig = PlotUtilities.figure(figsize=(3.25,4.25))
+    fig = PlotUtilities.figure(figsize=(7,3))
     # # plot the experimental image
     in_ax = plt.subplot(gs[:,0])
     cantilever_image_plot(image_location)
@@ -409,7 +409,7 @@ def run():
     plt.ylim(rupture_limits)
     # # plot the energy landscape with annotations
     # add axes is [left,bottom,width,height]
-    in_ax_landscape= fig.add_axes([0.085,0.545,0.225,0.25])
+    in_ax_landscape= fig.add_axes([0.2,0.545,0.7,0.35])
     plot_landscape(x,landscape,ax=in_ax_landscape)
     energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
     # remove the upper and right part of the frames
@@ -447,9 +447,7 @@ def run():
              [-0.18,0.95]]
     ylabel_subplot(ax_zoom,y_fec_label)
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-    PlotUtilities.savefig(fig,"./diagram.png",
-                          subplots_adjust=dict(top=0.95,bottom=0.035,
-                                               hspace=0.25))
+    PlotUtilities.savefig(fig,"./diagram.png")
 
 if __name__ == "__main__":
     run()

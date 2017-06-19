@@ -14,6 +14,11 @@ import figure_util
 prefix = [""]
 known_labels = {}
 
+
+"""
+following two set the global prefix variable,
+which is updated as we go through the AST
+"""
 def get_prefix():
     return prefix[0]
 

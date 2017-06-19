@@ -14,15 +14,28 @@ import re,pickle
 import figure_util
 
 def label_text(label_or_ref,kind,label,known_labels):
+    """
+    Given a raw label, returns how its text should be formatted
+
+    Args:
+        label_or_ref: either "label_" or "ref_"
+        kind: one of the valid types (eq,tlb,sec, etc)
+        label: the label to use (ie: "PerformanceFigure")
+        known_labels: obtained from walk_figures
+    Retruns:
+        either Str or Strong element to replace in the AST
+    """
     is_label = label_or_ref is not None and "label" in label_or_ref
     default_fmt = "{:s} {:s}"
+    sec_label = default_fmt
     if (is_label):
         default_fmt += "."
+        sec_label += ":"
     num = known_labels[kind][label]
     kind_to_label = dict(fig=default_fmt.format("Figure",num),
                          eq=default_fmt.format("Equation",num),
                          tbl=default_fmt.format("Table",num),
-                         sec="{:s} {:s}:".format("Section",num))
+                         sec=sec_label.format("Section",num))
     str_ele = [Str(kind_to_label[kind])]
     if (is_label):
         return [Strong(str_ele)]
@@ -30,6 +43,9 @@ def label_text(label_or_ref,kind,label,known_labels):
         return str_ele
 
 def fulfill_references(key,val,fmt,meta,known_labels):
+    """
+    loops through, replacing the references with their proper numbers 
+    """
     if (key == 'Str') and figure_util.REF_PAT.match(val):
         start, label_or_ref,kind,supp,label, end = \
                 figure_util.match_pattern(val)
