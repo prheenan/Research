@@ -28,7 +28,8 @@ def get_first_peak_slices(absolute_data_dir):
     retracts = IoUtilHao.get_downsampled_data(downsample_n,force_sample,
                                               cache_directory,
                                               absolute_data_dir,limit=limit)
-    data_fec = [IoUtilHao.get_retract_pulling_region(d) for d in retracts]
+    data_fec = [IoUtilHao.get_retract_pulling_region(d,zero=True) 
+                for d in retracts]
     # get a x% 'fudge factor' used for filtering etc.
     frac = 0.02
     fudge_N = [int(np.ceil(x.Force.size*frac)) for x in data_fec]

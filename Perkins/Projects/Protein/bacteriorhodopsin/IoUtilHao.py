@@ -18,9 +18,10 @@ from Research.Personal.EventDetection._2SplineEventDetector import _no_event
     
 def hao_grouping_function(str_v):
     pattern = r"""
-               (\D+) # type (eg: ext,force)
-               (\d+)      # id (e.g. 1131)
-               (\D+)        # anything else, who cares
+               (ext|force)     # type (eg: ext,force)
+               \D+?            # non-greedy non digits (e.g. "extsmooth")
+               (\d+)           # id (e.g. 1131)
+               (\D+)           # anything else, who cares
                """
     match = re.match(pattern,str_v,re.VERBOSE)
     assert match is not None , "Whoops! Got a bad string: {:s}".format(str_v)
@@ -29,21 +30,38 @@ def hao_grouping_function(str_v):
     ending = ending if ending != "ext" else "sep"
     return preamble,id,ending
     
-def get_downsampled_data(downsample_n,force,cache_directory,
-                         input_directory,limit):
+def read_and_cache_data_hao(input_directory,cache_directory="./cache_in/",
+                            force=True,limit=None,**kwargs):
+    """
+    Reads hao-style ibw files from input_directory, caching them as TimeSepForce
+    to cache_directory 
+    
+    Args:
+        see cache_ibw_directory
+    Returns;
+        list of TimeSepForce objects 
+    """    
     dict_kwargs = dict(cache_directory=cache_directory,
                        in_directory=input_directory,
                        grouping_function = hao_grouping_function,
                        limit=limit,force=force)
     data = FEC_Util.cache_ibw_directory(**dict_kwargs)  
+    for d in data:
+        d.Force *= 1e-12
+        d.Separation *= 1e-9
+    return data
+    
+def get_downsampled_data(downsample_n,force,cache_directory,
+                         input_directory,limit):
+    data = read_data_hao(**kwargs)
     if (downsample_n > 1):
         get_down_slice = lambda x: slice(0,d.Force.size,downsample_n) 
         data = [FEC_Util.MakeTimeSepForceFromSlice(d,get_down_slice(d)) 
                 for d in data]
     return data
     
-def get_retract_pulling_region(d,fraction_for_vel=0.1,fraction_fudge=0.02,
-                               n_std=3,fraction_zero_retract=0.05):
+def get_retract_pulling_region(d,fraction_fudge=0.02,
+                               n_std=3,fraction_zero_retract=0.05,zero=False):
     # get just the retract regions
     # get after the surface invols
     r = FEC_Util.GetFECPullingRegion(d,FlipSign=False,Correct=True)
@@ -70,9 +88,9 @@ def get_retract_pulling_region(d,fraction_for_vel=0.1,fraction_fudge=0.02,
     retract.Force *= 1e-12
     retract.Separation *= 1e-9
     # zero by the bottom P%...
-    retract.Separation -= np.percentile(retract.Separation,
-                                        fraction_zero_retract)
-
+    if (zero):
+        retract.Separation -= np.percentile(retract.Separation,
+                                            fraction_zero_retract)
     return retract
 
 

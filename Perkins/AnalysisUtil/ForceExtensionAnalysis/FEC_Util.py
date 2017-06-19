@@ -186,7 +186,7 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
         
         **kwargs: passed to load_func
     Returns:
-        list of TimeSepForce objects
+        list of TimeSepForce objects; at most limit (depending on the dta)
     """
     if (load_func is None):
         # by default, we read the pxps in the directory
@@ -195,17 +195,48 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
             concatenate_fec_from_single_directory(*args,**kwargs)[-1]
     GenUtilities.ensureDirExists(cache_dir)
     files = GenUtilities.getAllFiles(cache_dir,ext=".pkl")
-    if (len(files) > 0 and not force):
+    # if the files exist and we aren't forcing 
+    if (len(files) >= 0 and not force):
         return [CheckpointUtilities.lazy_load(f) for f in files[:limit]]
     # get all the fecs
     examples = load_func(pxp_dir,**kwargs)                    
-    # save them all out individually
-    base_path = "./cache/"
     for i,e in enumerate(examples):
-        name = "{:s}{:s}_{:s}{:d}.pkl".format(base_path,e.Meta.SourceFile,
+        # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
+        file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
+        name = "{:s}{:s}_{:s}{:d}.pkl".format(cache_dir,
+                                              file_name_src,
                                               e.Meta.Name,i)
         CheckpointUtilities.lazy_save(name,e)
     return examples[:limit]
+
+def _slice_by_property(obj,min_prop,max_prop,property_func):
+    """
+    slices an object into a nerw object by a certain propery range
+    
+    Args:
+        see slice_by_time, except...
+        property_func: takes in obj, returns the desired property
+    Returns:
+        new, sliced object. If it cant find the bounds, it just returns
+        as much data as it can
+    """
+    property = property_func(obj)
+    idx_greater_than_min = np.where(property >= min_prop)[0]
+    idx_less_than_max = np.where(property <= max_prop)[0]
+    # determine where to put the indices
+    n_greater = idx_greater_than_min.size 
+    n_less = idx_less_than_max.size
+    if (n_greater== 0):
+        idx_first = 0
+    else: 
+        idx_first = idx_greater_than_min[0]
+    if (n_less == 0):
+        idx_last = None
+    else: 
+        idx_last = idx_less_than_max[-1]
+    assert n_greater + n_less > 0 , "couldn't find a proper slice"
+    # POST: have something to slice
+    return MakeTimeSepForceFromSlice(obj,slice(idx_first,idx_last,1))    
     
 def slice_by_time(obj,time_min=-np.inf,time_max=np.inf):
     """
@@ -216,24 +247,21 @@ def slice_by_time(obj,time_min=-np.inf,time_max=np.inf):
         time_<min/max>: the maximum and minimum time to use
         By default, we just slice everything.
     """
-    time = obj.Time
-    idx_greater_than_min = np.where(time >= time_min)[0]
-    idx_less_than_max = np.where(time <= time_max)[0]
-    # determine where to put the indices
-    n_greater = idx_greater_than_min.size 
-    n_less = idx_less_than_max.size
-    if (n_greater== 0):
-        idx_first = 0
-    else: 
-        idx_first = idx_greater_than_min[0]
+    return _slice_by_property(obj,property_func = lambda x: x.Time,
+                              min_prop=time_min,max=max_prop)
 
-    if (n_less == 0):
-        idx_last = None
-    else: 
-        idx_last = idx_less_than_max[-1]
-    assert n_greater + n_less > 0 , "couldn't find a proper slice"
-    # POST: have something to slice
-    return MakeTimeSepForceFromSlice(obj,slice(idx_first,idx_last,1))
+def slice_by_separation(obj,*args,**kwargs):
+    """
+    slices the given object by separation bounds.
+    
+    Args:
+        see slice_by_time, except switch time to separation
+    Returns:
+        see slice_by_time
+    
+    """
+    return _slice_by_property(obj,*args,property_func = lambda x: x.Separation,
+                              **kwargs)                               
     
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
