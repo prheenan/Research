@@ -13,7 +13,7 @@ sys.path.append("../../../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from FitUtil.FreelyJointedChain.Python.Code import FJC
-from GeneralUtil.python import PlotUtilities,CheckpointUtilities
+from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
 from Research.Personal.EventDetection.Util import Analysis
 
 
@@ -92,6 +92,9 @@ def run():
     """
     abs_dir = "./"
     cache_dir = "./cache/"
+    out_dir = "./out/"
+    GenUtilities.ensureDirExists(cache_dir)
+    GenUtilities.ensureDirExists(out_dir)    
     examples = FEC_Util.\
         cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
                                             cache_dir=cache_dir,limit=20)
@@ -128,9 +131,9 @@ def run():
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec([r.retract for r in good_splits])
     PlotUtilities.title("FEC Heat map, aligned by L0, N={:d}".format(len(good_splits)))
-    PlotUtilities.savefig(fig,"./heat.png")
+    PlotUtilities.savefig(fig,out_dir + "heat.png")
     for i,ex in enumerate(examples):
-        hairpin_plots(ex,filter_fraction=1e-3,out_path="./out/{:d}".format(i))
+        hairpin_plots(ex,filter_fraction=1e-3,out_path=out_dir + "{:d}".format(i))
     # XXX plot the data with the fit of the WLC aligned ontop 
         
 if __name__ == "__main__":
