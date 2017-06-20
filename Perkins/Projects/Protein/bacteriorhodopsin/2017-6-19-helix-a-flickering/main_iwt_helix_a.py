@@ -16,6 +16,15 @@ from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
 from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
 from FitUtil.WormLikeChain.Python.Code import WLC 
 import cProfile 
+
+class slice_area:
+    def __init__(self,ext_bounds,plot_title,n_bins):
+        self.ext_bounds = ext_bounds
+        self.plot_title = plot_title
+        self.n_bins = n_bins
+    @property
+    def save_name(self):
+        return self.plot_title.replace(" ","_") + ".pkl"
    
 def convert_to_iwt(time_sep_force,frac_vel=0.1):
     iwt_data = [IWT_Util.ToIWTObject(d) for d in time_sep_force]
@@ -26,7 +35,7 @@ def convert_to_iwt(time_sep_force,frac_vel=0.1):
     
 def fmt_iwt():
     PlotUtilities.xlabel("Extension (nm)")
-
+    
    
 def run():
     """
@@ -38,51 +47,51 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    in_dir = "./data_in/"
-    out_dir = "./out/"
+    in_dir = "./data_in_full/"
+    out_dir = "./out_full/"
     GenUtilities.ensureDirExists(out_dir)
     force_read_data = False
-    force_iwt = False
-    data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
-                                             limit=40)
+    force_iwt = True
+    raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
+                                                 limit=150)
     adhesion_end_m = 20e-9                                             
     min_max_full = [adhesion_end_m,75e-9]
-    min_max_helix_a = [45e-9,75e-9]
-    min_max_helix_a_zoomed = [57e-9,61e-9]
+    n_bins_zoom = 100
+    array = [\
+        slice_area([20e-9,35e-9],"Helix A",n_bins_zoom),
+        slice_area([50e-9,75e-9],"Helix E",n_bins_zoom),
+        slice_area([57e-9,65e-9],"Helix E (detailed)",n_bins_zoom)
+        ]
     # # get the slice we care about for each...
-    sliced_data = []
-    helix_a_data = []
-    helix_a_zoomed_data = []
-    for i,d in enumerate(data):
+    sliced_data = [ [] for _ in array]
+    full_data = []
+    for i,d in enumerate(raw_data):
         sliced_fec = FEC_Util.slice_by_separation(d,*min_max_full)
-        slice_helix_a = FEC_Util.slice_by_separation(d,*min_max_helix_a)
-        slice_helix_a_zoomed = \
-            FEC_Util.slice_by_separation(d,*min_max_helix_a_zoomed)
-        sliced_data.append(sliced_fec)
-        helix_a_data.append(slice_helix_a)
-        helix_a_zoomed_data.append(slice_helix_a_zoomed)
+        full_data.append(sliced_fec)
+        for i,a in enumerate(array):
+            slice_tmp = FEC_Util.slice_by_separation(d,*a.ext_bounds)
+            sliced_data[i].append(slice_tmp)
     # # get the IWT of both regions
     n_bins = 100
     n_bins_helix=200
     n_bins_helix_zoom = 60
     iwt_f = InverseWeierstrass.FreeEnergyAtZeroForce
     # convert into the iwt objects needed 
-    iwt_full_data= convert_to_iwt(sliced_data)
-    iwt_helix_a_data =  convert_to_iwt(helix_a_data)
-    iwt_helix_a_zoomed_data = convert_to_iwt(helix_a_zoomed_data)
+    iwt_full_data= convert_to_iwt(full_data)
     # get the proper landscapes
-    iwt_full = CheckpointUtilities.getCheckpoint("iwt_full.pkl",iwt_f,force_iwt,
+    iwt_full = CheckpointUtilities.getCheckpoint(out_dir + "iwt_full.pkl",iwt_f,
+                                                 force_iwt,
                                                  iwt_full_data,
                                                  NumBins=n_bins)
-    iwt_helix_a = CheckpointUtilities.getCheckpoint("iwt_helix_a.pkl",iwt_f,
+    iwt_helices = []
+    for i,a in enumerate(array):
+        save_name = (out_dir + a.save_name)
+        iwt_helix_data_tmp =  convert_to_iwt(sliced_data[i])
+        iwt_tmp = CheckpointUtilities.getCheckpoint(save_name,iwt_f,
                                                     force_iwt,
-                                                    iwt_helix_a_data,
-                                                    NumBins=n_bins_helix)  
-    iwt_helix_a_zoomed = \
-        CheckpointUtilities.getCheckpoint("iwt_helix_a_zoomed.pkl",iwt_f,
-                                          force_iwt,
-                                          iwt_helix_a_zoomed_data,
-                                          NumBins=n_bins_helix_zoom)                                                      
+                                                    iwt_helix_data_tmp,
+                                                    NumBins=a.n_bins)  
+        iwt_helices.append(iwt_tmp)                                                  
     # make the iwt (energy landscape) plot of the entire protein
     fig = PlotUtilities.figure()
     obj_full_plot = IWT_Plot.plot_free_landscape(iwt_full)    
@@ -91,38 +100,34 @@ def run():
     PlotUtilities.title("Full bacteriorhodopsin energy landscape")
     fmt_iwt()
     PlotUtilities.legend()    
-    PlotUtilities.savefig(fig,"./iwt_full.png")
-    # make the iwt (energy landscape) plot of the helix, including a     
-    fig = PlotUtilities.figure()
-    IWT_Plot.plot_free_landscape(iwt_helix_a)    
-    fmt_iwt()    
-    PlotUtilities.savefig(fig,"./iwt_helix_a.png") 
-    # make the zoomed plot of the helix a region 
-    fig = PlotUtilities.figure()
-    IWT_Plot.plot_free_landscape(iwt_helix_a_zoomed)    
-    fmt_iwt()    
-    PlotUtilities.savefig(fig,"./iwt_helix_a_zoomed.png")     
+    PlotUtilities.savefig(fig,out_dir + "iwt_full.png")
+    # plot each of the supregions 
+    for i,(a,data) in enumerate(zip(array,sliced_data)):
+        fig = PlotUtilities.figure()
+        IWT_Plot.plot_free_landscape(iwt_helices[i])    
+        fmt_iwt()    
+        PlotUtilities.title(a.plot_title)
+        PlotUtilities.savefig(fig,out_dir + a.save_name + "_iwt_.png")
     # # make the plots we want
-    # make a heat map of all the data and 
+    # make a heat map of all the data and the 
     fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(sliced_data)
+    FEC_Plot.heat_map_fec(full_data)
     PlotUtilities.savefig(fig,out_dir + "heat_map.png")
-    # make a heat map of just the helix a region
-    fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(helix_a_data)
-    PlotUtilities.savefig(fig,out_dir + "heat_map_helix_a.png")    
-    # and of the zoomed region 
-    fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(helix_a_zoomed_data)
-    PlotUtilities.savefig(fig,out_dir + "heat_map_helix_a_zoom.png")    
-    # plot each individually 
+    # plot the zoomed regions 
+    for i,(a,data) in enumerate(zip(array,sliced_data)):
+        fig = PlotUtilities.figure()
+        FEC_Plot.heat_map_fec(sliced_data[i])    
+        PlotUtilities.title(a.plot_title)
+        PlotUtilities.savefig(fig,out_dir + a.save_name + "_heat_.png")
+    # plot each fec individually 
     to_x = lambda x : x*1e9
     to_y = lambda y : y*1e12
-    for i,d in enumerate(data):
+    return 
+    for i,d in enumerate(raw_data):
         fig = PlotUtilities.figure()
         plt.plot(to_x(d.Separation),to_y(d.Force),color='k',alpha=0.3)
-        sep_sliced = sliced_data[i].Separation
-        FEC_Plot._fec_base_plot(to_x(sep_sliced),to_y(sliced_data[i].Force),
+        sep_sliced = full_data[i].Separation
+        FEC_Plot._fec_base_plot(to_x(sep_sliced),to_y(full_data[i].Force),
                                 style_data=dict(color='r',alpha=0.3))
         plt.xlim([0,2*to_x(max(sep_sliced))])
         plt.ylim([-50,300])

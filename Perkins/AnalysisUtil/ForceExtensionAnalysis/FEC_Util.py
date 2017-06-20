@@ -196,7 +196,7 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
     GenUtilities.ensureDirExists(cache_dir)
     files = GenUtilities.getAllFiles(cache_dir,ext=".pkl")
     # if the files exist and we aren't forcing 
-    if (len(files) >= 0 and not force):
+    if (len(files) > 0 and not force):
         return [CheckpointUtilities.lazy_load(f) for f in files[:limit]]
     # get all the fecs
     examples = load_func(pxp_dir,**kwargs)                    
