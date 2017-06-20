@@ -25,11 +25,8 @@ def convert_to_iwt(time_sep_force,frac_vel=0.1):
     return iwt_data
     
 def fmt_iwt():
-    ylim_kT = np.array(plt.ylim())
-    ylim_kcal_per_mol = IWT_Util.kT_to_kcal_per_mol() * ylim_kT
     PlotUtilities.xlabel("Extension (nm)")
-    PlotUtilities.secondAxis(ax=plt.gca(),label="Energy (kcal/mol)",
-                             limits=ylim_kcal_per_mol,color='b',secondY=True)
+
    
 def run():
     """
@@ -44,32 +41,48 @@ def run():
     in_dir = "./data_in/"
     out_dir = "./out/"
     GenUtilities.ensureDirExists(out_dir)
-    data = IoUtilHao.read_and_cache_data_hao(in_dir,force=False,limit=40)
-    min_max_no_adhesion = [15e-9,75e-9]
-    min_max_helix_a = [55e-9,65e-9]
+    force_read_data = False
+    force_iwt = False
+    data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
+                                             limit=40)
+    adhesion_end_m = 20e-9                                             
+    min_max_full = [adhesion_end_m,75e-9]
+    min_max_helix_a = [45e-9,75e-9]
+    min_max_helix_a_zoomed = [57e-9,61e-9]
     # # get the slice we care about for each...
     sliced_data = []
     helix_a_data = []
+    helix_a_zoomed_data = []
     for i,d in enumerate(data):
-        sliced_fec = FEC_Util.slice_by_separation(d,*min_max_no_adhesion)
+        sliced_fec = FEC_Util.slice_by_separation(d,*min_max_full)
         slice_helix_a = FEC_Util.slice_by_separation(d,*min_max_helix_a)
+        slice_helix_a_zoomed = \
+            FEC_Util.slice_by_separation(d,*min_max_helix_a_zoomed)
         sliced_data.append(sliced_fec)
         helix_a_data.append(slice_helix_a)
+        helix_a_zoomed_data.append(slice_helix_a_zoomed)
     # # get the IWT of both regions
     n_bins = 100
     n_bins_helix=200
+    n_bins_helix_zoom = 60
     iwt_f = InverseWeierstrass.FreeEnergyAtZeroForce
     # convert into the iwt objects needed 
     iwt_full_data= convert_to_iwt(sliced_data)
     iwt_helix_a_data =  convert_to_iwt(helix_a_data)
+    iwt_helix_a_zoomed_data = convert_to_iwt(helix_a_zoomed_data)
     # get the proper landscapes
-    iwt_full = CheckpointUtilities.getCheckpoint("iwt_full.pkl",iwt_f,False,
+    iwt_full = CheckpointUtilities.getCheckpoint("iwt_full.pkl",iwt_f,force_iwt,
                                                  iwt_full_data,
                                                  NumBins=n_bins)
     iwt_helix_a = CheckpointUtilities.getCheckpoint("iwt_helix_a.pkl",iwt_f,
-                                                    False,
+                                                    force_iwt,
                                                     iwt_helix_a_data,
                                                     NumBins=n_bins_helix)  
+    iwt_helix_a_zoomed = \
+        CheckpointUtilities.getCheckpoint("iwt_helix_a_zoomed.pkl",iwt_f,
+                                          force_iwt,
+                                          iwt_helix_a_zoomed_data,
+                                          NumBins=n_bins_helix_zoom)                                                      
     # make the iwt (energy landscape) plot of the entire protein
     fig = PlotUtilities.figure()
     obj_full_plot = IWT_Plot.plot_free_landscape(iwt_full)    
@@ -80,11 +93,15 @@ def run():
     PlotUtilities.legend()    
     PlotUtilities.savefig(fig,"./iwt_full.png")
     # make the iwt (energy landscape) plot of the helix, including a     
-    fig = PlotUtilities.figure(figsize=(4.5,6))
+    fig = PlotUtilities.figure()
     IWT_Plot.plot_free_landscape(iwt_helix_a)    
     fmt_iwt()    
-    PlotUtilities.xlabel("")
-    PlotUtilities.savefig(fig,"./iwt_helix_a.png")  
+    PlotUtilities.savefig(fig,"./iwt_helix_a.png") 
+    # make the zoomed plot of the helix a region 
+    fig = PlotUtilities.figure()
+    IWT_Plot.plot_free_landscape(iwt_helix_a_zoomed)    
+    fmt_iwt()    
+    PlotUtilities.savefig(fig,"./iwt_helix_a_zoomed.png")     
     # # make the plots we want
     # make a heat map of all the data and 
     fig = PlotUtilities.figure()
@@ -94,6 +111,10 @@ def run():
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec(helix_a_data)
     PlotUtilities.savefig(fig,out_dir + "heat_map_helix_a.png")    
+    # and of the zoomed region 
+    fig = PlotUtilities.figure()
+    FEC_Plot.heat_map_fec(helix_a_zoomed_data)
+    PlotUtilities.savefig(fig,out_dir + "heat_map_helix_a_zoom.png")    
     # plot each individually 
     to_x = lambda x : x*1e9
     to_y = lambda y : y*1e12

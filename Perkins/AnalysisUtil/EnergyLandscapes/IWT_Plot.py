@@ -79,7 +79,19 @@ def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
     plt.ylim( min_landscape_kT,max_landscape_kT)
     ylabel = ("Tilted (F=" + fmt_f_label + "pN) [kT]").format(f_one_half_N*1e12)
     PlotUtilities.lazyLabel("Extension [nm]",ylabel,"",frameon=True)
-                            
+    format_kcal_per_mol_second_axis_after_kT_axis()    
+
+def format_kcal_per_mol_second_axis_after_kT_axis():
+    """
+    formats a second, kcal/mol axis after plotting kT data 
+    """
+    ax = plt.gca()
+    ylim_kT = np.array(plt.ylim())
+    ylim_kcal_per_mol = IWT_Util.kT_to_kcal_per_mol() * ylim_kT
+    PlotUtilities.secondAxis(ax=plt.gca(),label="Energy (kcal/mol)",
+                             limits=ylim_kcal_per_mol,color='b',secondY=True)
+    plt.sca(ax)                             
+    
 def plot_free_landscape(LandscapeObj,**kwargs):
     """
     plots a free landscape version extension
@@ -95,7 +107,8 @@ def plot_free_landscape(LandscapeObj,**kwargs):
     range = max(Obj.Landscape_kT) - min(Obj.Landscape_kT)
     fudge = range/10
     plt.ylim([-fudge,np.max(Obj.Landscape_kT)+fudge])
-    PlotUtilities.lazyLabel("","Landscape at F=0 [kT]","",frameon=True)         
+    PlotUtilities.lazyLabel("","Landscape at F=0 [kT]","",frameon=True)
+    format_kcal_per_mol_second_axis_after_kT_axis()    
     return Obj
                             
 def plot_single_landscape(LandscapeObj,**kwargs):
@@ -112,6 +125,7 @@ def plot_single_landscape(LandscapeObj,**kwargs):
     plot_free_landscape(LandscapeObj,**kwargs)  
     plt.subplot(2,1,2)
     plot_tilted_landscape(LandscapeObj,**kwargs)
+    PlotUtilities.xlabel("Extension (nm)")
                             
 def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj=[],Example=None,
                    Bins=[50,75,100,150,200,500,1000],**kwargs):
