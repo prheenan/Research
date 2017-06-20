@@ -511,7 +511,10 @@ def split_by_max_sep(obj,fraction_smooth=0.02):
     return unfold_start_idx,unfold_stop_idx,refold_stop_idx
     
     
-def kT_to_kcal_per_mol(x):
+def kT_to_kcal_per_mol(x=1):
+    """
+    Returns: <x> times the conversion from kcal/mol to kT
+    """
     return x * 0.593
     
 def get_unfold_and_refold_objects_by_sep(data,f_split=None,**kwargs):   

@@ -68,9 +68,9 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,f_one_half_N=0e-12):
 
 def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
                           fmt_f_label="{:.1g}",
-                          max_landscape_kT=None,f_one_half_N=10e-12):         
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,
-                                    f_one_half_N=f_one_half_N)
+                          max_landscape_kT=None,f_one_half_N=10e-12,**kwargs):  
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half_N,
+                                    **kwargs)
     plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT,color='b',alpha=0.7)
     if (max_landscape_kT is None):
         max_landscape_kT = max(Obj.OffsetTilted_kT)*1.5
@@ -81,11 +81,22 @@ def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
     PlotUtilities.lazyLabel("Extension [nm]",ylabel,"",frameon=True)
                             
 def plot_free_landscape(LandscapeObj,**kwargs):
+    """
+    plots a free landscape version extension
+    
+    Args:
+        LandscapeObj: see plot_single_landscape
+        kwargs: passed to TiltedLandscape
+    Returns: 
+        tilted landscape  
+    """
     Obj =  IWT_Util.TiltedLandscape(LandscapeObj,**kwargs)
     plt.plot(Obj.landscape_ext_nm,Obj.Landscape_kT)
     range = max(Obj.Landscape_kT) - min(Obj.Landscape_kT)
-    plt.ylim([-range/10,np.max(Obj.Landscape_kT)*1.05])
-    PlotUtilities.lazyLabel("","Landscape at F=0 [kT]","",frameon=True)           
+    fudge = range/10
+    plt.ylim([-fudge,np.max(Obj.Landscape_kT)+fudge])
+    PlotUtilities.lazyLabel("","Landscape at F=0 [kT]","",frameon=True)         
+    return Obj
                             
 def plot_single_landscape(LandscapeObj,**kwargs):
     """
