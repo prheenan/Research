@@ -79,7 +79,14 @@ def get_polymer_coefficients(split_fecs,working_distance_nm):
         coeffs.append(x0)
         idx_valid.append(i)
     return coeffs,idx_valid
-             
+    
+def get_unfolding_slice_only(ex):
+    idx = [int(i) for i in ex.Meta.Indexes.split(",")]
+    end_of_unfolding_idx = idx[-2] 
+    slice_unfolding_only = slice(end_of_unfolding_idx,None,1)
+    unfolding_only = FEC_Util.MakeTimeSepForceFromSlice(ex,slice_unfolding_only)
+    return unfolding_only
+    
 def run():
     """
     <Description>
@@ -132,6 +139,9 @@ def run():
     FEC_Plot.heat_map_fec([r.retract for r in good_splits])
     PlotUtilities.title("FEC Heat map, aligned by L0, N={:d}".format(len(good_splits)))
     PlotUtilities.savefig(fig,out_dir + "heat.png")
+    # for a simple IWT, only look at until the unfolding region
+    unfolding_retracts = [get_unfolding_slice_only(e.retract) 
+                          for e in split_fec]
     for i,ex in enumerate(examples):
         hairpin_plots(ex,filter_fraction=1e-3,out_path=out_dir + "{:d}".format(i))
     # XXX plot the data with the fit of the WLC aligned ontop 
