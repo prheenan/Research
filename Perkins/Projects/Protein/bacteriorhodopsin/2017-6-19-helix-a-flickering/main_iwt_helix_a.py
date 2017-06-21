@@ -74,7 +74,7 @@ def run():
     n_bins_helix_zoom = 60
     iwt_f = InverseWeierstrass.FreeEnergyAtZeroForce
     # convert into the iwt objects needed 
-    iwt_full_data= convert_to_iwt(full_data)
+    iwt_full_data= IWT_Util.convert_to_iwt(full_data)
     # get the proper landscapes
     iwt_full = CheckpointUtilities.getCheckpoint(out_dir + "iwt_full.pkl",iwt_f,
                                                  force_iwt,

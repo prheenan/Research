@@ -411,8 +411,8 @@ def convert_to_iwt(time_sep_force,frac_vel=0.1):
     Returns:
         iwt_object 
     """
-    iwt_data = [IWT_Util.ToIWTObject(d) for d in time_sep_force]
-    set_vel = IWT_Util.set_separation_velocity_by_first_frac    
+    iwt_data = [ToIWTObject(d) for d in time_sep_force]
+    set_vel = set_separation_velocity_by_first_frac    
     for d in iwt_data:
         set_vel(d,fraction_for_vel=frac_vel)  
     return iwt_data    
