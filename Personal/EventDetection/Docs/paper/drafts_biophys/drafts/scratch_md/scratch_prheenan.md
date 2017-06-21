@@ -27,7 +27,7 @@ This work describes a new method for detecting events in force-extension curves.
 
 The following two data sets were hand-annotated for the purposes of determining algorithm event detection performance:
 
-- A publically available polyprotein dataset @walder_robert_rapid_nodate
+- A publically available polyprotein dataset @walder_robert_rapid_nodate.
 - A 650nm dsDNA dataset taken for this paper (see {#ref_sec:SampleDetails}). 
 
 Statistics on the data sets and the annotated events are in {#ref_sec:SampleDetails}

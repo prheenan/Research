@@ -62,7 +62,7 @@ def tick_style_log(**kwargs):
 
 def make_metric_plot(metrics,
                      xlim_dist=[1e-5,2],
-                     xlim_load=[1e-3,1e5],
+                     xlim_load=[1e-2,1e5],
                      xlim_rupture=[-120,320]):
     colors = Plotting.algorithm_colors()
     n_rows = 3
