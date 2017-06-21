@@ -67,10 +67,11 @@ def TomPlot(LandscapeObj,OutBase,UnfoldObj,RefoldObj,idx,f_one_half_N=0e-12):
                fname=OutBase+"Landscape"+ext,**common)
 
 def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
-                          fmt_f_label="{:.1g}",
+                          fmt_f_label="{:.0f}",
                           max_landscape_kT=None,f_one_half_N=10e-12,**kwargs):  
     Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half_N,
                                     **kwargs)
+    Obj.OffsetTilted_kT -= min(Obj.OffsetTilted_kT)
     plt.plot(Obj.landscape_ext_nm,Obj.OffsetTilted_kT,color='b',alpha=0.7)
     if (max_landscape_kT is None):
         max_landscape_kT = max(Obj.OffsetTilted_kT)*1.5
@@ -79,18 +80,41 @@ def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
     plt.ylim( min_landscape_kT,max_landscape_kT)
     ylabel = ("Tilted (F=" + fmt_f_label + "pN) [kT]").format(f_one_half_N*1e12)
     PlotUtilities.lazyLabel("Extension [nm]",ylabel,"",frameon=True)
-    format_kcal_per_mol_second_axis_after_kT_axis()    
+    return format_kcal_per_mol_second_axis_after_kT_axis()    
 
+def get_limit_kcal_per_mol(ax_kT):
+    """
+    Returns: kilocalorie per mol limits corresponding to given kT limits
+    """
+    ylim_kT = np.array(ax_kT.get_ylim())
+    ylim_kcal_per_mol = IWT_Util.kT_to_kcal_per_mol() * ylim_kT         
+    return ylim_kcal_per_mol
+    
+def _set_kcal_axis_based_on_kT(ax_kT,ax_kcal):    
+    """
+    sets the kilocalorie per mol axis based on the current limits of the
+    kT axis
+    
+    Args:
+        ax_<kT/kcal>: the axes to use
+    Returns;
+        nothing
+    """
+    ylim_kcal_per_mol = get_limit_kcal_per_mol(ax_kT)
+    ax_kcal.set_ylim(ylim_kcal_per_mol)
+    
 def format_kcal_per_mol_second_axis_after_kT_axis():
     """
     formats a second, kcal/mol axis after plotting kT data 
     """
-    ax = plt.gca()
-    ylim_kT = np.array(plt.ylim())
-    ylim_kcal_per_mol = IWT_Util.kT_to_kcal_per_mol() * ylim_kT
-    PlotUtilities.secondAxis(ax=plt.gca(),label="Energy (kcal/mol)",
-                             limits=ylim_kcal_per_mol,color='b',secondY=True)
-    plt.sca(ax)                             
+    ax_kT = plt.gca()
+    ylim_kcal_per_mol = get_limit_kcal_per_mol(ax_kT)
+    ax_kcal = PlotUtilities.secondAxis(ax=ax_kT,label="Energy (kcal/mol)",
+                                       limits=ylim_kcal_per_mol,color='b',
+                                       secondY=True)
+    _set_kcal_axis_based_on_kT(ax_kT,ax_kcal)
+    plt.sca(ax_kT)                       
+    return ax_kcal
     
 def plot_free_landscape(LandscapeObj,**kwargs):
     """
@@ -119,13 +143,14 @@ def plot_single_landscape(LandscapeObj,**kwargs):
         LandscapeObj: energy landscape object (untilted)
         **kwargs: passed to plot_tilted_landscape
     Returns:
-        nothing
+        second, kcal/mol axis of tilted landscape 
     """                          
     plt.subplot(2,1,1)
     plot_free_landscape(LandscapeObj,**kwargs)  
     plt.subplot(2,1,2)
-    plot_tilted_landscape(LandscapeObj,**kwargs)
+    to_ret = plot_tilted_landscape(LandscapeObj,**kwargs)
     PlotUtilities.xlabel("Extension (nm)")
+    return to_ret
                             
 def InTheWeedsPlot(OutBase,UnfoldObj,RefoldObj=[],Example=None,
                    Bins=[50,75,100,150,200,500,1000],**kwargs):

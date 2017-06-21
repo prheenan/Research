@@ -411,11 +411,15 @@ def convert_to_iwt(time_sep_force,frac_vel=0.1):
     Returns:
         iwt_object 
     """
-    iwt_data = [ToIWTObject(d) for d in time_sep_force]
-    set_vel = set_separation_velocity_by_first_frac    
-    for d in iwt_data:
-        set_vel(d,fraction_for_vel=frac_vel)  
+    iwt_data = ToIWTObject(time_sep_force)
+    set_separation_velocity_by_first_frac(iwt_data,fraction_for_vel=frac_vel)  
     return iwt_data    
+    
+def convert_list_to_iwt(time_sep_force_list,**kwargs):
+    """
+    see convert_to_iwt, except converts an entire list
+    """
+    return [convert_to_iwt(d) for d in time_sep_force_list]
 
 
 def RobTimeSepForceToIWT(o,ZFunc):

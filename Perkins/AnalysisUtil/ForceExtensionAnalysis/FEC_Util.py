@@ -524,7 +524,8 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
         FlipSign: if true (default), assumes the data is 'raw', so that
         Dwell happens at positive force. Set to false if already fixed
     Returns: 
-        Tuple of (Integer surface index,Zero Force)
+        Tuple of (Integer surface index,Zero Force). If we cant find surface,
+        returns None
     """
     o = TimeSepForceObj
     ForceArray = o.Force
@@ -548,7 +549,9 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
     ZeroForce = ForceSign - MedRetr
     # Get the first time the Retract forces is above zero
     FilteredRetract = SavitskyFilter(ZeroForce)
-    ZeroIdx = np.where(FilteredRetract >= 0)[0][0]
+    ZeroIdx = np.where(FilteredRetract >= 0)[0]
+    assert ZeroIdx.size > 0 , "Couldnt find zero index."
+    ZeroIdx = ZeroIdx[0]
     return ZeroIdx,MedRetr
 
 def GetFECPullingRegion(o,fraction=0.05,FilterPoints=20,FlipSign=True,
