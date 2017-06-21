@@ -25,13 +25,7 @@ class slice_area:
     @property
     def save_name(self):
         return self.plot_title.replace(" ","_") + ".pkl"
-   
-def convert_to_iwt(time_sep_force,frac_vel=0.1):
-    iwt_data = [IWT_Util.ToIWTObject(d) for d in time_sep_force]
-    set_vel = IWT_Util.set_separation_velocity_by_first_frac    
-    for d in iwt_data:
-        set_vel(d,fraction_for_vel=frac_vel)  
-    return iwt_data
+
     
 def fmt_iwt():
     PlotUtilities.xlabel("Extension (nm)")
@@ -53,19 +47,22 @@ def run():
     force_read_data = False
     force_iwt = True
     raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
-                                                 limit=150)
-    adhesion_end_m = 20e-9                                             
+                                                 limit=10)
+    adhesion_end_m = 20e-9         
+    offset_force_N = 7.1e-12
     min_max_full = [adhesion_end_m,75e-9]
     n_bins_zoom = 100
+    n_bins_helix_a = 150
     array = [\
-        slice_area([20e-9,35e-9],"Helix A",n_bins_zoom),
+        slice_area([20e-9,27e-9],"Helix A",n_bins_helix_a),
         slice_area([50e-9,75e-9],"Helix E",n_bins_zoom),
-        slice_area([57e-9,65e-9],"Helix E (detailed)",n_bins_zoom)
+        slice_area([57e-9,70e-9],"Helix E (detailed)",n_bins_zoom)
         ]
     # # get the slice we care about for each...
     sliced_data = [ [] for _ in array]
     full_data = []
     for i,d in enumerate(raw_data):
+        d.Force -= offset_force_N 
         sliced_fec = FEC_Util.slice_by_separation(d,*min_max_full)
         full_data.append(sliced_fec)
         for i,a in enumerate(array):
@@ -77,7 +74,7 @@ def run():
     n_bins_helix_zoom = 60
     iwt_f = InverseWeierstrass.FreeEnergyAtZeroForce
     # convert into the iwt objects needed 
-    iwt_full_data= convert_to_iwt(full_data)
+    iwt_full_data= IWT_Util.convert_to_iwt(full_data)
     # get the proper landscapes
     iwt_full = CheckpointUtilities.getCheckpoint(out_dir + "iwt_full.pkl",iwt_f,
                                                  force_iwt,
@@ -86,7 +83,7 @@ def run():
     iwt_helices = []
     for i,a in enumerate(array):
         save_name = (out_dir + a.save_name)
-        iwt_helix_data_tmp =  convert_to_iwt(sliced_data[i])
+        iwt_helix_data_tmp =  IWT_Util.convert_to_iwt(sliced_data[i])
         iwt_tmp = CheckpointUtilities.getCheckpoint(save_name,iwt_f,
                                                     force_iwt,
                                                     iwt_helix_data_tmp,
