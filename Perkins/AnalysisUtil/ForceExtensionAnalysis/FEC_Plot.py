@@ -38,7 +38,7 @@ def _fec_base_plot(x,y,n_filter_points=None,style_data=dict(color='k',alpha=0.3)
     return x_filtered,y_filtered
  
     
-def _ApproachRetractCurve(Retr,Appr=None,NFilterPoints=100,
+def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
                           x_func = lambda x: x.Separation,
                           y_func = lambda y: y.Force, 
                           ApproachLabel="Approach",

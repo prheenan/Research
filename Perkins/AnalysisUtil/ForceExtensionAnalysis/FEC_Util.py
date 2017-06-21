@@ -525,7 +525,7 @@ def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,
         Dwell happens at positive force. Set to false if already fixed
     Returns: 
         Tuple of (Integer surface index,Zero Force). If we cant find surface,
-        returns None
+        throws an error.
     """
     o = TimeSepForceObj
     ForceArray = o.Force
