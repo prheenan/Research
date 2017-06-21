@@ -174,6 +174,12 @@ def Cy5_dye_3_prime():
     """
     return "/3Cy5Sp/"
 
+def atto_633():
+    """
+    Returns: the string for a 3' atto 633 -nhs
+    """
+    return "/3ATTO633N/"
+
 
 
 def PrintOrders(orders):
