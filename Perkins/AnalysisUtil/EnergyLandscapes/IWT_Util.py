@@ -347,7 +347,8 @@ def set_separation_velocity_by_first_num(iwt_data,num):
 
 
 def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
-                           fraction_for_vel=0.5,flip_forces=False,f_split=None,
+                           fraction_for_vel=0.2,flip_forces=False,
+                           slice_to_use=None,f_split=None,
                            unfold_start_idx=None):
     """
     given a 'raw' TimeSepForce object, gets the approach and retract 

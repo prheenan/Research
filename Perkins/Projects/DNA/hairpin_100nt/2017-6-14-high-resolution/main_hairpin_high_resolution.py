@@ -19,7 +19,6 @@ from Research.Personal.EventDetection.Util import Analysis
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 
-
 def hairpin_plots(example,filter_fraction,out_path):
     n_filter = int(np.ceil(example.Force.size * filter_fraction))
     # make a plot vs time 
@@ -33,7 +32,16 @@ def hairpin_plots(example,filter_fraction,out_path):
     fig = PlotUtilities.figure()
     FEC_Plot.FEC(example,NFilterPoints=n_filter)
     PlotUtilities.savefig(fig,out_path + "vs_sep.png")
-        
+
+def make_energy_landscape_plots(out_dir,energy_landscape_unfolding):
+    f_one_half_N_arr = np.array([1,2,5,7,8.5,10,12])*1e-12    
+    limits_kT = [-2,15]
+    # plot the iwt transform as just a free landscape                      
+    fig = PlotUtilities.figure()
+    IWT_Plot.plot_free_landscape(energy_landscape_unfolding)
+    PlotUtilities.xlabel("Separation (nm)")
+    PlotUtilities.savefig(fig,out_dir + "free_landscape.png")
+    
 def fit_polymer_model(example):
     """
     Fits the polymer model de jour to example
@@ -82,9 +90,13 @@ def get_polymer_coefficients(split_fecs,working_distance_nm):
         coeffs.append(x0)
         idx_valid.append(i)
     return coeffs,idx_valid
-    
-def get_unfolding_slice_only(split_fec):
-    retr = split_fec.retract 
+
+def relative_idx_start_of_final_retract(split_fec):
+    """
+    Returns: the index into split_fec.retract where the 'final' approach
+             starts (ie: no unfolding/refolding). (Indexes must be in the Note)
+    """
+    retr= split_fec.retract
     idx = [int(i) for i in retr.Meta.Indexes.split(",")]
     # last index is end, second to last is end of 'dwell' (indenter )
     end_of_unfolding_idx = idx[-2] 
@@ -94,39 +106,56 @@ def get_unfolding_slice_only(split_fec):
     # since retr has index 0 and point n_points_approach_dwell in the fec
     # this *assumes* that the DwellTime is set to the indenter time 
     relative_unfolding_start_idx = end_of_unfolding_idx-n_points_approach_dwell
+    return relative_unfolding_start_idx
+    
+def get_unfolding_slice_only(split_fec):
+    """
+    See: get_unfolding_and_refolding_slices, except only returns the (final)
+    retract, after the indenter is done (ie: no unfolding/refolding stuff)
+    
+    Args:
+        split_fec: see get_unfolding_and_refolding_slices
+    returns:
+        TimeSepForce with just the unfolding portion.
+    """
+    retr = split_fec.retract 
+    relative_unfolding_start_idx = \
+        relative_idx_start_of_final_retract(split_fec)
     slice_unfolding_only = slice(relative_unfolding_start_idx,None,1)
     # slice and return the object 
     unfolding_only = FEC_Util.MakeTimeSepForceFromSlice(retr,
                                                         slice_unfolding_only)
     return unfolding_only
     
-def make_energy_landscape_plots(out_dir,energy_landscape_unfolding):
-    f_one_half_N_arr = np.array([1,2,5,7,8.5,10,12])*1e-12    
-    limits_kT = [-2,15]
-    # plot the iwt transform as just a free landscape                      
-    fig = PlotUtilities.figure()
-    IWT_Plot.plot_free_landscape(energy_landscape_unfolding)
-    PlotUtilities.xlabel("Separation (nm)")
-    PlotUtilities.savefig(fig,out_dir + "free_landscape.png")
-    n_ssDNA_nucleotides = 100
-    n_ssDNA_gc_rich = 32
-    rise_per_bp_ssDNA = 0.5
-    line_locations_nm = [\
-        7,
-        (n_ssDNA_nucleotides-n_ssDNA_gc_rich)*rise_per_bp_ssDNA,
-        n_ssDNA_nucleotides*rise_per_bp_ssDNA]
-    for f_one_half_N in f_one_half_N_arr:
-        fig = PlotUtilities.figure()    
-        ax_kcal = IWT_Plot.plot_single_landscape(energy_landscape_unfolding,
-                                                 f_one_half_N=f_one_half_N)
-        title = out_dir + \
-            "landscape_tilt_{:.1f}pN.png".format(f_one_half_N*1e12)
-        # reset the y limits 
-        plt.ylim(limits_kT)
-        IWT_Plot._set_kcal_axis_based_on_kT(plt.gca(),ax_kcal)            
-        for l in line_locations_nm:
-            plt.axvline(l)
-        PlotUtilities.savefig(fig,title)       
+def get_unfolding_and_refolding_slices(split_fec,g_fraction_for_vel=0.2):
+    """
+    Given a split_fec with a single unnfolding/folding curve, returns the 
+    approach and retract points, trying to keep the minimum and maximum seps
+    consistent. 
+    
+    Args:
+        split_fec: the split force extension curve to use; retract should
+        *include* the indenter region and "Indexes" meta properly set 
+        
+        g_fraction_for_vel: the fraction of the approach or retract portion
+        to determine the velocity.
+    Returns:
+        approach/retarct tuple
+    """
+    relative_unfolding_start_idx = \
+        relative_idx_start_of_final_retract(split_fec)
+    retr = split_fec.retract
+    slice_refolding_experiment = slice(0,relative_unfolding_start_idx,1)
+    # get the region up until the 
+    slice_to_use = FEC_Util.\
+        MakeTimeSepForceFromSlice(retr,slice_refolding_experiment)
+    appr_iwt,retr_iwt = \
+        IWT_Util.split_into_iwt_objects(slice_to_use,
+                                        fraction_for_vel=g_fraction_for_vel,
+                                        f_split=IWT_Util.split_by_max_sep)
+    return appr_iwt,retr_iwt
+    
+        
 def run():
     """
     <Description>
@@ -140,6 +169,7 @@ def run():
     abs_dir = "./"
     cache_dir = "./cache/"
     out_dir = "./out/"
+    force_iwt = False 
     GenUtilities.ensureDirExists(cache_dir)
     GenUtilities.ensureDirExists(out_dir)    
     examples = FEC_Util.\
@@ -169,7 +199,7 @@ def run():
     good_splits = [split_fecs[i] for i in idx]
     # align all the retracts by the contour lenghts
     contour_L0 = [c[0] for c in coeffs]
-    arbitrary_offset = 75e-9
+    arbitrary_offset = 90e-9
     for L0,split_fec in zip(contour_L0,good_splits):
         split_fec.retract.Separation -= L0
         split_fec.retract.Separation += arbitrary_offset
@@ -177,19 +207,40 @@ def run():
     # for a simple IWT, only look at until the unfolding region
     unfolding_retracts = [get_unfolding_slice_only(split_fec) 
                           for e in good_splits]
-    # slice to just the first 75nm (before the final rupture)
-    max_meters = 65e-9
+    unfolding_and_refolding_objects = \
+        [get_unfolding_and_refolding_slices(r) for r in split_fecs]
+    unfolding_objs = [u[0] for u in unfolding_and_refolding_objects]
+    refolding_objs = [u[1] for u in unfolding_and_refolding_objects]   
+    # slice to just the first L0 (before the final rupture)
+    max_meters = arbitrary_offset
     final_rupture_only = [FEC_Util.slice_by_separation(u,-np.inf,max_meters) 
                           for u in unfolding_retracts]
     # convert to the type iwt needs                          
-    unfolding_iwt = [IWT_Util.convert_to_iwt(r) for r in final_rupture_only]   
+    final_unfolding_iwt = \
+        [IWT_Util.convert_to_iwt(r,frac_vel=0.2) for r in final_rupture_only]
     # get the iwt tx 
     n_bins = 500
     energy_landscape_unfolding = CheckpointUtilities.\
         getCheckpoint("./landscape.pkl",
-                      InverseWeierstrass.FreeEnergyAtZeroForce,True,
-                      unfolding_iwt,NumBins=n_bins)
-    make_energy_landscape_plots(out_dir,energy_landscape_unfolding)
+                      InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
+                      final_unfolding_iwt,NumBins=n_bins)
+    # get the refolding one                      
+    energy_landscape_bidirectional_folding = CheckpointUtilities.\
+        getCheckpoint("./landscape_bidirectional.pkl",
+                      InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
+                      unfolding_objs,RefoldingObjs=refolding_objs,
+                      NumBins=100)                      
+    energy_landscape_bidirectional_only_unfolding = CheckpointUtilities.\
+        getCheckpoint("./landscape_bidirectional_only_unfold.pkl",
+                      InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
+                      unfolding_objs,RefoldingObjs=[],
+                      NumBins=100)                           
+    make_energy_landscape_plots(out_dir +"bi_",
+                                energy_landscape_bidirectional_folding)
+    make_energy_landscape_plots(out_dir +"same_",
+                                energy_landscape_unfolding)                                
+    make_energy_landscape_plots(out_dir +"bi_only_unfold",
+                                energy_landscape_bidirectional_only_unfolding)                                  
     # make a heat map of all retracts 
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec([r.retract for r in good_splits])
@@ -200,7 +251,47 @@ def run():
     FEC_Plot.heat_map_fec(final_rupture_only)
     PlotUtilities.title("FEC Final unfolding heat map, aligned by L0, N={:d}".\
                         format(len(good_splits)))
-    PlotUtilities.savefig(fig,out_dir + "heat_unfolding.png")   
+    PlotUtilities.savefig(fig,out_dir + "heat_unfolding.png")                           
+    # make a heat map of the unfolding and refolding  experiment data 
+    fig = PlotUtilities.figure(figsize=(4,7))
+    plt.subplot(2,1,1)
+    FEC_Plot.heat_map_fec(unfolding_objs)
+    plt.subplot(2,1,2)
+    FEC_Plot.heat_map_fec(refolding_objs)
+    PlotUtilities.savefig(fig,out_dir + "heat_refolding.png") 
+    # plot each unfolding/refolding pair, along with their velocities...
+    kw_unfold = dict(style_data=dict(color='b',alpha=0.3))
+    kw_fold = dict(style_data=dict(color='r',alpha=0.3))
+    to_y = lambda x: x*1e12
+    to_x = lambda x: x*1e9
+    for i,(un,re) in enumerate(zip(unfolding_objs,refolding_objs)):
+        # get the separation changes 
+        min_v,max_v = min(un.Separation),max(un.Separation)
+        fudge = (max_v-min_v)*0.1
+        # using separation ('x value') as plotted y here, so use to_x
+        ylim = to_x(np.array([min_v-fudge,max_v+fudge]))    
+        fig = PlotUtilities.figure(figsize=(4,7))
+        plt.subplot(2,1,1)
+        FEC_Plot._fec_base_plot(x=un.Time,y=to_y(un.Force),**kw_unfold)
+        FEC_Plot._fec_base_plot(x=re.Time,y=to_y(re.Force),**kw_fold)    
+        PlotUtilities.lazyLabel("","Force","")        
+        plt.subplot(2,1,2)
+        FEC_Plot._fec_base_plot(x=un.Time,y=to_x(un.Separation),label="unfold",
+                                **kw_unfold)
+        FEC_Plot._fec_base_plot(x=re.Time,y=to_x(re.Separation),label="refold",
+                                **kw_fold)  
+        PlotUtilities.lazyLabel("","Separation","")        
+        PlotUtilities.no_x_label()
+        plt.ylim(ylim)        
+        sep_unfold = to_x(un.ZFuncSimple())
+        plt.plot(un.Time,sep_unfold,color='k',linestyle='--')        
+        plt.plot(re.Time,to_x(re.ZFuncSimple()),label="Schedule",
+                 color='k',linestyle=':')
+        plt.ylim(ylim)
+        PlotUtilities.lazyLabel("Time","Separation","")
+        PlotUtilities.legend()
+        name = out_dir + "unfolding_vs_time_{:d}.png".format(i)        
+        PlotUtilities.savefig(fig,name)
     # make the plots we want                           
     for i,(ex,ex_unfold) in enumerate(zip(examples,unfolding_retracts)):
         name = out_dir + "{:d}".format(i)
@@ -211,6 +302,14 @@ def run():
         FEC_Plot._fec_base_plot(x=ex_unfold.Separation,y=ex_unfold.Force)
         PlotUtilities.lazyLabel("Sep (nm)","Force (pN)","")
         PlotUtilities.savefig(fig,name + "_unfold.png")
+        # plot the folding and refolding force vs time..
+        fig = PlotUtilities.figure()
+        FEC_Plot._fec_base_plot(x=unfolding_objs[i].Time,
+                                y=to_y(unfolding_objs[i].Force))
+        FEC_Plot._fec_base_plot(x=refolding_objs[i].Time,
+                                y=to_y(refolding_objs[i].Force))                                
+        PlotUtilities.lazyLabel("Time (s)","Force (pN)","")
+        PlotUtilities.savefig(fig,name + "_bidirectional_fold.png")
     # XXX plot the data with the fit of the WLC aligned ontop 
         
 if __name__ == "__main__":

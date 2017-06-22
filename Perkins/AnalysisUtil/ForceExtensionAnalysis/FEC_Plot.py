@@ -12,7 +12,8 @@ import copy
 def_conversion_opts =dict(ConvertX = lambda x: x*1e9,
                           ConvertY = lambda y: y*1e12)
 
-def _fec_base_plot(x,y,n_filter_points=None,style_data=dict(color='k',alpha=0.3),
+def _fec_base_plot(x,y,n_filter_points=None,label="",
+                   style_data=dict(color='k',alpha=0.3),
                    style_filtered=None):
     """
     base function; plots x and y (and their filtered versions)
@@ -28,7 +29,7 @@ def _fec_base_plot(x,y,n_filter_points=None,style_data=dict(color='k',alpha=0.3)
     if (style_filtered is None):
         style_filtered = dict(**style_data)
         style_filtered['alpha'] = 1
-        style_filtered['label'] = ""
+        style_filtered['label'] = label
     if (n_filter_points is None):
         n_filter_points = int(np.ceil(x.size * 0.01))
     x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
@@ -54,9 +55,9 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
     """
     # plot the separation and force, with their filtered counterparts
     _fec_base_plot(x_func(Appr),y_func(Appr),n_filter_points=NFilterPoints,
-                   style_data=dict(color='r',alpha=0.3,label=ApproachLabel))
+                   style_data=dict(color='r',alpha=0.3),label=ApproachLabel)
     _fec_base_plot(x_func(Retr),y_func(Retr),n_filter_points=NFilterPoints,
-                   style_data=dict(color='b',alpha=0.3,label=RetractLabel))
+                   style_data=dict(color='b',alpha=0.3),label=RetractLabel)
 
 def FEC_AlreadySplit(Appr,Retr,
                      XLabel = "Separation (nm)",
