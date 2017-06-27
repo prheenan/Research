@@ -30,24 +30,9 @@ class slice_area:
 def fmt_iwt():
     PlotUtilities.xlabel("Extension (nm)")
     
-   
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    in_dir = "./data_in_full/"
-    out_dir = "./out_full/"
+def analyze_data(raw_data,out_dir):
     GenUtilities.ensureDirExists(out_dir)
-    force_read_data = False
-    force_iwt = True
-    raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
-                                                 limit=150)
+    force_iwt = False
     adhesion_end_m = 20e-9         
     offset_force_N = 7.1e-12
     n_bins_zoom = 75
@@ -108,6 +93,7 @@ def run():
             plt.xlim(1e9 * np.array(a.ext_bounds))
             PlotUtilities.savefig(fig,save_name)                                            
     # plot each landscape entirely 
+    full_data = sliced_data[0]    
     for i,d in enumerate(raw_data):
         fig = PlotUtilities.figure()
         plt.plot(to_x(d.Separation),to_y(d.Force),color='k',alpha=0.3)
@@ -118,6 +104,44 @@ def run():
         plt.ylim([-50,300])
         file_n = GenUtilities.file_name_from_path(d.Meta.SourceFile)
         PlotUtilities.savefig(fig,out_dir + "out{:d}_{:s}.png".format(i,file_n))
+   
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    in_dir = "./data_in_full/"
+    force_read_data = False    
+    raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
+                                                 limit=None)
+    # select only the 'flickery' traces
+    well_aligned_ids = [511,
+                        581,
+                        889,
+                        1283,
+                        1397,
+                        2137,
+                        2223,
+                        3155,
+                        3988]
+    pattern = r"""
+              \D+
+              (\d+) #Get the digits 'sandwiched' between 
+              \D+
+              """
+    get_id = lambda r: int(re.match(pattern,r.Meta.Name,re.VERBOSE).group(1))
+    only_flickering = [r for r in raw_data if get_id(r) in well_aligned_ids] 
+    analyze_data(only_flickering,"./out_curated/")    
+    # analyze everything                                                  
+    analyze_data(raw_data,"./out_full/")
+
+                            
+
 
 if __name__ == "__main__":
     run()
