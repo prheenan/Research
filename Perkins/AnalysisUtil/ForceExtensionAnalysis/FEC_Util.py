@@ -79,7 +79,7 @@ def read_ibw_directory(directory,grouping_function,limit=None):
     return _groups_to_time_sep_force(data,limit=limit)
     
 def cache_ibw_directory(cache_directory,in_directory,limit=None,force=False,
-                        *args,**kwargs):
+                        **kwargs):
     """
     reads a directory of ibw files, caching each TimeSepForce object 
     *individually* (which is critical for huge ibw's)
@@ -91,23 +91,12 @@ def cache_ibw_directory(cache_directory,in_directory,limit=None,force=False,
     Returns:
         list of TimeSepForce objects, after properly cachine
     """
-    in_base = GenUtilities.getFileFromPath(in_directory)
-    file_base = "{:s}{:s}".format(cache_directory,in_base)
-    files = GenUtilities.getAllFiles(cache_directory,ext=".pkl")
-    # make sure these are the files we want
-    files_cached = [f for f in files][:limit]
-    # POST: files is a list of all files with the base we want
-    if (force or (len(files_cached) == 0)):
-        # then read everything back in 
-        data = read_ibw_directory(in_directory,*args,limit=limit,**kwargs)
-        # cache all the files
-        cached_names = [(file_base + d.Meta.Name +".pkl") for d in data]
-        for file_name,data_tmp in zip(cached_names,data):
-            CheckpointUtilities.lazy_save(file_name,data_tmp)
-    else:
-        # just read all the (cached) files
-        data = [CheckpointUtilities.lazy_load(f) for f in files_cached]
-    return data 
+    return cache_individual_waves_in_directory(pxp_dir=in_directory,
+                                               cache_dir=cache_directory,
+                                               limit=limit,
+                                               load_func = read_ibw_directory,
+                                               force=force,**kwargs) 
+
 
 def ReadInData(FullName,Limit=None,**kwargs):
     """
@@ -175,6 +164,105 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
+def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
+                                        force=False,load_func=None,**kwargs):
+    """
+    reads in all pxp files in a directory, caching their waves 
+    (as TimeSepForce objects) to cache_dir, returning a list of TimeSepForce
+    objects
+
+    Args:
+        <pxp/cache>_dir: where the input pxps live, where to put the cached
+        files
+        
+        limit: maximum number to read out of the cached dir. will cache 
+        as many waves in the pxp as it can, but will only return up to limit 
+        
+        force: if true, force re-reading. 
+        
+        load_func: which function to use. if none, defaults to pxp. must accept
+        the directory as its first argument, and return a list of TimeSepForce
+        objects
+        
+        **kwargs: passed to load_func
+    Returns:
+        list of TimeSepForce objects; at most limit (depending on the dta)
+    """
+    if (load_func is None):
+        # by default, we read the pxps in the directory
+        # and get the last return (TimeSepForce)
+        load_func = lambda *args,**kwargs: \
+            concatenate_fec_from_single_directory(*args,**kwargs)[-1]
+    GenUtilities.ensureDirExists(cache_dir)
+    files = GenUtilities.getAllFiles(cache_dir,ext=".pkl")
+    # if the files exist and we aren't forcing 
+    if (len(files) > 0 and not force):
+        return [CheckpointUtilities.lazy_load(f) for f in files[:limit]]
+    # get all the fecs
+    examples = load_func(pxp_dir,**kwargs)                    
+    for i,e in enumerate(examples):
+        # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
+        file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
+        name = "{:s}{:s}_{:s}{:d}.pkl".format(cache_dir,
+                                              file_name_src,
+                                              e.Meta.Name,i)
+        CheckpointUtilities.lazy_save(name,e)
+    return examples[:limit]
+
+def _slice_by_property(obj,min_prop,max_prop,property_func):
+    """
+    slices an object into a nerw object by a certain propery range
+    
+    Args:
+        see slice_by_time, except...
+        property_func: takes in obj, returns the desired property
+    Returns:
+        new, sliced object. If it cant find the bounds, it just returns
+        as much data as it can
+    """
+    property = property_func(obj)
+    idx_greater_than_min = np.where(property >= min_prop)[0]
+    idx_less_than_max = np.where(property <= max_prop)[0]
+    # determine where to put the indices
+    n_greater = idx_greater_than_min.size 
+    n_less = idx_less_than_max.size
+    if (n_greater== 0):
+        idx_first = 0
+    else: 
+        idx_first = idx_greater_than_min[0]
+    if (n_less == 0):
+        idx_last = None
+    else: 
+        idx_last = idx_less_than_max[-1]
+    assert n_greater + n_less > 0 , "couldn't find a proper slice"
+    # POST: have something to slice
+    return MakeTimeSepForceFromSlice(obj,slice(idx_first,idx_last,1))    
+    
+def slice_by_time(obj,time_min=-np.inf,time_max=np.inf):
+    """
+    slices the given object by a minimum and maximum time
+    
+    Args:
+        obj: see MakeTimeSepForceFromSlice
+        time_<min/max>: the maximum and minimum time to use
+        By default, we just slice everything.
+    """
+    return _slice_by_property(obj,property_func = lambda x: x.Time,
+                              min_prop=time_min,max=max_prop)
+
+def slice_by_separation(obj,*args,**kwargs):
+    """
+    slices the given object by separation bounds.
+    
+    Args:
+        see slice_by_time, except switch time to separation
+    Returns:
+        see slice_by_time
+    
+    """
+    return _slice_by_property(obj,*args,property_func = lambda x: x.Separation,
+                              **kwargs)                               
+    
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
     Given a TimeSepForceObject and a slice, gets a new object using just the 
@@ -213,7 +301,11 @@ def UnitConvert(TimeSepForceObj,
     ObjCopy = copy.deepcopy(TimeSepForceObj)
     ObjCopy.Force = ConvertY(TimeSepForceObj.Force)
     ObjCopy.Separation = ConvertX(TimeSepForceObj.Separation)
-    ObjCopy.set_z_sensor(ConvertX(TimeSepForceObj.Zsnsr))
+    try:
+        ObjCopy.set_z_sensor(ConvertX(TimeSepForceObj.Zsnsr))
+    except AttributeError as E:
+        # OK if there isnt a Zsnsr
+        pass
     return ObjCopy
 
 

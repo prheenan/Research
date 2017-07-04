@@ -118,6 +118,11 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
     value_cond = (df_true > baseline)
+    """
+    plt.plot(df_true)
+    plt.axhline(baseline)
+    plt.show()
+    """
     return value_cond
     
 def f_average_and_diff(force,n):
@@ -202,6 +207,11 @@ def delta_mask_function(split_fec,slice_to_use,
     ratio_probability = _no_event._delta_probability(**kw_delta)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
+    """
+    plt.semilogy(ratio_probability)
+    plt.axhline(1-tol)
+    plt.show()
+    """
     # find where the derivative is definitely not an event
     value_cond = \
         _condition_no_delta_significance(no_event_parameters_object,df_true,
@@ -305,7 +315,7 @@ def delta_mask_function(split_fec,slice_to_use,
                          min_points_between=min_points_between,    
                          get_best_slice_func=get_best_slice_func)
     boolean_ret = probability_updated < threshold
-    """    
+    """
     Plotting.debug_plot_signal_mask(x,force,gt_condition,x_sliced,interp_f,
                            boolean_array,condition_non_events,
                            boolean_ret,probability_updated,probability,
@@ -588,7 +598,7 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     if (len(idx_above_predicted) == 0):
         return local_max_idx
     return idx_above_predicted[-1]
-
+    
 def make_event_parameters_from_split_fec(split_fec,**kwargs):
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)    

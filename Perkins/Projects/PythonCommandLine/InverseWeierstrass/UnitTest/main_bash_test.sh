@@ -10,12 +10,20 @@ IFS=$'\n\t'
 dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
 # Description:
+# runs a simulated unit test following Szabo, 2010, and a 'real' data test
 
-# Arguments:
-#### Arg 1: Description
 input_file=${1:-"./UnitTest/input.pxp"}
 output_file=${2:-"./UnitTest/unit_test.csv"}
 expected_file=${3:-"./UnitTest/expected_landscape.csv"}
+
+# # Run the Szabo test
+szabo_base="../../../../../../FitUtil/EnergyLandscapes/InverseWeierstrass/Python"
+szabo_path="${szabo_base}/TestExamples/Testing/"
+cd "$szabo_path"
+ls *.py | tail -1 | xargs python  || { echo "Szabo test failed" ; exit; }
+echo "===Szabo Test Passed==="
+cd - 
+# POST: Szabo test passed,  in original directory
 # go one directory up (where the python file lives)
 cd ..
 # remove the output file, in case we already ran

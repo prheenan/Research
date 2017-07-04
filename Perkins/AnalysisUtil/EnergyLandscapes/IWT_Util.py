@@ -397,6 +397,25 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
     set_separation_velocity_by_first_frac(IwtData,fraction_for_vel)
     set_separation_velocity_by_first_frac(IwtData_fold,fraction_for_vel)
     return IwtData,IwtData_fold
+    
+   
+def convert_to_iwt(time_sep_force,frac_vel=0.1):
+    """
+    Converts a TimeSepForce object into a iwt object (assuming just one 
+    direction)
+    
+    Args:
+        time_sep_force: to convert
+        frac_vel: the fractional number of points to use for getting the    
+        (assumed constant) velocity
+    Returns:
+        iwt_object 
+    """
+    iwt_data = [ToIWTObject(d) for d in time_sep_force]
+    set_vel = set_separation_velocity_by_first_frac    
+    for d in iwt_data:
+        set_vel(d,fraction_for_vel=frac_vel)  
+    return iwt_data    
 
 
 def RobTimeSepForceToIWT(o,ZFunc):
@@ -510,6 +529,12 @@ def split_by_max_sep(obj,fraction_smooth=0.02):
         unfold_start_idx = possible_unfolding_idx[-1]
     return unfold_start_idx,unfold_stop_idx,refold_stop_idx
     
+    
+def kT_to_kcal_per_mol(x=1):
+    """
+    Returns: <x> times the conversion from kcal/mol to kT
+    """
+    return x * 0.593
     
 def get_unfold_and_refold_objects_by_sep(data,f_split=None,**kwargs):   
     """

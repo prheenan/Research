@@ -12,19 +12,32 @@ import copy
 def_conversion_opts =dict(ConvertX = lambda x: x*1e9,
                           ConvertY = lambda y: y*1e12)
 
-def _fec_base_plot(x,y,n_filter_points=100,style_data=dict(color='k',alpha=0.3),
+def _fec_base_plot(x,y,n_filter_points=None,style_data=dict(color='k',alpha=0.3),
                    style_filtered=None):
+    """
+    base function; plots x and y (and their filtered versions)
+    
+    Args:
+        x/y: the x and y to use for plotting    
+        n_filter_points: how many points for the savitsky golay
+        style_<data/filtered>: plt.plot options for the raw and filtered data.
+        defaults to filtered just being alpha=1 (not transparent)
+    Returns:
+        x and y, filtered versions
+    """    
     if (style_filtered is None):
         style_filtered = dict(**style_data)
         style_filtered['alpha'] = 1
         style_filtered['label'] = ""
+    if (n_filter_points is None):
+        n_filter_points = int(np.ceil(x.size * 0.01))
     x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
     y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
     plt.plot(x,y,**style_data)
     plt.plot(x_filtered,y_filtered,**style_filtered)
     return x_filtered,y_filtered
-
-
+ 
+    
 def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
                           x_func = lambda x: x.Separation,
                           y_func = lambda y: y.Force, 
@@ -40,8 +53,6 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
         RetractLabel: label to put on the retract
     """
     # plot the separation and force, with their filtered counterparts
-    ApprFiltered = FEC_Util.GetFilteredForce(Appr,NFilterPoints)
-    RetrFiltered = FEC_Util.GetFilteredForce(Retr,NFilterPoints)
     _fec_base_plot(x_func(Appr),y_func(Appr),n_filter_points=NFilterPoints,
                    style_data=dict(color='r',alpha=0.3,label=ApproachLabel))
     _fec_base_plot(x_func(Retr),y_func(Retr),n_filter_points=NFilterPoints,
@@ -80,6 +91,31 @@ def FEC_AlreadySplit(Appr,Retr,
     PlotUtilities.lazyLabel(XLabel,YLabel,"")
     PlotUtilities.legend(**LegendOpts)
     
+def z_sensor_vs_time(time_sep_force,**kwargs):
+    """
+    plots z sensor versus time. See force_versus_time
+    """
+    plot_labels = dict(x_func=lambda x : x.Time,
+                       y_func=lambda x : x.ZSnsr)
+    FEC(time_sep_force,
+        PlotLabelOpts=plot_labels,
+        XLabel="Time (s)",
+        YLabel="ZSnsr (nm)",**kwargs)
+        
+def force_versus_time(time_sep_force,**kwargs):
+    """
+    Plots force versus time
+    
+    Args:
+        **kwargs: see FEC
+    """
+    plot_labels = dict(x_func=lambda x : x.Time,
+                       y_func=lambda x: x.Force)
+    FEC(time_sep_force,
+        PlotLabelOpts=plot_labels,
+        XLabel="Time (s)",
+        YLabel="Force (pN)",**kwargs)
+    
 def FEC(TimeSepForceObj,NFilterPoints=50,
         PreProcessDict=dict(),
         **kwargs):
@@ -96,10 +132,10 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
                                       NFilterPoints=NFilterPoints,
                                       **PreProcessDict)
     # plot the approach and retract with the appropriate units
-    FEC_AlreadySplit(Appr,Retr,**kwargs)
+    FEC_AlreadySplit(Appr,Retr,NFilterPoints=NFilterPoints,**kwargs)
     
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
-                 separation_max = None,n_filter_func=None,
+                 separation_max = None,n_filter_func=None,use_colorbar=True,
                  ConversionOpts=def_conversion_opts,cmap='afmhot'):
     """
     Plots a force extension curve. Splits the curve into approach and 
@@ -112,6 +148,8 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
         versuon of the objects given, with n_filter_func being a function
         taking in the TimeSepForce object and returning an integer number of 
         points
+        
+        use_colorbar: if true, add a color bar
         
         separation_max: if not None, only histogram up to and including this
         separation. should be in units *after* conversion (default: nanometers)
@@ -138,12 +176,13 @@ def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
     # make a heat map, essentially
     counts, xedges, yedges, Image = plt.hist2d(separations, forces,
                                                bins=num_bins,cmap=cmap)
-    PlotUtilities.lazyLabel("Separation [nm]",
-                            "Force [pN]",
-                            "Two-Dimensional Force-Separation Histogram")
-    cbar = plt.colorbar()
-    label = '# of points in (Force,Separation) Bin'
-    cbar.set_label(label,labelpad=10,rotation=270) 
+    PlotUtilities.lazyLabel("Separation (nm)",
+                            "Force (pN)",
+                            "Force-Extension Heatmap")
+    if (use_colorbar): 
+        cbar = plt.colorbar()
+        label = '# of points in (Force,Separation) Bin'
+        cbar.set_label(label,labelpad=10,rotation=270) 
 
 def _n_rows_and_cols(processed,n_cols=3):
     n_rows = int(np.ceil(len(processed)/n_cols))    
