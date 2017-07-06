@@ -30,7 +30,7 @@ def _fec_base_plot(x,y,n_filter_points=None,style_data=dict(color='k',alpha=0.3)
         style_filtered['alpha'] = 1
         style_filtered['label'] = ""
     if (n_filter_points is None):
-        n_filter_points = int(np.ceil(x.size * 0.01))
+        n_filter_points = int(np.ceil(x.size * FEC_Util.default_filter_pct))
     x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
     y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
     plt.plot(x,y,**style_data)

@@ -14,6 +14,8 @@ from IgorUtil.PythonAdapter import TimeSepForceObj
 from GeneralUtil.python.IgorUtil import SavitskyFilter
 from GeneralUtil.python import GenUtilities,CheckpointUtilities
 
+default_filter_pct = 0.01
+
 class DNAWlcPoints:
     class BoundingIdx:
         def __init__(self,start,end):
@@ -248,7 +250,7 @@ def slice_by_time(obj,time_min=-np.inf,time_max=np.inf):
         By default, we just slice everything.
     """
     return _slice_by_property(obj,property_func = lambda x: x.Time,
-                              min_prop=time_min,max=max_prop)
+                              min_prop=time_min,max_prop=time_max)
 
 def slice_by_separation(obj,*args,**kwargs):
     """
@@ -423,7 +425,7 @@ def PreProcessFEC(TimeSepForceObject,**kwargs):
     return Appr,Retr
 
 def SplitAndProcess(TimeSepForceObj,ConversionOpts=dict(),
-                    NFilterPoints=100,**kwargs):
+                    NFilterPoints=None,**kwargs):
     """
     Args:
         TimeSepForceObj: see PreProcessFEC
@@ -432,6 +434,9 @@ def SplitAndProcess(TimeSepForceObj,ConversionOpts=dict(),
         **kwargs: passed to PreProcessFEC
     """
     # convert the x and y to sensible units
+    if (NFilterPoints is None):
+        NFilterPoints = \
+            int(np.ceil(default_filter_pct * TimeSepForceObj.Force.size))
     ObjCopy = UnitConvert(TimeSepForceObj,**ConversionOpts)
     # pre-process (to, for example, flip the axes and zero everything out
     Appr,Retr = PreProcessFEC(ObjCopy,NFilterPoints=NFilterPoints,**kwargs)
@@ -487,14 +492,20 @@ def BreakUpIntoApproachAndRetract(mObjs):
         Retract.append(Retr)
     return Approach,Retract
 
-def GetFilteredForce(Obj,NFilterPoints,FilterFunc=SavitskyFilter):
+def GetFilteredForce(Obj,NFilterPoints=None,FilterFunc=SavitskyFilter):
     """
     Given a TimeSepForce object, return a (filtered) copy of it
 
     Args:
         Obj: the TimeSepForce object we care about
         NFilterPoitns: fed to savitsky golay filter
+        FilterFunc: takes in an array, and a kwarg 'nsmooth', returns a 
+        filtered version of the array
+    Returns:
+        Filtered timesepforce object 
     """
+    if (NFilterPoints is None):
+        NFilterPoints = int(np.ceil(default_filter_pct*Obj.Force.size))
     ToRet = copy.deepcopy(Obj)
     ToRet.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
     try:
