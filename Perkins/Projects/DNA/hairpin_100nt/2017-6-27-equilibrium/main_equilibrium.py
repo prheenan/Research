@@ -96,29 +96,8 @@ def deconvolution(slice_eq,coeffs,bins):
     p_k_interp = InverseBoltzmann.gaussian_deconvolve(**kwargs_deconv)
     return deconvolution_info(ext_bins,ext_interp,interp_prob,P_q,P_q_interp,
                               p_k_interp)
-    
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    abs_dir = "./"
-    out_dir = "./out/"
-    cache_dir = "./cache/"
-    examples = FEC_Util.\
-        cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
-                                            cache_dir=cache_dir,limit=20)
-    example = examples[0]
-    split_fec = Analysis.zero_and_split_force_extension_curve(example)
-    retract = split_fec.retract
-    n_steps = 20
-    dt = retract.Time[1] - retract.Time[0]
-    NFilterPoints = int(np.ceil(5e-3/dt))
+                              
+def get_slices(retract,NFilterPoints):                              
     fudge = 0.1
     delta_1 = 0.5
     offset_1 = 2.25
@@ -142,7 +121,31 @@ def run():
     slices = [FEC_Util.GetFilteredForce(r,NFilterPoints=NFilterPoints)
               for r in slices]
     slice_idx_safe = [0,1,2,3,-4,-3,-2,-1]
-    slices_safe = [slices[i] for i in slice_idx_safe]
+    slices_safe = [slices[i] for i in slice_idx_safe]  
+    return slices,slices_safe 
+    
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    abs_dir = "./"
+    out_dir = "./out/"
+    cache_dir = "./cache/"
+    examples = FEC_Util.\
+        cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
+                                            cache_dir=cache_dir,limit=20)
+    example = examples[-1]
+    split_fec = Analysis.zero_and_split_force_extension_curve(example)
+    retract = split_fec.retract
+    dt = retract.Time[1] - retract.Time[0]
+    NFilterPoints = int(np.ceil(5e-3/dt))
+    slices,slices_safe  = get_slices(retract,NFilterPoints)
     mean_safe_ext = [np.mean(s.Separation) for s in slices_safe]
     std_safe_ext = [np.std(s.Separation) for s in slices_safe]
     coeffs,cov = np.polyfit(x=mean_safe_ext,y=std_safe_ext,full=False,cov=True,
