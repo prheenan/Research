@@ -78,16 +78,15 @@ def deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
     plt.plot(inf.ext_interp*1e-10,inf.P_q_interp,'r--')  
     plt.plot(inf.ext_interp * 1e-10,inf.p_k_interp,'b-')
     
-def deconvolution(slice_eq,coeffs,bins=20):
+def deconvolution(slice_eq,coeffs,bins):
     ext_eq = slice_eq.Separation * 1e10
-    bins = 20
     P_q,ext_bins = np.histogram(ext_eq,bins=bins,normed=True)
     # get rid of rightmost bin 
     ext_bins = ext_bins[:-1]
     # fit a spline to the bins to get a higher resolution histogram 
     interp_prob = interp1d(ext_bins,P_q,kind='cubic')
     ext_interp = np.linspace(min(ext_bins),max(ext_bins),endpoint=True,
-                             num=bins*10)
+                             num=bins*4)
     P_q_interp = interp_prob(ext_interp)
     P_q_interp /= np.trapz(y=P_q_interp,x=ext_interp)
     mean_ext_eq = np.mean(slice_eq.Separation)
@@ -156,21 +155,21 @@ def run():
     spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred)
     PlotUtilities.savefig(fig,"{:s}spring.png".format(out_dir))
     # get a specific one for the equilibrium measurements 
-    idx_eq = 19
-    bins = 20
-    slice_eq = slices[idx_eq]
-    inf = deconvolution(slice_eq,coeffs,bins=bins)
-    # reinterpolate p_k_interp back onto the original grid 
-    prob_savename = "{:s}probability.png".format(out_dir)
-    fig = PlotUtilities.figure(figsize=(4,8))
-    probability_plot(inf)
-    PlotUtilities.savefig(fig,prob_savename)
-    # make the deconvolution plot
-    deconv_name = "{:s}deconvolution.png".format(out_dir)
-    fig = PlotUtilities.figure(figsize=(4,8))
-    deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
-                       NFilterPoints,bins)
-    PlotUtilities.savefig(fig,deconv_name)
+    bins = 30
+    for idx_eq in range(16,20):
+        slice_eq = slices[idx_eq]
+        inf = deconvolution(slice_eq,coeffs,bins=bins)
+        # reinterpolate p_k_interp back onto the original grid 
+        prob_savename = "{:s}probability{:d}.png".format(out_dir,idx_eq)
+        fig = PlotUtilities.figure(figsize=(4,8))
+        probability_plot(inf)
+        PlotUtilities.savefig(fig,prob_savename)
+        # make the deconvolution plot
+        deconv_name = "{:s}deconvolution{:d}.png".format(out_dir,idx_eq)
+        fig = PlotUtilities.figure(figsize=(4,8))
+        deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
+                           NFilterPoints,bins)
+        PlotUtilities.savefig(fig,deconv_name)
     
 if __name__ == "__main__":
     run()
