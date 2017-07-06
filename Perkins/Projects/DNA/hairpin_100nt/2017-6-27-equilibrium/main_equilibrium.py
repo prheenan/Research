@@ -124,23 +124,7 @@ def get_slices(retract,NFilterPoints):
     slices_safe = [slices[i] for i in slice_idx_safe]  
     return slices,slices_safe 
     
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
-    
-    Returns:
-        This is a description of what is returned.
-    """
-    abs_dir = "./"
-    out_dir = "./out/"
-    cache_dir = "./cache/"
-    examples = FEC_Util.\
-        cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
-                                            cache_dir=cache_dir,limit=20)
-    example = examples[-1]
+def analyze(example,out_dir):
     split_fec = Analysis.zero_and_split_force_extension_curve(example)
     retract = split_fec.retract
     dt = retract.Time[1] - retract.Time[0]
@@ -173,6 +157,30 @@ def run():
         deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
                            NFilterPoints,bins)
         PlotUtilities.savefig(fig,deconv_name)
+        
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    abs_dir = "./"
+    out_dir = "./out"
+    cache_dir = "./cache/"
+    examples = FEC_Util.\
+        cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
+                                            cache_dir=cache_dir,limit=20)
+    example = examples[-1]
+    for example in examples:
+        out_dir_tmp = "{:s}_{:s}/".format(out_dir,example.Meta.Name)
+        GenUtilities.ensureDirExists(out_dir_tmp)
+        analyze(example,out_dir_tmp)
+        
+
     
 if __name__ == "__main__":
     run()
