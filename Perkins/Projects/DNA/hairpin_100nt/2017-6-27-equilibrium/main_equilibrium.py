@@ -12,7 +12,7 @@ import sys,cProfile,os
 sys.path.append("../../../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
-from GeneralUtil.python import PlotUtilities,CheckpointUtilities
+from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
 from Research.Personal.EventDetection.Util import Analysis
 from scipy.stats import norm
 from FitUtil.EnergyLandscapes.Inverse_Boltzmann.Python.Code import \
@@ -143,9 +143,15 @@ def analyze(example,out_dir):
     PlotUtilities.savefig(fig,"{:s}spring.png".format(out_dir))
     # get a specific one for the equilibrium measurements 
     bins = 30
-    for idx_eq in range(16,20):
+    for idx_eq in range(4,20):
         slice_eq = slices[idx_eq]
-        inf = deconvolution(slice_eq,coeffs,bins=bins)
+        try:
+            inf = deconvolution(slice_eq,coeffs,bins=bins)
+        except AssertionError as e:
+            print(e)
+            print("skipping #{:d}".format(idx_eq))
+            continue
+        # POST: deconvolution worked
         # reinterpolate p_k_interp back onto the original grid 
         prob_savename = "{:s}probability{:d}.png".format(out_dir,idx_eq)
         fig = PlotUtilities.figure(figsize=(4,8))
@@ -169,14 +175,13 @@ def run():
         This is a description of what is returned.
     """
     abs_dir = "./"
-    out_dir = "./out"
+    out_dir = "./out/"
     cache_dir = "./cache/"
     examples = FEC_Util.\
         cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
                                             cache_dir=cache_dir,limit=20)
-    example = examples[-1]
     for example in examples:
-        out_dir_tmp = "{:s}_{:s}/".format(out_dir,example.Meta.Name)
+        out_dir_tmp = "{:s}{:s}/".format(out_dir,example.Meta.Name)
         GenUtilities.ensureDirExists(out_dir_tmp)
         analyze(example,out_dir_tmp)
         
