@@ -20,6 +20,19 @@ from FitUtil.EnergyLandscapes.Inverse_Boltzmann.Python.Code import \
 
 from scipy.interpolate import interp1d,griddata
 
+class deconvolution_info:
+    def __init__(self,ext_bins,ext_interp,interp_prob,P_q,P_q_interp,
+                 p_k_interp):
+        self.ext_bins = ext_bins
+        self.ext_interp = ext_interp
+        self.interp_prob = interp_prob
+        self.P_q = P_q
+        self.P_q_interp = P_q_interp
+        self.p_k_interp = p_k_interp
+        self.p_k = griddata(points=ext_interp,values=p_k_interp,xi=ext_bins)
+        self.p_k /= np.trapz(y=self.p_k,x=self.ext_bins)
+        self.free_energy_kT = -np.log(self.p_k)
+
 def spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred):
     for i,s in enumerate(slices_safe):
         sep = s.Separation
@@ -30,20 +43,19 @@ def spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred):
     plt.plot(mean_safe_ext,pred,color='r',linewidth=2)      
     PlotUtilities.lazyLabel("Extension (nm)","Standard Deviation (nm), PSF","")    
 
-def probability_plot(ext_bins,ext_interp,p_k,p_k_interp,P_q,P_q_interp,
-                     free_energy_kT):
+def probability_plot(inf):
     plt.subplot(2,1,1)
-    plt.plot(ext_bins,p_k)
-    plt.plot(ext_bins,P_q,'rp')
-    plt.plot(ext_interp,p_k_interp,linestyle='--')
-    plt.plot(ext_interp,P_q_interp,linestyle='--')
+    plt.plot(inf.ext_bins,inf.p_k)
+    plt.plot(inf.ext_bins,inf.P_q,'rp')
+    plt.plot(inf.ext_interp,inf.p_k_interp,linestyle='--')
+    plt.plot(inf.ext_interp,inf.P_q_interp,linestyle='--')
     PlotUtilities.lazyLabel("","PDF","")    
     plt.subplot(2,1,2)
-    plt.plot(ext_bins,free_energy_kT)
+    plt.plot(inf.ext_bins,inf.free_energy_kT)
     PlotUtilities.lazyLabel(r"Extension ($\AA$)","Free energy","")    
 
-def deconvolution_plot(retract,slice_eq,slices,slices_safe,ext_bins,ext_interp,
-                       p_k,p_k_interp,P_q_interp,NFilterPoints,bins):
+def deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
+                       NFilterPoints,bins):
     plt.subplot(4,1,1)
     FEC_Plot._fec_base_plot(retract.Time,retract.Separation)
     plt.plot(slice_eq.Time,slice_eq.Separation,color='r',alpha=0.3)
@@ -62,9 +74,29 @@ def deconvolution_plot(retract,slice_eq,slices,slices_safe,ext_bins,ext_interp,
     plt.subplot(4,1,3)
     plt.hist(slice_eq.Separation,normed=False,bins=bins)
     plt.subplot(4,1,4)
-    plt.plot(ext_bins*1e-10,p_k)
-    plt.plot(ext_interp*1e-10,P_q_interp,'r--')  
-    plt.plot(ext_interp * 1e-10, p_k_interp,'b-')
+    plt.plot(inf.ext_bins*1e-10,inf.p_k)
+    plt.plot(inf.ext_interp*1e-10,inf.P_q_interp,'r--')  
+    plt.plot(inf.ext_interp * 1e-10,inf.p_k_interp,'b-')
+    
+def deconvolution(slice_eq,coeffs,bins=20):
+    ext_eq = slice_eq.Separation * 1e10
+    bins = 20
+    P_q,ext_bins = np.histogram(ext_eq,bins=bins,normed=True)
+    # get rid of rightmost bin 
+    ext_bins = ext_bins[:-1]
+    # fit a spline to the bins to get a higher resolution histogram 
+    interp_prob = interp1d(ext_bins,P_q,kind='cubic')
+    ext_interp = np.linspace(min(ext_bins),max(ext_bins),endpoint=True,
+                             num=bins*10)
+    P_q_interp = interp_prob(ext_interp)
+    P_q_interp /= np.trapz(y=P_q_interp,x=ext_interp)
+    mean_ext_eq = np.mean(slice_eq.Separation)
+    kwargs_deconv = dict(gaussian_stdev=np.polyval(coeffs,mean_ext_eq)*1e10,
+                         extension=ext_interp,
+                         P_q=P_q_interp)
+    p_k_interp = InverseBoltzmann.gaussian_deconvolve(**kwargs_deconv)
+    return deconvolution_info(ext_bins,ext_interp,interp_prob,P_q,P_q_interp,
+                              p_k_interp)
     
 def run():
     """
@@ -124,38 +156,21 @@ def run():
     spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred)
     PlotUtilities.savefig(fig,"{:s}spring.png".format(out_dir))
     # get a specific one for the equilibrium measurements 
-    idx_eq = 15
-    slice_eq = slices[idx_eq]
-    ext_eq = slice_eq.Separation * 1e10
+    idx_eq = 19
     bins = 20
-    P_q,ext_bins = np.histogram(ext_eq,bins=bins,normed=True)
-    # get rid of rightmost bin 
-    ext_bins = ext_bins[:-1]
-    # fit a spline to the bins to get a higher resolution histogram 
-    interp_prob = interp1d(ext_bins,P_q,kind='cubic')
-    ext_interp = np.linspace(min(ext_bins),max(ext_bins),endpoint=True,
-                             num=bins*10)
-    P_q_interp = interp_prob(ext_interp)
-    P_q_interp /= np.trapz(y=P_q_interp,x=ext_interp)
-    mean_ext_eq = np.mean(slice_eq.Separation)
-    kwargs_deconv = dict(gaussian_stdev=np.polyval(coeffs,mean_ext_eq)*1e10,
-                         extension=ext_interp,
-                         P_q=P_q_interp)
-    p_k_interp = InverseBoltzmann.gaussian_deconvolve(**kwargs_deconv)
+    slice_eq = slices[idx_eq]
+    inf = deconvolution(slice_eq,coeffs,bins=bins)
     # reinterpolate p_k_interp back onto the original grid 
-    p_k = griddata(points=ext_interp,values=p_k_interp,xi=ext_bins)
-    p_k /= np.trapz(y=p_k,x=ext_bins)
-    free_energy_kT = -np.log(P_q)
     prob_savename = "{:s}probability.png".format(out_dir)
     fig = PlotUtilities.figure(figsize=(4,8))
-    probability_plot(ext_bins,ext_interp,p_k,p_k_interp,P_q,P_q_interp,
-                     free_energy_kT)
+    probability_plot(inf)
     PlotUtilities.savefig(fig,prob_savename)
     # make the deconvolution plot
     deconv_name = "{:s}deconvolution.png".format(out_dir)
     fig = PlotUtilities.figure(figsize=(4,8))
-    deconvolution_plot(retract,slice_eq,slices,slices_safe,ext_bins,ext_interp,
-                       p_k,p_k_interp,P_q_interp,NFilterPoints,bins)
+    deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
+                       NFilterPoints,bins)
     PlotUtilities.savefig(fig,deconv_name)
+    
 if __name__ == "__main__":
     run()
