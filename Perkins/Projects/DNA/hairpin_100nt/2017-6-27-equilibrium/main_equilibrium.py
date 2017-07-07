@@ -54,29 +54,34 @@ def probability_plot(inf):
     plt.plot(inf.ext_bins,inf.free_energy_kT)
     PlotUtilities.lazyLabel(r"Extension ($\AA$)","Free energy","")    
 
-def deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
+def deconvolution_plot(retract,slice_eq,slices,inf,
                        NFilterPoints,bins):
+    sep_limits = [min(inf.ext_bins),max(inf.ext_bins)]                      
+    time_limits = [min(slice_eq.Time),max(slice_eq.Time)]
+    retract_sliced_tmp = FEC_Util.slice_by_time(retract,*time_limits)
     plt.subplot(4,1,1)
-    FEC_Plot._fec_base_plot(retract.Time,retract.Separation)
-    plt.plot(slice_eq.Time,slice_eq.Separation,color='r',alpha=0.3)
-    for s in slices:
-        plt.axvline(s.Time[0]) 
-        plt.axvline(s.Time[-1],linestyle='--')   
+    plt.plot(slice_eq.Time,slice_eq.Separation*1e10,color='r',alpha=0.3)
+    plt.plot(retract_sliced_tmp.Time,retract_sliced_tmp.Separation*1e10,color='k',
+             alpha=0.3)
+    plt.xlim(time_limits)
+    PlotUtilities.lazyLabel(r"",r"Separation ($\AA$)","")    
     plt.subplot(4,1,2)
-    FEC_Plot._fec_base_plot(retract.Time,retract.Force,
-                            n_filter_points=NFilterPoints)
-    for s in slices:
-        plt.axvline(s.Time[0])
-    plt.plot(slice_eq.Time,slice_eq.Force,color='r',alpha=0.3)
-    for s_safe in slices_safe:
-        plt.plot(s_safe.Time,s_safe.Force,
-                 color='g',alpha=0.3,linestyle='--')
+    plt.plot(slice_eq.Time,slice_eq.Force*1e12,color='r',alpha=0.3)
+    plt.plot(retract_sliced_tmp.Time,retract_sliced_tmp.Force*1e12,color='k',
+             alpha=0.3)    
+    plt.xlim(time_limits)             
+    PlotUtilities.lazyLabel(r"Time (s)","Force (pN)","")        
     plt.subplot(4,1,3)
-    plt.hist(slice_eq.Separation,normed=False,bins=bins)
+    plt.hist(slice_eq.Separation*1e10,normed=False,bins=bins)
+    plt.xlim(sep_limits)    
+    PlotUtilities.lazyLabel("","Count","")            
     plt.subplot(4,1,4)
-    plt.plot(inf.ext_bins*1e-10,inf.p_k)
-    plt.plot(inf.ext_interp*1e-10,inf.P_q_interp,'r--')  
-    plt.plot(inf.ext_interp * 1e-10,inf.p_k_interp,'b-')
+    plt.plot(inf.ext_bins,inf.p_k)
+    plt.plot(inf.ext_interp,inf.P_q_interp,'r--')  
+    plt.plot(inf.ext_interp,inf.p_k_interp,'b-')
+    plt.xlim(sep_limits)        
+    PlotUtilities.lazyLabel(r"Separation ($\AA$)","PDF","")            
+    
     
 def deconvolution(slice_eq,coeffs,bins):
     ext_eq = slice_eq.Separation * 1e10
@@ -88,6 +93,8 @@ def deconvolution(slice_eq,coeffs,bins):
     ext_interp = np.linspace(min(ext_bins),max(ext_bins),endpoint=True,
                              num=bins*4)
     P_q_interp = interp_prob(ext_interp)
+    # ensure the smoothed probability integrates to one, is >= 0 everywhere
+    P_q_interp = np.maximum(0,P_q_interp)
     P_q_interp /= np.trapz(y=P_q_interp,x=ext_interp)
     mean_ext_eq = np.mean(slice_eq.Separation)
     kwargs_deconv = dict(gaussian_stdev=np.polyval(coeffs,mean_ext_eq)*1e10,
@@ -143,14 +150,9 @@ def analyze(example,out_dir):
     PlotUtilities.savefig(fig,"{:s}spring.png".format(out_dir))
     # get a specific one for the equilibrium measurements 
     bins = 30
-    for idx_eq in range(4,20):
+    for idx_eq in range(5,24):
         slice_eq = slices[idx_eq]
-        try:
-            inf = deconvolution(slice_eq,coeffs,bins=bins)
-        except AssertionError as e:
-            print(e)
-            print("skipping #{:d}".format(idx_eq))
-            continue
+        inf = deconvolution(slice_eq,coeffs,bins=bins)
         # POST: deconvolution worked
         # reinterpolate p_k_interp back onto the original grid 
         prob_savename = "{:s}probability{:d}.png".format(out_dir,idx_eq)
@@ -160,7 +162,7 @@ def analyze(example,out_dir):
         # make the deconvolution plot
         deconv_name = "{:s}deconvolution{:d}.png".format(out_dir,idx_eq)
         fig = PlotUtilities.figure(figsize=(4,8))
-        deconvolution_plot(retract,slice_eq,slices,slices_safe,inf,
+        deconvolution_plot(retract,slice_eq,slices,inf,
                            NFilterPoints,bins)
         PlotUtilities.savefig(fig,deconv_name)
         
