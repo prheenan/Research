@@ -133,7 +133,7 @@ def run():
     PlotUtilities.no_x_label(ax_heat)
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
-    plt.plot(extension_nm,landscape_kcal_per_mol,color='k',linestyle='--')
+    plt.plot(extension_nm,landscape_kcal_per_mol,color='k')
     # make a second axis for the number of ammino acids 
     units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
     units_energy_delta = r"($\frac{\mathrm{kcal}}{\mathrm{mol} \cdot AA}$)"
@@ -146,7 +146,7 @@ def run():
                                     label=label,color='r',
                                     limits=limits_delta,secondY =True)
     ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-              color='r')                               
+              color='r',linestyle='o-')                               
     plt.xlim(xlim_fec)                             
     PlotUtilities.savefig(fig,"out.png")
 
