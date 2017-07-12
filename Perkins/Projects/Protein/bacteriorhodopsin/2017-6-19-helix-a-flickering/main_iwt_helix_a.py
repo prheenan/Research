@@ -116,9 +116,14 @@ def run():
         This is a description of what is returned.
     """
     in_dir = "./data_in_full/"
+    flickering_dir = "./data_flickering/"
+    # XXX use the flickering dir for stuff
+    cache_dir = flickering_dir 
+    GenUtilities.ensureDirExists(flickering_dir)
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
-                                                 limit=None)
+                                                 cache_directory=flickering_dir,
+                                                 limit=40)
     # select only the 'flickery' traces
     well_aligned_ids = [511,
                         581,
@@ -136,9 +141,12 @@ def run():
               """
     get_id = lambda r: int(re.match(pattern,r.Meta.Name,re.VERBOSE).group(1))
     only_flickering = [r for r in raw_data if get_id(r) in well_aligned_ids] 
+    # save out all the flickering results...
+    for r in only_flickering: 
+        CheckpointUtilities.lazy_save(flickering_dir + r.Meta.Name +".pkl",r)
     analyze_data(only_flickering,"./out_curated/")    
     # analyze everything                                                  
-    analyze_data(raw_data,"./out_full/")
+    #analyze_data(raw_data,"./out_full/")
 
                             
 

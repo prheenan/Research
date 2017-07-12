@@ -31,7 +31,7 @@ def hao_grouping_function(str_v):
     return preamble,id,ending
     
 def read_and_cache_data_hao(input_directory,cache_directory="./cache_in/",
-                            force=True,limit=None,**kwargs):
+                            force=True,limit=None,renormalize=False,**kwargs):
     """
     Reads hao-style ibw files from input_directory, caching them as TimeSepForce
     to cache_directory 
@@ -46,9 +46,10 @@ def read_and_cache_data_hao(input_directory,cache_directory="./cache_in/",
                        grouping_function = hao_grouping_function,
                        limit=limit,force=force)
     data = FEC_Util.cache_ibw_directory(**dict_kwargs)  
-    for d in data:
-        d.Force *= 1e-12
-        d.Separation *= 1e-9
+    if (renormalize):
+        for d in data:
+            d.Force *= 1e-12
+            d.Separation *= 1e-9
     return data
     
 def get_downsampled_data(downsample_n,force,cache_directory,
