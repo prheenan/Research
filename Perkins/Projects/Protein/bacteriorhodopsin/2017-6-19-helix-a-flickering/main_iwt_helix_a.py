@@ -122,8 +122,7 @@ def run():
     GenUtilities.ensureDirExists(flickering_dir)
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
-                                                 cache_directory=flickering_dir,
-                                                 limit=40)
+                                                 limit=40,renormalize=True)
     # select only the 'flickery' traces
     well_aligned_ids = [511,
                         581,
