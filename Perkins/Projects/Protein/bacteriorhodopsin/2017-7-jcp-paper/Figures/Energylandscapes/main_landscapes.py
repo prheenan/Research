@@ -52,27 +52,32 @@ def get_heatmap_data(time_sep_force_arr,bins=(100,100)):
     histogram = histogram.T            
     return histogram, x_edges,y_edges 
     
-def get_cacheable_data(areas,flickering_dir):
+def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=force_read_data,
                                                  cache_directory=flickering_dir,
-                                                 limit=None)
+                                                 limit=None,renormalize=True)
     raw_area_slices = []
     for area in areas:
         this_area = [FEC_Util.slice_by_separation(r,*area.ext_bounds) 
                      for r in raw_data]
         raw_area_slices.append(this_area)
     to_ret = []
-    for slice_tmp in raw_area_slices:
-        heatmap_data = get_heatmap_data(slice_tmp,bins=(100,100))  
-        to_ret.append(cacheable_data(None,heatmap_data))
+    for area,slice_tmp in zip(areas,raw_area_slices):
+        # get the heatmap histograms
+        heatmap_data = get_heatmap_data(slice_tmp,)  
+        # get the landscapes 
+        iwt_objs = IWT_Util.convert_to_iwt(slice_tmp)
+        iwt_helix_data_tmp = \
+            InverseWeierstrass.FreeEnergyAtZeroForce(iwt_objs,area.n_bins)
+        # make the object we want for this 'area' slice
+        to_ret.append(cacheable_data(iwt_helix_data_tmp,heatmap_data))
     return to_ret
     
 def make_heatmap(histogram, x_edges,y_edges):
     # XXX ? digitize all the ids so we know what bin they fall into...
     X,Y = np.meshgrid(x_edges,y_edges)
     plt.gca().pcolormesh(X,Y,histogram,cmap=plt.cm.afmhot)
-    
     
 def run():
     """
@@ -88,32 +93,61 @@ def run():
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     GenUtilities.ensureDirExists(flickering_dir)
-    meters_to_amino_acids = 1/0.3
+    meters_to_amino_acids = 1/(0.3e-9)
+    nanometers_to_amino_acids = meters_to_amino_acids * 1/1e9
     n_bins = 150
+    # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)",n_bins),
         slice_area([20e-9,27e-9],"Helix A",n_bins),
         slice_area([50e-9,75e-9],"Helix E",n_bins),
-        slice_area([57e-9,70e-9],"Helix E (detailed)",n_bins)
         ]    
+    # read in the data 
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,False,areas,
                       flickering_dir)
-    heatmap_data = data_to_analyze[0].heatmap_data
+    data_to_plot = data_to_analyze[0]         
+    heatmap_data = data_to_plot.heatmap_data
+    kT = 4.1e-21
+    # get the landscape
+    landscape_kT = data_to_plot.landscape.EnergyLandscape/kT
+    landscape_kcal_per_mol = landscape_kT * IWT_Util.kT_to_kcal_per_mol()
+    extension_nm = data_to_plot.landscape.Extensions*1e9
+    # get the change in energy per unit distance (force)
+    delta_landscape_kT_per_nm = \
+        np.gradient(landscape_kT)/np.gradient(extension_nm)
+    delta_landscape_kcal_per_mol_per_nm = \
+        delta_landscape_kT_per_nm * IWT_Util.kT_to_kcal_per_mol()
+    delta_landscape_kcal_per_mol_per_amino_acid = \
+        delta_landscape_kcal_per_mol_per_nm * 1/(nanometers_to_amino_acids)
     fig = PlotUtilities.figure((3.25,7))
+    # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
     make_heatmap(*heatmap_data)
     PlotUtilities.lazyLabel("","Force (pN)","")
-    # make a second axis for the number of ammino acids 
+    # make a second x axis for the number of ammino acids 
     xlim_fec = plt.xlim()
-    limits = np.array(xlim_fec) * meters_to_amino_acids
+    limits = np.array(xlim_fec) * nanometers_to_amino_acids
     PlotUtilities.secondAxis(ax_heat,"Extension (AA #)",limits,secondY =False)
     plt.xlim(xlim_fec)
-    energy_axis = plt.subplot(2,1,2)    
-    PlotUtilities.lazyLabel("","Free energy (kT)","")
+    PlotUtilities.no_x_label(ax_heat)
+    # # plot the energy landscape...
+    ax_energy = plt.subplot(2,1,2)    
+    plt.plot(extension_nm,landscape_kcal_per_mol,color='k',linestyle='--')
     # make a second axis for the number of ammino acids 
-    IWT_Plot.format_kcal_per_mol_second_axis_after_kT_axis(ax=energy_axis)
-    plt.xlim(xlim_fec)
+    units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
+    units_energy_delta = r"($\frac{\mathrm{kcal}}{\mathrm{mol} \cdot AA}$)"
+    PlotUtilities.lazyLabel("Extension (nm)","Free energy " + units_energy,"")    
+    limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
+                    max(delta_landscape_kcal_per_mol_per_amino_acid)]
+    plt.xlim(xlim_fec)                    
+    label = "Free energy difference " + units_energy_delta
+    ax_2 = PlotUtilities.secondAxis(ax_energy,
+                                    label=label,color='r',
+                                    limits=limits_delta,secondY =True)
+    ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
+              color='r')                               
+    plt.xlim(xlim_fec)                             
     PlotUtilities.savefig(fig,"out.png")
 
     
