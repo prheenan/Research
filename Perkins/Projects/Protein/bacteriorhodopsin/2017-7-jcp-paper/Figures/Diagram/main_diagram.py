@@ -13,6 +13,7 @@ import sys
 sys.path.append("../../../../../../../../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
+from GeneralUtil.python.Plot import Scalebar
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
@@ -86,16 +87,34 @@ def run():
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
     PlotUtilities.lazyLabel("Separation (nm)","Force (pN)","")   
-    PlotUtilities.x_label_on_top(ax_example)    
-    x_scale_dict = dict(unit="nm",mult=1,fmt="{:.1f}",x_frac=0.8,y_frac=0.8)
+    PlotUtilities.x_label_on_top(ax_example)
+
     ## plot all the zoomed regions 
+    offsets_x = [0.7,0.8]
+    offsets_y = [0.1,0.1]
+    heights_pN = [10,5]
+    widths_nm = [1,1]
     for i,r in enumerate(regions):
         ax_tmp = plt.subplot(zoom_in_spec[:,i])
         FEC_Plot._fec_base_plot(x_func(r),y_func(r),**dict_plot)
         xlim = plt.xlim()
-        PlotUtilities.x_scale_bar_and_ticks(x_scale_dict,ax=ax_tmp)
-        PlotUtilities.zoom_effect01(ax_example, ax_tmp,*xlim)
+        ylim = plt.ylim()
+        min_x = min(xlim)
+        max_y = max(ylim)
+        y_loc = max_y*0.9
+        kw = dict(ax=ax_tmp)
+        x_kwargs =dict(unit="nm",width=widths_nm[i],**kw)
+        offset_x = Scalebar.rel_to_abs(ax_tmp,offsets_x[i],True)
+        offset_y = Scalebar.rel_to_abs(ax_tmp,offsets_y[i],False)
+        Scalebar.crossed_x_and_y(offset_x=offset_x,
+                                 offset_y=offset_y,
+                                 x_kwargs=x_kwargs,
+                                 y_kwargs=dict(unit="pN",height=heights_pN[i],
+                                               **kw))
         PlotUtilities.no_x_label(ax_tmp)
+        PlotUtilities.no_y_label(ax_tmp)        
+        PlotUtilities.zoom_effect01(ax_example, ax_tmp,*xlim)
+
         PlotUtilities.lazyLabel("","","")           
     PlotUtilities.savefig(fig,"out.png")
 
