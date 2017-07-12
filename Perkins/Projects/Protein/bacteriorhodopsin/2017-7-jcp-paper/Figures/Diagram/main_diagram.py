@@ -53,7 +53,7 @@ def run():
     ylim_pN = [-20,None]
     xlim_nm = [-5,100]
     zoom_regions_nm = [ [22.5,24.5],
-                        [60,61.25]]
+                        [60,62]]
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
                for reg in zoom_regions_nm]
@@ -79,20 +79,32 @@ def run():
     ax_example = plt.subplot(data_spec[0,:])
     alpha_data = 0.4
     color_data = 'b'
-    dict_plot = dict(n_filter_points=500,
+    dict_plot = dict(n_filter_points=2000,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
-    FEC_Plot._fec_base_plot(x_func(example_plot),y_func(example_plot),
+    x_full_plot = x_func(example_plot)                                     
+    FEC_Plot._fec_base_plot(x_full_plot,y_func(example_plot),
                             **dict_plot)
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
-    PlotUtilities.lazyLabel("Separation (nm)","Force (pN)","")   
+    ymin = 0.80
+    ymax = 0.85
+    adhesion_max_nm = 17
+    # plot the helical regions...
+    regions_nm = [ [[18,31],"ED Helix",'b'],
+                   [[31,45],"CB Helix",'r'],
+                   [[55,65],"A Helix",'g']]
+    for x,name,color in regions_nm:
+        plt.axvspan(*x,color=color,ymin=ymin,ymax=ymax,alpha=0.3,linewidth=0)
+    # plot the adhesion regions
+    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='k',alpha=0.1,hatch='//',
+                linewidth=0)
+    PlotUtilities.lazyLabel("Molecular extension (nm)","Force (pN)","")   
     PlotUtilities.x_label_on_top(ax_example)
-
-    ## plot all the zoomed regions 
-    offsets_x = [0.7,0.8]
+    # # plot all the zoomed regions 
+    offsets_x = [0.7,0.7]
     offsets_y = [0.1,0.1]
-    heights_pN = [10,5]
+    heights_pN = [10,6]
     widths_nm = [1,1]
     for i,r in enumerate(regions):
         ax_tmp = plt.subplot(zoom_in_spec[:,i])
