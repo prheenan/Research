@@ -134,6 +134,7 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
     # plot the approach and retract with the appropriate units
     FEC_AlreadySplit(Appr,Retr,NFilterPoints=NFilterPoints,**kwargs)
     
+
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
                  separation_max = None,n_filter_func=None,use_colorbar=True,
                  ConversionOpts=def_conversion_opts,cmap='afmhot'):

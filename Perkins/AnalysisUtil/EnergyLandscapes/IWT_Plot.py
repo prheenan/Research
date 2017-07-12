@@ -81,11 +81,10 @@ def plot_tilted_landscape(LandscapeObj,min_landscape_kT=None,
     PlotUtilities.lazyLabel("Extension [nm]",ylabel,"",frameon=True)
     format_kcal_per_mol_second_axis_after_kT_axis()    
 
-def format_kcal_per_mol_second_axis_after_kT_axis():
+def format_kcal_per_mol_second_axis_after_kT_axis(ax=plt.gca()):
     """
     formats a second, kcal/mol axis after plotting kT data 
     """
-    ax = plt.gca()
     ylim_kT = np.array(plt.ylim())
     ylim_kcal_per_mol = IWT_Util.kT_to_kcal_per_mol() * ylim_kT
     PlotUtilities.secondAxis(ax=plt.gca(),label="Energy (kcal/mol)",
