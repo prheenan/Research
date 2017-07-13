@@ -63,13 +63,23 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
                      for r in raw_data]
         raw_area_slices.append(this_area)
     to_ret = []
+    N = 3
     for area,slice_tmp in zip(areas,raw_area_slices):
         # get the heatmap histograms
         heatmap_data = get_heatmap_data(slice_tmp,)  
-        # get the landscapes 
+        # get the landscapes (we use N, to get an error)
         iwt_objs = IWT_Util.convert_to_iwt(slice_tmp)
+        num_n = len(iwt_objs)/N
+        assert (num_n % N == 0), \
+            "Need a multiple of {:d}".format(N)
+        ids = [i for i in range(len(iwt_objs))]
+        # shuffle ids in-place
+        np.random.shuffle(ids)
+        # get the groups 
+        iwt_obj_subsets = [ iwt_objs[ids[N*i:N*i+N]] for i in range(0,num_n)]
         iwt_helix_data_tmp = \
-            InverseWeierstrass.FreeEnergyAtZeroForce(iwt_objs,area.n_bins)
+            [InverseWeierstrass.FreeEnergyAtZeroForce(objs,area.n_bins)
+             for objs in iwt_obj_subsets]
         # make the object we want for this 'area' slice
         to_ret.append(cacheable_data(iwt_helix_data_tmp,heatmap_data))
     return to_ret
@@ -150,10 +160,11 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    np.random.seed(42)
     flickering_dir = "../Data/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
-    force_recalculation = False
+    force_recalculation = True
     GenUtilities.ensureDirExists(flickering_dir)
     n_bins = 150
     n_bins_helix_a = 50
