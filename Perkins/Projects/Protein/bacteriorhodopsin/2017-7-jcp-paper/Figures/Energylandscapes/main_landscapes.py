@@ -125,6 +125,21 @@ def heatmap_plot(heatmap_data,nanometers_to_amino_acids):
     plt.xlim(xlim_fec)
     PlotUtilities.no_x_label(ax_heat)    
     
+def create_landscape_plot(data_to_plot): 
+    meters_to_amino_acids = 1/(0.3e-9)
+    nanometers_to_amino_acids = meters_to_amino_acids * 1/1e9
+    heatmap_data = data_to_plot.heatmap_data
+    extension_nm,landscape_kcal_per_mol, delta_energy_kcal_per_mol_per_aa = \
+            get_energy_landscape_data(data_to_plot,nanometers_to_amino_acids)
+    # # ploy the heat map 
+    ax_heat = plt.subplot(2,1,1)
+    heatmap_plot(heatmap_data,nanometers_to_amino_acids)
+    xlim_fec = plt.xlim()
+    # # plot the energy landscape...
+    ax_energy = plt.subplot(2,1,2)    
+    plot_landscape(extension_nm,landscape_kcal_per_mol,
+                   delta_energy_kcal_per_mol_per_aa,xlim_fec)
+    
 def run():
     """
     <Description>
@@ -138,34 +153,26 @@ def run():
     flickering_dir = "../Data/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
+    force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
-    meters_to_amino_acids = 1/(0.3e-9)
-    nanometers_to_amino_acids = meters_to_amino_acids * 1/1e9
     n_bins = 150
+    n_bins_helix_a = 50
+    n_binx_helix_e = 75
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)",n_bins),
-        slice_area([20e-9,27e-9],"Helix A",n_bins),
-        slice_area([50e-9,75e-9],"Helix E",n_bins),
+        slice_area([20e-9,27e-9],"Helix A",n_bins_helix_a),
+        slice_area([50e-9,75e-9],"Helix E",n_binx_helix_e),
         ]    
     # read in the data 
     data_to_analyze = CheckpointUtilities.\
-        getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,False,areas,
-                      flickering_dir)
-    data_to_plot = data_to_analyze[0]         
-    heatmap_data = data_to_plot.heatmap_data
-    extension_nm,landscape_kcal_per_mol, delta_energy_kcal_per_mol_per_aa = \
-            get_energy_landscape_data(data_to_plot,nanometers_to_amino_acids)
-    fig = PlotUtilities.figure((3.25,7))    
-    # # ploy the heat map 
-    ax_heat = plt.subplot(2,1,1)
-    heatmap_plot(heatmap_data,nanometers_to_amino_acids)
-    xlim_fec = plt.xlim()
-    # # plot the energy landscape...
-    ax_energy = plt.subplot(2,1,2)    
-    plot_landscape(extension_nm,landscape_kcal_per_mol,
-                   delta_energy_kcal_per_mol_per_aa,xlim_fec)
-    PlotUtilities.savefig(fig,"out.png")
+        getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
+                      force_recalculation,areas,flickering_dir)
+    for i,d in enumerate(data_to_analyze):
+        fig = PlotUtilities.figure((3.25,7))        
+        create_landscape_plot(d)
+        out_name = "landscape{:d}_{:s}.png".format(i,areas[i].plot_title)
+        PlotUtilities.savefig(fig,out_name)
 
     
 if __name__ == "__main__":
