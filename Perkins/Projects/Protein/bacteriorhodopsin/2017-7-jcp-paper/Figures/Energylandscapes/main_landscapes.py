@@ -79,6 +79,52 @@ def make_heatmap(histogram, x_edges,y_edges):
     X,Y = np.meshgrid(x_edges,y_edges)
     plt.gca().pcolormesh(X,Y,histogram,cmap=plt.cm.afmhot)
     
+def get_energy_landscape_data(data_to_plot,nanometers_to_amino_acids,
+                              kT=4.1e-21):
+    # get the landscape
+    landscape_kT = data_to_plot.landscape.EnergyLandscape/kT
+    landscape_kcal_per_mol = landscape_kT * IWT_Util.kT_to_kcal_per_mol()
+    extension_nm = data_to_plot.landscape.Extensions*1e9
+    # get the change in energy per unit distance (force)
+    delta_landscape_kT_per_nm = \
+        np.gradient(landscape_kT)/np.gradient(extension_nm)
+    delta_landscape_kcal_per_mol_per_nm = \
+        delta_landscape_kT_per_nm * IWT_Util.kT_to_kcal_per_mol()
+    delta_landscape_kcal_per_mol_per_amino_acid = \
+        delta_landscape_kcal_per_mol_per_nm * 1/(nanometers_to_amino_acids)
+    return extension_nm,landscape_kcal_per_mol,\
+        delta_landscape_kcal_per_mol_per_amino_acid
+    
+def plot_landscape(extension_nm,landscape_kcal_per_mol,
+                   delta_landscape_kcal_per_mol_per_amino_acid,xlim):
+    ax_energy = plt.gca()
+    plt.plot(extension_nm,landscape_kcal_per_mol,color='k')
+    # make a second axis for the number of ammino acids 
+    units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
+    units_energy_delta = r"($\frac{\mathrm{kcal}}{\mathrm{mol} \cdot AA}$)"
+    PlotUtilities.lazyLabel("Extension (nm)","Free energy " + units_energy,"")    
+    limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
+                    max(delta_landscape_kcal_per_mol_per_amino_acid)]
+    plt.xlim(xlim)                    
+    label = "Free energy difference " + units_energy_delta
+    ax_2 = PlotUtilities.secondAxis(ax_energy,
+                                    label=label,color='r',
+                                    limits=limits_delta,secondY =True)
+    ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
+              color='r',linestyle='-',linewidth=0.5)                               
+    plt.xlim(xlim)     
+
+def heatmap_plot(heatmap_data,nanometers_to_amino_acids):
+    ax_heat = plt.gca()
+    make_heatmap(*heatmap_data)
+    PlotUtilities.lazyLabel("","Force (pN)","")
+    # make a second x axis for the number of ammino acids 
+    xlim_fec = plt.xlim()
+    limits = np.array(xlim_fec) * nanometers_to_amino_acids
+    PlotUtilities.secondAxis(ax_heat,"Extension (AA #)",limits,secondY =False)
+    plt.xlim(xlim_fec)
+    PlotUtilities.no_x_label(ax_heat)    
+    
 def run():
     """
     <Description>
@@ -108,46 +154,17 @@ def run():
                       flickering_dir)
     data_to_plot = data_to_analyze[0]         
     heatmap_data = data_to_plot.heatmap_data
-    kT = 4.1e-21
-    # get the landscape
-    landscape_kT = data_to_plot.landscape.EnergyLandscape/kT
-    landscape_kcal_per_mol = landscape_kT * IWT_Util.kT_to_kcal_per_mol()
-    extension_nm = data_to_plot.landscape.Extensions*1e9
-    # get the change in energy per unit distance (force)
-    delta_landscape_kT_per_nm = \
-        np.gradient(landscape_kT)/np.gradient(extension_nm)
-    delta_landscape_kcal_per_mol_per_nm = \
-        delta_landscape_kT_per_nm * IWT_Util.kT_to_kcal_per_mol()
-    delta_landscape_kcal_per_mol_per_amino_acid = \
-        delta_landscape_kcal_per_mol_per_nm * 1/(nanometers_to_amino_acids)
-    fig = PlotUtilities.figure((3.25,7))
+    extension_nm,landscape_kcal_per_mol, delta_energy_kcal_per_mol_per_aa = \
+            get_energy_landscape_data(data_to_plot,nanometers_to_amino_acids)
+    fig = PlotUtilities.figure((3.25,7))    
     # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
-    make_heatmap(*heatmap_data)
-    PlotUtilities.lazyLabel("","Force (pN)","")
-    # make a second x axis for the number of ammino acids 
+    heatmap_plot(heatmap_data,nanometers_to_amino_acids)
     xlim_fec = plt.xlim()
-    limits = np.array(xlim_fec) * nanometers_to_amino_acids
-    PlotUtilities.secondAxis(ax_heat,"Extension (AA #)",limits,secondY =False)
-    plt.xlim(xlim_fec)
-    PlotUtilities.no_x_label(ax_heat)
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
-    plt.plot(extension_nm,landscape_kcal_per_mol,color='k')
-    # make a second axis for the number of ammino acids 
-    units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
-    units_energy_delta = r"($\frac{\mathrm{kcal}}{\mathrm{mol} \cdot AA}$)"
-    PlotUtilities.lazyLabel("Extension (nm)","Free energy " + units_energy,"")    
-    limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
-                    max(delta_landscape_kcal_per_mol_per_amino_acid)]
-    plt.xlim(xlim_fec)                    
-    label = "Free energy difference " + units_energy_delta
-    ax_2 = PlotUtilities.secondAxis(ax_energy,
-                                    label=label,color='r',
-                                    limits=limits_delta,secondY =True)
-    ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-              color='r',linestyle='o-')                               
-    plt.xlim(xlim_fec)                             
+    plot_landscape(extension_nm,landscape_kcal_per_mol,
+                   delta_energy_kcal_per_mol_per_aa,xlim_fec)
     PlotUtilities.savefig(fig,"out.png")
 
     
