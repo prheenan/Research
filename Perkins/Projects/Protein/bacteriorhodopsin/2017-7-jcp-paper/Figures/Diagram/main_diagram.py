@@ -53,7 +53,7 @@ def run():
     ylim_pN = [-20,None]
     xlim_nm = [-5,100]
     zoom_regions_nm = [ [21,23],
-                        [59,61]]
+                        [59,62]]
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
                for reg in zoom_regions_nm]
@@ -105,7 +105,7 @@ def run():
     PlotUtilities.x_label_on_top(ax_example)
     # # plot all the zoomed regions 
     offsets_x = [0.5,0.5]
-    offsets_y = [0.7,0.2]
+    offsets_y = [0.7,0.15]
     heights_pN = [10,10]
     widths_nm = [1,1]
     for i,r in enumerate(regions):
