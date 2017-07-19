@@ -52,7 +52,7 @@ def run():
     y_func = lambda y: y.Force 
     ylim_pN = [-20,None]
     xlim_nm = [-5,100]
-    zoom_regions_nm = [ [22.5,24.5],
+    zoom_regions_nm = [ [21,23],
                         [60,62]]
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
@@ -64,15 +64,17 @@ def run():
     top_spec = gridspec.GridSpec(1,2)
     # create separate axes for the image and FECs 
     image_spec = gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0])
-    data_spec = gridspec.GridSpecFromSubplotSpec(3,1,subplot_spec=top_spec[1:]) 
+    data_spec = gridspec.GridSpecFromSubplotSpec(3,1,subplot_spec=top_spec[1:],
+                                                hspace=0.1) 
     # create a separate axis for the 'zoom in' FEC 
     zoom_in_spec = gridspec.GridSpecFromSubplotSpec(2,len(zoom_regions_nm),
-                                                    subplot_spec=data_spec[1:]) 
+                                                    subplot_spec=data_spec[1:],
+                                                    wspace=0.02) 
     # # plot the image 
     ax = plt.subplot(image_spec[:])
+    plt.imshow(plt.imread("../Data/sample_cartoon.png"),aspect='auto')
     ax.axis('off')
     xy_text = 0,np.mean(plt.ylim())
-    ax.text(*xy_text,s="Cartoon placeholder")
     # # plot the example fec and zoomed regions
     #
     # 'full' example 
@@ -89,10 +91,10 @@ def run():
     plt.xlim(xlim_nm)
     ymin = 0.80
     ymax = 0.85
-    adhesion_max_nm = 17
+    adhesion_max_nm = 19
     # plot the helical regions...
-    regions_nm = [ [[18,31],"ED Helix",'b'],
-                   [[31,45],"CB Helix",'r'],
+    regions_nm = [ [[adhesion_max_nm,30],"ED Helix",'deepskyblue'],
+                   [[31,45],"CB Helix",'orangered'],
                    [[55,65],"A Helix",'g']]
     for x,name,color in regions_nm:
         plt.axvspan(*x,color=color,ymin=ymin,ymax=ymax,alpha=0.3,linewidth=0)
@@ -102,9 +104,9 @@ def run():
     PlotUtilities.lazyLabel("Molecular extension (nm)","Force (pN)","")   
     PlotUtilities.x_label_on_top(ax_example)
     # # plot all the zoomed regions 
-    offsets_x = [0.7,0.7]
-    offsets_y = [0.1,0.1]
-    heights_pN = [10,6]
+    offsets_x = [0.5,0.5]
+    offsets_y = [0.7,0.2]
+    heights_pN = [10,10]
     widths_nm = [1,1]
     for i,r in enumerate(regions):
         ax_tmp = plt.subplot(zoom_in_spec[:,i])
@@ -128,7 +130,8 @@ def run():
         PlotUtilities.zoom_effect01(ax_example, ax_tmp,*xlim)
 
         PlotUtilities.lazyLabel("","","")           
-    PlotUtilities.savefig(fig,"out.png")
+    subplots_adjust = dict(bottom=0.05,top=0.9,left=0)
+    PlotUtilities.savefig(fig,"out.png",subplots_adjust=subplots_adjust)
 
     
 if __name__ == "__main__":

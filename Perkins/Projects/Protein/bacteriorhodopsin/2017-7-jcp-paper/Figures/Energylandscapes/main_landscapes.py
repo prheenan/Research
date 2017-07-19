@@ -171,7 +171,6 @@ def make_heatmap(histogram, x_edges,y_edges):
 def plot_landscape(data,xlim):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
-    
     extension_nm = data._extension_grid_nm
     extension_aa = data.amino_acids_per_nm() * extension_nm
     grad = lambda x: np.gradient(x)/(np.gradient(extension_aa))
@@ -278,6 +277,7 @@ def run():
         create_landscape_plot(d)
         out_name = "landscape{:d}_{:s}.png".format(i,areas[i].plot_title)
         PlotUtilities.savefig(fig,out_name)
+        
 
     
 if __name__ == "__main__":
