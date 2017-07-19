@@ -41,6 +41,13 @@ def make_energy_landscape_plots(out_dir,energy_landscape_unfolding):
     IWT_Plot.plot_free_landscape(energy_landscape_unfolding)
     PlotUtilities.xlabel("Separation (nm)")
     PlotUtilities.savefig(fig,out_dir + "free_landscape.png")
+    # plot the tileted landscape 
+    tilt_N = 12e-12
+    fig = PlotUtilities.figure()    
+    IWT_Plot.plot_tilted_landscape(energy_landscape_unfolding,f_one_half_N=tilt_N)
+    PlotUtilities.xlabel("Separation (nm)")    
+    PlotUtilities.savefig(fig,out_dir + "tilted_landscape.png")
+    
     
 def fit_polymer_model(example):
     """
