@@ -14,6 +14,17 @@ from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
 from Research.Personal.EventDetection._2SplineEventDetector import _no_event
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
+    """
+    Given a data set, an offset into that data set, and a list of slices
+    relative to that offset, picks the slice giving the largest value
+
+    Args:
+        interp_sliced: the data to choose from
+        offset: the absolute offset for each slice. If 0, then absolute
+        slice_list: list of slice object
+    Returns:
+        s in slice_list giving the maximum value in interp_sliced
+    """
     value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
                  for e in slice_list]
     return np.argmax(value_max)
@@ -707,7 +718,7 @@ def _predict_full(example,threshold=1e-2,f_refs=None,tau_fraction=0.02,
     """
     example_split = Analysis.\
         zero_and_split_force_extension_curve(example,
-                                             fraction=tau_fraction)                         
+                                             fraction=tau_fraction)            
     if (f_refs is None):
         f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
@@ -723,7 +734,7 @@ def predict(example,threshold=1e-2,add_offsets=False,**kwargs):
     Args:
         example: TimeSepForce
         threshold: maximum probability under the no-event hypothesis
-        add_offsets: if true, offset into the entire array. otherwise, we offset
+        add_offsets: if true, indices are absolute. otherwise, we offset
         into just the retract portion (after splitting into the approach,
         dwell, and retract)
     Returns:

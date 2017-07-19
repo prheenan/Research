@@ -23,29 +23,32 @@ from mpl_toolkits.axes_grid.inset_locator import inset_axes,mark_inset
 from FitUtil.EnergyLandscapes.Rupture_Dudko2007.Python.Code import Dudko2007
 import matplotlib.gridspec as gridspec
 from mpl_toolkits.axes_grid.inset_locator import inset_axes
+from FitUtil.WormLikeChain.Python.Code.WLC_Utils import WlcNonExtensible
+from mpl_toolkits.axes_grid.inset_locator import inset_axes
 
 
 # plotting constants    
 raw_force_kwargs = dict(color='k',alpha=0.3)
-interp_force_kwargs = dict(color='b',linewidth=3)
+interp_force_kwargs = dict(color='b',linewidth=1.5)
 probabiity_kwargs = dict(color='r')
 # how big the scale bars are
-scale_fraction_width = 0.3
+scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
-df_dt_string = r"$\frac{\mathrm{dF}}{\mathrm{dt}}$"
-rupture_string = r"F$_{\mathrm{r}}$"
-fontsize=20
+df_dt_string = r"$\mathbf{\partial}$F/$\mathbf{\partial}$t"
+rupture_string = r"F$_{\mathbf{R}}$"
+fontsize=8
+scale_line_width=1.5
 
 def generate_rupture_histograms():
     num_loading_rates = 10
     np.random.seed(42)
     kbT =  4.1e-21
-    delta_G_ddagger = 10 *kbT
-    x_ddagger= 0.3e-9
+    delta_G_ddagger = 20 *kbT
+    x_ddagger= 0.6e-9
     k0 = 0.1
     nu = 2/3
     beta = 1/kbT
-    n_samples = 10000
+    n_samples = 1000
     # loading rates from 10 pN/s to 100 pN/s, 
     loading_rates = np.logspace(-11,-10,num=num_loading_rates)
     # rupture forces from 1pN to 1000pN
@@ -59,7 +62,7 @@ def generate_rupture_histograms():
     stdev_rupture_forces = Dudko2007.stdev_rupture_force(loading_rates,
                                                          **common_kwargs)
     models = []    
-    x = np.linspace(start=-x_ddagger*0.8,stop=x_ddagger*0.8)
+    x = np.linspace(start=-x_ddagger*1.0,stop=x_ddagger*0.8)
     landscape = Dudko2007.free_energy_landscape(x=x,**basic_kwargs)
     for loading_rate in loading_rates:
         model = Dudko2007.normalized_model(loading_rate,rupture_forces,
@@ -80,36 +83,44 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
     style_interp_before = dict(**interp_force_kwargs)
     style_interp_before['color'] = 'b'
     style_interp_after = dict(**interp_force_kwargs)
-    style_interp_after['color'] = 'g'
+    style_interp_after['color'] = 'r'
+    style_interp_final = dict(**interp_force_kwargs)
+    style_interp_final['color'] = 'g'
     # get the slices
-    slice_before = slice(0,info_final.event_idx[0],1)
-    slice_after = slice(info_final.event_idx[0],None,1)
+    event_final = info_final.event_idx[-2]
+    event_initial = info_final.event_idx[0]
+    slice_before = slice(0,event_initial,1)
+    slice_after = slice(event_initial,event_final,1)
+    slice_final = slice(event_final,None,1)
     plt.plot(time_plot,force_plot,**raw_force_kwargs)
     plt.plot(time_plot[slice_before],force_interp_plot[slice_before],
              **style_interp_before)
     plt.plot(time_plot[slice_after],force_interp_plot[slice_after],
              **style_interp_after)
+    plt.plot(time_plot[slice_final],force_interp_plot[slice_final],
+             **style_interp_final)
     PlotUtilities.lazyLabel("","Force (pN)","")
     # plot arrows above the events
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
-                                      fudge_y=20,**arrow_kwargs)
+                                      fudge_y=30,**arrow_kwargs)
     # add a scale bar
-    PlotUtilities.no_x_anything(plt.gca())               
+    PlotUtilities.no_x_label(plt.gca())               
     max_time = max(time_plot)
     width = scale_fraction_width * max_time
-    label = "{:.1g}s".format(width)
-    PlotUtilities.scale_bar_x(x=scale_fraction_offset*max_time,
-                              y=-15,s=label,
-                              width=width)  
+    scale_bar_dict = dict(linewidth=scale_line_width)
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=scale_bar_dict)
 
-def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=20,
-                                        shrinkB=20,
+def common_text_kwargs():
+    return dict(xycoords='data',
+                textcoords='data',
+                verticalalignment='center',
+                horizontalalignment='center')
+
+def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=0,
+                                        shrinkB=0,linewidth=1,
                                         connectionstyle="arc3")):
-    return  dict(xycoords='data',
-                 textcoords='data',
-                 verticalalignment='center',
-                 horizontalalignment='center',fontsize=fontsize,
-                 arrowprops=arrowprops)
+    return  dict(fontsize=fontsize,
+                 arrowprops=arrowprops,**common_text_kwargs())
 
 def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # determine the second event (zoom index)
@@ -126,157 +137,169 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     slice_fit = slice(0,int(time_slice.size/2),1)
     x_fit = time_slice[slice_fit]
     y_fit = force_slice[slice_fit]
-    _,predicted,loading_rate,rupture_force,_ = \
-        Analysis._loading_rate_helper(x_fit,y_fit)
-    plt.plot(time_slice,force_slice,**raw_force_kwargs)
-    color_loading_line = 'm'
-    plt.plot(x_fit,predicted,linestyle='--',color=color_loading_line,
-             linewidth=3)
+    _,_,loading_rate,rupture_force,_ = \
+            Analysis._loading_rate_helper(x_fit,y_fit)
+    raw_kwargs = dict(**raw_force_kwargs)
+    raw_kwargs['alpha'] = 0.5
+    plt.plot(time_slice,force_slice,**raw_kwargs)
+    color_loading_line = 'b'
     xlim = [time_slice[0],time_slice[-1]]
     plt.xlim(xlim)
     ax_zoom = plt.gca()
-    PlotUtilities.zoom_effect01(ax1, ax_zoom, *xlim)
+    PlotUtilities.zoom_effect01(ax1, ax_zoom, *xlim,linestyle=':',
+                                color='m')
     # plot annotations showing the loading rate
     bbox_props = dict(boxstyle="rarrow,pad=0.3",linestyle='--',
                       fc=color_loading_line,ec=color_loading_line,
                       alpha=0.3,lw=2)
-    dy = (predicted[-1]-predicted[0])
-    dx = (x_fit[-1]-x_fit[0])
-    # XXX should programmtically figure out rotation...
-    rotation =20
-    t = ax_zoom.text(np.mean(x_fit), np.mean(force_slice), 
-                     df_dt_string, ha="center", va="center", 
-                     rotation=rotation,size=fontsize,bbox=bbox_props)
-    # plot annotations showing the rupture force
     fudge = (max(x_fit)-min(x_fit)) * 0.2
     min_time = min(x_fit) + fudge
     event_force = rupture_force
     event_time = time_plot[event_zoom]
     arrow_kw_thick = common_arrow_kwargs()
-    arrow_kw_thick['arrowprops']['linewidth'] = 3
+    linewidth_common = 1.5
+    arrow_kw_thick['arrowprops']['linewidth'] = linewidth_common
     arrow_kw_thick['arrowprops']['arrowstyle'] = '->'
-    ax_zoom.annotate(rupture_string,
-                     xy=(event_time,event_force), 
-                     xytext=(min_time, event_force),**arrow_kw_thick)
     zoom_event_only = [event_zoom]
-    # make the marker larger for this subplot
-    arrow_kwargs = dict(**arrow_kwargs)
-    arrow_kwargs['markersize'] *= 3
-    Plotting.plot_arrows_above_events(event_idx=zoom_event_only,fudge_y=6,
-                                      **arrow_kwargs)
     # get the x locations of two predicted events
     predicted_x_fracs = [0.8,0.95]
     xlim = plt.xlim()
     ylim = plt.ylim()
     predicted_x = [xlim[0] + (xlim[1]-xlim[0]) * r for r in predicted_x_fracs]
     # plot them as lines
-    style_predicted = dict(linestyle='-.',color='c',linewidth=3)
+    style_predicted = dict(linestyle=':',color='c',linewidth=linewidth_common)
     style_arrow_predicted = dict(**arrow_kw_thick)
     style_arrow_predicted['color'] = 'b'
     for x in predicted_x:
         plt.axvline(x,**style_predicted)
-    text_box_kwargs = dict(horizontalalignment='center',
+    text_box_kwargs = dict(horizontalalignment='center',fontweight='bold',
                            verticalalignment='center',fontsize=fontsize)
     # plot a text box on top of the lines
-    plt.text(x=np.min(predicted_x),y=np.mean(ylim)*0.9,backgroundcolor='c',
-             bbox=dict(linestyle='-.',color='c'),color='w',
-             s="Predictions",**text_box_kwargs)
+    predicted_line_style = ":"
+    y_fudge = abs(np.diff(ylim))
+    plt.text(x=np.mean(predicted_x),
+             y=np.mean(ylim),backgroundcolor='c',
+             bbox=dict(color='c'),color='w',
+             s="Predicted\nevents",rotation=90,zorder=10,**text_box_kwargs)
+    # plot a text box for the event
+    plt.axvline(event_time,color='g')
+    plt.text(x=event_time-abs(np.diff(plt.xlim()))*0.06,
+             y=np.mean(ylim)- y_fudge*0.1,backgroundcolor='g',
+             bbox=dict(linestyle='-',color='g'),color='w',
+             s="True\nevent",rotation=90,zorder=10,**text_box_kwargs)
     # plot an from the event to the closest x 
     closest_x_idx = np.argmin(np.abs(predicted_x-event_time))
     closest_x = predicted_x[closest_x_idx]
     dx = closest_x-event_time
     dy = 0
-    plt.text(event_time+dx/2,event_force*1.05,r"d$_{t\rightarrow p}$",
+    plt.text(event_time+dx/2,event_force*0.90,r"d$_{t\rightarrow p}$",
              color='g',**text_box_kwargs)
     plt.annotate("", xytext=(event_time, event_force), 
                  xy=(closest_x, event_force),
-                arrowprops=dict(arrowstyle="->",color='g',linewidth=2))
+                 arrowprops=dict(arrowstyle="->",color='g',
+                                 linewidth=linewidth_common))
     # plot arrows from the predictions to the actual
     # see:
     # matplotlib.org/api/pyplot_api.html?highlight=arrow#matplotlib.pyplot.arrow
     # we need to use arowstyle 
     ax = plt.gca()
-    y_text= np.mean(ylim)*1.07
-    plot_y = [y_text*1.07,y_text*1.12]
+    y_text= np.mean(ylim)*1
+    plot_y = [y_text*1.0,y_text*1.12]
     for x,plot_y_tmp in zip(predicted_x,plot_y):
         ax.annotate("", xy=(event_time, plot_y_tmp), xytext=(x, plot_y_tmp),
-                    arrowprops=dict(arrowstyle="->",color='c',linewidth=3,
-                                    linestyle="-."))
-    plt.text(event_time+dx/2,y_text,r"d$_{p\rightarrow t}$",
+                    arrowprops=dict(arrowstyle="->",color='c',
+                                    linewidth=linewidth_common,
+                                    linestyle='-'))
+    plt.text(event_time+dx*0.67,y_text*0.85,r"d$_{p\rightarrow t}$",
              color='c',**text_box_kwargs)
     # add a scalebar...
-    dx_zoom_full =abs(time_slice[-1]-time_slice[0])
-    width = scale_fraction_width * dx_zoom_full
-    label = "{:.1g}ms".format(1000*width)
-    x_text = time_slice[0] + dx_zoom_full*scale_fraction_offset
-    PlotUtilities.scale_bar_x(x=x_text,
-                              y=min(force_slice)*1.1,s=label,
-                              width=width)    
-    PlotUtilities.lazyLabel("Time","Force (pN)","") 
-    PlotUtilities.no_x_label(ax)
+    scale_bar_kwargs = dict(dict(y_frac=0.5,
+                                 linewidth=scale_line_width))
+    PlotUtilities.x_scale_bar_and_ticks(scale_bar_kwargs)
 
 
 def plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces):
+    sizes = [r.size for r in rupture_forces_histograms]
     loading_plot = loading_rate_histogram*1e12
     mean_plot = mean_rupture_forces*1e12                                
     stdev_plot = stdev_rupture_forces*1e12
+    sem_plot = stdev_plot/sizes
     # plot the theory first
     mean_rupture_string = "<" + rupture_string + ">"
-    plt.plot(loading_plot,mean_plot,
-             label=(mean_rupture_string + "      (Theory)"),
-             linewidth=3)
-    stdev_style = dict(linestyle=":",linewidth=3,color='m')
-    plt.plot(loading_plot,mean_plot-stdev_plot,
-             label=(mean_rupture_string + r'$\pm \sigma$ (Theory)'),
-             **stdev_style)
-    plt.plot(loading_plot,mean_plot+stdev_plot,**stdev_style)
+    plt.plot(loading_plot,mean_plot,linewidth=1.5)
     # plot the data on top of the theory
     means = np.mean(rupture_forces_histograms,axis=1) *1e12
     stdevs= np.std(rupture_forces_histograms,axis=1) * 1e12
-    plt.errorbar(loading_plot,y=means,yerr=stdevs,fmt='ro')
+    sems = stdevs/sizes 
+    plt.plot(loading_plot,means,'ro',
+             markersize=2)
+    plt.gca().set_xscale('log')
 
 
-def plot_histogram_and_model(rupture_forces,rupture,model,kwargs_errorbar):
+def plot_histogram_and_model(rupture_forces,rupture,model,kwargs_errorbar,
+                             loading_rate_pN_per_s,bins=25):
     rupture_plot = rupture*1e12
-    n,_,_ = plt.hist(rupture_plot,alpha=0.5)
-    plt.plot(rupture_forces*1e12,model*max(n)/max(model),linewidth=3)
-    mean = np.mean(rupture_plot)
-    stdev = np.std(rupture_plot)
-    plt.errorbar(x=mean,xerr=stdev,y=max(n)*1.05,**kwargs_errorbar)
+    n,_,_ = plt.hist(rupture_plot,alpha=0.5,bins=bins,edgecolor='k',linewidth=1)
+    plt.plot(rupture_forces*1e12,model*max(n)/max(model),**kwargs_errorbar)
+    plt.xlim([min(rupture_plot),max(rupture_plot)])
+    xlim = plt.xlim()
+    ylim = plt.ylim()
+    plt.ylim([ylim[0],ylim[1]*1.2])
 
-def plot_landscape(x,landscape):
-    ax = plt.gca()
+
+
+def plot_landscape(x,landscape,ax=plt.gca()):
     landscape -= min(landscape)
     landscape /= 4.1e-21
     x *= 1e9
-    plt.plot(x,landscape)
+    plt.plot(x,landscape,color='k',linewidth=1.5)
     PlotUtilities.no_x_label(ax)
     # determine where to put all the annotations
-    max_idx = np.argmax(landscape)
     min_idx =np.argmin(landscape)
+    max_idx = min_idx + np.argmax(landscape[min_idx:])
     x_max = x[max_idx]
     x_min = x[min_idx]
-    y_low_plot = -2
+    x_range = x_max-x_min
+    y_low_plot = -3
     y_max = landscape[max_idx]
+    y_range = y_max - landscape[min_idx]
     # make the x_dagger annotation
     dagger_props = common_arrow_kwargs()
+    text_kwargs = dict(horizontalalignment='center',
+                       verticalalignment='center',fontsize=8)
+    dagger_props['arrowprops']['arrowstyle'] = '<->'
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
-                s=r"x$^{\ddag}$",**dagger_props)
+                s=r"",**dagger_props)
+    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.125,s="x$^{\ddag}$",
+            **text_kwargs)
     # make the delta_G_dagger annotation
-    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"$\Delta$G$^{\ddag}$",
-                **dagger_props)
-    # make the extension scale bar 
-    width = 0.19 * (max(x)-min(x))
-    label = "{:.1g}nm".format(width)
-    x_text = x_min
-    y_text = np.mean(plt.ylim())
-    PlotUtilities.scale_bar_x(x=x_text,
-                              y=y_text,
-                              s=label,
-                              width=width)    
-    PlotUtilities.lazyLabel("Extension","Free Energy (k$_B$T)","")
-    plt.ylim(-4,max(plt.ylim()))
+    ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"",**dagger_props)
+    ax.text(x=x_max+x_range*0.4,y=np.mean(landscape)*0.7,
+            s="$\Delta$G$^{\ddag}$",**text_kwargs)
+    # make the k0 annotation
+    fudge = (x_max-x_min)*0.5
+    y_k0 = y_max * 0.95
+    ax.annotate('',
+                xy=(x_max+fudge, y_k0), xycoords='data',
+                xytext=(x_max-fudge, y_k0), textcoords='data',
+                arrowprops=dict(arrowstyle="->",shrinkA=0,shrinkB=0,
+                                connectionstyle="angle3,angleA=45,angleB=-45"))
+    ax.text(x=x_max,y=y_k0*1.25,s="k$_0$",**text_kwargs)
+    plt.ylim(y_low_plot*2,max(plt.ylim())*1.1)
+    xlim = plt.xlim()
+    plt.xlim(xlim[0],xlim[1]+x_range * 0.4)
+    PlotUtilities.no_y_ticks(ax=ax)
+    PlotUtilities.no_x_ticks(ax=ax)
+    PlotUtilities.no_y_label(ax=ax)
+    PlotUtilities.no_x_label(ax=ax)
+
+def cantilever_image_plot(image_location):
+    in_ax = plt.gca()
+    im = plt.imread(image_location)
+    in_ax.imshow(im,interpolation="bicubic",aspect='auto')
+    in_ax.set_xticks([])
+    in_ax.set_yticks([])
 
 
 def run():
@@ -299,7 +322,9 @@ def run():
     mean_rupture_lower = 0
     mean_rupture_upper = np.max(mean_rupture_forces+stdev_rupture_forces)
     rupture_limits = np.array([mean_rupture_lower,mean_rupture_upper])*1e12
+    lazy_kwargs = dict()
     data_file = "../_Data/example_protein.pkl"
+    image_location =  "../_Data/JILA_PFC_PRH_Edi.png"
     data = CheckpointUtilities.lazy_load(data_file)
     split_fec,info_final = Detector._predict_full(data)
     # get the plotting versions of the time, etc
@@ -308,68 +333,123 @@ def run():
     force_plot = split_fec.retract.Force * 1e12
     force_interp_plot = split_fec.retract_spline_interpolator()(time) * 1e12
     # plot everything
-    n_cols = 3
-    n_rows = 2
-    gs = gridspec.GridSpec(n_rows, n_cols)
-    ylim_force_pN = [-40,max(force_interp_plot)*1.2]
+    n_cols = 2
+    n_rows = 3
+    # 'master' grid spec is 2x1
+    gs0 = gridspec.GridSpec(2,1)
+    gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
+                                          hspace=0.5,wspace=0.5)
+    ylim_force_pN = [-35,max(force_interp_plot)*1.3]
     ylim_prob = [min(info_final.cdf)/2,2]
     arrow_kwargs = dict(plot_x=time_plot,plot_y=force_plot,
-                        markersize=50)
-    fig = PlotUtilities.figure(figsize=(16,8))
-    # # plot the 'raw' force
-    ax1 = plt.subplot(gs[0,0])
-    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
-                    arrow_kwargs)
-    xlim = plt.xlim()
-    plt.ylim(ylim_force_pN)
-    plt.xlim([xlim[0],xlim[1]*1.5])
-    # # plot the image on top
-    in_ax = inset_axes(ax1,
-                       width="65%", # width = 30% of parent_bbox
-                       height="90%", 
-                       loc=1)
-    im = plt.imread("../_Data/pulling_figure.png")
-    in_ax.imshow(im,interpolation="bicubic")
-    in_ax.set_xticks([])
-    in_ax.set_yticks([])
-    # # plot the energy landscape with annotations
-    ax = plt.subplot(gs[0,1:])
-    plot_landscape(x,landscape)
-    # # plot the 'zoomed' axis
-    ax_zoom = plt.subplot(gs[1,0])
-    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
-    # # plot (a single) histogram and model. This one is special, so we 
-    # use a slightly different error bar for it 
-    fmt_error = dict(marker='v',color='k',markersize=15,linewidth=3)
+                        markersize=75)
+    # want all the subplots to have aligned y labels. for FEC, slightly 
+    # different fraction.
+    y_fec_label = -0.1
+    ylabel_subplot = lambda ax,x=-0.25 : ax.yaxis.set_label_coords(x, 0.5) 
+    fig = PlotUtilities.figure(figsize=(3.25,4.25))
+    # # plot the experimental image
+    in_ax = plt.subplot(gs[:,0])
+    cantilever_image_plot(image_location)
+    # remove its border
+    for spine in in_ax.spines.values():
+        spine.set_visible(False)
+    # # plot the cartoon of the fec; easier to just call out the axis
+    ax_fec = plt.subplot(gs[0,1])
+    slice_tuples = [ [slice(0,0.05),0.08],
+                     [slice(0,0.2),0.25],
+                     [slice(0,0.4),0.5],
+                     [slice(0,0.6),0.7],
+                     [slice(0,0.8),0.92],
+                     [slice(0,0.95),1.05]]
+    n_cartoon = 500
+    x_cartoon = np.linspace(0,1.0,num=n_cartoon)
+    f = np.zeros(x_cartoon.size)
+    slice_starts = [0]
+    for slice_active,L0 in slice_tuples:
+        slice_tmp = slice(int(slice_active.start * n_cartoon),
+                          int(slice_active.stop * n_cartoon))
+        slice_starts.append(slice_tmp.stop)
+        f[slice_tmp] += WlcNonExtensible(ext=x_cartoon[slice_tmp],
+                                         kbT=1,Lp=max(x)/30,L0=L0)
+    colors = ['b','r','r','r','r','g']
+    slice_starts.append(None)
+    for i in range(len(slice_starts)-2):
+        slice_tmp = slice(slice_starts[i],slice_starts[i+1]+1,1)
+        plt.plot(x_cartoon[slice_tmp],f[slice_tmp],color=colors[i])
+    PlotUtilities.lazyLabel("Time","Force","Analysis scheme",**lazy_kwargs )
+    PlotUtilities.no_x_label(ax_fec)
+    PlotUtilities.no_x_ticks(ax_fec)
+    PlotUtilities.no_y_label(ax_fec)
+    PlotUtilities.no_y_ticks(ax_fec)
+    ylabel_subplot(ax_fec)
+    # # plot the loading rate stuff
+    ax_rupture = plt.subplot(gs[1,1])
+    fmt_error = dict(linewidth=1.5)
     example_idx = 4
     loading_rate_example_pN_per_s = loading_rate_histogram[example_idx] * 1e12
-    plt.subplot(gs[1,1])
     plot_histogram_and_model(rupture_forces,
                              rupture_forces_histograms[example_idx],
-                             models[example_idx],fmt_error)
-    PlotUtilities.lazyLabel(rupture_string+ " (pN)","Count","")
-    # give the loading rate as an annotation
-    plt.text(x=np.mean(rupture_limits),y=np.mean(plt.ylim())*0.5,
-             s=df_dt_string+"={:.2g} pN/s".\
-             format(loading_rate_example_pN_per_s),fontsize=fontsize,
-             horizontalalignment='center',
-             verticalalignment='center')
-    plt.xlim(rupture_limits)
-    plt.subplot(gs[1,2])
+                             models[example_idx],fmt_error,
+                             loading_rate_example_pN_per_s)
+    x_label = rupture_string+ " (pN)"
+    PlotUtilities.lazyLabel(x_label,"Count","",**lazy_kwargs)
+    # tuck the x label up into the rupture force
+    plt.xticks([10,40])
+    ax_rupture.xaxis.set_label_coords(0.6, -0.1) 
+    ylabel_subplot(ax_rupture)
+    ax_log_loading = plt.subplot(gs[2,1])
     # # plot the distribution of expected rupture forces
     plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
                       mean_rupture_forces,stdev_rupture_forces)
-    PlotUtilities.lazyLabel(df_dt_string + " (pN/s)",
-                            rupture_string + " (pN)","")
-    # plot the 'extra' point specially, so it sticks out. 
-    mean = 1e12*np.mean(rupture_forces_histograms[example_idx])
-    stdev = 1e12*np.std(rupture_forces_histograms[example_idx])
-    plt.errorbar(x=loading_rate_histogram[example_idx]*1e12,
-                 y=mean,
-                 yerr=stdev,
-                 **fmt_error)
+    xlabel = df_dt_string + " (pN/s)"
+    PlotUtilities.lazyLabel(xlabel,rupture_string + " (pN)","",**lazy_kwargs)
+    ax_log_loading.xaxis.set_label_coords(0.5, -0.2) 
+    ylabel_subplot(ax_log_loading)
     plt.ylim(rupture_limits)
-    PlotUtilities.savefig(fig,"./diagram.png")
+    # # plot the energy landscape with annotations
+    # add axes is [left,bottom,width,height]
+    in_ax_landscape= fig.add_axes([0.085,0.545,0.225,0.25])
+    plot_landscape(x,landscape,ax=in_ax_landscape)
+    energy_kwargs = dict(axis_kwargs=dict(fontsize=8))
+    # remove the upper and right part of the frames
+    in_ax_landscape.spines['right'].set_visible(False)
+    in_ax_landscape.spines['top'].set_visible(False)
+    PlotUtilities.lazyLabel("Extension","Free Energy","",**energy_kwargs)
+    # # # Second gridspec (se we can more easily control wasted space)
+    gs_data = gridspec.GridSpecFromSubplotSpec(2,1,hspace=0.15, 
+                                               subplot_spec=gs0[1])
+    # # plot the 'raw' force
+    ax1 = plt.subplot(gs_data[0,:])
+    plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
+                    arrow_kwargs)
+    PlotUtilities.lazyLabel("","F (pN)",
+                            "Extracting rupture properties",
+                            **lazy_kwargs)
+    PlotUtilities.tom_ticks(num_major=4,change_x=False)
+    ylabel_subplot(ax1,y_fec_label)
+    xlim = plt.xlim()
+    plt.ylim(ylim_force_pN)
+    # # plot the 'zoomed' axis
+    ax_zoom = plt.subplot(gs_data[1:,:])
+    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
+    PlotUtilities.lazyLabel("","F (pN)","",**lazy_kwargs)
+    PlotUtilities.xlabel("Time",labelpad=0)
+    PlotUtilities.no_x_label(ax_zoom)
+    PlotUtilities.tom_ticks(num_major=5,change_x=False)
+    axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
+    loc_subplot = [-0.5,1.17]
+    locs = [ [-0.45,1.04],
+             loc_subplot,
+             loc_subplot,
+             loc_subplot,
+             [-0.18,1.15],
+             [-0.18,0.95]]
+    ylabel_subplot(ax_zoom,y_fec_label)
+    PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
+    PlotUtilities.savefig(fig,"./diagram.png",
+                          subplots_adjust=dict(top=0.95,bottom=0.035,
+                                               hspace=0.25))
 
 if __name__ == "__main__":
     run()

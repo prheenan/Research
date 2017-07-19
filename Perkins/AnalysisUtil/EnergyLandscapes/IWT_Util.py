@@ -347,7 +347,8 @@ def set_separation_velocity_by_first_num(iwt_data,num):
 
 
 def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
-                           fraction_for_vel=0.5,flip_forces=False,f_split=None,
+                           fraction_for_vel=0.2,flip_forces=False,
+                           slice_to_use=None,f_split=None,
                            unfold_start_idx=None):
     """
     given a 'raw' TimeSepForce object, gets the approach and retract 
@@ -411,11 +412,15 @@ def convert_to_iwt(time_sep_force,frac_vel=0.1):
     Returns:
         iwt_object 
     """
-    iwt_data = [ToIWTObject(d) for d in time_sep_force]
-    set_vel = set_separation_velocity_by_first_frac    
-    for d in iwt_data:
-        set_vel(d,fraction_for_vel=frac_vel)  
+    iwt_data = ToIWTObject(time_sep_force)
+    set_separation_velocity_by_first_frac(iwt_data,fraction_for_vel=frac_vel)  
     return iwt_data    
+    
+def convert_list_to_iwt(time_sep_force_list,**kwargs):
+    """
+    see convert_to_iwt, except converts an entire list
+    """
+    return [convert_to_iwt(d) for d in time_sep_force_list]
 
 
 def RobTimeSepForceToIWT(o,ZFunc):

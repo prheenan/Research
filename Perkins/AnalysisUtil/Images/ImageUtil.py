@@ -58,7 +58,7 @@ def PlotImageDistribution(Image,pct=95,bins=100,PlotLines=True,AddSigmas=True,
     height_nm_rel_encompassing_pct = np.percentile(height_nm_relative,pct)
     if (PlotLines):
         min_height = np.min(height_nm_relative.ravel())
-        max_height = np.max(height_nm_relative.ravel())
+I        max_height = np.max(height_nm_relative.ravel())
         limits = np.linspace(start=min_height,stop=max_height,num=bins.size)
         # fit symmetrically to between pct_min% and (100-pct_min)%
         pct_min = 5

@@ -111,7 +111,7 @@ def plot_learner_prediction_time_comparison(learners,
     width = 0.4       # the width of the bars
     ax = plt.gca()
     for x,y,c,m in zip(ind,plot_y,color,markers):
-        plt.scatter(x=x,y=y,c=c,marker=m,linewidth=0,s=100)
+        plt.scatter(x=x,y=y,c=c,marker=m,linewidth=0,s=30)
     # add some text for labels, title and axes ticks
     ax.set_xticks(ind)
     ax.set_xticklabels(labels)
@@ -159,7 +159,7 @@ def plot_learner_slope_versus_loading_rate(learner_trials,style_data=None,
     coeffs,coeffs_err,x_pred,y_pred = get_linear_runtime(x,params)
     # fit a linear model to the runtime
     fudge = 2
-    plt.errorbar(x=x,xerr=xerr,y=params,yerr=params_std,**style_data)
+    plt.plot(x=x,xerr=xerr,y=params,yerr=params_std,markersize=1,**style_data)
     slope = coeffs[0]
     lower_label = r"{:.2f}$ c_0 N \leq $".format(fudge)
     upper_label = r"$\leq \frac{c_0}{" + "{:.2f}".format(fudge) + "} N$"
