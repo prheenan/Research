@@ -146,7 +146,7 @@ def get_unfolding_and_refolding_slices(split_fec,g_fraction_for_vel=0.2):
         relative_idx_start_of_final_retract(split_fec)
     retr = split_fec.retract
     slice_refolding_experiment = slice(0,relative_unfolding_start_idx,1)
-    # get the region up until the 
+    # get the region up until the start of the final retract 
     slice_to_use = FEC_Util.\
         MakeTimeSepForceFromSlice(retr,slice_refolding_experiment)
     appr_iwt,retr_iwt = \
@@ -234,13 +234,20 @@ def run():
         getCheckpoint("./landscape_bidirectional_only_unfold.pkl",
                       InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
                       unfolding_objs,RefoldingObjs=[],
+                      NumBins=100)   
+    energy_landscape_bidirectional_only_refolding = CheckpointUtilities.\
+        getCheckpoint("./landscape_bidirectional_only_refold.pkl",
+                      InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
+                      refolding_objs,RefoldingObjs=[],
                       NumBins=100)                           
     make_energy_landscape_plots(out_dir +"bi_",
                                 energy_landscape_bidirectional_folding)
     make_energy_landscape_plots(out_dir +"same_",
                                 energy_landscape_unfolding)                                
     make_energy_landscape_plots(out_dir +"bi_only_unfold",
-                                energy_landscape_bidirectional_only_unfolding)                                  
+                                energy_landscape_bidirectional_only_unfolding)  
+    make_energy_landscape_plots(out_dir +"bi_only_refold",
+                                energy_landscape_bidirectional_only_refolding)                                    
     # make a heat map of all retracts 
     fig = PlotUtilities.figure()
     FEC_Plot.heat_map_fec([r.retract for r in good_splits])
