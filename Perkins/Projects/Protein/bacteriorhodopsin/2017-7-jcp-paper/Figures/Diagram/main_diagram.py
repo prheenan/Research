@@ -53,7 +53,7 @@ def run():
     ylim_pN = [-20,None]
     xlim_nm = [-5,100]
     zoom_regions_nm = [ [21,23],
-                        [60,62]]
+                        [59,61]]
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
                for reg in zoom_regions_nm]
