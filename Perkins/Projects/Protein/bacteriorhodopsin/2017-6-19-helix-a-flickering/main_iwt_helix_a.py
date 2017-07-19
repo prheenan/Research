@@ -37,17 +37,17 @@ def analyze_data(raw_data,out_dir):
     offset_force_N = 7.1e-12
     n_bins_zoom = 75
     n_bins_helix_a = 100
-    array = [\
+    plot_region_info = [\
         slice_area([adhesion_end_m,75e-9],"Full (no adhesion)",n_bins_helix_a),
         slice_area([20e-9,27e-9],"Helix A",n_bins_helix_a),
         slice_area([50e-9,75e-9],"Helix E",n_bins_zoom),
         slice_area([57e-9,70e-9],"Helix E (detailed)",n_bins_zoom)
         ]
     # # get the slice we care about for each...
-    sliced_data = [ [] for _ in array]
+    sliced_data = [ [] for _ in plot_region_info]
     for i,d in enumerate(raw_data):
         d.Force -= offset_force_N 
-        for i,a in enumerate(array):
+        for i,a in enumerate(plot_region_info):
             slice_tmp = FEC_Util.slice_by_separation(d,*a.ext_bounds)
             sliced_data[i].append(slice_tmp)
     # # get the IWT of both regions
@@ -56,7 +56,7 @@ def analyze_data(raw_data,out_dir):
     n_bins_helix_zoom = 60
     iwt_f = InverseWeierstrass.FreeEnergyAtZeroForce
     iwt_helices = []
-    for i,a in enumerate(array):
+    for i,a in enumerate(plot_region_info):
         save_name = (out_dir + a.save_name)
         iwt_helix_data_tmp =  IWT_Util.convert_to_iwt(sliced_data[i])
         iwt_tmp = CheckpointUtilities.getCheckpoint(save_name,iwt_f,
@@ -65,7 +65,7 @@ def analyze_data(raw_data,out_dir):
                                                     NumBins=a.n_bins)  
         iwt_helices.append(iwt_tmp)                                                  
     # plot each of the subregions 
-    for i,(a,data) in enumerate(zip(array,sliced_data)):
+    for i,(a,data) in enumerate(zip(plot_region_info,sliced_data)):
         fig = PlotUtilities.figure()
         IWT_Plot.plot_free_landscape(iwt_helices[i])    
         fmt_iwt()    
@@ -75,7 +75,7 @@ def analyze_data(raw_data,out_dir):
         PlotUtilities.title(a.plot_title)
         PlotUtilities.savefig(fig,out_dir + a.save_name + "_iwt_.png")
     # # make the heat map plots we want
-    for i,(a,data) in enumerate(zip(array,sliced_data)):
+    for i,(a,data) in enumerate(zip(plot_region_info,sliced_data)):
         fig = PlotUtilities.figure()
         FEC_Plot.heat_map_fec(sliced_data[i])    
         PlotUtilities.title(a.plot_title)
@@ -84,7 +84,7 @@ def analyze_data(raw_data,out_dir):
     to_x = lambda x : x*1e9
     to_y = lambda y : y*1e12
     # plot fec for each region(after the first, which is just the 'full_data')
-    for i,(a,d) in enumerate(zip(array,sliced_data)):
+    for i,(a,d) in enumerate(zip(plot_region_info,sliced_data)):
         for fec in d:
             fec_name = GenUtilities.file_name_from_path(fec.Meta.SourceFile)
             save_name = out_dir + "regions_" + a.save_name + fec_name + ".png"
@@ -116,9 +116,13 @@ def run():
         This is a description of what is returned.
     """
     in_dir = "./data_in_full/"
+    flickering_dir = "./data_flickering/"
+    # XXX use the flickering dir for stuff
+    cache_dir = flickering_dir 
+    GenUtilities.ensureDirExists(flickering_dir)
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(in_dir,force=force_read_data,
-                                                 limit=None)
+                                                 limit=40,renormalize=True)
     # select only the 'flickery' traces
     well_aligned_ids = [511,
                         581,
@@ -136,9 +140,12 @@ def run():
               """
     get_id = lambda r: int(re.match(pattern,r.Meta.Name,re.VERBOSE).group(1))
     only_flickering = [r for r in raw_data if get_id(r) in well_aligned_ids] 
+    # save out all the flickering results...
+    for r in only_flickering: 
+        CheckpointUtilities.lazy_save(flickering_dir + r.Meta.Name +".pkl",r)
     analyze_data(only_flickering,"./out_curated/")    
     # analyze everything                                                  
-    analyze_data(raw_data,"./out_full/")
+    #analyze_data(raw_data,"./out_full/")
 
                             
 
