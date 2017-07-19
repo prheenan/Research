@@ -69,8 +69,8 @@ class landscape_data:
     @property                        
     def _extensions_nm(self):
         return [l.Extensions * 1e9 for l in self.landscape_objs]
-    def nanometers_to_amino_acids(self):
-        return 0.3        
+    def amino_acids_per_nm(self):
+        return 3     
     @property
     def _delta_landscapes_kcal_per_mol_per_AA(self):
         dy = np.gradient(self._raw_uninterpolared_landscapes_kcal_per_mol,
@@ -78,7 +78,7 @@ class landscape_data:
         ext_nm = self._extensions_nm                   
         dx = np.gradient(ext_nm,**self.mean_std_opt())
         # get the individual gradients
-        gradients_per_aa = [dy_i/(self.nanometers_to_amino_acids()*dx_i) 
+        gradients_per_aa = [(dy_i/(dx_i))  * self.amino_acids_per_nm()
                             for dy_i,dx_i in zip(dy,dx)]
         grid_x = self._extension_grid_nm                            
         to_ret =  grid_interpolate_arrays(ext_nm,gradients_per_aa,grid_x)
@@ -142,9 +142,10 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
         heatmap_data = get_heatmap_data(slice_tmp,)  
         # get the landscapes (we use N, to get an error)
         iwt_objs = IWT_Util.convert_to_iwt(slice_tmp)
-        num_n = int(np.round(len(iwt_objs)/N))
-        assert (num_n % N == 0), \
-            "Need a multiple of {:d}".format(N)
+        n_objs = len(iwt_objs)
+        num_n = int(np.round(n_objs/N))
+        assert (n_objs % N == 0), \
+            "Need a multiple of {:d}, got {:d}".format(N,n_objs)
         ids = [i for i in range(len(iwt_objs))]
         # shuffle ids in-place
         np.random.shuffle(ids)
@@ -169,16 +170,22 @@ def make_heatmap(histogram, x_edges,y_edges):
     
 def plot_landscape(data,xlim):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
-    extension_nm = data._extension_grid_nm
-    delta_landscape_kcal_per_mol_per_amino_acid = \
-        data.mean_delta_landscape_kcal_per_mol_per_AA
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
-    std_delta_landscape = data.std_delta_landscape_kcal_per_mol_per_AA
+    
+    extension_nm = data._extension_grid_nm
+    extension_aa = data.amino_acids_per_nm() * extension_nm
+    grad = lambda x: np.gradient(x)/(np.gradient(extension_aa))
+    delta_landscape_kcal_per_mol_per_amino_acid = grad(landscape_kcal_per_mol)
+    landscape_upper = landscape_kcal_per_mol+std_landscape_kcal_per_mol
+    landscape_lower =landscape_kcal_per_mol-std_landscape_kcal_per_mol 
+    upper_delta_landscape = grad(landscape_upper)
+    lower_delta_landscape = grad(landscape_lower)
     ax_energy = plt.gca()
-    plt.plot(extension_nm,landscape_kcal_per_mol,color='k')
+    # plot the landscape and its standard deviation
+    plt.plot(extension_nm,landscape_kcal_per_mol,color='k',linestyle='--')
     plt.fill_between(x=extension_nm,
-                     y1=landscape_kcal_per_mol-std_landscape_kcal_per_mol,
-                     y2=landscape_kcal_per_mol+std_landscape_kcal_per_mol,
+                     y1=landscape_lower,
+                     y2=landscape_upper,
                      color='k',alpha=0.3)
     # make a second axis for the number of ammino acids 
     units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
@@ -190,16 +197,17 @@ def plot_landscape(data,xlim):
     ax_2 = PlotUtilities.secondAxis(ax_energy,
                                     label=label,color='r',
                                     limits=limits_delta,secondY =True)
+    # plot the energy delta and its bounds, based on the bounds on the landscape    
     ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-              color='r',linestyle='-',linewidth=0.5)                               
-
-def heatmap_plot(heatmap_data,nanometers_to_amino_acids):
+              color='r',linestyle='-',linewidth=0.5)    
+              
+def heatmap_plot(heatmap_data,amino_acids_per_nm):
     ax_heat = plt.gca()
     make_heatmap(*heatmap_data)
     PlotUtilities.lazyLabel("","Force (pN)","")
     # make a second x axis for the number of ammino acids 
     xlim_fec = plt.xlim()
-    limits = np.array(xlim_fec) * nanometers_to_amino_acids
+    limits = np.array(xlim_fec) * amino_acids_per_nm
     PlotUtilities.secondAxis(ax_heat,"Extension (AA #)",limits,secondY =False)
     plt.xlim(xlim_fec)
     PlotUtilities.no_x_label(ax_heat)    
@@ -230,7 +238,7 @@ def create_landscape_plot(data_to_plot):
     
     # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
-    heatmap_plot(heatmap_data,data_landscape.nanometers_to_amino_acids())
+    heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm())
     xlim_fec = plt.xlim()
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
@@ -247,7 +255,7 @@ def run():
         This is a description of what is returned.
     """
     np.random.seed(42)
-    flickering_dir = "../Data/"
+    flickering_dir = "../LargerDataset/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     force_recalculation = False
@@ -258,8 +266,8 @@ def run():
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)",n_bins),
-        slice_area([20e-9,27e-9],"Helix A",n_bins_helix_a),
-        slice_area([50e-9,75e-9],"Helix E",n_binx_helix_e),
+        slice_area([20e-9,27e-9],"Helix E",n_bins_helix_a),
+        slice_area([50e-9,75e-9],"Helix A",n_binx_helix_e),
         ]    
     # read in the data 
     data_to_analyze = CheckpointUtilities.\
