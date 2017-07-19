@@ -65,7 +65,7 @@ class plotting_metrics:
     def safe_concat(self,x):
         flat = []
         for v in x:
-            if (isinstance(v,float)):
+            if (isinstance(v,float) or isinstance(v,np.int64)):
                 flat.append([v])
             else:
                 flat.append(list(v))
@@ -199,17 +199,18 @@ def update_limits(previous,new,floor=None):
     to_update_max = np.max(cat_max)
     return [to_update_min,to_update_max]
     
-def best_metric_from_learner(l):
+def best_metric_from_learner(l,**kw):
     """
     returns the best metric from the learner l
 
     Args:
         l: learning_curve object
+        **kw: passed to Learning.get_true_and_predicted_ruptures_per_param
     Returns:
         *best* plotting_metrics
     """
     ruptures_valid_true,ruptures_valid_pred = \
-        Learning.get_true_and_predicted_ruptures_per_param(l)
+        Learning.get_true_and_predicted_ruptures_per_param(l,**kw)
     ret  = [metrics(true,pred) \
             for true,pred in zip(ruptures_valid_true,ruptures_valid_pred)]
     return plotting_metrics(l,ret)
@@ -232,7 +233,7 @@ def get_metric_list(data_file):
     return metric_list    
 
 
-def get_best_metrics(data_file):
+def get_best_metrics(data_file,**kw):
     """
     Get the best metrics, given a data file with a list of learners
     (e.g. Scores.pkl)
@@ -243,6 +244,6 @@ def get_best_metrics(data_file):
         best metric for each learner
     """
     learners = CheckpointUtilities.lazy_load(data_file)
-    metrics = [best_metric_from_learner(l) for l in learners]
+    metrics = [best_metric_from_learner(l,**kw) for l in learners]
     return metrics
     

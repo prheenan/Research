@@ -55,6 +55,7 @@ def run():
     # what we are sure is background and restrictive on what
     # is considered signal
     # determine 'markers' for the data and background
+    # XXX subdivide polygon to fit spline to image...
     markers = np.zeros_like(CorrectedImage)
     markers[CorrectedImage <= LowIntensity] = 1
     markers[CorrectedImage >= HighIntensity] = 2

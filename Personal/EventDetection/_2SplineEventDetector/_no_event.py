@@ -285,7 +285,8 @@ def _no_event_probability(x,interp,y,n_points,no_event_parameters_object):
         df = _delta(x_s,interpolated_y,_min_points_between(n_points))
         p_delta = _delta_probability(df,no_event_parameters_object)
         probability_distribution *= p_delta        
-    if (no_event_parameters_object.negative_only):
+    if (no_event_parameters_object.negative_only and 
+        no_event_parameters_object.valid_derivative):
         deriv_sigma = no_event_parameters_object.derivative_sigma
         condition = derivative >= 0
         where_condition = np.where(condition)

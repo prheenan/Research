@@ -9,10 +9,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("../../../../../../")
+from GeneralUtil.python import PlotUtilities
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
-from Research.Personal.EventDetection.Util import Analysis,Plotting 
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-
+from Research.Personal.EventDetection.Util import Analysis,Plotting,InputOutput
 
 
 def run():
@@ -25,10 +24,16 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    data = FEC_Util.ReadInData("./Graph3.pxp")
-    split,info = Detector._predict_full(data[0],threshold=0.5)
+    file_path = "./2017-6-5-devin-email-Hold.pxpImage1056Concat.csv"
+    data = InputOutput.read_and_cache_file(file_path=file_path,
+                                           cache_directory="./",
+                                           has_events=True,force=False)
+    split,info = Detector._predict_full(data,threshold=0.5)
+    fig = PlotUtilities.figure(figsize=(4,8))
     Plotting.plot_prediction_info(split,info)
-    plt.show()
+    PlotUtilities.savefig(fig,"./out.png")
+    
+    
 
 if __name__ == "__main__":
     run()

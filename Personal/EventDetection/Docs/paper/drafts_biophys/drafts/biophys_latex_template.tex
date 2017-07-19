@@ -19,10 +19,7 @@
 \iflatextortf
 % This code is processed only by latex2rtf
 \documentclass[a4paper,10pt,twoside]{article}
-
-\renewcommand{\text}[1]{$#1$}
-
-\input{biophys_rtf}
+\input{biophys_rtf_2}
 \else
 % This code is processed only by latex   
 \documentclass{biophys}
@@ -84,15 +81,12 @@
 % Bibliography style (requires the style file biophysj.bst in the
 % document directory)
 
-%\bibliographystyle{biophysj}
+\bibliographystyle{biophysj}
 
 % Numbering style in the list of references: a number followed by a period
 
 \renewcommand{\bibnumfmt}[1]{#1.}
 
-% Examples of special definitions (amsmath package required)
-\newcommand{\erf}{\operatorname{erf}}        % error function
-\newcommand{\erfc}{\operatorname{erfc}}      % complementary error function
 \newcommand{\BibTeX}{\textsc{Bib}\TeX}       % corect BibTeX appearance
 
 

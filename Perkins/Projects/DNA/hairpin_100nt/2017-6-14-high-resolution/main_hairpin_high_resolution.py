@@ -188,7 +188,7 @@ def run():
     for i,ex in enumerate(examples):
         split_fec = Analysis.zero_and_split_force_extension_curve(ex)
         retract = split_fec.retract
-        split_fecs.append(split_fec)
+        split_fecs.append(split_fec)  
     # align them by the contour lengths (assuming we have at least xnm to 
     # work with 
     working_distance_nm = 30

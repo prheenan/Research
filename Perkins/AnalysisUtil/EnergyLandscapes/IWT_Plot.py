@@ -115,6 +115,7 @@ def format_kcal_per_mol_second_axis_after_kT_axis():
     _set_kcal_axis_based_on_kT(ax_kT,ax_kcal)
     plt.sca(ax_kT)                       
     return ax_kcal
+
     
 def plot_free_landscape(LandscapeObj,**kwargs):
     """

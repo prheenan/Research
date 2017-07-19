@@ -31,7 +31,7 @@ def _fec_base_plot(x,y,n_filter_points=None,label="",
         style_filtered['alpha'] = 1
         style_filtered['label'] = label
     if (n_filter_points is None):
-        n_filter_points = int(np.ceil(x.size * 0.01))
+        n_filter_points = int(np.ceil(x.size * FEC_Util.default_filter_pct))
     x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
     y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
     plt.plot(x,y,**style_data)
@@ -135,6 +135,7 @@ def FEC(TimeSepForceObj,NFilterPoints=50,
     # plot the approach and retract with the appropriate units
     FEC_AlreadySplit(Appr,Retr,NFilterPoints=NFilterPoints,**kwargs)
     
+
 def heat_map_fec(time_sep_force_objects,num_bins=(100,100),
                  separation_max = None,n_filter_func=None,use_colorbar=True,
                  ConversionOpts=def_conversion_opts,cmap='afmhot'):

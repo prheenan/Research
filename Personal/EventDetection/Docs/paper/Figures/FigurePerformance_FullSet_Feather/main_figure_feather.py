@@ -26,9 +26,9 @@ def run(in_base="./"):
     cache_file = out_base + "cache.pkl"
     metrics = CheckpointUtilities.getCheckpoint(cache_file,get_best_metrics,
                                                 force,data_file)
-    loc_left = (-0.10,1.1)
-    loc_top = (-0.12,1.05)
-    loc_lower = (-0.12,0.95)
+    loc_left = (-0.15,1.1)
+    loc_top = (-0.15,1.05)
+    loc_lower = (-0.15,0.95)
     locs = [loc_top,loc_left,loc_left,loc_lower,loc_lower]
     titles = Plotting.algorithm_title_dict()
     colors = Plotting.algorithm_colors()
@@ -49,17 +49,19 @@ def run(in_base="./"):
                             format(out_base,safe_name)
         Plotting.rupture_plot(true,pred,fig=fig)
         PlotUtilities.savefig(fig,final_out_rupture)
-        fig = PlotUtilities.figure((16,8))
+        fig = PlotUtilities.figure((7,4))
         # plot the metric plot
         Plotting.rupture_plot(true,pred,use_legend=True,
                               distance_histogram=distance_histogram,
                               fig=fig,color_pred=color_pred)
         final_out_path = "{:s}{:s}_full.pdf".format(out_base,safe_name)
-        PlotUtilities.label_tom(fig,loc=locs,fontsize=18)
-        plt.suptitle(name,fontsize=25,y=0.95,color=colors[i],alpha=0.7)
-        PlotUtilities.savefig(fig,final_out_path,
-                              subplots_adjust=dict(wspace=0.2,hspace=0.1,
-                                                   left=0.05,top=0.85))
+        PlotUtilities.label_tom(fig,loc=locs)
+        plt.suptitle(name,y=0.98,color=colors[i],alpha=0.7)
+        PlotUtilities.save_twice(fig,final_out_path +".svg",
+                                 final_out_path + ".png",
+                                 subplots_adjust=dict(wspace=0.3,hspace=0.1,
+                                                      left=0.1,bottom=0.1,
+                                                      top=0.87))
 
 
 

@@ -4,13 +4,14 @@ from __future__ import division
 import numpy as np
 import matplotlib.pyplot as plt
 # need to add the utilities class. Want 'home' to be platform independent
-from Util.python import GenUtilities as pGenUtil
+from GeneralUtil.python import GenUtilities as pGenUtil
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio import SeqIO
 from Bio.Emboss import Primer3
-import Scripts.Emboss.EmbossAdapter as EmbossAdapter
+import Research.Perkins.Projects.Primers.Scripts.Emboss.EmbossAdapter as \
+    EmbossAdapter
 import AlignUtil
 
 import KmerUtil

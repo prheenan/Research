@@ -35,9 +35,10 @@ def prep_figure(src_gel_photo,src_dna_image):
     PlotUtilities.FormatImageAxis()
     # add an arrow at the 2KB line
     ax = plt.gca()
-    ax.annotate('2kbp standard', fontsize=20, xy=(.11, .57),
-                xycoords='data', xytext=(50, -150),
-                textcoords='offset points',
+    ax.annotate('2kbp standard', fontsize=PlotUtilities.g_font_label,
+                xy=(.11, .57),
+                xycoords='data', xytext=(0.3, 0.2),
+                textcoords='axes fraction',
                 arrowprops=dict(width = 5.,
                                 headwidth = 20.,
                                 headlength=20,
@@ -84,14 +85,14 @@ def run():
     PlotUtilities.savefig(fig,"./prep_pres.pdf",bbox_inches='tight',
                           subplots_adjust=subplots_adjust)
     # make the figure for the paper, with subplot labels
-    fig = PlotUtilities.figure((16,8))
+    fig = PlotUtilities.figure((7,3.25))
     im = prep_figure(src_gel_photo,src_dna_image)
     plt.tight_layout()
     m_colorbar(im,fig)
     axis_func = lambda x: x[:-1]
     PlotUtilities.label_tom(fig,loc=(0,1.1),axis_func=axis_func)
-    PlotUtilities.savefig(fig,"./prep.pdf",
-                          subplots_adjust=subplots_adjust)
+    PlotUtilities.save_twice(fig,"./prep.pdf.png","./prep.pdf.svg",
+                             subplots_adjust=subplots_adjust)
 
 
 if __name__ == "__main__":

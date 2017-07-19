@@ -3,14 +3,22 @@ from __future__ import division
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,warnings
+import sys,warnings,copy
 from scipy import interpolate
-from GeneralUtil.python import PlotUtilities
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from scipy.stats import norm
 from scipy.ndimage.filters import uniform_filter1d,generic_filter1d
 from scipy.integrate import cumtrapz
 
+class simple_fec:
+    def __init__(self,time,z_sensor,separation,force,trigger_time,
+                 dwell_time,events=[]):
+        self.Time = time
+        self.ZSnsr = z_sensor
+        self.Separation = separation
+        self.Force = force
+        self.TriggerTime = trigger_time
+        self.DwellTime = dwell_time
+        self.Events = events
 
 class split_force_extension:
     """
@@ -153,9 +161,9 @@ class split_force_extension:
         """
         multiplies all the forces by -1; useful after offsetting
         """
-        self.approach.LowResData.force *= -1
-        self.dwell.LowResData.force *= -1
-        self.retract.LowResData.force *= -1
+        self.approach.Force *= -1
+        self.dwell.Force *= -1
+        self.retract.Force *= -1
     def n_points_approach_dwell(self):
         """
         Returns:
@@ -349,8 +357,11 @@ def local_stdev(f,n):
 
 
 def filter_fec(obj,n_points):
-    return FEC_Util.GetFilteredForce(obj,n_points,spline_interpolated_by_index)
-
+    to_ret = copy.deepcopy(obj)
+    to_ret.Force = spline_interpolated_by_index(obj.Force,n_points)
+    to_ret.Separation = spline_interpolated_by_index(obj.Separation,n_points)
+    to_ret.ZSnsr = spline_interpolated_by_index(obj.ZSnsr,n_points)
+    return to_ret
 
 def bc_coeffs_load_force_2d(loading_true,loading_pred,bins_load,
                             ruptures_true,ruptures_pred,bins_rupture):
@@ -537,6 +548,23 @@ def zero_by_approach(split_fec,n_smooth,flip_force=True):
         split_fec.flip_forces()
    
    
+def slice_func_fec(fec,slice_v):
+    """
+    makes a copy of the fec, slicing the data fields to slice_v
+
+    Args:
+        fec: the force-extension curve to use
+        slice_v: the slice of fec to get
+    Returns:
+        the sliced version of fec
+    """
+    to_ret = copy.deepcopy(fec)
+    slice_f = lambda x: x[slice_v]
+    to_ret.Force = slice_f(to_ret.Force)
+    to_ret.Separation = slice_f(to_ret.Separation)
+    to_ret.ZSnsr = slice_f(to_ret.ZSnsr)
+    to_ret.Time = slice_f(to_ret.Time)
+    return to_ret
         
 def split_FEC_by_meta(time_sep_force_obj):
     """
@@ -556,8 +584,7 @@ def split_FEC_by_meta(time_sep_force_obj):
     start_of_dwell = get_idx_at_time(start_of_dwell_time)
     end_of_dwell = get_idx_at_time(end_of_dwell_time)
     # slice the object into approach, retract, dwell
-    slice_func = lambda s: \
-        FEC_Util.MakeTimeSepForceFromSlice(time_sep_force_obj,s)
+    slice_func = lambda s:  slice_func_fec(time_sep_force_obj,s)
     approach = slice_func(slice(0             ,start_of_dwell,1))
     dwell    = slice_func(slice(start_of_dwell,end_of_dwell  ,1))
     retract  = slice_func(slice(end_of_dwell  ,None          ,1))
@@ -796,17 +823,3 @@ def get_before_and_after_and_zoom_of_slice(split_fec):
     slices_after = [slice(i,f,1) 
                      for i,f in zip(index_before[1:],index_after[1:])]
     return slices_before,slices_after
-
-def debug_plot_approach_no_event(approach_force_sliced,
-                                 approach_force_interp_sliced,epsilon,sigma,
-                                 stdevs):
-    plt.subplot(2,1,1)
-    plt.plot(approach_force_sliced * 1e12,color='k',alpha=0.3)
-    plt.plot(approach_force_interp_sliced * 1e12)
-    PlotUtilities.lazyLabel("","force [pN]","")
-    plt.subplot(2,1,2)
-    plt.plot(stdevs*1e12,color='k',alpha=0.3)
-    plt.axhline(epsilon*1e12)
-    plt.axhline((epsilon-sigma)*1e12)
-    plt.axhline((epsilon+sigma)*1e12)
-    PlotUtilities.lazyLabel("idx","Residual [pN]","")
