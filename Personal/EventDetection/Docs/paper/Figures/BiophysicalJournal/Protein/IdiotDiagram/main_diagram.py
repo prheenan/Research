@@ -453,9 +453,9 @@ def run():
              [-0.17,0.95]]
     ylabel_subplot(ax_zoom,y_fec_label)
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-    PlotUtilities.savefig(fig,"./diagram.png",
-                          subplots_adjust=dict(top=0.95,bottom=0.035,
-                                               hspace=0.25))
+    PlotUtilities.save_png_and_svg(fig,"./diagram",
+                                   subplots_adjust=dict(top=0.95,bottom=0.035,
+                                                        hspace=0.25))
 
 if __name__ == "__main__":
     run()
