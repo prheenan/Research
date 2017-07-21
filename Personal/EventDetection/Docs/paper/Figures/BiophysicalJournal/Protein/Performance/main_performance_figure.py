@@ -88,11 +88,12 @@ def make_metric_plot(metrics,
         if (last_row):
             xlabel_dist = "Relative Error ($\mathbf{x_k}$)"
             xlabel_load = "Loading Rate (pN/s)"
-            xlabel_rupture_force = "F$_\mathbf{R}$ (pN)"
+            xlabel_rupture_force = \
+                PlotUtilities.force_string("F_R")
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
-        ylabel_dist = \
-            (r"$N_{\mathrm{" + "{:s}".format(titles[i]) + "}}$")
+        n_string = r"N_{\mathrm{" + "{:s}".format(titles[i]) + "}}"
+        ylabel_dist = PlotUtilities.variable_string(n_string)
         color_pred=colors[i]
         color_true = 'g'
         # get the formatting dictionaries for the various plots 
@@ -209,6 +210,7 @@ def run():
     kw = dict(score_tx_func=get_only_nug2_ruptures)
     runs = [ ["./cache.pkl",dict(),"performance"],
              ["./cache_nug2.pkl",kw,"performance_nug2"]]
+    PlotUtilities.tom_text_rendering()
     for cache_name,keywords,plot_name in runs:
         # get the metrics we care about
         metrics = CheckpointUtilities.getCheckpoint(cache_name,
@@ -222,7 +224,7 @@ def run():
         make_metric_plot(metrics)
         axis_func = lambda axes: [ax for i,ax in enumerate(axes) if i < 3]
         loc_last_two = [-0.05,1.1]
-        locs = [ [-0.25,1.1], loc_last_two,loc_last_two]
+        locs = [ [-0.2,1.1], loc_last_two,loc_last_two]
         PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
         # save out the plot
         subplots_adjust = dict(hspace=0.1,wspace=0.1,
