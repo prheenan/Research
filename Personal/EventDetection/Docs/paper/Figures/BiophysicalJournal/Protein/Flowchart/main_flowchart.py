@@ -42,6 +42,7 @@ def run():
     Returns:
         This is a description of what is returned.
     """
+    PlotUtilities.tom_text_rendering()
     data_file = "../_Data/example_protein.pkl"
     data = CheckpointUtilities.lazy_load(data_file)
     # get the 'raw' no-event probabilities, and the increasingly domain-specific
@@ -81,11 +82,13 @@ def run():
     kwargs_axis = dict()
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\Downarrow$"
-    probability_label = "log$_{\mathbf{10}}$(P)"
+    prob_str = PlotUtilities.variable_str("P")
+    force_str = PlotUtilities.variable_str("F")
+    probability_label = "log$_{\mathbf{10}}$" + "({:s})".format(prob_str)
     probability_label_post = probability_label
     n_cols = 3
     n_rows = 6
-    force_label = "F (pN)"
+    force_label = "{:s} (pN)".format(force_str)
     gs = gridspec.GridSpec(nrows=n_rows,ncols=n_cols,
                            width_ratios=[1 for _ in range(n_cols)],
                            height_ratios=[0.75,0.75,0.75,0.75,1,1])
