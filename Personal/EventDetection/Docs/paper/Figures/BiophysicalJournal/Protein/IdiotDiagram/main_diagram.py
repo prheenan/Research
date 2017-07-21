@@ -34,8 +34,10 @@ probabiity_kwargs = dict(color='r')
 # how big the scale bars are
 scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
-df_dt_string = r"$\mathbf{\partial}$F/$\mathbf{\partial}$t"
-rupture_string = r"F$_{\mathbf{R}}$"
+PlotUtilities.tom_text_rendering()
+df_dt_string = PlotUtilities.variable_string(r"\partial{}F/\partial{}t")
+rupture_string = PlotUtilities.variable_string(r"F_{R}")
+force_string = PlotUtilities.force_string()
 fontsize=8
 scale_line_width=1.5
 
@@ -99,7 +101,7 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
              **style_interp_after)
     plt.plot(time_plot[slice_final],force_interp_plot[slice_final],
              **style_interp_final)
-    PlotUtilities.lazyLabel("","Force (pN)","")
+    PlotUtilities.lazyLabel("",PlotUtilities.force_string(),"")
     # plot arrows above the events
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
                                       fudge_y=30,**arrow_kwargs)
@@ -269,14 +271,17 @@ def plot_landscape(x,landscape,ax=plt.gca()):
     text_kwargs = dict(horizontalalignment='center',
                        verticalalignment='center',fontsize=8)
     dagger_props['arrowprops']['arrowstyle'] = '<->'
+    label_x_dagger = PlotUtilities.variable_string("x^{\ddag}")
+    label_delta_g =  PlotUtilities.variable_string("\Delta G^{\ddag}")
+    label_k0 = PlotUtilities.variable_string("k_0")
     ax.annotate(xytext=(x_min,y_low_plot),xy=(x_max,y_low_plot),
-                s=r"",**dagger_props)
-    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.125,s="x$^{\ddag}$",
-            **text_kwargs)
+                s="",**dagger_props)
+    ax.text(x=np.mean([x_max,x_min]),y=y_low_plot+y_range*0.125,
+            s=label_x_dagger,**text_kwargs)
     # make the delta_G_dagger annotation
     ax.annotate(xytext=(x_max,0),xy=(x_max,y_max),s=r"",**dagger_props)
-    ax.text(x=x_max+x_range*0.4,y=np.mean(landscape)*0.7,
-            s="$\Delta$G$^{\ddag}$",**text_kwargs)
+    ax.text(x=x_max+x_range*0.5,y=np.mean(landscape)*0.7,
+            s=label_delta_g,**text_kwargs)
     # make the k0 annotation
     fudge = (x_max-x_min)*0.5
     y_k0 = y_max * 0.95
@@ -285,7 +290,7 @@ def plot_landscape(x,landscape,ax=plt.gca()):
                 xytext=(x_max-fudge, y_k0), textcoords='data',
                 arrowprops=dict(arrowstyle="->",shrinkA=0,shrinkB=0,
                                 connectionstyle="angle3,angleA=45,angleB=-45"))
-    ax.text(x=x_max,y=y_k0*1.25,s="k$_0$",**text_kwargs)
+    ax.text(x=x_max,y=y_k0*1.25,s=label_k0,**text_kwargs)
     plt.ylim(y_low_plot*2,max(plt.ylim())*1.1)
     xlim = plt.xlim()
     plt.xlim(xlim[0],xlim[1]+x_range * 0.4)
@@ -336,6 +341,7 @@ def run():
     n_cols = 2
     n_rows = 3
     # 'master' grid spec is 2x1
+
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
                                           hspace=0.5,wspace=0.5)
@@ -423,7 +429,7 @@ def run():
     ax1 = plt.subplot(gs_data[0,:])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
                     arrow_kwargs)
-    PlotUtilities.lazyLabel("","F (pN)",
+    PlotUtilities.lazyLabel("",PlotUtilities.force_string(),
                             "Extracting rupture properties",
                             **lazy_kwargs)
     PlotUtilities.tom_ticks(num_major=4,change_x=False)
@@ -433,18 +439,18 @@ def run():
     # # plot the 'zoomed' axis
     ax_zoom = plt.subplot(gs_data[1:,:])
     plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
-    PlotUtilities.lazyLabel("","F (pN)","",**lazy_kwargs)
+    PlotUtilities.lazyLabel("",PlotUtilities.force_string(),"",**lazy_kwargs)
     PlotUtilities.xlabel("Time",labelpad=0)
     PlotUtilities.no_x_label(ax_zoom)
     PlotUtilities.tom_ticks(num_major=5,change_x=False)
     axis_func = lambda axes: [a for i,a in enumerate(axes) if i != 4]
     loc_subplot = [-0.5,1.17]
-    locs = [ [-0.45,1.04],
+    locs = [ [-0.42,1.04],
              loc_subplot,
              loc_subplot,
              loc_subplot,
-             [-0.18,1.15],
-             [-0.18,0.95]]
+             [-0.17,1.15],
+             [-0.17,0.95]]
     ylabel_subplot(ax_zoom,y_fec_label)
     PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
     PlotUtilities.savefig(fig,"./diagram.png",

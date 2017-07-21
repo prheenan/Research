@@ -75,15 +75,15 @@ def run():
     fec_scale_dict = dict(y_frac=0.45,y_label_frac=0.2,**common_scale_dict)
     n_cols = 1
     n_rows = 6
-    ylim_force_pN = [-35,max(force_interp_plot)+1.1+50]
+    ylim_force_pN = [-35,max(force_interp_plot)+1.1+75]
     to_prob_plot = lambda x: np.log10(x)
     ylim_prob = [to_prob_plot(min((info_final.cdf))/5),1.1]
     title_kwargs = dict(loc='left',color='b')
     kwargs_axis = dict()
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\Downarrow$"
-    prob_str = PlotUtilities.variable_str("P")
-    force_str = PlotUtilities.variable_str("F")
+    prob_str = PlotUtilities.variable_string("P")
+    force_str = PlotUtilities.variable_string("F")
     probability_label = "log$_{\mathbf{10}}$" + "({:s})".format(prob_str)
     probability_label_post = probability_label
     n_cols = 3
@@ -148,12 +148,11 @@ def run():
     title_final = (arrow + " Extract significant events")
     event_starts = [e.start for e in info_final.event_slices_raw]
     Plotting.plot_arrows_above_events(event_starts,plot_x=time_plot,
-                                      plot_y=force_plot,fudge_y=25,
+                                      plot_y=force_plot,fudge_y=40,
                                       label=None)
     PlotUtilities.lazyLabel("",force_label,title_final,
                             loc = "upper center",**kw)
     plt.ylim(ylim_force_pN)                           
-
     plt.xlim(xlim_time)
     PlotUtilities.x_scale_bar_and_ticks(fec_scale_dict)
     tick_style()
