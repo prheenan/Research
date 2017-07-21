@@ -219,9 +219,9 @@ def run():
     locs = [loc_major for _ in range(5)] + \
            [loc_minor for _ in range(3)]
     PlotUtilities.label_tom(fig,loc=locs)
-    PlotUtilities.savefig(fig,"./flowchart.png",
-                          subplots_adjust=dict(hspace=0.48,wspace=0.35))
+    subplots_adjust=dict(hspace=0.48,wspace=0.35)
+    PlotUtilities.save_png_and_svg(fig,"flowchart",
+                                   subplots_adjust=subplots_adjust)
     
-
 if __name__ == "__main__":
     run()

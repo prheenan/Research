@@ -207,8 +207,8 @@ def run():
     """
     data_file = "../_Data/Scores.pkl"
     kw = dict(score_tx_func=get_only_nug2_ruptures)
-    runs = [ ["./cache.pkl",dict(),"performance.png"],
-             ["./cache_nug2.pkl",kw,"performance_nug2.png"]]
+    runs = [ ["./cache.pkl",dict(),"performance"],
+             ["./cache_nug2.pkl",kw,"performance_nug2"]]
     for cache_name,keywords,plot_name in runs:
         # get the metrics we care about
         metrics = CheckpointUtilities.getCheckpoint(cache_name,
@@ -224,11 +224,11 @@ def run():
         loc_last_two = [-0.05,1.1]
         locs = [ [-0.25,1.1], loc_last_two,loc_last_two]
         PlotUtilities.label_tom(fig,axis_func=axis_func,loc=locs)
-        # sav out the plot
-        PlotUtilities.savefig(fig,plot_name,
-                              subplots_adjust=dict(hspace=0.1,wspace=0.1,
-                                                   bottom=0.125,top=0.93))
-    
+        # save out the plot
+        subplots_adjust = dict(hspace=0.1,wspace=0.1,
+                               bottom=0.125,top=0.93)
+        PlotUtilities.save_png_and_svg(fig,plot_name,
+                                       subplots_adjust=subplots_adjust)
 
 if __name__ == "__main__":
     run()

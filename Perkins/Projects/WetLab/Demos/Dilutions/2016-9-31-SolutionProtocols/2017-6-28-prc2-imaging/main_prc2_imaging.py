@@ -30,7 +30,6 @@ def run():
     DilutionUtil.PrintSerialSteps(500,[2000],[TCEP_final_mM],
                                   ConcString="x",
                                   BufferString="DI")
-
     print(" === FLAG buffer ===")
     Stats = [ ["NaCl","M",2000,150,0],
               ["Tris-HCl","mM",100,10,0],
@@ -122,23 +121,6 @@ def run():
     Stats = [ ["Ni2+","mM",50,3,0],
               ["Tris-HCl","mM",100,10,0],
               ["KCl","mM",1000,25,0],
-              ["ZnCl2","mM",2.5,0.1,0]]
-    Volume = 250
-    vol_units = "mL"
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
-                                    BufferName="DI H20")
-    print("High salt buffer creation")
-    Stats = [ ["Ni2+","mM",50,3,0],
-              ["Tris-HCl","mM",100,10,0],
-              ["KCl","mM",3000,1000,0],
-              ["ZnCl2","mM",2.5,0.1,0]]
-    Volume = 250
-    vol_units = "mL"
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
-                                    BufferName="DI H20")
-    print("No NiCl2 buffer creation")
-    Stats = [ ["Tris-HCl","mM",100,10,0],
-              ["KCl","mM",1000,300,0],
               ["ZnCl2","mM",2.5,0.1,0]]
     Volume = 250
     vol_units = "mL"
