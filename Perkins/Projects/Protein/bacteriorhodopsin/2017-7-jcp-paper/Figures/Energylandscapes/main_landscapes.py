@@ -163,12 +163,12 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
         to_ret.append(cacheable_data(iwt_helix_data_tmp,heatmap_data))
     return to_ret
     
-def make_heatmap(histogram, x_edges,y_edges):
+def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     # XXX ? digitize all the ids so we know what bin they fall into...
     X,Y = np.meshgrid(x_edges,y_edges)
-    plt.gca().pcolormesh(X,Y,histogram,cmap=plt.cm.afmhot)
+    plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
     
-def plot_landscape(data,xlim):
+def plot_landscape(data,xlim,kw_landscape=dict()):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
     extension_nm = data._extension_grid_nm
@@ -181,11 +181,12 @@ def plot_landscape(data,xlim):
     lower_delta_landscape = grad(landscape_lower)
     ax_energy = plt.gca()
     # plot the landscape and its standard deviation
-    plt.plot(extension_nm,landscape_kcal_per_mol,color='k',linestyle='--')
+    plt.plot(extension_nm,landscape_kcal_per_mol,
+             linestyle='--',**kw_landscape)
     plt.fill_between(x=extension_nm,
                      y1=landscape_lower,
                      y2=landscape_upper,
-                     color='k',alpha=0.3)
+                     alpha=0.3,**kw_landscape)
     # make a second axis for the number of ammino acids 
     units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
     units_energy_delta = r"($\frac{\mathrm{kcal}}{\mathrm{mol} \cdot AA}$)"
@@ -193,16 +194,17 @@ def plot_landscape(data,xlim):
     limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
                     max(delta_landscape_kcal_per_mol_per_amino_acid)]
     label = "Free energy difference " + units_energy_delta
+    difference_color = 'rebeccapurple'
     ax_2 = PlotUtilities.secondAxis(ax_energy,
-                                    label=label,color='r',
+                                    label=label,color=difference_color,
                                     limits=limits_delta,secondY =True)
     # plot the energy delta and its bounds, based on the bounds on the landscape    
     ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-              color='r',linestyle='-',linewidth=0.5)    
+              color=difference_color,linestyle='-',linewidth=0.5)    
               
-def heatmap_plot(heatmap_data,amino_acids_per_nm):
+def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     ax_heat = plt.gca()
-    make_heatmap(*heatmap_data)
+    make_heatmap(*heatmap_data,kw_heatmap=kw_heatmap)
     PlotUtilities.lazyLabel("","Force (pN)","")
     # make a second x axis for the number of ammino acids 
     xlim_fec = plt.xlim()
@@ -211,37 +213,17 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm):
     plt.xlim(xlim_fec)
     PlotUtilities.no_x_label(ax_heat)    
     
-def create_landscape_plot(data_to_plot): 
+def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict()): 
     heatmap_data = data_to_plot.heatmap_data
     data_landscape = landscape_data(data_to_plot.landscape)
-    """
-    for x,d in zip(data_landscape._extensions_nm,
-                   data_landscape._raw_uninterpolared_landscapes_kcal_per_mol()):
-        plt.plot(x,d)
-    plt.plot(data_landscape._extension_grid_nm,
-             data_landscape.mean_landscape_kcal_per_mol,
-             'r--')
-    one_std_lower = data_landscape.mean_landscape_kcal_per_mol - \
-                    data_landscape.std_landscape_kcal_per_mol
-    one_std_higher = data_landscape.mean_landscape_kcal_per_mol + \
-                    data_landscape.std_landscape_kcal_per_mol
-    plt.fill_between(x=data_landscape._extension_grid_nm,
-                     y1=one_std_lower,y2=one_std_higher,color='k',alpha=0.3)           
-    extension_nm = data._extension_grid_nm
-    delta_landscape_kcal_per_mol_per_amino_acid = \
-        data.mean_delta_landscape_kcal_per_mol_per_AA
-    std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
-    std_delta_landscape = data.std_delta_landscape_kcal_per_mol_per_AA        
-    plt.show()
-    """
-    
     # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
-    heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm())
+    heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm(),
+                 kw_heatmap=kw_heatmap)
     xlim_fec = plt.xlim()
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
-    plot_landscape(data_landscape,xlim_fec)
+    plot_landscape(data_landscape,xlim_fec,kw_landscape=kw_landscape)
     
 def run():
     """
@@ -272,11 +254,19 @@ def run():
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
                       force_recalculation,areas,flickering_dir)
+    kwargs = [ dict(kw_heatmap=dict(cmap=plt.cm.Greys_r),
+                    kw_landscape=dict(color='k')),
+               dict(kw_heatmap=dict(cmap=plt.cm.Blues_r),
+                    kw_landscape=dict(color='royalblue')),
+               dict(kw_heatmap=dict(cmap=plt.cm.Greens_r),
+                    kw_landscape=dict(color='g'))]
     for i,d in enumerate(data_to_analyze):
-        fig = PlotUtilities.figure((3.25,7))        
-        create_landscape_plot(d)
-        out_name = "landscape{:d}_{:s}.png".format(i,areas[i].plot_title)
-        PlotUtilities.savefig(fig,out_name)
+        fig = PlotUtilities.figure((3.25,7))     
+        create_landscape_plot(d,**(kwargs[i]))
+        out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
+        axis_func = lambda x: [x[0],x[2]]
+        PlotUtilities.label_tom(fig,axis_func=axis_func)
+        PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))
         
 
     
