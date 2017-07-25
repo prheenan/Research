@@ -27,7 +27,7 @@ This work describes a new method for detecting events in force-extension curves.
 
 The following two data sets were hand-annotated for the purposes of determining algorithm event detection performance:
 
-- A publically available polyprotein dataset @walder_robert_rapid_nodate.
+- A previously published polyprotein dataset @walder_robert_rapid_nodate.
 - A 650nm dsDNA dataset taken for this paper (see {#ref_sec:SampleDetails}). 
 
 Statistics on the data sets and the annotated events are in {#ref_sec:SampleDetails}
@@ -68,12 +68,12 @@ Two metrics were used for comparing the event-finding performance of FEATHER wit
 {#ref_tbl:performance} lists the performance metrics for each algorithm on the polyprotein dataset. {#ref_fig:performance} shows the event detection performance of each algorithm. As defined by {#ref_tbl:metrics}, relative to the best baseline FEATHER improves the relative and absolute event error by a factor of about 30 and improves the Bhattacharya coefficient's complement by a factor of about 5. Additional tests on the dsDNA dataset (See {#ref_sec:datasets} and {#ref_fig:DNA}) show even greater relative performance gains. FEATHER's performance detecting events in polyprotein and dsDNA data demonstrate generalized and order-of-magnitude improvements relative to the baselines presented. 
 
 
-Name 	      	    | Rupture BCC ($\downarrow$) | Relative event error $P_{95}$ ($\downarrow$)
-------------------- | ------------| --------------------------------
-FEATHER             | **0.00501** | **0.00648**
-OpenFovea 	    | 0.287 	  | 0.421
-Scientific Python   | 0.0257 	  | 0.201
-[{#label_tbl:performance} The performance metrics for each algorithm, as defined in the text and {#ref_tbl:metrics}.]
+Name 	      	    | BCC ($\downarrow$) | $P_{95}$ ($\downarrow$)
+----------------- | ------     | ------
+FEATHER           | **0.0050** | **0.0065**
+OpenFovea 	  | 0.29       | 0.42
+Scientific Python | 0.026      | 0.20
+[{#label_tbl:performance} The performance metrics for each algorithm, as defined in the text and {#ref_tbl:metrics}. The symbol ($\downarrow$) indicates a lower value is better. ]
 
 
 # Conclusion

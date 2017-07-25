@@ -179,7 +179,7 @@ def GetVolumesNeededByConcentration(StockConcs,ConcsDesired,TotalVolume,
 
 
 def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes,
-                   FixedBufferVolume=None):
+                   dilution_concentration=0):
     """
     Given a stock and desired concentraitons and desired volumes at each 
     concentration, returns the list of stocks, volumes, dilutions, and final
@@ -195,6 +195,11 @@ def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes,
          more, since we need something to serially dilute with. E.g., if 
          DesiredVolumes was 1L, we might need 10mL extra for 'downstream'
          Dilutions
+
+         dilution_concentration: the concentration of whatever already in the 
+         stock.  (i.e. if we aren't using something with a concentration of 
+         zero. For example, if diluting 100mM NaCl with 10mM dilution,
+         Stock would be 100, DilutionConcentration would be 10
     Returns
         Tuple of arrays, the elements are grouped from high to low 
         concentrations for each of:<What stocks we used, What volumes of stocks,
@@ -215,16 +220,18 @@ def SeriallyDilute(Stock,DesiredConcentrations,DesiredVolumes,
         # what mass is needed 'below' us?
         MassNeeded = ConcNeeded*VolumeNeeded
         MassNeededBelow += MassNeeded
-        # we use  the stock 'above' what we need here
+        # determine what total volume of the final solution we need
+        # (we know the mass, and the concentration is specified) 
+        V0 = MassNeededBelow/ConcNeeded
         TmpStock = Stock if (i==0) \
                    else GetFromArrayOrScalar(DesiredConcentrations,i-1)
-        # determine how much stock we need
-        VolStock = np.array(MassNeededBelow)/np.array(TmpStock)
-        # how can we dilute it to get the concentration we need?
-        # since we have already accounting for the underlying mass,
-        # this implicitly includes the 'extra' volume for dilutions
-        VolDilute = GetVolumeToDilute(TmpStock,VolStock,
-                                      ConcNeeded)
+        conc_diff = dilution_concentration - TmpStock
+        # We are solving the following system:
+        # c_stock * V_s + c_dilute * V_dilute = MassNeededBelow
+        # V_s + V_dilute                      = V0
+        VolStock = (dilution_concentration*V0-MassNeededBelow)/conc_diff
+        VolDilute = (MassNeededBelow-TmpStock*V0 )/conc_diff
+        # we use  the stock 'above' what we need here
         VolumeStock.append(VolStock)
         VolumeDilute.append(VolDilute)
         Stocks.append(TmpStock)

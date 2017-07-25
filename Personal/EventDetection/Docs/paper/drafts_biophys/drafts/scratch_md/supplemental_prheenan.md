@@ -143,7 +143,7 @@ All three algorithms were tuned using 5-fold cross validation. Cross validation 
 
 --------------------------------------------------- 
 ![](figures/FEATHER_full.pdf.png)      
-{#label_fig:full_dataset} FEATHER generalizes well to a wide range of Data. The subplots in this figure are formatted as in {#ref_fig:DNA} but with FEATHER applied to the full data set listed in {#ref_tbl:statistics}. 
+{#label_fig:full_dataset} FEATHER generalizes well to a wide range of data. The subplots in this figure are formatted as in {#ref_fig:DNA} but with FEATHER applied to the full data set listed in {#ref_tbl:statistics}. 
 --------------------------------------------------- 
 
 Since tuning the baselines on the full dataset would have required more than eight cpu-months (compared to $\approx 1.5$ cpu-days for FEATHER, see {#ref_fig:timing}), a smaller subset of data was used for comparing the algorithms. In particular, the subset of the data with the smallest number of points per curve - 200 curves with v=1000}{nm/s}, N $\approx{}10^{5}$ (see {#ref_tbl:statistics}) - was used for results comparing FEATHER to the baselines. FEATHER was also tuned separately on the larger, more complex dataset, with similar results to those reported in the rest of the paper ({#ref_fig:full_dataset}). This demonstrates that FEATHER generalizes well to a wide range of data sets sizes and experimental parameters.

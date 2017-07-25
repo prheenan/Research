@@ -15,7 +15,7 @@ from GeneralUtil.python import GenUtilities
 from IgorUtil.PythonAdapter import PxpLoader
 import argparse
 from FitUtil.EnergyLandscapes.Inverse_Boltzmann.Python.Code import \
-    InverseBoltzmann
+    InverseBoltzmannUtil
 
 def load_separation_wave(file_path):
     waves = PxpLoader.LoadAllWavesFromPxp(file_path)
@@ -25,49 +25,6 @@ def load_separation_wave(file_path):
     assert m_wave.Name().lower().endswidth("sep") , "Wave must end in 'sep'"
     # POST: this is a separation wave. return it 
     return m_wave
-
-def run_deconvolution(gaussian_stdev,extension,bins,
-                      interpolate_kwargs = dict(),
-                      deconvolve_common_kwargs=dict(p_0=None,
-                                                    n_iters=300,
-                                                    delta_tol=1e-9,
-                                                    return_full=False,
-                                                    r_0=1)):
-    # get the extension distribution in whatever units the user gives us
-    bins,P_q = \
-        InverseBoltzmann.get_extension_bins_and_distribution(extension,
-                                                             bins=bins)
-    # XXX assume we know initial guess...
-    p_0 = np.ones(P_q.size)
-    sum_initial = sum(p_0)
-    # get the normalized p_0
-    p_0_normalized = p_0/np.trapz(y=p_0,x=bins)
-    # determine what p_0 will then sum to
-    p_0_sum = sum(p_0_normalized)
-    # choose bins such that the sum is 1
-    extension_factor = p_0_sum
-    # XXX assume p0...
-    extension_unitless = extension*extension_factor
-    bins *= extension_factor
-    gaussian_stdev *= extension_factor
-    P_q /= np.trapz(y=P_q,x=bins)
-    deconvolve_kwargs = dict(gaussian_stdev=gaussian_stdev,
-                             extension_bins = bins,
-                             P_q = P_q,
-                             interpolate_kwargs=interpolate_kwargs,
-                             **deconvolve_common_kwargs)
-    interp_ext,interp_prob,deconv_interpolated_probability = \
-        InverseBoltzmann.\
-        interpolate_and_deconvolve_gaussian_psf(**deconvolve_kwargs)
-    # convert the extensions back to their unit-less format, and renormalize the
-    # probabilities so that they match up
-    interp_ext = interp_ext * 1/extension_factor
-    # 'raw' probability
-    interp_prob /= np.trapz(x=interp_ext,y=interp_prob)
-    # deconvolved probability 
-    factor_deconv = np.trapz(x=interp_ext,y=deconv_interpolated_probability)
-    deconv_interpolated_probability /= factor_deconv
-    return interp_ext,interp_prob,deconv_interpolated_probability
 
 
 def parse_and_run():
@@ -97,10 +54,8 @@ def parse_and_run():
     data = load_separation_wave(in_file)
     # get the extension in ~ unitless for (it will return to 'normal' after)
     extension = data.dataY
-    interpolate_kwargs=dict(interpolation_factor=interpolation_factor)
-    args = run_deconvolution(gaussian_stdev,extension,bins,
-                             interpolate_kwargs=interpolate_kwargs)
-    interp_ext,interp_prob,deconv_interpolated_probability = args
+    interpolate_kwargs = dict(interpolation_factor=interpolation_factor)
+    run_and_save_data(gaussian_stdev,extension,bins,interpolate_kwargs,out_file)
         
 
 def run():
