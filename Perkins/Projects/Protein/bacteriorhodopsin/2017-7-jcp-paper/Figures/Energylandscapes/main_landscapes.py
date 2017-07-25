@@ -137,7 +137,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
            this_area = FEC_Util.slice_by_separation(r,*area.ext_bounds)
            raw_area_slices[j].append(this_area)
         # r is no longer needed; stop referencing it to make space
-        del raw_data[i]
+        raw_data[i] = None
     to_ret = []
     N = 3
     for area,slice_tmp in zip(areas,raw_area_slices):
@@ -241,7 +241,7 @@ def run():
         This is a description of what is returned.
     """
     np.random.seed(42)
-    flickering_dir = "../../LargerDataset/Half/"
+    flickering_dir = "../../LargerDataset/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     force_recalculation = False
