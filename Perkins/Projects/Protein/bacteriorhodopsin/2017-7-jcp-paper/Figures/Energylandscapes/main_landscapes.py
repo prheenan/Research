@@ -129,19 +129,24 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=force_read_data,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,renormalize=True)
-    raw_area_slices = []
-    for area in areas:
-        this_area = [FEC_Util.slice_by_separation(r,*area.ext_bounds) 
-                     for r in raw_data]
-        raw_area_slices.append(this_area)
+                                                 limit=None,
+                                                 renormalize=False)
+    raw_area_slices = [[] for _ in areas]
+    for i,r in enumerate(raw_data):
+        for j,area in enumerate(areas):
+           this_area = FEC_Util.slice_by_separation(r,*area.ext_bounds)
+           raw_area_slices[j].append(this_area)
+        # r is no longer needed; stop referencing it to make space
+        del raw_data[i]
     to_ret = []
     N = 3
     for area,slice_tmp in zip(areas,raw_area_slices):
         # get the heatmap histograms
-        heatmap_data = get_heatmap_data(slice_tmp,)  
+        heatmap_data = get_heatmap_data(slice_tmp)  
         # get the landscapes (we use N, to get an error)
-        iwt_objs = IWT_Util.convert_to_iwt(slice_tmp)
+        iwt_objs = IWT_Util.convert_list_to_iwt(slice_tmp)
+        # delete the original list to free its memnory
+        slice_tmp[:] = []
         n_objs = len(iwt_objs)
         num_n = int(np.round(n_objs/N))
         assert (n_objs % N == 0), \
@@ -236,7 +241,7 @@ def run():
         This is a description of what is returned.
     """
     np.random.seed(42)
-    flickering_dir = "../LargerDataset/"
+    flickering_dir = "../../LargerDataset/Half/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     force_recalculation = False
