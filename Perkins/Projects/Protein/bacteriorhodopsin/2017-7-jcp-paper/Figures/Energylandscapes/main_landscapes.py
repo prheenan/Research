@@ -125,7 +125,8 @@ def get_heatmap_data(time_sep_force_arr,bins=(100,100)):
     histogram = histogram.T            
     return histogram, x_edges,y_edges 
     
-def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
+def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
+                       offset_N=7.1e-12):
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=force_read_data,
                                                  cache_directory=flickering_dir,
@@ -133,6 +134,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100)):
                                                  renormalize=False)
     raw_area_slices = [[] for _ in areas]
     for i,r in enumerate(raw_data):
+        r.Force -= offset_N
         for j,area in enumerate(areas):
            this_area = FEC_Util.slice_by_separation(r,*area.ext_bounds)
            raw_area_slices[j].append(this_area)
@@ -246,14 +248,14 @@ def run():
     cache_dir = flickering_dir 
     force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
-    n_bins = 150
-    n_bins_helix_a = 50
-    n_binx_helix_e = 75
+    n_bins = 250
+    n_bins_helix_a = 100
+    n_bins_helix_e = 100
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)",n_bins),
-        slice_area([20e-9,27e-9],"Helix E",n_bins_helix_a),
-        slice_area([50e-9,75e-9],"Helix A",n_binx_helix_e),
+        slice_area([18e-9,27e-9],"Helix E",n_bins_helix_e),
+        slice_area([50e-9,75e-9],"Helix A",n_bins_helix_a),
         ]    
     # read in the data 
     data_to_analyze = CheckpointUtilities.\
