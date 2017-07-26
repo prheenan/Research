@@ -23,7 +23,8 @@ class BoundsObj:
         self.force_one_half_N = force_one_half_N
 
 class TiltedLandscape:
-    def __init__(self,landscape,f_one_half_N=0,kT=4.1e-21):
+    def __init__(self,landscape,f_one_half_N=0,kT=4.1e-21,
+                 extension_zero_m=0):
         """
         Creates a new tilted landscape object
 
@@ -31,13 +32,14 @@ class TiltedLandscape:
             landscape: the IWT landscape object (from InverseWeierstrass)
             bounds: the IWT_Util.BoundsObj
             kT: 1/beta, assumed constant
+            extension_zero : the zero point of extension in meters, for tilting
         """
 
         self.kT = kT
+        ext = landscape.Extensions - extension_zero_m
         self.Landscape_kT =  landscape.EnergyLandscape/kT
-        self.Tilted_kT = self.Landscape_kT - \
-                         (landscape.Extensions*f_one_half_N)/kT
-        landscape_ext_nm = landscape.Extensions * 1e9
+        self.Tilted_kT = self.Landscape_kT - (ext*f_one_half_N)/kT
+        landscape_ext_nm = ext * 1e9
         self.MinG = min(self.Landscape_kT)
         self.landscape_ext_nm = landscape_ext_nm
         self.Offset = np.percentile(self.Tilted_kT,10)
@@ -390,9 +392,11 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
         IwtData = ToIWTObject(unfold_tmp)
         IwtData_fold = ToIWTObject(fold_tmp)
     except AttributeError:
-        # Rob messes with the notes
-        IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None)
-        IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None)
+        # Rob messes with the notes; he also gives the velocities
+        IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None,
+                                       fraction_for_vel=fraction_for_vel)
+        IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None,
+                                            fraction_for_vel=fraction_for_vel)
     # switch the velocities of all ToIWTObject folding objects..
     # set the velocity and Z functions
     set_separation_velocity_by_first_frac(IwtData,fraction_for_vel)
@@ -423,26 +427,29 @@ def convert_list_to_iwt(time_sep_force_list,**kwargs):
     return [convert_to_iwt(d) for d in time_sep_force_list]
 
 
-def RobTimeSepForceToIWT(o,ZFunc):
+def RobTimeSepForceToIWT(o,ZFunc,fraction_for_vel):
     """
     converts a Rob-Walder style pull into a FEC_Pulling_Object
 
     Args:
          o: TimeSepForce object with Robs meta information
          ZFunc: the z function (schedule) passed along
+         fraction_for_vel : see set_separation_velocity_by_first_frac
     Returns:
          properly initialized FEC_Pulling_Object for use in IWT
     """
     # spring constant should be in N/m
     k = o.Meta.__dict__["K"]
     velocity = o.Meta.__dict__["RetractVelocity"]
+    print("k,velocity",k,velocity)
     Obj = InverseWeierstrass.FEC_Pulling_Object(Time=o.Time,
                                                 Extension=o.Separation,
                                                 Force=o.Force,
                                                 SpringConstant=k,
                                                 Velocity=velocity,
                                                 ZFunc=ZFunc)
-    Obj.SetWork(Obj.CalculateForceCummulativeWork())
+    # set the proper offset 
+    set_separation_velocity_by_first_frac(Obj,fraction_for_vel)
     return Obj
 
         
