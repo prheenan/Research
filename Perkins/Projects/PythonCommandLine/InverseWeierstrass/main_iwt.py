@@ -49,13 +49,6 @@ def parse_and_run():
                " of fraction_velocity_fit"
     parser.add_argument('-velocity',metavar="velocity",type=float,default=0,
                         help=vel_help,required=False)
-    help_zero = "if relative_zero is not zero, then the free energy is tilted"+\
-                " with respect to the minimum separation. If zero molecular "+\
-                " extension isn't present in each trial, this should probably"+\
-                " be 1"
-    parser.add_argument('-relative_zero',metavar="relative_zero",type=int,
-                        default=0,required=False,
-                        help=help_zero)
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
@@ -93,12 +86,7 @@ def parse_and_run():
         FreeEnergyAtZeroForce(unfold,NumBins=num_bins,RefoldingObjs=refold)
     # get the distance to the transition state etc
     all_landscape = [-np.inf,np.inf]    
-    if (args.relative_zero):
-        offset_ext_m = min(LandscapeObj.Extensions)
-    else:
-        offset_ext_m = 0
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half,
-                                    extension_zero_m=offset_ext_m)
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half)
     # write out the file we need
     extension_meters = Obj.landscape_ext_nm/1e9
     landscape_joules = Obj.Landscape_kT * Obj.kT

@@ -441,7 +441,6 @@ def RobTimeSepForceToIWT(o,ZFunc,fraction_for_vel):
     # spring constant should be in N/m
     k = o.Meta.__dict__["K"]
     velocity = o.Meta.__dict__["RetractVelocity"]
-    print("k,velocity",k,velocity)
     Obj = InverseWeierstrass.FEC_Pulling_Object(Time=o.Time,
                                                 Extension=o.Separation,
                                                 Force=o.Force,

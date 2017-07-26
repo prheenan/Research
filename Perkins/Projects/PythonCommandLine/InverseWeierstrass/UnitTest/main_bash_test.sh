@@ -32,8 +32,7 @@ python2 main_iwt.py \
     -number_of_pairs 16\
     -flip_forces 0\
     -number_of_bins 150\
-    -relative_zero 1 \
-    -f_one_half 5e-12\
+    -f_one_half e-12\
     -fraction_velocity_fit 0.1\
     -file_input "${input_file}"\
     -file_output "${output_file}" || { echo "===IWT run failed===" ; exit; }
