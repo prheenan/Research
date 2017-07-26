@@ -44,6 +44,11 @@ def parse_and_run():
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
+    vel_help = "optional manually-specified velocity (m/s). If this is" + \
+               " present, then it is used to determing the velocity instead" +\
+               " of fraction_velocity_fit"
+    parser.add_argument('-velocity',metavar="velocity",type=float,default=0,
+                        help=vel_help,optional=True)
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
@@ -69,6 +74,12 @@ def parse_and_run():
                                       number_of_pairs=number_of_pairs,
                                       flip_forces=flip_forces,
                                       fraction_for_vel=fraction_for_vel)
+    velocity = args.velocity
+    if (velocity > 0):
+        for un,re in zip(unfold,refold):
+            # keep the offsets, reset the velocites
+            un.SetVelocityAndOffset(un.Offset,velocity)
+            re.SetVelocityAndOffset(re.Offset,velocity)
     # POST: have the unfolding and refolding objects, get the energy landscape
     num_bins = args.number_of_bins
     LandscapeObj =  InverseWeierstrass.\
