@@ -5,6 +5,7 @@ import numpy as np
 import sys
 
 import os, sys,traceback
+import matplotlib.pyplot as plt
 # change to this scripts path
 path = os.path.abspath(os.path.dirname(__file__))
 os.chdir(path)

@@ -14,39 +14,40 @@ sys.path.append("../../../../")
 from Util import DilutionUtil 
 
 def run():
-    print("No NiCl2 buffer creation (high salt)")
-    Stats = [ ["Tris-HCl","mM",100,10,0],
-              ["KCl","mM",1000,300,0],
-              ["ZnCl2","mM",2.5,0.1,0]]
-    Volume = 250
-    vol_units = "mL"
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
-                                    BufferName="DI H20")
-    print("No NiCl2 buffer creation (low salt)")
-    Stats = [ ["Tris-HCl","mM",100,10,0],
-              ["KCl","mM",1000,25,0],
-              ["ZnCl2","mM",2.5,0.1,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
+    print("No Divalent buffer creation, 2x")
+    Stats = [ ["Tris-HCl","mM",1000,20,0],
+              ["KCl","mM",2500,50,0],
+              ["ZnCl2","mM",2.5,0.2,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
                                     BufferName="DI H20")
     print("Pre-treatment dilution")
-    Stats = [ ["Tris-HCl","mM",100,10,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,50,vol_units,
+    Stats = [ ["NiCl2","mM",50,10,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
                                     BufferName="DI H20")
-    # write down how to get the volumes we will want
-    volumes = 30
-    desired_dilutions_mM = [100,50,25]
-    desired_volumes_mL = [volumes for d in desired_dilutions_mM]
-    DilutionUtil.PrintSerialSteps(300,desired_volumes_mL,desired_dilutions_mM,
-                                  ConcString="mM KCl",VolString="mL",
-                                  BufferString="25 mM KCl",
-                                  dilution_concentration=25)
-    print("=== Low salt dilution === ")
-    for desired_dilutions_mM in [0.33,0.083,0.021]:
-        desired_volumes_mL = volumes
-        DilutionUtil.PrintSerialSteps(3,desired_volumes_mL,
-                                      [desired_dilutions_mM],
-                                      ConcString="mM NiCl2",VolString="mL",
-                                      BufferString="[0mM NiCl2, Same KCl]")
+    # roughly speaking, these are (very high, should be able to image in liquid,
+    # shouldnt be able to image in liquid), corresponding to...
+    # (Pastre, 2003), ns2~0.972, ns2~0.962, ns2~0.953
+    MgCl2_concentrations_mM = [120,64,40]
+    max_conc = max(MgCl2_concentrations_mM)
+    Stats = [ ["2x PRC2 buffer","x",2,1,0],
+              ["MgCl2","mM",1000,max(MgCl2_concentrations_mM),0]]
+    print("==== MgCl2 Stock ====")
+    DilutionUtil.PrintSolutionSteps(Stats,75,"mL",
+                                    BufferName="DI H20")
+    # serially dilute to what we need..
+    DilutionUtil.PrintSerialSteps(Stock=max_conc,Volumes=20,
+                                  Desired=MgCl2_concentrations_mM,
+                                  ConcString="mM MgCl2",VolString="mL",
+                                  BufferString="1x Buffer")
+    # try again with NiCl2 if we dont have any luck?
+    NiCl2_concentrations_mM = [1,0.05,0.01,5e-3]
+    print("==== NiCl2 Stock ====")
+    # serially dilute to what we need..
+    DilutionUtil.PrintSerialSteps(Stock=10,Volumes=20,
+                                  Desired=NiCl2_concentrations_mM,
+                                  ConcString="mM NiCl2",VolString="mL",
+                                  BufferString="1x Buffer")
+
 
 
 
