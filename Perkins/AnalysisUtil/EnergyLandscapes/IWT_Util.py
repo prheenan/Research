@@ -69,7 +69,6 @@ def ToIWTObject(o):
                                                 Force=o.Force,
                                                 SpringConstant=o.SpringConstant,
                                                 Velocity=o.Velocity)
-    obj.SetWork(obj.CalculateForceCummulativeWork())
     return obj
 
 def ToIWTObjects(TimeSepForceObjects):
@@ -148,170 +147,6 @@ def GetObjectsAndIWT(Base,FullName,Force,NumBins=125,Limit=150):
                                                             NumBins=NumBins)
     return IwtObjects,RetractList,Touchoff,LandscapeObj
 
-def toNano(x):
-    return x * 1e9
-
-
-def toPn(x):
-    return x * 1e12
-
-
-def GetAllExtensionsAndForceAndPlot(RetractList,Touchoff,IwtObjects,Base):
-    """
-    Returns all the normalized forces and extnsions, after plotting them
-    in the location given by base
-
-    Args:
-        RetractList: list of TimeSepForce objects with just the retract
-        Touchoff: list of TimeSepForceObjects *zero-offset* in x and y
-        IwtObjects: Touchoff, converted to IWT
-        Base: where to save
-    Returns:
-        tuple of <stage Z,force>
-    """
-    NPlots = 3
-    ext = []
-    force = []
-    MaxForce = max([np.max(t.Force) for t in Touchoff])
-    MinForce = min([np.min(t.Force) for t in Touchoff])
-    MaxX = max([t.Zsnsr[-1] for t in Touchoff])
-    MaxWork = max([np.max(t.Work) for t in IwtObjects])
-    # convert all the maxes to plot-friendly units
-    MaxX_nm = MaxX * 1e9
-    MaxWork_kbT = MaxWork/(4.1e-21)
-    MaxForce_pN = MaxForce * 1e12
-    MinForce_pN = MinForce * 1e12
-    # get the limits
-    ForceLim_pN = [MinForce_pN,MaxForce_pN]
-    XLim_nm = [0,MaxX_nm]
-    WorkLim_kbT = [0, MaxWork_kbT]
-    for i,(Retract,Touch) in enumerate(zip(RetractList,Touchoff)):
-        fig = PlotUtilities.figure(figsize=(8,12))
-        ForZ = Retract
-        RetractZ = Retract.Zsnsr
-        RetractZ -= np.min(RetractZ)
-        plt.subplot(NPlots,1,1)
-        # normalize and flip the force, XXX move to utility...
-        ForceRetractPlot = toPn(Retract.Force)
-        ForceRetractPlot *= -1
-        N = ForceRetractPlot.size
-        fraction = 0.2
-        ForceRetractPlot -= np.median(ForceRetractPlot[-int(fraction*N):])
-        plt.plot(toNano(RetractZ),ForceRetractPlot,alpha=0.3)
-        PlotUtilities.lazyLabel("Z stage Position (nm), Absolute","Force (pN)",
-                            "Determining Work and Force for FEC")
-        plt.subplot(NPlots,1,2)
-        Z = Touch.Zsnsr
-        plt.plot(toNano(Z),toPn(Touch.Force),alpha=0.3)
-        plt.xlim(XLim_nm)
-        # force bounds in pN
-        plt.ylim(ForceLim_pN)
-        PlotUtilities.lazyLabel("","Force (pN)","")
-        plt.subplot(NPlots,1,3)
-        plt.plot(toNano(Z),IwtObjects[i].Work/(4.1e-21),
-                 alpha=0.3)
-        plt.xlim(XLim_nm)
-        plt.ylim(WorkLim_kbT)
-        PlotUtilities.lazyLabel("Z stage Position (nm), relative to touchoff",
-                            "Work (kbT)","")
-        PlotUtilities.savefig(fig,Base + "{:d}.png".format(i))
-        ext.extend(toNano(Z))
-        force.extend(toPn(Touch.Force))
-    return ext,force
-
-def ForceExtensionHistograms(ext,force,nBins=100,AddAverage=True):
-    """
-    Makes a 2-d force histogram (ext,force)
-    
-    Args:
-        ext: list of extensions
-        force: list of forces
-        nBins: how many bins to use
-        AddAverage: if true, add average at each bin
-    """
-    # make a heat map, essentially
-    counts, xedges, yedges, Image = plt.hist2d(ext, force,
-                                               bins=nBins,cmap='afmhot')
-    if (AddAverage):
-        x_bins = xedges[:-1]
-        y_bins = yedges[:-1]
-        bindiff = np.median(np.diff(x_bins))
-        for i in range(x_bins.size):
-            N = sum(counts[i,:])
-            average = (sum(counts[i,:] * y_bins))/N
-            label = "Avg binned force" if i == 0 else ""
-            plt.plot(x_bins[i]+bindiff/2,average,'go',label=label)
-    PlotUtilities.lazyLabel("Separation [nm]",
-                            "Force [pN]",
-                            "Two-Dimensional Force-Separation Histogram",
-                            frameon=True)
-    cbar = plt.colorbar()
-    cbar.set_label('# in (Force,Separation) Bin', labelpad=10,rotation=270)
-
-
-def EnergyLandscapePlot(LandscapeObj,FOneHalf=8e-12,
-                        ZoomBoundsMeters=[22e-9,30e-9],
-                        NumPointsAround=4,
-                        stiffness_pN_per_nm=4):
-    """
-    Plots the enegry landscape  and tilted landscape
-
-    Args:
-        LandscapeObj: return from InverseWeierstrass.FreeEnergyAtZeroForce(
-        FOneHalf: what to tilt by
-    """
-    plt.subplot(3,1,1)
-    NanoExt =toNano(LandscapeObj.Extensions)
-    FreeEnergyEq = LandscapeObj.EnergyLandscape
-    plt.plot(NanoExt,FreeEnergyEq * LandscapeObj.Beta)
-    PlotUtilities.lazyLabel("","G0",
-                            "Reconstructed Energy Landscape")
-    plt.subplot(3,1,2)
-    TiltedEnergy = (FreeEnergyEq - LandscapeObj.Extensions * FOneHalf)
-    TiltedEnergy -= (TiltedEnergy[0])
-    EnergyByBeta = TiltedEnergy * LandscapeObj.Beta
-    plt.plot(NanoExt,EnergyByBeta)
-    PlotUtilities.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
-                            "")
-    plt.subplot(3,1,3)
-    # zoom on in a specific reigon, just eyeballing
-    # the bounds based on the 'full' landscape plot
-    ZoomNm = np.array(ZoomBoundsMeters)* 1e9
-    WhereZoom = np.where( (NanoExt > min(ZoomNm)) &
-                          (NanoExt < max(ZoomNm)))
-    if (WhereZoom[0].size > 0):
-        EnergyZoom = EnergyByBeta[WhereZoom]
-        ExtZoom = NanoExt[WhereZoom]
-        # Zero out everything
-        MinIdx = np.argmin(EnergyZoom)
-        EnergyZoom -= np.min(EnergyZoom)
-        ExtZoom -= ExtZoom[MinIdx]
-        # fit a parabola to the bottom of the well
-        IdxStart = max(0,MinIdx-NumPointsAround)
-        IdxEnd = min(ExtZoom.size,MinIdx+NumPointsAround)
-        IdxSlice = slice(IdxStart,IdxEnd)
-        FitX = ExtZoom[IdxSlice]
-        FitY = EnergyZoom[IdxSlice]
-        coeffs = np.polyfit(FitX,FitY,deg=2)
-        # remove the linear term, which is the second
-        coeffs[1] = 0
-        xinterp = np.linspace(FitX[0],FitX[-1])
-        vals = np.polyval(coeffs,x=xinterp)
-        curvature_kbT_per_nm = coeffs[0]
-        # note: the well is in kT/nm, so we convert to pN/nm
-        # by multuplying by 4.1
-        curvature_pN_per_nm = curvature_kbT_per_nm * 4.1
-        plt.plot(ExtZoom,EnergyZoom)
-        plt.plot(xinterp,vals,color='g',linewidth=4.0,linestyle='--',
-                 label="Landscape SHO ({:.1f} pN/nm)".\
-                 format(curvature_pN_per_nm))
-        plt.plot(xinterp,stiffness_pN_per_nm*xinterp**2+max(vals),
-                 label="Cantilever SHO ({:.1f} pN/nm)".\
-                 format(stiffness_pN_per_nm))
-        plt.ylim([0,max(EnergyZoom)])
-        PlotUtilities.lazyLabel("Molecular Extension (nm)","G at F-1/2 (kT)",
-                                "",frameon=True)
-
 def set_separation_velocity_by_first_frac(iwt_data,fraction_for_vel):
     """
     Sets the velocity and offset of the given iwt_object by the first
@@ -345,18 +180,22 @@ def set_separation_velocity_by_first_num(iwt_data,num):
     velocity = coeffs[0]
     offset = coeffs[1]
     # adjust the Z function for the fitted velocity and time
-    iwt_data.SetVelocityAndOffset(offset,velocity)
+    iwt_data.SetOffsetAndVelocity(offset,velocity)
 
 
 def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
                            fraction_for_vel=0.2,flip_forces=False,
                            slice_to_use=None,f_split=None,
+                           slice_func=None,
                            unfold_start_idx=None):
     """
     given a 'raw' TimeSepForce object, gets the approach and retract 
     as IWT objects, accounting for the velocity and offset of the separation
 
     Args:
+        slice_func: takes in a TimeSepForce object and a slice, returns
+        the sliced data
+    
         d: Single TimeSepForce object to split. A single retract/approach
         idx_end_of_unfolding: where the unfolding stops. If not given, we
         assume it happens directly in the middle (ie: default is no 'padding').
@@ -372,6 +211,9 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
     returns:
         tuple of <unfolding,refolding> IWT Object
     """
+    if (slice_func is None):
+        slice_func = lambda o,s: \
+                FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
     if (f_split is not None):
         unfold_start_idx,idx_end_of_unfolding,idx_end_of_folding = f_split(d)
     if (unfold_start_idx is None):
@@ -384,14 +226,14 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
         d.Force *= -1
     # get the unfolding and unfolds
     slice_unfolding = slice(unfold_start_idx,idx_end_of_unfolding)
-    unfold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
+    unfold_tmp = slice_func(d,slice_unfolding)
     slice_folding = slice(idx_end_of_unfolding,idx_end_of_folding)
-    fold_tmp = FEC_Util.MakeTimeSepForceFromSlice(d,slice_folding)
+    fold_tmp = slice_func(d,slice_folding)
     # convert all the unfolding objects to IWT data
     try:
         IwtData = ToIWTObject(unfold_tmp)
         IwtData_fold = ToIWTObject(fold_tmp)
-    except AttributeError:
+    except AttributeError as e:
         # Rob messes with the notes; he also gives the velocities
         IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None,
                                        fraction_for_vel=fraction_for_vel)
@@ -478,10 +320,11 @@ def get_slice(data,j,n):
     return slice(j*data_per_curve,(j+1)*data_per_curve,1)
 
 def get_unfold_and_refold_objects(data,number_of_pairs,flip_forces=False,
-                                  fraction_for_vel=0.1,**kwargs):
+                                  fraction_for_vel=0.1,slice_func=None,
+                                  **kwargs):
     """
-    Splits a TimeSepForceObj into number_of_pairs unfold/refold pairs, converting
-    into IWT Objects.
+    Splits a TimeSepForceObj into number_of_pairs unfold/refold pairs,
+    converting into IWT Objects.
     
     Args:
         data: TimeSepForce object to use
@@ -490,21 +333,25 @@ def get_unfold_and_refold_objects(data,number_of_pairs,flip_forces=False,
         flip_forces: if true, multiply all the forces by -1
         fraction_for_vel: fraction to use for the velocity
         get_slice: how to slice the data
+
+        slice_func: see split_into_iwt_objects
         
         kwargs: passed to split_into_iwt_objects
     Returns:
         tuple of <unfold,refold> objects
     """
+    if (slice_func is None):
+        slice_func = lambda obj,s: FEC_Util.MakeTimeSepForceFromSlice(obj,s)
     n = number_of_pairs
-    pairs = [FEC_Util.MakeTimeSepForceFromSlice(data,get_slice(data,i,n))
-             for i in range(n) ]
+    pairs = [slice_func(data,get_slice(data,i,n)) for i in range(n) ]
     # POST: pairs has each slice (approach/retract pair) that we want
     # break up into retract and approach (ie: unfold,refold)
     unfold,refold = [],[]
     for p in pairs:
         unfold_tmp,refold_tmp = \
             split_into_iwt_objects(p,fraction_for_vel=fraction_for_vel,
-                                   flip_forces=flip_forces,**kwargs)
+                                   flip_forces=flip_forces,
+                                   slice_func=slice_func,**kwargs)
         unfold.append(unfold_tmp)
         refold.append(refold_tmp)
     return unfold,refold        

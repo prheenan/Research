@@ -40,10 +40,10 @@ def run():
                                   ConcString="mM MgCl2",VolString="mL",
                                   BufferString="1x Buffer")
     # try again with NiCl2 if we dont have any luck?
-    NiCl2_concentrations_mM = [1,0.05,0.01,5e-3]
+    NiCl2_concentrations_mM = [1,0.02,0.01,5e-3]
     print("==== NiCl2 Stock ====")
     # serially dilute to what we need..
-    DilutionUtil.PrintSerialSteps(Stock=10,Volumes=20,
+    DilutionUtil.PrintSerialSteps(Stock=10,Volumes=30,
                                   Desired=NiCl2_concentrations_mM,
                                   ConcString="mM NiCl2",VolString="mL",
                                   BufferString="1x Buffer")

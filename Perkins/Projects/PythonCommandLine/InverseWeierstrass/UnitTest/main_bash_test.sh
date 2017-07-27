@@ -20,7 +20,7 @@ expected_file=${3:-"./UnitTest/expected_landscape.csv"}
 szabo_base="../../../../../../FitUtil/EnergyLandscapes/InverseWeierstrass/Python"
 szabo_path="${szabo_base}/TestExamples/Testing/"
 cd "$szabo_path"
-ls *.py | tail -1 | xargs python  || { echo "Szabo test failed" ; exit; }
+#ls *.py | tail -1 | xargs python  || { echo "Szabo test failed" ; exit; }
 echo "===Szabo Test Passed==="
 cd - 
 # POST: Szabo test passed,  in original directory
@@ -32,7 +32,7 @@ python2 main_iwt.py \
     -number_of_pairs 16\
     -flip_forces 0\
     -number_of_bins 150\
-    -f_one_half e-12\
+    -f_one_half 14e-12\
     -fraction_velocity_fit 0.1\
     -file_input "${input_file}"\
     -file_output "${output_file}" || { echo "===IWT run failed===" ; exit; }
