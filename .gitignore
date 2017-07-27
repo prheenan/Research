@@ -6,6 +6,9 @@
 *.md*
 *.nb
 *~
+/Personal/EventDetection/OtherMethods/*
+*cache*
+*scratch*
 *.pse
 *.pdb
 *.pqr
