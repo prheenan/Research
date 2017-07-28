@@ -156,7 +156,7 @@ def analyze(example,out_dir):
         PlotUtilities.savefig(fig,"{:s}_hist_{:d}.png".format(out_dir,i))   
     # get a specific one for the equilibrium measurements 
     bins = 40
-    for idx_eq in range(5,24):
+    for idx_eq in range(0,24):
         slice_eq = slices[idx_eq]
         inf = deconvolution(slice_eq,coeffs,bins=bins)
         # POST: deconvolution worked
