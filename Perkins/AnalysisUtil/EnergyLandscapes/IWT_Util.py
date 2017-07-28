@@ -213,7 +213,7 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
     """
     if (slice_func is None):
         slice_func = lambda o,s: \
-                FEC_Util.MakeTimeSepForceFromSlice(d,slice_unfolding)
+                FEC_Util.MakeTimeSepForceFromSlice(o,s)
     if (f_split is not None):
         unfold_start_idx,idx_end_of_unfolding,idx_end_of_folding = f_split(d)
     if (unfold_start_idx is None):
