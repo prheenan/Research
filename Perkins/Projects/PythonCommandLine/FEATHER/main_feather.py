@@ -50,10 +50,6 @@ def parse_and_run():
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
-    parser.add_argument('-debug_flag',metavar="debug_flag",type=bool,
-                        help=("if 1, then a debugging plot is made in the " + \
-                              "script directory. This is slower."),
-                        required=False,default=0)
     # parse all the inputs
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
@@ -71,8 +67,6 @@ def parse_and_run():
     np.savetxt(fname=out_file,delimiter=",",newline="\n",fmt="%d",
                header="(C) PRH 2017\nEvent Indices",
                X=event_indices)
-    if (args.debug):
-        # XXX plot out using all the debugging information. 
     return event_indices
 
 def run():
