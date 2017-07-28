@@ -74,12 +74,13 @@ def parse_and_run():
                                       number_of_pairs=number_of_pairs,
                                       flip_forces=flip_forces,
                                       fraction_for_vel=fraction_for_vel)
+    # if the velocity was there, use it.
     velocity = args.velocity
-    if (velocity > 0):
+    if ( (velocity is not None) and velocity > 0):
         for un,re in zip(unfold,refold):
             # keep the offsets, reset the velocites
-            un.SetVelocityAndOffset(un.Offset,velocity)
-            re.SetVelocityAndOffset(re.Offset,velocity * -1)
+            un.SetOffsetAndVelocity(un.Offset,velocity)
+            re.SetOffsetAndVelocity(re.Offset,velocity * -1)
     # POST: have the unfolding and refolding objects, get the energy landscape
     num_bins = args.number_of_bins
     LandscapeObj =  InverseWeierstrass.\
