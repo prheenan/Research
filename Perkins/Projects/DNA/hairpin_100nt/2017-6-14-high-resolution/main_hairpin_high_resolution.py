@@ -43,10 +43,11 @@ def make_energy_landscape_plots(out_dir,energy_landscape_unfolding):
     PlotUtilities.xlabel("Separation (nm)")
     PlotUtilities.savefig(fig,out_dir + "free_landscape.png")
     # plot the tileted landscape 
-    f_one_half_N_arr = np.array([1,2,5,7,8.5,10,12])*1e-12        
+    f_one_half_N_arr = np.array([7,8.5,10,12,13,15])*1e-12        
     for i,tilt_N in enumerate(f_one_half_N_arr):
         fig = PlotUtilities.figure()    
-        IWT_Plot.plot_tilted_landscape(landscape_zeroed,f_one_half_N=tilt_N)
+        IWT_Plot.plot_tilted_landscape(landscape_zeroed,f_one_half_N=tilt_N,
+                                       extension_zero_m=30e-9)
         PlotUtilities.xlabel("Separation (nm)")    
         save_name = "{:s}free_landscape_tilted_{:d}_{:.2g}.png".\
                     format(out_dir,i,tilt_N*1e12)
@@ -211,8 +212,8 @@ def run():
     refolding_experiments = \
         [get_unfolding_and_refolding_slice(r) for r in split_fecs]
     # get the extension maximum and minimum bounds. 
-    ext_min_m = max([min(r.Separation) for r in refolding_experiments])
-    ext_max_m = min([max(r.Separation) for r in refolding_experiments])
+    ext_min_m = 30e-9
+    ext_max_m = 55e-9
     # slice the refolding experiments 
     sliced_refolds = [FEC_Util.slice_by_separation(s,ext_min_m,ext_max_m)
                       for s in refolding_experiments]                      
@@ -232,11 +233,30 @@ def run():
     final_unfolding_iwt = \
         [IWT_Util.convert_to_iwt(r,frac_vel=0.2) for r in final_rupture_only]
     # get the iwt tx 
-    n_bins = 150
+    n_bins = 50
     energy_landscape_unfolding = CheckpointUtilities.\
         getCheckpoint("./landscape.pkl",
                       InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
                       final_unfolding_iwt,NumBins=n_bins)
+    # make a heat map of all retracts 
+    fig = PlotUtilities.figure()
+    FEC_Plot.heat_map_fec([r.retract for r in good_splits])
+    PlotUtilities.title("FEC Heat map, aligned by L0, N={:d}".\
+                        format(len(good_splits)))
+    PlotUtilities.savefig(fig,out_dir + "heat.png")    
+    # make a heat map of just the region for the unfolding iwt 
+    fig = PlotUtilities.figure()
+    FEC_Plot.heat_map_fec(final_rupture_only)
+    PlotUtilities.title("FEC Final unfolding heat map, aligned by L0, N={:d}".\
+                        format(len(good_splits)))
+    PlotUtilities.savefig(fig,out_dir + "heat_unfolding.png")                           
+    # make a heat map of the unfolding and refolding  experiment data 
+    fig = PlotUtilities.figure(figsize=(4,7))
+    plt.subplot(2,1,1)
+    FEC_Plot.heat_map_fec(unfolding_objs)
+    plt.subplot(2,1,2)
+    FEC_Plot.heat_map_fec(refolding_objs)
+    PlotUtilities.savefig(fig,out_dir + "heat_refolding.png")         
     # get the refolding one                      
     energy_landscape_bidirectional_folding = CheckpointUtilities.\
         getCheckpoint("./landscape_bidirectional.pkl",
@@ -261,24 +281,6 @@ def run():
                                 energy_landscape_bidirectional_only_unfolding)  
     make_energy_landscape_plots(out_dir +"bi_only_refold",
                                 energy_landscape_bidirectional_only_refolding)                                    
-    # make a heat map of all retracts 
-    fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec([r.retract for r in good_splits])
-    PlotUtilities.title("FEC Heat map, aligned by L0, N={:d}".format(len(good_splits)))
-    PlotUtilities.savefig(fig,out_dir + "heat.png")    
-    # make a heat map of just the region for the unfolding iwt 
-    fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(final_rupture_only)
-    PlotUtilities.title("FEC Final unfolding heat map, aligned by L0, N={:d}".\
-                        format(len(good_splits)))
-    PlotUtilities.savefig(fig,out_dir + "heat_unfolding.png")                           
-    # make a heat map of the unfolding and refolding  experiment data 
-    fig = PlotUtilities.figure(figsize=(4,7))
-    plt.subplot(2,1,1)
-    FEC_Plot.heat_map_fec(unfolding_objs)
-    plt.subplot(2,1,2)
-    FEC_Plot.heat_map_fec(refolding_objs)
-    PlotUtilities.savefig(fig,out_dir + "heat_refolding.png") 
     # plot each unfolding/refolding pair, along with their velocities...
     kw_unfold = dict(style_data=dict(color='b',alpha=0.3))
     kw_fold = dict(style_data=dict(color='r',alpha=0.3))
@@ -303,9 +305,9 @@ def run():
         PlotUtilities.lazyLabel("","Separation","")        
         PlotUtilities.no_x_label()
         plt.ylim(ylim)        
-        sep_unfold = to_x(un.ZFunc())
+        sep_unfold = to_x(un.ZFunc(un))
         plt.plot(un.Time,sep_unfold,color='k',linestyle='--')        
-        plt.plot(re.Time,to_x(re.ZFunc()),label="Schedule",
+        plt.plot(re.Time,to_x(re.ZFunc(re)),label="Schedule",
                  color='k',linestyle=':')
         plt.ylim(ylim)
         PlotUtilities.lazyLabel("Time","Separation","")

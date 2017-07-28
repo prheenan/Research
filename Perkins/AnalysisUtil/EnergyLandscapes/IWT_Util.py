@@ -234,17 +234,11 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
         IwtData = ToIWTObject(unfold_tmp)
         IwtData_fold = ToIWTObject(fold_tmp)
     except AttributeError as e:
-<<<<<<< HEAD
-        # Rob messes with the notes
-        IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None)
-        IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None)
-=======
         # Rob messes with the notes; he also gives the velocities
         IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None,
                                        fraction_for_vel=fraction_for_vel)
         IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None,
                                             fraction_for_vel=fraction_for_vel)
->>>>>>> c0bcac87e7a9f0731416c4b03322d0c55bebe627
     # switch the velocities of all ToIWTObject folding objects..
     # set the velocity and Z functions
     set_separation_velocity_by_first_frac(IwtData,fraction_for_vel)
