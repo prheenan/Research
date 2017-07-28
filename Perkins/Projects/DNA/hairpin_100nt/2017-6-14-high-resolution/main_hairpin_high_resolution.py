@@ -303,9 +303,9 @@ def run():
         PlotUtilities.lazyLabel("","Separation","")        
         PlotUtilities.no_x_label()
         plt.ylim(ylim)        
-        sep_unfold = to_x(un.ZFunc(un))
+        sep_unfold = to_x(un.ZFunc())
         plt.plot(un.Time,sep_unfold,color='k',linestyle='--')        
-        plt.plot(re.Time,to_x(re.ZFunc(re)),label="Schedule",
+        plt.plot(re.Time,to_x(re.ZFunc()),label="Schedule",
                  color='k',linestyle=':')
         plt.ylim(ylim)
         PlotUtilities.lazyLabel("Time","Separation","")

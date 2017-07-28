@@ -281,8 +281,11 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
                                GetSlice(Obj.Force),
                                copy.deepcopy(Obj.Meta))
     # copy the events over...
-    if (Obj.has_events):
-        ToRet.Events = Obj.Events
+    try:
+        if (Obj.has_events):
+            ToRet.Events = Obj.Events
+    except:
+        pass
     return ToRet
 
 

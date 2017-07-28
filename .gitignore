@@ -1,9 +1,14 @@
 *.i
+*.gbk
+*.xlsx
 *.hg/*
 *.mat
 *.md*
 *.nb
 *~
+/Personal/EventDetection/OtherMethods/*
+*cache*
+*scratch*
 *.pse
 *.pdb
 *.pqr
