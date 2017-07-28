@@ -38,25 +38,41 @@ def spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred):
     plt.plot(mean_safe_ext,pred,'b--')
     PlotUtilities.lazyLabel("Extension (nm)","Standard Deviation (nm), PSF","")    
 def histogram_plot(s):
-    sep = s.Separation
-    plt.subplot(1,2,1)
-    plt.plot(s.Time,sep)
-    plt.subplot(1,2,2)
-    plt.hist(sep,orientation='horizontal')
+    sep = s.Separation * 1e9
+    force_to_plot = s.Force*1e12    
+    plt.subplot(2,2,1)
+    plt.plot(s.Time,sep,color='g',linewidth=0.2)
+    PlotUtilities.lazyLabel("","Separation (nm)","")        
+    plt.subplot(2,2,2)
+    plt.hist(sep,orientation='horizontal',color='g')
     mean,stdev = np.mean(sep),np.std(sep)
     plt.axhline(mean-stdev)
-    plt.axhline(mean+stdev,label=r"$\sigma$" + "={:.2g}".format(stdev))
-    PlotUtilities.lazyLabel("Count","Extension (nm)","")        
+    plt.axhline(mean+stdev,label=r"$\sigma$=" + "{:.2g}nm".format(stdev))
+    PlotUtilities.lazyLabel("","Count","")            
+    plt.subplot(2,2,3)
+    plt.plot(s.Time,force_to_plot,color='r',linewidth=0.25)
+    PlotUtilities.lazyLabel("Time (S)","Force (pN)","")            
+    plt.subplot(2,2,4)
+    plt.hist(force_to_plot,orientation='horizontal',color='r')
+    mean,stdev = np.mean(force_to_plot),np.std(force_to_plot)
+    plt.axhline(mean-stdev)
+    plt.axhline(mean+stdev,label=r"$\sigma$=" + "{:.2g}pN".format(stdev))
+    PlotUtilities.lazyLabel("Count","","")          
 
-def probability_plot(inf):
-    plt.subplot(2,1,1)
+def probability_plot(inf,slice_eq):
+    plt.subplot(3,1,1)
     plt.plot(inf.ext_bins,inf.p_k)
-    plt.plot(inf.ext_bins,inf.P_q,'rp')
+    plt.plot(inf.ext_bins,inf.P_q,'r-')
     plt.plot(inf.ext_interp,inf.p_k_interp,linestyle='--')
     PlotUtilities.lazyLabel("","PDF","")    
-    plt.subplot(2,1,2)
+    plt.subplot(3,1,2)
     plt.plot(inf.ext_bins,inf.free_energy_kT)
     plt.plot(inf.ext_bins,inf.convolved_free_energy_kT)
+    PlotUtilities.lazyLabel(r"Extension ($\AA$)","Energy at <F>","")        
+    plt.subplot(3,1,3)
+    bins_relative = inf.ext_bins + min(inf.ext_bins)
+    tilt_energy  = (np.mean(slice_eq.Force) * bins_relative)/4.1e-21
+    plt.plot(inf.ext_bins,inf.free_energy_kT-tilt_energy)
     PlotUtilities.lazyLabel(r"Extension ($\AA$)","Free energy","")    
 
 def deconvolution_plot(retract,slice_eq,slices,inf,
@@ -155,7 +171,7 @@ def analyze(example,out_dir):
         histogram_plot(s)
         PlotUtilities.savefig(fig,"{:s}_hist_{:d}.png".format(out_dir,i))   
     # get a specific one for the equilibrium measurements 
-    bins = 40
+    bins = 100
     for idx_eq in range(0,24):
         slice_eq = slices[idx_eq]
         inf = deconvolution(slice_eq,coeffs,bins=bins)
@@ -163,7 +179,7 @@ def analyze(example,out_dir):
         # reinterpolate p_k_interp back onto the original grid 
         prob_savename = "{:s}probability{:d}.png".format(out_dir,idx_eq)
         fig = PlotUtilities.figure(figsize=(4,8))
-        probability_plot(inf)
+        probability_plot(inf,slice_eq)
         PlotUtilities.savefig(fig,prob_savename)
         # make the deconvolution plot
         deconv_name = "{:s}deconvolution{:d}.png".format(out_dir,idx_eq)
@@ -171,6 +187,7 @@ def analyze(example,out_dir):
         deconvolution_plot(retract,slice_eq,slices,inf,
                            NFilterPoints,bins)
         PlotUtilities.savefig(fig,deconv_name)
+        CheckpointUtilities.lazy_save(prob_savename +".pkl",inf)
         
 def run():
     """
