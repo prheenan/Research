@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,cProfile,os
+import sys,cProfile,os,copy
 
 sys.path.append("../../../../../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
@@ -34,19 +34,23 @@ def hairpin_plots(example,filter_fraction,out_path):
     PlotUtilities.savefig(fig,out_path + "vs_sep.png")
 
 def make_energy_landscape_plots(out_dir,energy_landscape_unfolding):
-    f_one_half_N_arr = np.array([1,2,5,7,8.5,10,12])*1e-12    
     limits_kT = [-2,15]
+    landscape_zeroed = copy.deepcopy(energy_landscape_unfolding)
+    landscape_zeroed.Extensions -= min(landscape_zeroed.Extensions)
     # plot the iwt transform as just a free landscape                      
     fig = PlotUtilities.figure()
-    IWT_Plot.plot_free_landscape(energy_landscape_unfolding)
+    IWT_Plot.plot_free_landscape(landscape_zeroed)
     PlotUtilities.xlabel("Separation (nm)")
     PlotUtilities.savefig(fig,out_dir + "free_landscape.png")
     # plot the tileted landscape 
-    tilt_N = 12e-12
-    fig = PlotUtilities.figure()    
-    IWT_Plot.plot_tilted_landscape(energy_landscape_unfolding,f_one_half_N=tilt_N)
-    PlotUtilities.xlabel("Separation (nm)")    
-    PlotUtilities.savefig(fig,out_dir + "tilted_landscape.png")
+    f_one_half_N_arr = np.array([1,2,5,7,8.5,10,12])*1e-12        
+    for i,tilt_N in enumerate(f_one_half_N_arr):
+        fig = PlotUtilities.figure()    
+        IWT_Plot.plot_tilted_landscape(landscape_zeroed,f_one_half_N=tilt_N)
+        PlotUtilities.xlabel("Separation (nm)")    
+        save_name = "{:s}free_landscape_tilted_{:d}_{:.2g}.png".\
+                    format(out_dir,i,tilt_N*1e12)
+        PlotUtilities.savefig(fig,save_name)
     
     
 def fit_polymer_model(example):
@@ -60,7 +64,7 @@ def fit_polymer_model(example):
     """
     wlc_params = dict(K0=2000e-12,kbT=4.1e-21)
     ranges = [(10e-9,90e-9),(0.1e-9,1e-9)]
-    fit_dict = dict(brute_dict=dict(Ns=30,ranges=ranges),
+    fit_dict = dict(brute_dict=dict(Ns=10,ranges=ranges),
                     **wlc_params)
     x_raw,y_raw = example.Separation,example.Force
     x0,model_x,model_y = FJC.fit_fjc_contour(x_raw,y_raw,**fit_dict)        
@@ -91,7 +95,6 @@ def get_polymer_coefficients(split_fecs,working_distance_nm):
         # POST: at least one thing to fit 
         fit_slice = slice(idx[-1],max_fit_idx,1)
         retract_fit = FEC_Util.MakeTimeSepForceFromSlice(retract,fit_slice)
-        plt.plot(retract_fit.Separation,retract_fit.Force)
         x0 = fit_polymer_model(retract_fit)
         # offset the retract by the contour length (first paramter)
         coeffs.append(x0)
@@ -134,7 +137,7 @@ def get_unfolding_slice_only(split_fec):
                                                         slice_unfolding_only)
     return unfolding_only
     
-def get_unfolding_and_refolding_slices(split_fec,g_fraction_for_vel=0.2):
+def get_unfolding_and_refolding_slice(split_fec):
     """
     Given a split_fec with a single unnfolding/folding curve, returns the 
     approach and retract points, trying to keep the minimum and maximum seps
@@ -143,11 +146,9 @@ def get_unfolding_and_refolding_slices(split_fec,g_fraction_for_vel=0.2):
     Args:
         split_fec: the split force extension curve to use; retract should
         *include* the indenter region and "Indexes" meta properly set 
-        
-        g_fraction_for_vel: the fraction of the approach or retract portion
-        to determine the velocity.
+
     Returns:
-        approach/retarct tuple
+        just the single approach retract 
     """
     relative_unfolding_start_idx = \
         relative_idx_start_of_final_retract(split_fec)
@@ -156,11 +157,7 @@ def get_unfolding_and_refolding_slices(split_fec,g_fraction_for_vel=0.2):
     # get the region up until the start of the final retract 
     slice_to_use = FEC_Util.\
         MakeTimeSepForceFromSlice(retr,slice_refolding_experiment)
-    appr_iwt,retr_iwt = \
-        IWT_Util.split_into_iwt_objects(slice_to_use,
-                                        fraction_for_vel=g_fraction_for_vel,
-                                        f_split=IWT_Util.split_by_max_sep)
-    return appr_iwt,retr_iwt
+    return slice_to_use
     
         
 def run():
@@ -176,7 +173,7 @@ def run():
     abs_dir = "./"
     cache_dir = "./cache/"
     out_dir = "./out/"
-    force_iwt = False 
+    force_iwt = True 
     GenUtilities.ensureDirExists(cache_dir)
     GenUtilities.ensureDirExists(out_dir)    
     examples = FEC_Util.\
@@ -187,9 +184,6 @@ def run():
     # (2) get regions for WLC fit
     # (3) fit WLC to regions
     # (4) Invert WLC, determine dsDNA and ssDNA contour lengths at each force 
-    region_fit_final = [8.1,8.9]
-    region_fit_gc_rich = [7.6,7.8]
-    region_fit_gc_poor = [7.37,7.49]
     # split the fecs...
     split_fecs = []
     for i,ex in enumerate(examples):
@@ -214,10 +208,22 @@ def run():
     # for a simple IWT, only look at until the unfolding region
     unfolding_retracts = [get_unfolding_slice_only(split_fec) 
                           for e in good_splits]
-    unfolding_and_refolding_objects = \
-        [get_unfolding_and_refolding_slices(r) for r in split_fecs]
-    unfolding_objs = [u[0] for u in unfolding_and_refolding_objects]
-    refolding_objs = [u[1] for u in unfolding_and_refolding_objects]   
+    refolding_experiments = \
+        [get_unfolding_and_refolding_slice(r) for r in split_fecs]
+    # get the extension maximum and minimum bounds. 
+    ext_min_m = max([min(r.Separation) for r in refolding_experiments])
+    ext_max_m = min([max(r.Separation) for r in refolding_experiments])
+    # slice the refolding experiments 
+    sliced_refolds = [FEC_Util.slice_by_separation(s,ext_min_m,ext_max_m)
+                      for s in refolding_experiments]                      
+    # split the refolding experiments into iwt       
+    iwt_refolds = [ \
+        IWT_Util.split_into_iwt_objects(s,
+                                        fraction_for_vel=0.1,
+                                        f_split=IWT_Util.split_by_max_sep)
+        for s in  sliced_refolds]                                                                   
+    unfolding_objs = [u[0] for u in iwt_refolds]
+    refolding_objs = [u[1] for u in iwt_refolds]   
     # slice to just the first L0 (before the final rupture)
     max_meters = arbitrary_offset
     final_rupture_only = [FEC_Util.slice_by_separation(u,-np.inf,max_meters) 
@@ -226,7 +232,7 @@ def run():
     final_unfolding_iwt = \
         [IWT_Util.convert_to_iwt(r,frac_vel=0.2) for r in final_rupture_only]
     # get the iwt tx 
-    n_bins = 500
+    n_bins = 150
     energy_landscape_unfolding = CheckpointUtilities.\
         getCheckpoint("./landscape.pkl",
                       InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
@@ -297,9 +303,9 @@ def run():
         PlotUtilities.lazyLabel("","Separation","")        
         PlotUtilities.no_x_label()
         plt.ylim(ylim)        
-        sep_unfold = to_x(un.ZFuncSimple())
+        sep_unfold = to_x(un.ZFunc(un))
         plt.plot(un.Time,sep_unfold,color='k',linestyle='--')        
-        plt.plot(re.Time,to_x(re.ZFuncSimple()),label="Schedule",
+        plt.plot(re.Time,to_x(re.ZFunc(re)),label="Schedule",
                  color='k',linestyle=':')
         plt.ylim(ylim)
         PlotUtilities.lazyLabel("Time","Separation","")

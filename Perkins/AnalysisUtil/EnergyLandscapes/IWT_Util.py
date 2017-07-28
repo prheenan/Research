@@ -389,7 +389,7 @@ def split_into_iwt_objects(d,idx_end_of_unfolding=None,idx_end_of_folding=None,
     try:
         IwtData = ToIWTObject(unfold_tmp)
         IwtData_fold = ToIWTObject(fold_tmp)
-    except AttributeError:
+    except AttributeError as e:
         # Rob messes with the notes
         IwtData = RobTimeSepForceToIWT(unfold_tmp,ZFunc=None)
         IwtData_fold = RobTimeSepForceToIWT(fold_tmp,ZFunc=None)
