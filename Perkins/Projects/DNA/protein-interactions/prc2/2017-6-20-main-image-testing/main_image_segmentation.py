@@ -45,7 +45,7 @@ def run():
     GenUtilities.ensureDirExists(out_dir)    
     images = ImageUtil.cache_images_in_directory(base_dir,cache_dir)
     for i in images:
-        plt.imshow(i.height)
+        plt.imshow(i.height,cmap=plt.cm.Greys)
         plt.savefig(out_dir + i.SourceFilename() + i.Name() +".tiff")
 
 
