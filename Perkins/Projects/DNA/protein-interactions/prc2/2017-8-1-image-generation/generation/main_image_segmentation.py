@@ -9,7 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys,matplotlib
 
-sys.path.append("../../../../../../../")
+sys.path.append("../../../../../../../../")
 
 from Research.Perkins.AnalysisUtil.Images import ImageUtil
 from IgorUtil.PythonAdapter import PxpLoader
