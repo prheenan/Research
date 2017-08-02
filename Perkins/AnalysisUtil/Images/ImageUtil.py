@@ -5,6 +5,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
+from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
+from GeneralUtil.python import GenUtilities
+
+def read_images_in_pxp_dir(dir,**kwargs):
+    """
+    Returns: all SurfaceImage objects from all pxps in dir
+    """
+    pxps_in_dir = GenUtilities.getAllFiles(dir,ext=".pxp")
+    return [image
+            for pxp_file in pxps_in_dir 
+            for image in PxpLoader.ReadImages(pxp_file,**kwargs)]
+    
+
+def cache_images_in_directory(pxp_dir,cache_dir,**kwargs):
+    """
+    conveniewnce wrapper. See FEC_Util. cache_individual_waves_in_directory, 
+    except for images 
+    """
+    load_func = read_images_in_pxp_dir
+    to_ret = FEC_Util.cache_individual_waves_in_directory(pxp_dir,cache_dir,
+                                                          load_func=load_func,
+                                                          **kwargs)
+    return to_ret                                                  
+    
+
 
 def PlotImage(Image,height_to_plot=None,fix_extent=False,aspect='auto',
               cmap=plt.cm.Greys,range_plot=None,ax=None,**kwargs):
@@ -58,7 +84,7 @@ def PlotImageDistribution(Image,pct=95,bins=100,PlotLines=True,AddSigmas=True,
     height_nm_rel_encompassing_pct = np.percentile(height_nm_relative,pct)
     if (PlotLines):
         min_height = np.min(height_nm_relative.ravel())
-I        max_height = np.max(height_nm_relative.ravel())
+        max_height = np.max(height_nm_relative.ravel())
         limits = np.linspace(start=min_height,stop=max_height,num=bins.size)
         # fit symmetrically to between pct_min% and (100-pct_min)%
         pct_min = 5
