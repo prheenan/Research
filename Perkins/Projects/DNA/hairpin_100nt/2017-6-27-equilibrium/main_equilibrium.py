@@ -31,25 +31,48 @@ class deconvolution_info:
         self.p_k = griddata(points=ext_interp,values=p_k_interp,xi=ext_bins)
         self.p_k /= np.trapz(y=self.p_k,x=self.ext_bins)
         self.free_energy_kT = -np.log(self.p_k)
+        self.convolved_free_energy_kT = -np.log(self.P_q)
 
 def spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred):
-    for i,s in enumerate(slices_safe):
-        sep = s.Separation
-        mean,std = mean_safe_ext[i],std_safe_ext[i]
-        n,_,_ = plt.hist(sep,normed=True)
-        plt.axvline(mean-std)
-        plt.axvline(mean+std)
-    plt.plot(mean_safe_ext,pred,color='r',linewidth=2)      
+    plt.plot(mean_safe_ext,std_safe_ext,'ro-',linewidth=2)      
+    plt.plot(mean_safe_ext,pred,'b--')
     PlotUtilities.lazyLabel("Extension (nm)","Standard Deviation (nm), PSF","")    
+def histogram_plot(s):
+    sep = s.Separation * 1e9
+    force_to_plot = s.Force*1e12    
+    plt.subplot(2,2,1)
+    plt.plot(s.Time,sep,color='g',linewidth=0.2)
+    PlotUtilities.lazyLabel("","Separation (nm)","")        
+    plt.subplot(2,2,2)
+    plt.hist(sep,orientation='horizontal',color='g')
+    mean,stdev = np.mean(sep),np.std(sep)
+    plt.axhline(mean-stdev)
+    plt.axhline(mean+stdev,label=r"$\sigma$=" + "{:.2g}nm".format(stdev))
+    PlotUtilities.lazyLabel("","Count","")            
+    plt.subplot(2,2,3)
+    plt.plot(s.Time,force_to_plot,color='r',linewidth=0.25)
+    PlotUtilities.lazyLabel("Time (S)","Force (pN)","")            
+    plt.subplot(2,2,4)
+    plt.hist(force_to_plot,orientation='horizontal',color='r')
+    mean,stdev = np.mean(force_to_plot),np.std(force_to_plot)
+    plt.axhline(mean-stdev)
+    plt.axhline(mean+stdev,label=r"$\sigma$=" + "{:.2g}pN".format(stdev))
+    PlotUtilities.lazyLabel("Count","","")          
 
-def probability_plot(inf):
-    plt.subplot(2,1,1)
+def probability_plot(inf,slice_eq):
+    plt.subplot(3,1,1)
     plt.plot(inf.ext_bins,inf.p_k)
-    plt.plot(inf.ext_bins,inf.P_q,'rp')
+    plt.plot(inf.ext_bins,inf.P_q,'r-')
     plt.plot(inf.ext_interp,inf.p_k_interp,linestyle='--')
     PlotUtilities.lazyLabel("","PDF","")    
-    plt.subplot(2,1,2)
+    plt.subplot(3,1,2)
     plt.plot(inf.ext_bins,inf.free_energy_kT)
+    plt.plot(inf.ext_bins,inf.convolved_free_energy_kT)
+    PlotUtilities.lazyLabel(r"Extension ($\AA$)","Energy at <F>","")        
+    plt.subplot(3,1,3)
+    bins_relative = inf.ext_bins + min(inf.ext_bins)
+    tilt_energy  = (np.mean(slice_eq.Force) * bins_relative)/4.1e-21
+    plt.plot(inf.ext_bins,inf.free_energy_kT-tilt_energy)
     PlotUtilities.lazyLabel(r"Extension ($\AA$)","Free energy","")    
 
 def deconvolution_plot(retract,slice_eq,slices,inf,
@@ -86,6 +109,7 @@ def deconvolution(slice_eq,coeffs,bins):
     ext_bins,P_q = InverseBoltzmannUtil.\
         get_extension_bins_and_distribution(ext_eq,bins=bins)  
     mean_ext_eq = np.mean(ext_eq)            
+    # XXX rough estimate for stdev
     gaussian_stdev=np.polyval(coeffs,mean_ext_eq)
     # do the actual deconvolution 
     args = InverseBoltzmannUtil.extension_deconvolution(gaussian_stdev,
@@ -102,15 +126,19 @@ def get_slices(retract,NFilterPoints):
     fudge = 0.01
     delta_2 = 2
     offset_2 = 4.259
-    n_2 = 20
+    n_2 = 19
     fudge_2 = 0.1    
     delta_3 = 0.5
-    offset_3 = 42.3
-    time_slices = [ [offset_1 + delta_1 * i,offset_1 + delta_1 * (i+1)-fudge]
+    offset_3 = 42.27
+    fudge_3 = 0.1
+    time_slices = [ [offset_1 + (delta_1) * i + fudge,
+                     offset_1 + (delta_1) * (i+1)]
                     for i in range(n_1)] + \
-                  [ [offset_2 + delta_2 * i,offset_2 + delta_2 * (i+1)-fudge_2]
+                  [ [offset_2 + (delta_2) * i + fudge,
+                    offset_2 + delta_2 * (i+1)]
                     for i in range(n_2)] + \
-                  [ [offset_3 + delta_3 * i,offset_3 + delta_3 * (i+1)-fudge]
+                  [ [offset_3 + (delta_3)* i,
+                    offset_3 + delta_3 * (i+1)-fudge]
                     for i in range(4)]
     slices = [FEC_Util.slice_by_time(retract,*t)
                for t in time_slices]  
@@ -138,16 +166,20 @@ def analyze(example,out_dir):
     fig = PlotUtilities.figure()
     spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred)
     PlotUtilities.savefig(fig,"{:s}spring.png".format(out_dir))
+    for i,s in enumerate(slices):
+        fig = PlotUtilities.figure()
+        histogram_plot(s)
+        PlotUtilities.savefig(fig,"{:s}_hist_{:d}.png".format(out_dir,i))   
     # get a specific one for the equilibrium measurements 
-    bins = 30
-    for idx_eq in range(5,24):
+    bins = 100
+    for idx_eq in range(0,24):
         slice_eq = slices[idx_eq]
         inf = deconvolution(slice_eq,coeffs,bins=bins)
         # POST: deconvolution worked
         # reinterpolate p_k_interp back onto the original grid 
         prob_savename = "{:s}probability{:d}.png".format(out_dir,idx_eq)
         fig = PlotUtilities.figure(figsize=(4,8))
-        probability_plot(inf)
+        probability_plot(inf,slice_eq)
         PlotUtilities.savefig(fig,prob_savename)
         # make the deconvolution plot
         deconv_name = "{:s}deconvolution{:d}.png".format(out_dir,idx_eq)
@@ -155,6 +187,7 @@ def analyze(example,out_dir):
         deconvolution_plot(retract,slice_eq,slices,inf,
                            NFilterPoints,bins)
         PlotUtilities.savefig(fig,deconv_name)
+        CheckpointUtilities.lazy_save(prob_savename +".pkl",inf)
         
 def run():
     """
