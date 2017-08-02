@@ -81,7 +81,7 @@ def run():
         dna_desired_pmol/(Volume_total_inc)
     # base the PRC2 on it
     Desired_prc2 = dna_imaging_stock_conc_nM/1000 * \
-                   np.array([40,10,4,2,1,1/2,1/4])
+                   np.array([50,4,2,1/5])
     num_extra = 1
     # desired volumes (for each)
     Volumes = [Volume_total_inc/ratio_prc2_dilution 
@@ -117,22 +117,6 @@ def run():
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
                                   ConcString=ConcString,
                                   BufferString="NiCl2+ Buf")
-    print("Imaging buffer recreation...")
-    Stats = [ ["Ni2+","mM",50,3,0],
-              ["Tris-HCl","mM",100,10,0],
-              ["KCl","mM",1000,25,0],
-              ["ZnCl2","mM",2.5,0.1,0]]
-    Volume = 250
-    vol_units = "mL"
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
-                                    BufferName="DI H20")
-    print("Pretreatment buffer creation")
-    Stats = [ ["Ni2+","mM",50,3,0],
-              ["Tris-HCl","mM",100,10,0]]
-    Volume = 50
-    vol_units = "mL"
-    DilutionUtil.PrintSolutionSteps(Stats,Volume,vol_units,
-                                    BufferName="DI H20")
 
 if __name__ == "__main__":
     run()

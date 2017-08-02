@@ -21,6 +21,7 @@ import argparse
 def write_and_close(string):
     raise RuntimeError(string)
 
+
 def parse_and_run():
     parser = argparse.ArgumentParser(description='IWT of a .pxp ')
     common = dict(required=True)

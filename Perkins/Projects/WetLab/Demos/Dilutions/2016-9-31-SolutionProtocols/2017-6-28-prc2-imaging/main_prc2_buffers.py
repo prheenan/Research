@@ -20,6 +20,13 @@ def run():
               ["ZnCl2","mM",2.5,0.2,0]]
     DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
                                     BufferName="DI H20")
+    print("120mM MgCl2, 1x")
+    Stats = [ ["Tris-HCl","mM",1000,10,0],
+              ["KCl","mM",2500,25,0],
+              ["ZnCl2","mM",2.5,0.1,0],
+              ["MgCl2","mM",1000,120,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
+                                    BufferName="DI H20")
     print("Pre-treatment dilution")
     Stats = [ ["NiCl2","mM",50,10,0]]
     DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
@@ -27,12 +34,12 @@ def run():
     # roughly speaking, these are (very high, should be able to image in liquid,
     # shouldnt be able to image in liquid), corresponding to...
     # (Pastre, 2003), ns2~0.972, ns2~0.962, ns2~0.953
-    MgCl2_concentrations_mM = [120,64,40]
-    max_conc = max(MgCl2_concentrations_mM)
+    MgCl2_concentrations_mM = [30,10,5]
+    max_conc = 120
     Stats = [ ["2x PRC2 buffer","x",2,1,0],
               ["MgCl2","mM",1000,max(MgCl2_concentrations_mM),0]]
     print("==== MgCl2 Stock ====")
-    DilutionUtil.PrintSolutionSteps(Stats,75,"mL",
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
                                     BufferName="DI H20")
     # serially dilute to what we need..
     DilutionUtil.PrintSerialSteps(Stock=max_conc,Volumes=20,
@@ -40,10 +47,10 @@ def run():
                                   ConcString="mM MgCl2",VolString="mL",
                                   BufferString="1x Buffer")
     # try again with NiCl2 if we dont have any luck?
-    NiCl2_concentrations_mM = [1,0.02,0.01,5e-3]
+    NiCl2_concentrations_mM = [1,0.3,0.1]
     print("==== NiCl2 Stock ====")
     # serially dilute to what we need..
-    DilutionUtil.PrintSerialSteps(Stock=10,Volumes=30,
+    DilutionUtil.PrintSerialSteps(Stock=25,Volumes=30,
                                   Desired=NiCl2_concentrations_mM,
                                   ConcString="mM NiCl2",VolString="mL",
                                   BufferString="1x Buffer")
