@@ -13,7 +13,7 @@ sys.path.append('../../../../../')
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass
+    InverseWeierstrass,WeierstrassUtil
 from GeneralUtil.python import GenUtilities
 from IgorUtil.PythonAdapter import PxpLoader
 import argparse
@@ -67,23 +67,13 @@ def parse_and_run():
         write_and_close("Need exactly one Force/Separation".\
                         format(in_file))
     # POST: have just one. Go ahead and break it up
-    fraction_for_vel = args.fraction_velocity_fit    
-    Data= RawData[0]
-    unfold,refold = IWT_Util.\
-        get_unfold_and_refold_objects(Data,
-                                      number_of_pairs=number_of_pairs,
-                                      flip_forces=flip_forces,
-                                      fraction_for_vel=fraction_for_vel)
-    velocity = args.velocity
-    if (velocity > 0):
-        for un,re in zip(unfold,refold):
-            # keep the offsets, reset the velocites
-            un.SetVelocityAndOffset(un.Offset,velocity)
-            re.SetVelocityAndOffset(re.Offset,velocity * -1)
-    # POST: have the unfolding and refolding objects, get the energy landscape
-    num_bins = args.number_of_bins
-    LandscapeObj =  InverseWeierstrass.\
-        FreeEnergyAtZeroForce(unfold,NumBins=num_bins,RefoldingObjs=refold)
+    iwt_kwargs = dict(number_of_pairs=args.number_of_pairs,
+                      number_of_bins=args.number_of_bins,
+                      fraction_for_vel=args.fraction_velocity_fit,
+                      velocity=args.velocity,
+                      flip_forces=args.flip_forces)
+    LandscapeObj = WeierstrassUtil.iwt_ramping_experiment(RawData[0],
+                                                          **iwt_kwargs)
     # get the distance to the transition state etc
     all_landscape = [-np.inf,np.inf]    
     Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half)

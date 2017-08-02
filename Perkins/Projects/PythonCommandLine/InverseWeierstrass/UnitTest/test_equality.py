@@ -25,6 +25,12 @@ def run():
     f2 = sys.argv[2]
     arr1 = np.loadtxt(f1,delimiter=",",skiprows=2)
     arr2 = np.loadtxt(f2,delimiter=",",skiprows=2)
+    plt.plot(arr1[:,0]*1e9,arr1[:,1]/4.1e-21,'r--',label=r"$\Delta G^0$, debugged")
+    plt.plot(arr2[:,0]*1e9,arr2[:,1]/4.1e-21,label=r"$\Delta G^0$, previous")
+    plt.xlabel("Extension (nm)")
+    plt.ylabel("Delta G (kT)")
+    plt.legend()
+    plt.show()
     tol = 1e-6
     np.testing.assert_allclose(arr1,arr2,rtol=tol,atol=0,verbose=True)
 
