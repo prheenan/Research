@@ -8,23 +8,37 @@ from __future__ import unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt
 import sys,matplotlib,os,copy
-
+from skimage.segmentation import active_contour
+from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
 
 from GeneralUtil.python import GenUtilities,PlotUtilities
 
 class worm_object:
     def __init__(self,x,y,text_file):
+        """
+        object for keeping track of an x,y trace
+        
+        Args:
+            x,y: thew coordinates 
+            text_file: where this trace came from 
+        """
         self.x = x
         self.y = y
         self.L0_pixels = get_contour_length(self.x,self.y)
         self.L0_meters = None
         self.file_name = text_file
     def set_meters_per_pixel(self,m_per_pixel):
+        """
+        Sets the scale in meters/pixel to m_per_pixel. Needed for L0_meters
+        """
         self.m_per_pixel = m_per_pixel
         self.L0_meters = self.L0_pixels * self.m_per_pixel
     @property
     def has_dna_bound_protein(self):
+        """
+        Returns: True iff this trace was tagged as having protein 
+        """
         return "protein" in self.file_name.lower()
     @property
     def L0(self):
@@ -33,6 +47,13 @@ class worm_object:
 
 class tagged_image:
     def __init__(self,image_path,worm_objects):
+        """
+        Grouping of an images and the associated traces on items
+        
+        Args:
+            image_path: the file name of the image
+            worm_objects: list of worm_objects associated with this image
+        """
         self.image_path = image_path
         self.image = plt.imread(self.image_path)
         self.worm_objects = worm_objects
@@ -42,31 +63,62 @@ class tagged_image:
     def subset(self,idx):
         return [copy.deepcopy(self.worm_objects[i]) for i in idx]
     def traces_dna_protein(self):
+        """
+        Returns: the traces on this image of protein bound to DNA 
+        """
         return self.subset(self.protein_idx)
     def traces_dna_only(self):
+        """
+        Returns: the traces on this object on DNA (only)
+        """
         return self.subset(self.dna_only_idx)    
     def _L0(self,subset):
+        """
+        Returns the contour length of the given subset 
+        """
         return np.array([s.L0 for s in subset])
     def L0_protein_dna(self):
+        """
+        Returns: the contour length, in meters, of the traces on DNA-protein 
+        complex in this image 
+        """    
         return self._L0(self.traces_dna_protein())
     def L0_dna_only(self):
+        """
+        Returns: the contour length, in meters, of the traces on DNA in this
+        image 
+        """
         return self._L0(self.traces_dna_only())
         
 
 def get_x_and_y_arrays(text_file):
+    """
+    Returns: the x and y columns (0 and 1) of text_file 
+    """
     data = np.loadtxt(text_file)
     return data[:,0],data[:,1]
     
 def get_contour_length(x,y):
+    """
+    Returns: the contour length of the line L_i=(x,y)_i
+    """
     return np.sum(np.sqrt(np.diff(x)**2 + np.diff(y)**2))
     
 def get_x_y_and_contour_lengths(text_files):
+    """
+    Gets all the worm_objects associated with text_files
+    
+    Args:
+        text_files: list of files, each has columns like <x>,<y>
+    Returns:
+        list of worm_object 
+    """
     to_ret = []
     for t in text_files:
         x,y = get_x_and_y_arrays(t)
         to_ret.append(worm_object(x,y,t))
     return to_ret     
-  
+
 def run():
     """
     <Description>
@@ -104,17 +156,16 @@ def run():
     # POST: all the contour lengths are set in 'real' units ]  
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
-    print(np.mean(L0_protein),np.std(L0_protein))
-    print(np.mean(L0_dna),np.std(L0_dna))
     for obj in objs_all:
+        # plot each image with all the traces overlayed
         fig = PlotUtilities.figure()        
         plt.imshow(obj.image)
+        # plot each DNA trace
         for o in obj.worm_objects:
             color = "g" if o.has_dna_bound_protein else "r"
             plt.plot(o.x,o.y,color=color,linewidth=0.25)
         out_name = os.path.basename(obj.image_path)
         PlotUtilities.savefig(fig,out_dir + out_name + ".png")
-
 
 
 
