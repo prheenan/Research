@@ -18,7 +18,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass
+    InverseWeierstrass,WeierstrassUtil
 from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
 
 import copy 
@@ -31,10 +31,13 @@ class cacheable_data:
         self.heatmap_data = heatmap_data
 
 class slice_area:
-    def __init__(self,ext_bounds,plot_title,n_bins):
+    def __init__(self,ext_bounds,plot_title):
         self.ext_bounds = ext_bounds
         self.plot_title = plot_title
-        self.n_bins = n_bins
+        self.n_bins = None
+    def set_num_bins_by_bin_in_meters(self,bin_size_meters):
+        self.n_bins = \
+            int(np.ceil(abs(np.diff(self.ext_bounds))/bin_size_meters))
     @property
     def save_name(self):
         return self.plot_title.replace(" ","_") + ".pkl"
@@ -130,7 +133,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     force_read_data = False    
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=force_read_data,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=9,
                                                  renormalize=False)
     raw_area_slices = [[] for _ in areas]
     for i,r in enumerate(raw_data):
@@ -146,7 +149,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # get the heatmap histograms
         heatmap_data = get_heatmap_data(slice_tmp)  
         # get the landscapes (we use N, to get an error)
-        iwt_objs = IWT_Util.convert_list_to_iwt(slice_tmp)
+        iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
         # delete the original list to free its memnory
         slice_tmp[:] = []
         n_objs = len(iwt_objs)
@@ -175,7 +178,7 @@ def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     X,Y = np.meshgrid(x_edges,y_edges)
     plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
     
-def plot_landscape(data,xlim,kw_landscape=dict()):
+def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
     extension_nm = data._extension_grid_nm
@@ -193,21 +196,31 @@ def plot_landscape(data,xlim,kw_landscape=dict()):
     plt.fill_between(x=extension_nm,
                      y1=landscape_lower,
                      y2=landscape_upper,
-                     alpha=0.3,**kw_landscape)
+                     alpha=0.3,**kw_landscape)                     
     # make a second axis for the number of ammino acids 
-    units_energy = r"($\frac{\mathrm{kcal}}{\mathrm{mol}}$)"
-    units_energy_delta = r"($\frac{\mathrm{kcal}}{\mathrm{mol} \cdot AA}$)"
-    PlotUtilities.lazyLabel("Extension (nm)","Free energy " + units_energy,"")    
-    limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
-                    max(delta_landscape_kcal_per_mol_per_amino_acid)]
-    label = "Free energy difference " + units_energy_delta
-    difference_color = 'rebeccapurple'
-    ax_2 = PlotUtilities.secondAxis(ax_energy,
-                                    label=label,color=difference_color,
-                                    limits=limits_delta,secondY =True)
-    # plot the energy delta and its bounds, based on the bounds on the landscape    
-    ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-              color=difference_color,linestyle='-',linewidth=0.5)    
+    units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")
+    units_energy_delta = PlotUtilities.variable_string("\Delta G") + \
+                        " per AA (kcal/mol)"
+    PlotUtilities.lazyLabel("Extension (nm)",units_energy,
+                            "")        
+    if (plot_derivative):
+        limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
+                        max(delta_landscape_kcal_per_mol_per_amino_acid)]
+        label = units_energy_delta
+        difference_color = 'rebeccapurple'
+        ax_2 = PlotUtilities.secondAxis(ax_energy,
+                                        label=label,color=difference_color,
+                                        limits=limits_delta,secondY =True)
+        # plot the energy delta and its bounds, based on the bounds on the
+        #        landscape    
+        ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
+                  color=difference_color,linestyle='-',linewidth=0.5)   
+        ax_2.tick_params('y',color=difference_color)
+        ax_2.spines['right'].set_color(difference_color)
+        PlotUtilities.tom_ticks(ax=ax_2,change_x=False)
+        return ax_energy,ax_2
+    else:
+        return ax_energy
               
 def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     ax_heat = plt.gca()
@@ -231,6 +244,33 @@ def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict()):
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
     plot_landscape(data_landscape,xlim_fec,kw_landscape=kw_landscape)
+
+def landscape_kwargs():
+    kwargs = [ dict(kw_heatmap=dict(cmap=plt.cm.Greys_r),
+                    kw_landscape=dict(color='k')),
+               dict(kw_heatmap=dict(cmap=plt.cm.Blues_r),
+                    kw_landscape=dict(color='royalblue')),
+               dict(kw_heatmap=dict(cmap=plt.cm.Reds_r),
+                    kw_landscape=dict(color='orangered')),                    
+               dict(kw_heatmap=dict(cmap=plt.cm.Greens_r),
+                    kw_landscape=dict(color='g'))]
+    return kwargs                    
+    
+def make_detalied_plots(data_to_analyze,areas):
+    kwargs = landscape_kwargs()
+    for i,d in enumerate(data_to_analyze):
+        fig = PlotUtilities.figure((3.25,7))     
+        create_landscape_plot(d,**(kwargs[i]))
+        out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
+        axis_func = lambda x: [x[0],x[2]]
+        PlotUtilities.label_tom(fig,axis_func=axis_func)
+        PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))    
+    
+def normalize_axes(ax_list):
+    max_ylim = np.max([ax.get_ylim() for ax in ax_list])
+    min_ylim = np.min([ax.get_ylim() for ax in ax_list])
+    for ax in ax_list:
+        ax.set_ylim([min_ylim,max_ylim])    
     
 def run():
     """
@@ -248,33 +288,54 @@ def run():
     cache_dir = flickering_dir 
     force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
-    n_bins = 250
-    n_bins_helix_a = 100
-    n_bins_helix_e = 100
+    bin_size_meters = 0.3e-9
     # write down the areas we want to look at 
     areas = [\
-        slice_area([18e-9,75e-9],"Full (no adhesion)",n_bins),
-        slice_area([18e-9,27e-9],"Helix E",n_bins_helix_e),
-        slice_area([50e-9,75e-9],"Helix A",n_bins_helix_a),
+        slice_area([18e-9,75e-9],"Full (no adhesion)"),
+        slice_area([18e-9,27e-9],"Helix ED"),
+        slice_area([33e-9,50e-9],"Helix CB"),
+        slice_area([50e-9,75e-9],"Helix A"),
         ]    
+    for a in areas:
+        a.set_num_bins_by_bin_in_meters(bin_size_meters)
     # read in the data 
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
-                      force_recalculation,areas,flickering_dir)
-    kwargs = [ dict(kw_heatmap=dict(cmap=plt.cm.Greys_r),
-                    kw_landscape=dict(color='k')),
-               dict(kw_heatmap=dict(cmap=plt.cm.Blues_r),
-                    kw_landscape=dict(color='royalblue')),
-               dict(kw_heatmap=dict(cmap=plt.cm.Greens_r),
-                    kw_landscape=dict(color='g'))]
-    for i,d in enumerate(data_to_analyze):
-        fig = PlotUtilities.figure((3.25,7))     
-        create_landscape_plot(d,**(kwargs[i]))
-        out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
-        axis_func = lambda x: [x[0],x[2]]
-        PlotUtilities.label_tom(fig,axis_func=axis_func)
-        PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))
-        
+                      force_recalculation,areas,flickering_dir,bin_size_meters)
+    #make_detalied_plots(data_to_analyze,areas)
+    # skip the first one (the entire landscape )
+    helical_areas = areas[1:]
+    helical_data = data_to_analyze[1:]
+    helical_kwargs = landscape_kwargs()[1:]
+    fig = PlotUtilities.figure((7,3.25))
+    axs,second_axs = [],[]
+    kw_scalebars = [dict(offset_x=0.5,offset_y=0.05),
+                    dict(offset_x=0.3,offset_y=0.9),
+                    dict(offset_x=0.3,offset_y=0.92)]
+    for i,(a,data) in enumerate(zip(helical_areas,helical_data)):
+        kw_tmp = helical_kwargs[i]
+        data_landscape = landscape_data(data.landscape)
+        # # plot the energy landscape...
+        ax_tmp = plt.subplot(1,len(helical_areas),(i+1))
+        axs.append(ax_tmp)
+        _, ax_2 = plot_landscape(data_landscape,xlim=[None,None],
+                              kw_landscape=kw_tmp['kw_landscape'],
+                              plot_derivative=True)
+        second_axs.append(ax_2)                    
+        Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_tmp,
+
+                                                **kw_scalebars[i])
+        PlotUtilities.no_x_label(ax_tmp)                                                
+        if (i != 0):
+            PlotUtilities.ylabel("")
+            PlotUtilities.no_y_label(ax_tmp)
+            PlotUtilities.xlabel("")
+        if (i != len(helical_areas)-1):
+            ax_2.set_ylabel("")
+            PlotUtilities.no_y_label(ax_2)
+    normalize_axes(axs)
+    normalize_axes(second_axs)
+    PlotUtilities.savefig(fig,"./gallery.png")                        
 
     
 if __name__ == "__main__":
