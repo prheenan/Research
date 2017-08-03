@@ -338,10 +338,11 @@ def run():
                               plot_derivative=True)
         second_axs.append(ax_2)                    
         Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_tmp,
-
                                                 **kw_scalebars[i])
         PlotUtilities.no_x_label(ax_tmp)          
         PlotUtilities.tom_ticks(ax=ax_tmp,num_major=7,change_x=False)
+        PlotUtilities.color_axis_ticks(color=color,spine_name='left',
+                                       axis_name='y',ax=ax_tmp)          
         if (i != 0):
             PlotUtilities.ylabel("")
             PlotUtilities.no_y_label(ax_tmp)
