@@ -200,8 +200,8 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     # make a second axis for the number of ammino acids 
     units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")
     units_energy_delta = PlotUtilities.variable_string("\Delta G") + \
-                        " per AA (kcal/(mol $\cdot$ AA$))"
-    PlotUtilities.lazyLabel("Extension (nm)",units_energy,
+                        r" per AA (kcal/(mol $\cdot$ AA))"
+    PlotUtilities.lazyLabel("Molecular Extension",units_energy,
                             "")        
     if (plot_derivative):
         limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
