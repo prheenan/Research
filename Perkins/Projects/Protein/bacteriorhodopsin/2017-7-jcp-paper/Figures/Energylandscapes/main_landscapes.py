@@ -210,14 +210,14 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
         difference_color = 'rebeccapurple'
         ax_2 = PlotUtilities.secondAxis(ax_energy,
                                         label=label,color=difference_color,
-                                        limits=limits_delta,secondY =True)
+                                        limits=limits_delta,secondY =True,
+                                        tick_color=difference_color)
         # plot the energy delta and its bounds, based on the bounds on the
         #        landscape    
         ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
                   color=difference_color,linestyle='-',linewidth=0.5)   
-        ax_2.tick_params('y',color=difference_color)
-        ax_2.spines['right'].set_color(difference_color)
-        PlotUtilities.tom_ticks(ax=ax_2,change_x=False)
+        PlotUtilities.tom_ticks(ax=ax_2,change_x=False,num_major=5)
+   
         return ax_energy,ax_2
     else:
         return ax_energy
@@ -267,6 +267,9 @@ def make_detalied_plots(data_to_analyze,areas):
         PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))    
     
 def normalize_axes(ax_list):
+    """
+    ensures all the y axes in ax_list have the same limits
+    """
     max_ylim = np.max([ax.get_ylim() for ax in ax_list])
     min_ylim = np.min([ax.get_ylim() for ax in ax_list])
     for ax in ax_list:
@@ -304,6 +307,7 @@ def run():
                       force_recalculation,areas,flickering_dir,bin_size_meters)
     #make_detalied_plots(data_to_analyze,areas)
     # skip the first one (the entire landscape )
+    PlotUtilities.tom_text_rendering()
     helical_areas = areas[1:]
     helical_data = data_to_analyze[1:]
     helical_kwargs = landscape_kwargs()[1:]
@@ -318,14 +322,17 @@ def run():
         # # plot the energy landscape...
         ax_tmp = plt.subplot(1,len(helical_areas),(i+1))
         axs.append(ax_tmp)
+        kw_landscape = kw_tmp['kw_landscape']
+        color = kw_landscape['color']
         _, ax_2 = plot_landscape(data_landscape,xlim=[None,None],
-                              kw_landscape=kw_tmp['kw_landscape'],
+                              kw_landscape=kw_landscape,
                               plot_derivative=True)
         second_axs.append(ax_2)                    
         Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_tmp,
 
                                                 **kw_scalebars[i])
-        PlotUtilities.no_x_label(ax_tmp)                                                
+        PlotUtilities.no_x_label(ax_tmp)          
+        PlotUtilities.tom_ticks(ax=ax_tmp,num_major=7,change_x=False)
         if (i != 0):
             PlotUtilities.ylabel("")
             PlotUtilities.no_y_label(ax_tmp)
@@ -333,6 +340,7 @@ def run():
         if (i != len(helical_areas)-1):
             ax_2.set_ylabel("")
             PlotUtilities.no_y_label(ax_2)
+        PlotUtilities.title(a.plot_title,color=color)
     normalize_axes(axs)
     normalize_axes(second_axs)
     PlotUtilities.savefig(fig,"./gallery.png")                        
