@@ -200,7 +200,7 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     # make a second axis for the number of ammino acids 
     units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")
     units_energy_delta = PlotUtilities.variable_string("\Delta G") + \
-                        " per AA (kcal/mol)"
+                        " per AA (kcal/(mol $\cdot$ AA$))"
     PlotUtilities.lazyLabel("Extension (nm)",units_energy,
                             "")        
     if (plot_derivative):
@@ -234,6 +234,9 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     PlotUtilities.no_x_label(ax_heat)    
     
 def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict()): 
+    """
+    Creates a plot of
+    """
     heatmap_data = data_to_plot.heatmap_data
     data_landscape = landscape_data(data_to_plot.landscape)
     # # ploy the heat map 
@@ -246,6 +249,9 @@ def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict()):
     plot_landscape(data_landscape,xlim_fec,kw_landscape=kw_landscape)
 
 def landscape_kwargs():
+    """
+    Returns: a list of keywords for the entire listscape, ED,CB, and A helices 
+    """
     kwargs = [ dict(kw_heatmap=dict(cmap=plt.cm.Greys_r),
                     kw_landscape=dict(color='k')),
                dict(kw_heatmap=dict(cmap=plt.cm.Blues_r),
@@ -257,6 +263,9 @@ def landscape_kwargs():
     return kwargs                    
     
 def make_detalied_plots(data_to_analyze,areas):
+    """
+    makes the detailed plots
+    """
     kwargs = landscape_kwargs()
     for i,d in enumerate(data_to_analyze):
         fig = PlotUtilities.figure((3.25,7))     
