@@ -29,8 +29,17 @@ class deconvolution_info:
         self.P_q = P_q
         self.p_k_interp = p_k_interp
         self.p_k = griddata(points=ext_interp,values=p_k_interp,xi=ext_bins)
-        self.p_k /= np.trapz(y=self.p_k,x=self.ext_bins)
+        # determine where p_k is finite and above zero (this is where we can
+        # 'properly' use it...
+        finite_idx = np.where(np.isfinite(self.p_k))[0]
+        p_k_finite = self.p_k[finite_idx]
+        good_idx = finite_idx[np.where(p_k_finite > 0)]
+        p_k_good = self.p_k[good_idx]
+        # determine the new normalized p_k and associated free energy
+        self.p_k = p_k_good/np.trapz(y=p_k_good,x=self.ext_bins[good_idx])
         self.free_energy_kT = -np.log(self.p_k)
+        # use ext_bins_safe with free energy kT 
+        self.ext_bins_safe = self.ext_bins[good_idx]
         self.convolved_free_energy_kT = -np.log(self.P_q)
 
 def spring_const_plot(slices_safe,mean_safe_ext,std_safe_ext,pred):
@@ -60,19 +69,14 @@ def histogram_plot(s):
     PlotUtilities.lazyLabel("Count","","")          
 
 def probability_plot(inf,slice_eq):
-    plt.subplot(3,1,1)
-    plt.plot(inf.ext_bins,inf.p_k)
-    plt.plot(inf.ext_bins,inf.P_q,'r-')
-    plt.plot(inf.ext_interp,inf.p_k_interp,linestyle='--')
+    plt.subplot(2,1,1)
+    plt.plot(inf.ext_bins_safe,inf.p_k)
+    plt.plot(inf.ext_bins,inf.P_q,'r--')
+    plt.plot(inf.ext_interp,inf.p_k_interp,'g-')
     PlotUtilities.lazyLabel("","PDF","")    
-    plt.subplot(3,1,2)
-    plt.plot(inf.ext_bins,inf.free_energy_kT)
-    plt.plot(inf.ext_bins,inf.convolved_free_energy_kT)
-    PlotUtilities.lazyLabel(r"Extension ($\AA$)","Energy at <F>","")        
-    plt.subplot(3,1,3)
-    bins_relative = inf.ext_bins + min(inf.ext_bins)
-    tilt_energy  = (np.mean(slice_eq.Force) * bins_relative)/4.1e-21
-    plt.plot(inf.ext_bins,inf.free_energy_kT-tilt_energy)
+    plt.subplot(2,1,2)
+    plt.plot(inf.ext_bins_safe,inf.free_energy_kT,'g-')
+    plt.plot(inf.ext_bins,inf.convolved_free_energy_kT,'r--')
     PlotUtilities.lazyLabel(r"Extension ($\AA$)","Free energy","")    
 
 def deconvolution_plot(retract,slice_eq,slices,inf,
@@ -97,7 +101,7 @@ def deconvolution_plot(retract,slice_eq,slices,inf,
     plt.xlim(sep_limits)    
     PlotUtilities.lazyLabel("","Count","")            
     plt.subplot(4,1,4)
-    plt.plot(inf.ext_bins,inf.p_k)
+    plt.plot(inf.ext_bins_safe,inf.p_k)
     plt.plot(inf.ext_interp,inf.p_k_interp,'b-')
     plt.xlim(sep_limits)        
     PlotUtilities.lazyLabel(r"Separation ($\AA$)","PDF","")            
@@ -112,8 +116,11 @@ def deconvolution(slice_eq,coeffs,bins):
     # XXX rough estimate for stdev
     gaussian_stdev=np.polyval(coeffs,mean_ext_eq)
     # do the actual deconvolution 
+    upscale = InverseBoltzmannUtil.\
+        upscale_factor_by_stdev(ext_bins,gaussian_stdev) 
+    kw = dict(interp_kwargs=dict(upscale=upscale))
     args = InverseBoltzmannUtil.extension_deconvolution(gaussian_stdev,
-                                                        ext_eq,bins)
+                                                        ext_eq,bins,**kw)
     interp_ext,interp_prob,p_k_interp = args
     return deconvolution_info(ext_bins,interp_ext,interp_prob,P_q,
                               p_k_interp)
@@ -153,7 +160,7 @@ def analyze(example,out_dir):
     split_fec = Analysis.zero_and_split_force_extension_curve(example)
     retract = split_fec.retract
     dt = retract.Time[1] - retract.Time[0]
-    NFilterPoints = int(np.ceil(5e-3/dt))
+    NFilterPoints = int(np.ceil(3e-3/dt))
     slices,slices_safe  = get_slices(retract,NFilterPoints)
     mean_safe_ext = [np.mean(s.Separation) for s in slices_safe]
     std_safe_ext = [np.std(s.Separation) for s in slices_safe]
@@ -171,9 +178,11 @@ def analyze(example,out_dir):
         histogram_plot(s)
         PlotUtilities.savefig(fig,"{:s}_hist_{:d}.png".format(out_dir,i))   
     # get a specific one for the equilibrium measurements 
-    bins = 100
+    bins_per_m = 1/(0.3e-10)
     for idx_eq in range(0,24):
         slice_eq = slices[idx_eq]
+        min_v,max_v = min(slice_eq.Separation),max(slice_eq.Separation)
+        bins = int(np.ceil((max_v-min_v)*bins_per_m))
         inf = deconvolution(slice_eq,coeffs,bins=bins)
         # POST: deconvolution worked
         # reinterpolate p_k_interp back onto the original grid 
