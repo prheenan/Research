@@ -47,19 +47,20 @@ def run():
     example_plot = copy.deepcopy(example)
     example_plot.Force *= 1e12
     example_plot.Separation *= 1e9
+    # fix the manual offset
+    example_plot.Force -= 7.1
     plot_examples = [example_plot]
     x_func = lambda y: y.Separation
     y_func = lambda y: y.Force 
     ylim_pN = [-20,None]
     xlim_nm = [-5,100]
-    zoom_regions_nm = [ [21,23],
-                        [59,62]]
+    zoom_regions_nm = [ [59,62]]
     adhesion_max_nm = 19
     # plot the helical regions...
     regions_nm = [ [[adhesion_max_nm,30],"ED Helix",'royalblue'],
                    [[31,45],"CB Helix",'orangered'],
                    [[55,65],"A Helix",'g']]
-    colors_regions = [regions_nm[0],regions_nm[-1]]                        
+    colors_regions = [regions_nm[-1]]                        
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
                for reg in zoom_regions_nm]
@@ -67,14 +68,16 @@ def run():
     # # make the plot 
     fig = PlotUtilities.figure((7,3))
     # create the 'top' gridspec
-    top_spec = gridspec.GridSpec(1,2)
+    top_spec = gridspec.GridSpec(2,3)
     # create separate axes for the image and FECs 
-    image_spec = gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0])
-    data_spec = gridspec.GridSpecFromSubplotSpec(3,1,subplot_spec=top_spec[1:],
-                                                hspace=0.1) 
-    # create a separate axis for the 'zoom in' FEC 
-    zoom_in_spec = gridspec.GridSpecFromSubplotSpec(2,len(zoom_regions_nm),
-                                                    subplot_spec=data_spec[1:],
+    image_spec = \
+        gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0,0])
+    data_spec = \
+        gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=top_spec[0,1:],
+                                         hspace=0.05,wspace=0.05)
+    # create a separate axis for the previously-published data 
+    zoom_in_spec = gridspec.GridSpecFromSubplotSpec(3,1,
+                                                    subplot_spec=data_spec[:,1],
                                                     wspace=0.06) 
     # # plot the image 
     ax = plt.subplot(image_spec[:])
@@ -84,15 +87,18 @@ def run():
     # # plot the example fec and zoomed regions
     #
     # 'full' example 
-    ax_example = plt.subplot(data_spec[0,:])
+    ax_example = plt.subplot(data_spec[:,0])
     alpha_data = 0.4
     color_data = 'k'
-    dict_plot = dict(n_filter_points=2000,
+    dict_plot = dict(n_filter_points=100,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
     x_full_plot = x_func(example_plot)                                     
     FEC_Plot._fec_base_plot(x_full_plot,y_func(example_plot),
                             **dict_plot)
+    PlotUtilities.tom_ticks(ax=ax_example,num_major=5,change_x=False)    
+    PlotUtilities.tom_ticks(ax=ax_example,num_major=4,change_y=False)                              
+
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
         dict_tmp = dict(**dict_plot)
         dict_tmp['style_data']['color'] = color[-1]
@@ -110,11 +116,11 @@ def run():
     PlotUtilities.x_label_on_top(ax_example)
     # # plot all the zoomed regions 
     offsets_x = [0.5,0.5]
-    offsets_y = [0.7,0.15]
+    offsets_y = [0.2,0.15]
     heights_pN = [10,10]
     widths_nm = [1,1]
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
-        ax_tmp = plt.subplot(zoom_in_spec[:,i])
+        ax_tmp = plt.subplot(data_spec[-1])
         dict_tmp = dict(**dict_plot)
         dict_tmp['style_data']['color'] = color[-1]
         FEC_Plot._fec_base_plot(x_func(r),y_func(r),**dict_tmp)
@@ -134,12 +140,10 @@ def run():
                                                **kw))
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.no_y_label(ax_tmp)        
-        PlotUtilities.zoom_effect01(ax_example, ax_tmp,*xlim)
-
         PlotUtilities.lazyLabel("","","")           
-    loc = [ [0.15,1.0],
+    loc = [ [0.15,1.15],
             [-0.05,1.15],
-            [0.1,0.9],
+            [0.05,1.15],
             [0.3,0.9]]
     PlotUtilities.label_tom(fig,loc=loc)
     subplots_adjust = dict(bottom=0.05,top=0.9,left=0)
