@@ -116,7 +116,7 @@ def run():
     PlotUtilities.x_label_on_top(ax_example)
     # # plot all the zoomed regions 
     offsets_x = [0.5,0.5]
-    offsets_y = [0.2,0.15]
+    offsets_y = [0.15,0.15]
     heights_pN = [10,10]
     widths_nm = [1,1]
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
@@ -136,7 +136,7 @@ def run():
         Scalebar.crossed_x_and_y(offset_x=offset_x,
                                  offset_y=offset_y,
                                  x_kwargs=x_kwargs,
-                                 y_kwargs=dict(unit="pN",height=heights_pN[i],
+                                 y_kwargs=dict(unit="pN ",height=heights_pN[i],
                                                **kw))
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.no_y_label(ax_tmp)        
