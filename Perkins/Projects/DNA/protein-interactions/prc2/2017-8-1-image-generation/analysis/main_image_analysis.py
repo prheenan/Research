@@ -91,12 +91,18 @@ class tagged_image:
         return self._L0(self.traces_dna_only())
         
 
-def get_x_and_y_arrays(text_file):
+def get_x_and_y_arrays(text_file,size_images_pixels):
     """
     Returns: the x and y columns (0 and 1) of text_file 
     """
     data = np.loadtxt(text_file)
-    return data[:,0],data[:,1]
+    x = data[:,0]
+    y = data[:,1]
+    assert ((x < 1) & (y < 1)).all() or ((x > 1) & (y > 1)).all()
+    if (x<1).all():
+        x *= size_images_pixels
+        y *= size_images_pixels
+    return x,y
     
 def get_contour_length(x,y):
     """
@@ -104,7 +110,7 @@ def get_contour_length(x,y):
     """
     return np.sum(np.sqrt(np.diff(x)**2 + np.diff(y)**2))
     
-def get_x_y_and_contour_lengths(text_files):
+def get_x_y_and_contour_lengths(text_files,size_images_pixels):
     """
     Gets all the worm_objects associated with text_files
     
@@ -115,7 +121,7 @@ def get_x_y_and_contour_lengths(text_files):
     """
     to_ret = []
     for t in text_files:
-        x,y = get_x_and_y_arrays(t)
+        x,y = get_x_and_y_arrays(t,size_images_pixels)
         to_ret.append(worm_object(x,y,t))
     return to_ret     
 
@@ -143,7 +149,8 @@ def run():
     for file_name in image_files:
         file_no_ext = file_name.replace(ext,"")
         these_text_files= [ t for t in text_files if str(file_no_ext) in str(t)]
-        objs_tmp = get_x_y_and_contour_lengths(these_text_files)
+        objs_tmp = get_x_y_and_contour_lengths(these_text_files,
+                                               size_images_pixels)
         im = plt.imread(file_name)
         assert (im.shape[0] == im.shape[1]) 
         assert (im.shape[0] == size_images_pixels)
@@ -156,6 +163,16 @@ def run():
     # POST: all the contour lengths are set in 'real' units ]  
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
+    fig = PlotUtilities.figure()            
+    sanit_L0 = lambda x: x*1e6
+    n_protein = (L0_protein).size
+    n_dna = L0_dna.size
+    n_str = lambda n: "(N={:d})".format(n)
+    plt.hist(sanit_L0(L0_dna),normed=True,label="DNA only" + n_str(n_dna))
+    plt.hist(sanit_L0(L0_protein),normed=True,
+             label="DNA+Protein" + n_str(n_protein))
+    PlotUtilities.lazyLabel("L0 (microns)","Probability (1/microns)","")
+    PlotUtilities.savefig(fig,out_dir + "hist.png")
     for obj in objs_all:
         # plot each image with all the traces overlayed
         fig = PlotUtilities.figure()        
