@@ -12,6 +12,7 @@ import sys
 
 import serial
 import time
+import struct
 
 def run():
     """
@@ -29,10 +30,9 @@ def run():
     time.sleep(3)
     # forever read/write 
     while 1:
-        str_input = raw_input("Enter a character: ")
-        str_as_bytes = str_input[0].encode()
-        print("You entered [{:s}] (ASCII byte: {:d})".format(str_input,
-                                                           ord(str_as_bytes)))
+        num = 3.7
+        str_as_bytes = bytearray(struct.pack("d", num))  
+        print("You entered bytes: " + str(num))
         ser.write(str_as_bytes)
         try:
             time.sleep(1)

@@ -8,13 +8,13 @@ void setup()
  
 void loop()
 {
-  if (Serial.available() > 0) {
-   // read the incoming byte:
-   incomingByte = Serial.read();
+  if (Serial.available() > 0) 
+  {
+   float a = Serial.parseFloat();
    // See also: https://www.arduino.cc/en/Tutorial/StringToIntExample
    // say what you got, plus 1:
    Serial.print("Adding 1 gives: "); // ASCII printable characters
-   Serial.println(incomingByte+1, DEC);
+   Serial.println( (float) (a+1), 1);
   }
 } 
  
