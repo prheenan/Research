@@ -14,7 +14,7 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 # Arguments:
 #### Arg 1: Description
 python_file="../../../PythonCommandLine/InverseWeierstrass/main_iwt.py"
-python2 $python_file  \
+python $python_file  \
     -number_of_pairs 10 \
     -number_of_bins 75 \
     -f_one_half 0 \
