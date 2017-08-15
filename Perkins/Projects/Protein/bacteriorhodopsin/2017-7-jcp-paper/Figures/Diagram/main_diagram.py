@@ -90,7 +90,7 @@ def run():
     ax_example = plt.subplot(data_spec[:,0])
     alpha_data = 0.4
     color_data = 'k'
-    dict_plot = dict(n_filter_points=100,
+    dict_plot = dict(n_filter_points=3000,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
     x_full_plot = x_func(example_plot)                                     

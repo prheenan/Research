@@ -208,7 +208,7 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     plt.fill_between(x=extension_nm,
                      y1=landscape_lower,
                      y2=landscape_upper,
-                     alpha=0.3,**kw_landscape)          
+                     alpha=0.15,**kw_landscape)          
     landscape_label()
     # make a second axis for the number of ammino acids 
     if (plot_derivative):
@@ -225,7 +225,7 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
         # plot the energy delta and its bounds, based on the bounds on the
         #        landscape    
         ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-                  color=difference_color,linestyle='-',linewidth=0.5)   
+                  color=difference_color,linestyle='-',linewidth=1.5)   
         PlotUtilities.tom_ticks(ax=ax_2,change_x=False,num_major=5)
    
         return ax_energy,ax_2
@@ -340,9 +340,15 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
 def setup_pedagogy_ticks(ax):
-    Scalebar.y_scale_bar_and_ticks_relative(unit="kcal/mol ",height=30,
-                                            offset_x=0.3,
-                                            offset_y=0.7,ax=ax)   
+    font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
+    font_kwargs['horizontalalignment'] = 'left'
+    scale_kwargs = dict(height=30,
+                        offset_x=0.2,
+                        offset_y=0.7,
+                        ax=ax,
+                        fudge_line_pct=dict(x=-0.05,y=0),
+                        font_kwargs=font_kwargs)
+    Scalebar.y_scale_bar_and_ticks_relative(unit="kcal/mol ",**scale_kwargs)   
     PlotUtilities.no_y_label(ax)                                              
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
@@ -363,7 +369,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                 data._grid_property(lambda x: x.second_deriv_term* convert)]
     second_deriv =  r"\frac{1}{2\beta}\ln(1-\frac{\ddot{A}}{k})"                
     labels = [PlotUtilities.variable_string(r"A"),
-              PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2\mathrm{k}}"),
+              PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2k}"),
               PlotUtilities.variable_string(second_deriv)]
     kwargs = [dict(color='r',linestyle='-.'),
               dict(color='b',linestyle='-',linewidth=0.3),

@@ -10,17 +10,12 @@ P. Heenan, H. Yu, M. Siewny , T. Perkins
 ----
 
 ----
-![](./Figures/landscape0_Full_(no_adhesion).png)
+![](./Figures/iwt_diagram.png)
 {#label_fig:full} Energy landscape reconstruction of bacteriorhodopsin reveals significant intra-molecule variation in unfolding energy.  **(A)** A heat map of all force-extension curves used in this work. Data within 20nm of the surface are excluded due to surface adhesion. **(B)** The mean free energy at zero force (black dotted line) and free energy change per amino acid (purple line) reconstructed using an Inverse Weierstrass Transform applied to the data in (A).  The shaded region gives the standard deviation from three non-overlapping subsets of the data in (A). 
 ----
 
 ----
-![](./Figures/landscape1_Helix_E.png)
+![](./Figures/gallery.png)
 {#label_fig:helixE} The ED helical pair has a significantly higher average unfolding energy than the CB helical pair or the A Helix. This figure is formatted as {#ref_fig:full}, but applied to the region of the force-extension curve of the ED Helical pair.
-----
-
-----
-![](./Figures/landscape2_Helix_A.png)
-{#label_fig:helixA} The energy landscape of Helix A. Formatted as {#ref_fig:full}, but applied to the region of the force-extension curve of Helix A.
 ----
 
