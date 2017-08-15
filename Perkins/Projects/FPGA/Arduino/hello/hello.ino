@@ -14,7 +14,8 @@ void loop()
    // See also: https://www.arduino.cc/en/Tutorial/StringToIntExample
    // say what you got, plus 1:
    Serial.print("Adding 1 gives: "); // ASCII printable characters
-   Serial.println( (float) (a+1), 1);
+   int num_of_decimals = 1
+   Serial.println( (float) (a+1), lin);
   }
 } 
  
