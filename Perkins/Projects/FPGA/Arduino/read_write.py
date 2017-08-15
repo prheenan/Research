@@ -12,7 +12,6 @@ import sys
 
 import serial
 import time
-import struct
 
 def run():
     """
@@ -30,13 +29,16 @@ def run():
     time.sleep(3)
     # forever read/write 
     while 1:
-        num = 3.7
-        str_as_bytes = bytearray(struct.pack("d", num))  
-        print("You entered bytes: " + str(num))
-        ser.write(str_as_bytes)
+        str_input = raw_input("Enter a character: ")
+        float_input = float(str_input)
+        sstr='{0}\n'.format(float_input)
+        print("sending {:s}".format(sstr))
+        ser.write(sstr.encode('ascii'))
         try:
-            time.sleep(1)
+            time.sleep(2)
             line = ser.readline()
+            # XXX why is this necessary? arduino writes an extra line?
+            _ = ser.readline()
         except ser.SerialTimeoutException:
             print('Data could not be read')
         print("Arduino sent back:\n\t[{:s}]".format(line.strip()))
