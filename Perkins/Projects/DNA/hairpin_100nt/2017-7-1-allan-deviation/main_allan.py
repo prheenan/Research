@@ -28,8 +28,8 @@ def run():
     file_name = "defl.ibw"
     defl_volts_wave = PxpLoader.read_ibw_as_wave(file_name)
     defl_volts = defl_volts_wave.DataY
-    invols_nm_per_volt = 58.75
-    spring_pN_per_nM = 6.84
+    invols_nm_per_volt = 203
+    spring_pN_per_nM = 4
     force_pN = defl_volts * invols_nm_per_volt * spring_pN_per_nM
     # zero out to the maximum
     force_pN -= np.mean(force_pN)
@@ -40,7 +40,7 @@ def run():
     (taus_used, adev, adeverror, adev_n) = \
         allantools.adev(force_pN, data_type='freq', rate=rate, taus=taus)
     fig = PlotUtilities.figure()
-    plt.errorbar(x=taus_used,y=adev,yerr=adeverror)
+    plt.errorbar(x=taus_used,y=adev,yerr=2*adeverror,label="95% C.I.")
     plt.xscale('log')
     plt.yscale('log')
     plt.axhline(1,color='r',linestyle='--',label="1 pN")
