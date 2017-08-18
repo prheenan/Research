@@ -339,12 +339,12 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
-def setup_pedagogy_ticks(ax):
+def setup_pedagogy_ticks(ax,offset_y=0.6):
     font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
     font_kwargs['horizontalalignment'] = 'left'
     scale_kwargs = dict(height=30,
-                        offset_x=0.2,
-                        offset_y=0.7,
+                        offset_x=0.7,
+                        offset_y=offset_y,
                         ax=ax,
                         fudge_line_pct=dict(x=-0.05,y=0),
                         font_kwargs=font_kwargs)
@@ -382,11 +382,11 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
     setup_pedagogy_ticks(ax_correction)
-    PlotUtilities.legend(handlelength=0.75,loc=(0.55,0.07))
+    PlotUtilities.legend(handlelength=0.75,loc=(0.3,0.07),ncol=2)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
                    plot_derivative=False)    
-    setup_pedagogy_ticks(ax_energy)
+    setup_pedagogy_ticks(ax_energy,offset_y=0.4)
     PlotUtilities.save_png_and_svg(fig,out_name)  
     
     
@@ -405,7 +405,7 @@ def run():
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     force_recalculation = False
-    final = True
+    final = False
     GenUtilities.ensureDirExists(flickering_dir)
     bin_size_meters = 0.3e-9
     # write down the areas we want to look at 
