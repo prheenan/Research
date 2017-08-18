@@ -425,9 +425,10 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                                     **kw_common))
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
-    mark_inset(ax_correction, axins, loc1=2, loc2=4, fc="none", ec="m",
+    color_box = 'rebeccapurple'
+    mark_inset(ax_correction, axins, loc1=2, loc2=4, fc="none", ec=color_box,
                linestyle='--',zorder=np.inf,alpha=0.7)               
-    PlotUtilities.color_frame('m',ax=axins) 
+    PlotUtilities.color_frame('rebeccapurple',ax=axins) 
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
                    plot_derivative=False)    
