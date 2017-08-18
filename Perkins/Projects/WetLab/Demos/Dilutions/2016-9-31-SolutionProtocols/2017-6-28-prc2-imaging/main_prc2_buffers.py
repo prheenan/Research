@@ -22,6 +22,14 @@ def run():
         DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
                                         BufferName="DI H20")
         print("...")
+    print("No Divalent buffer creation, 2x")
+    Stats = [ ["Tris-HCl","mM",1000,10,0],
+              ["KCl","mM",2500,300,0],
+              ["ZnCl2","mM",1.25,0.2,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
+                                    BufferName="DI H20")
+    print("...")
+
     max_conc = 120
     Stats = [ ["2x PRC2 buffer","x",2,1,0],
               ["MgCl2","mM",1000,max_conc,0]]
