@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,matplotlib as mpl
 
 
 sys.path.append("../../../../../../../../")
@@ -66,9 +66,9 @@ def run():
                for reg in zoom_regions_nm]
     ylim_pN_zoom = [50,120]
     # # make the plot 
-    fig = PlotUtilities.figure((7,3))
+    fig = PlotUtilities.figure((7,2))
     # create the 'top' gridspec
-    top_spec = gridspec.GridSpec(2,3)
+    top_spec = gridspec.GridSpec(1,3)
     # create separate axes for the image and FECs 
     image_spec = \
         gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0,0])
@@ -90,7 +90,7 @@ def run():
     ax_example = plt.subplot(data_spec[:,0])
     alpha_data = 0.4
     color_data = 'k'
-    dict_plot = dict(n_filter_points=3000,
+    dict_plot = dict(n_filter_points=100,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
     x_full_plot = x_func(example_plot)                                     
@@ -110,8 +110,9 @@ def run():
     for x,name,color in regions_nm:
         plt.axvspan(*x,color=color,ymin=ymin,ymax=ymax,alpha=0.3,linewidth=0)
     # plot the adhesion regions
-    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='k',alpha=0.1,
-                hatch='//',linewidth=0)
+    mpl.rcParams['hatch.color'] = '0.85'
+    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.95',hatch='--',
+                linewidth=0)
     PlotUtilities.lazyLabel("Molecular extension (nm)","Force (pN)","")   
     PlotUtilities.x_label_on_top(ax_example)
     # # plot all the zoomed regions 
@@ -129,15 +130,14 @@ def run():
         min_x = min(xlim)
         max_y = max(ylim)
         y_loc = max_y*0.9
-        kw = dict(ax=ax_tmp)
-        x_kwargs =dict(unit="nm",width=widths_nm[i],**kw)
+        x_kwargs =dict(unit="nm",width=widths_nm[i])
         offset_x = Scalebar.rel_to_abs(ax_tmp,offsets_x[i],True)
         offset_y = Scalebar.rel_to_abs(ax_tmp,offsets_y[i],False)
         Scalebar.crossed_x_and_y(offset_x=offset_x,
                                  offset_y=offset_y,
+                                 ax=ax_tmp,
                                  x_kwargs=x_kwargs,
-                                 y_kwargs=dict(unit="pN ",height=heights_pN[i],
-                                               **kw))
+                                 y_kwargs=dict(unit="pN ",height=heights_pN[i]))
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.no_y_label(ax_tmp)        
         PlotUtilities.lazyLabel("","","")           
@@ -146,10 +146,7 @@ def run():
             [0.05,1.15],
             [0.3,0.9]]
     PlotUtilities.label_tom(fig,loc=loc)
-    subplots_adjust = dict(bottom=0.05,top=0.9,left=0)
-    PlotUtilities.save_png_and_svg(fig,"diagram",
-                                   subplots_adjust=subplots_adjust)
-
+    PlotUtilities.save_png_and_svg(fig,"diagram",bbox_inches='tight')
     
 if __name__ == "__main__":
     run()
