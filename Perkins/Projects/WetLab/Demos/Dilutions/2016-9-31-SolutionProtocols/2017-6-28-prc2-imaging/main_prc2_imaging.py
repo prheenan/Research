@@ -74,20 +74,18 @@ def run():
     # stock concentration
     Stock = 1
     # Desired concentrations for dna
-    Volume_total_inc = 20
+    Volume_total_inc = 40
     dna_desired_pmol = 200
     ratio_prc2_dilution = 2
     dna_imaging_stock_conc_nM = \
         dna_desired_pmol/(Volume_total_inc)
     # base the PRC2 on it
     Desired_prc2 = dna_imaging_stock_conc_nM/1000 * \
-                   np.array([50,4,2,1/5])
+                   np.array([20,8,2])
     num_extra = 1
     # desired volumes (for each)
-    Volumes = [Volume_total_inc/ratio_prc2_dilution 
-               for d in Desired_prc2[:-3]] + \
-              [num_extra * Volume_total_inc/ratio_prc2_dilution 
-               for d in Desired_prc2[-3:]]
+    volume_1x = Volume_total_inc/ratio_prc2_dilution 
+    Volumes = [volume_1x,volume_1x,volume_1x*4]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired_prc2,
                                   ConcString=ConcString,
                                   BufferString="FLAG") 
