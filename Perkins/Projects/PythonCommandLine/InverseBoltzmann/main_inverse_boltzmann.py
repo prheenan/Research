@@ -73,7 +73,6 @@ def parse_and_run():
     InverseBoltzmannUtil.\
         run_and_save_data(gaussian_stdev,extension,bins,out_file,
                           interpolate_kwargs=interpolate_kwargs)
-        
 
 def run():
     # change to this scripts path

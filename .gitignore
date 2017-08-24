@@ -172,3 +172,15 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# NAMD Files
+
+*.old
+*.vel
+*.xdc
+*.xst
+*.log
+*.ref
+*.coor
+*.dcd
+*.restart.*
+*.xsc
