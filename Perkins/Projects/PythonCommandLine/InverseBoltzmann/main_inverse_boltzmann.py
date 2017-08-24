@@ -22,7 +22,7 @@ def load_separation_wave(file_path):
     assert len(waves) == 1 , "Need exactly one wave"
     # POST: exactly one wave
     m_wave = waves[0]
-    assert m_wave.Name().lower().endswidth("sep") , "Wave must end in 'sep'"
+    assert m_wave.Name().lower().endswith("sep") , "Wave must end in 'sep'"
     # POST: this is a separation wave. return it 
     return m_wave
 
@@ -37,7 +37,11 @@ def parse_and_run():
                         metavar='interpolation_factor',
                         type=float,
                         help='force at which half the pop is folded/unfolded')
-    help_gauss = "standard deviaiton of the (assumed gaussian) psf"
+    help_smart = 'If true, interpolation_factor is ignored and the algorithm'+\
+                 ' determines the interpolation factor by the standard devation'
+    parser.add_argument('-smart_interpolation',metavar='smart_interpolation',
+                        type=bool,help=help_smart)
+    help_gauss = "standard deviation of the (assumed gaussian) psf, in meters"
     parser.add_argument('-gaussian_stdev',metavar='gaussian_stdev',
                         type=float,help=help_gauss)
     parser.add_argument('-file_input',metavar="file_input",type=str,
@@ -50,13 +54,25 @@ def parse_and_run():
     in_file = os.path.normpath(args.file_input)
     bins = args.number_of_bins
     gaussian_stdev = args.gaussian_stdev
-    interpolation_factor = args.interpolation_factor
     data = load_separation_wave(in_file)
+    extension = data.DataY
+    # POST: have the data, determine how to interpolate
+    if (help_smart):
+        ext_bins,_ = InverseBoltzmannUtil.\
+                     get_extension_bins_and_distribution(extension,bins=bins)
+        plt.hist(extension,bins=ext_bins)
+        plt.show()
+        interpolation_factor = InverseBoltzmannUtil.upscale_factor_by_stdev(\
+                    extension_bins=ext_bins,
+                    gaussian_stdev=gaussian_stdev)
+    else:
+        interpolation_factor = args.interpolation_factor
     # get the extension in ~ unitless for (it will return to 'normal' after)
-    extension = data.dataY
-    interpolate_kwargs = dict(interpolation_factor=interpolation_factor)
-    run_and_save_data(gaussian_stdev,extension,bins,interpolate_kwargs,out_file)
-        
+    extension = data.DataY
+    interpolate_kwargs = dict(upscale=interpolation_factor)
+    InverseBoltzmannUtil.\
+        run_and_save_data(gaussian_stdev,extension,bins,out_file,
+                          interpolate_kwargs=interpolate_kwargs)
 
 def run():
     # change to this scripts path

@@ -15,13 +15,28 @@ from Util import DilutionUtil
 
 def run():
     print("No Divalent buffer creation, 2x")
-    for KCl in [50,300]:
+    for KCl in [50]:
         Stats = [ ["Tris-HCl","mM",1000,20,0],
                   ["KCl","mM",2500,KCl,0],
                   ["ZnCl2","mM",2.5,0.2,0]]
         DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
                                         BufferName="DI H20")
         print("...")
+    print("No Divalent buffer creation, 2x")
+    Stats = [ ["Tris-HCl","mM",1000,10,0],
+              ["KCl","mM",2500,300,0],
+              ["ZnCl2","mM",1.25,0.2,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
+                                    BufferName="DI H20")
+    print("High salt buffer creation, 1x")
+    Stats = [ ["Tris-HCl","mM",1000,10,0],
+              ["KCl","mM",2500,500,0],
+              ["ZnCl2","mM",1.25,0.1,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
+                                    BufferName="DI H20")
+
+    print("...")
+
     max_conc = 120
     Stats = [ ["2x PRC2 buffer","x",2,1,0],
               ["MgCl2","mM",1000,max_conc,0]]
@@ -29,7 +44,7 @@ def run():
                                     BufferName="DI H20")
     # use NiCl2 assay 
     Stats = [ ["2x PRC2 buffer","x",2,1,0],
-              ["NiCl2","mM",25,1,0]]
+              ["NiCl2","mM",25,3,0]]
     DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
                                     BufferName="DI H20")
     # serially dilute to what we need..

@@ -14,16 +14,17 @@ def run():
     """
     Serially dilute something
     """
-    ConcString = "ng/uL"
-    VolString = "uL"
+    ConcString = "mM"
+    VolString = "mL"
     # stock concentration
-    Stock = 311
+    Stock = 500
     # Desired concentrations
-    Desired = [135,100,50,25,1]
+    Desired = [250,125,62.5]
     # desired volumes (for each)
     Volumes = [20 for d in Desired]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
-                                  ConcString=ConcString,BufferString="TE")
+                                  ConcString=ConcString,BufferString="25 mM",
+                                  dilution_concentration=25)
     
 
 if __name__ == "__main__":
