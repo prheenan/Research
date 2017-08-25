@@ -12,6 +12,7 @@ import sys
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities
+from GeneralUtil.python.Plot import Scalebar
 
 from Research.Personal.EventDetection.Util import Offline,Plotting,Learning
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
@@ -42,7 +43,6 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    PlotUtilities.tom_text_rendering()
     data_file = "../_Data/example_protein.pkl"
     data = CheckpointUtilities.lazy_load(data_file)
     # get the 'raw' no-event probabilities, and the increasingly domain-specific
@@ -68,11 +68,12 @@ def run():
     probability_kwargs = dict(color='r',linestyle="-",linewidth=0.75)
     # for the probabilities, how far from the maximum y the scale bar should be
     # (units [0,1]
-    y_frac_prob = 0.65
-    common_scale_dict = dict(x_frac=0.15)
-    prob_scale_dict = dict(y_frac=y_frac_prob,y_label_frac=0.2,
-                           **common_scale_dict)
-    fec_scale_dict = dict(y_frac=0.45,y_label_frac=0.2,**common_scale_dict)
+    y_frac_prob = 0.3
+    common_scale_dict = dict(width=0.1,unit="ms",
+                             unit_kwargs=dict(value_function=lambda x: 1e3 * x))
+    fec_scale_dict = dict(offset_y=0.5,offset_x=0.15,**common_scale_dict)
+    prob_scale_dict = dict(**fec_scale_dict)
+    prob_scale_dict['offset_y'] = y_frac_prob
     n_cols = 1
     n_rows = 6
     ylim_force_pN = [-35,max(force_interp_plot)+1.1+75]
@@ -105,7 +106,8 @@ def run():
                             legend_kwargs=dict(handlelength=0.75,ncol=2),
                             **kw)
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks(fec_scale_dict)
+    print(fec_scale_dict)
+    Scalebar.x_scale_bar_and_ticks_relative(ax=ax_raw,**fec_scale_dict)
     tick_style()
     # # plot the 'raw' probability
     ax_raw_prob = plt.subplot(gs[1,:])
@@ -116,7 +118,7 @@ def run():
     PlotUtilities.no_x_label(ax_raw_prob)        
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
+    Scalebar.x_scale_bar_and_ticks_relative(ax=ax_raw_prob,**prob_scale_dict)
     tick_style()
     # # plot the adhesion-fixed probability
     ax_adhesion = plt.subplot(gs[2,:])
@@ -127,7 +129,9 @@ def run():
     PlotUtilities.no_x_label(ax_adhesion)      
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)    
-    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
+    print(prob_scale_dict)
+    Scalebar.x_scale_bar_and_ticks_relative(ax=ax_adhesion,
+                                            **prob_scale_dict)
     tick_style()
     # # plot the final probability
     ax_final_prob = plt.subplot(gs[3,:])
@@ -138,7 +142,7 @@ def run():
     PlotUtilities.no_x_label(ax_final_prob)      
     plt.ylim(ylim_prob)    
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=prob_scale_dict)
+    Scalebar.x_scale_bar_and_ticks_relative(ax=ax_final_prob,**prob_scale_dict)
     tick_style()
     # # plot the final event locations
     ax_final = plt.subplot(gs[4,:])
@@ -154,7 +158,7 @@ def run():
                             loc = "upper center",**kw)
     plt.ylim(ylim_force_pN)                           
     plt.xlim(xlim_time)
-    PlotUtilities.x_scale_bar_and_ticks(fec_scale_dict)
+    Scalebar.x_scale_bar_and_ticks_relative(ax=ax_final,**fec_scale_dict)
     tick_style()
     ylim_first_event = [-5,30]
     first_event_window_large = 0.045
@@ -167,6 +171,7 @@ def run():
           [0 ,first_event_window_large/fraction_increase,False,
            ylim_first_event,color_first],
           [-1,4e-3,True,[-50,None],'r']]
+    widths_seconds = 1e-3 * np.array([50,10,5])
     for i,(event_id,fudge,zoom_bool,ylim,c) in \
         enumerate(event_idx_fudge_and_kw):
         # get how the interpolated plot should be 
@@ -214,10 +219,14 @@ def run():
                                           plot_y=force_plot,fudge_y=7,
                                           label=None,markersize=150)
         plt.ylim(ylim)
-        PlotUtilities.make_scale_bar(y_frac=0.9,x_frac=0.5,width=0.7,
-                                     label_sig_figs=1)
-    loc_major = [-0.2,1.2]
-    loc_minor = [-0.15,1.1]
+        common = dict(unit="ms",
+                      unit_kwargs=dict(value_function = lambda x: x*1e3))
+        width = widths_seconds[i]
+        Scalebar.x_scale_bar_and_ticks_relative(offset_y=0.1,offset_x=0.5,
+                                                width=width,ax=in_ax,
+                                                **common)
+    loc_major = [-0.15,1.2]
+    loc_minor = [-0.15,1.15]
     locs = [loc_major for _ in range(5)] + \
            [loc_minor for _ in range(3)]
     PlotUtilities.label_tom(fig,loc=locs)
