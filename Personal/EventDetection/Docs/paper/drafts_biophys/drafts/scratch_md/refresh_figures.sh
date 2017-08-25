@@ -16,7 +16,12 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
 # Returns:
 
+source ~/.profile
 # copy all .png or .svg files in the protein directory
 # (-o is OR clause)
 find ../../../Figures/BiophysicalJournal/Protein/ \
     \( -name "*.png" -o -name "*.svg" \) -exec cp {} figures \;
+# re-make the word document
+p_pandoc scratch_prheenan.md supplemental_prheenan.md
+date_str=`date +%Y_%m_%d-%H.%M`
+cp scratch_prheenan.md.docx "feather_${date_str}.docx"
