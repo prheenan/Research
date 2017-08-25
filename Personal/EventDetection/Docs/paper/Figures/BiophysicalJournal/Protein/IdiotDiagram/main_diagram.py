@@ -14,6 +14,7 @@ import scipy
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from GeneralUtil.python import CheckpointUtilities
+from GeneralUtil.python.Plot import Scalebar
 from matplotlib.patches import Ellipse
 from Research.Personal.EventDetection.Util import Offline,Plotting,Learning,\
     Analysis
@@ -34,10 +35,8 @@ probabiity_kwargs = dict(color='r')
 # how big the scale bars are
 scale_fraction_width = 0.13
 scale_fraction_offset = 0.3
-PlotUtilities.tom_text_rendering()
 df_dt_string = PlotUtilities.variable_string(r"\partial{}F/\partial{}t")
 rupture_string = PlotUtilities.variable_string(r"F_{R}")
-force_string = PlotUtilities.force_string()
 fontsize=8
 scale_line_width=1.5
 
@@ -80,7 +79,7 @@ def generate_rupture_histograms():
         rupture_forces,mean_rupture_forces,stdev_rupture_forces,x,landscape
 
 def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
-                    arrow_kwargs):
+                    arrow_kwargs,ax):
     # get the style for before and after
     style_interp_before = dict(**interp_force_kwargs)
     style_interp_before['color'] = 'b'
@@ -101,16 +100,18 @@ def plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
              **style_interp_after)
     plt.plot(time_plot[slice_final],force_interp_plot[slice_final],
              **style_interp_final)
-    PlotUtilities.lazyLabel("",PlotUtilities.force_string(),"")
+    PlotUtilities.lazyLabel("",PlotUtilities.unit_string(),"")
     # plot arrows above the events
     Plotting.plot_arrows_above_events(event_idx=info_final.event_idx,
                                       fudge_y=30,**arrow_kwargs)
     # add a scale bar
-    PlotUtilities.no_x_label(plt.gca())               
+    PlotUtilities.no_x_label(ax=ax)               
     max_time = max(time_plot)
-    width = scale_fraction_width * max_time
-    scale_bar_dict = dict(linewidth=scale_line_width)
-    PlotUtilities.x_scale_bar_and_ticks(scale_bar_dict=scale_bar_dict)
+    width = 0.1
+    scale_bar_dict = dict(width=width,offset_x=0.2,offset_y=0.7,
+                          unit="ms",ax=ax,
+                          unit_kwargs=dict(value_function = lambda x: x*1e3))
+    Scalebar.x_scale_bar_and_ticks_relative(**scale_bar_dict)
 
 def common_text_kwargs():
     return dict(xycoords='data',
@@ -124,7 +125,7 @@ def common_arrow_kwargs(arrowprops=dict(arrowstyle="<->",shrinkA=0,
     return  dict(fontsize=fontsize,
                  arrowprops=arrowprops,**common_text_kwargs())
 
-def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
+def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs,ax_zoomed):
     # determine the second event (zoom index)
     zoom_event_idx = 1
     event_zoom = info_final.event_idx[zoom_event_idx]
@@ -217,7 +218,12 @@ def plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs):
     # add a scalebar...
     scale_bar_kwargs = dict(dict(y_frac=0.5,
                                  linewidth=scale_line_width))
-    PlotUtilities.x_scale_bar_and_ticks(scale_bar_kwargs)
+    max_time = max(time_plot)
+    width = 0.001
+    scale_bar_dict = dict(width=width,offset_x=0.2,offset_y=0.25,
+                          unit="ms",ax=ax_zoomed,
+                          unit_kwargs=dict(value_function = lambda x: x*1e3))
+    Scalebar.x_scale_bar_and_ticks_relative(**scale_bar_dict)
 
 
 def plot_mean_rupture(rupture_forces_histograms,loading_rate_histogram,
@@ -341,7 +347,6 @@ def run():
     n_cols = 2
     n_rows = 3
     # 'master' grid spec is 2x1
-
     gs0 = gridspec.GridSpec(2,1)
     gs = gridspec.GridSpecFromSubplotSpec(n_rows, n_cols, subplot_spec=gs0[0],
                                           hspace=0.5,wspace=0.5)
@@ -428,18 +433,18 @@ def run():
     # # plot the 'raw' force
     ax1 = plt.subplot(gs_data[0,:])
     plot_fec_scaled(time_plot,force_plot,force_interp_plot,info_final,
-                    arrow_kwargs)
-    PlotUtilities.lazyLabel("",PlotUtilities.force_string(),
+                    arrow_kwargs,ax=ax1)
+    PlotUtilities.lazyLabel("",PlotUtilities.unit_string(),
                             "Extracting rupture properties",
                             **lazy_kwargs)
-    PlotUtilities.tom_ticks(num_major=4,change_x=False)
     ylabel_subplot(ax1,y_fec_label)
     xlim = plt.xlim()
     plt.ylim(ylim_force_pN)
+    PlotUtilities.tom_ticks(ax=ax1,change_x=False)
     # # plot the 'zoomed' axis
     ax_zoom = plt.subplot(gs_data[1:,:])
-    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs)
-    PlotUtilities.lazyLabel("",PlotUtilities.force_string(),"",**lazy_kwargs)
+    plot_zoomed(time_plot,force_plot,info_final,ax1,arrow_kwargs,ax_zoom)
+    PlotUtilities.lazyLabel("",PlotUtilities.unit_string(),"",**lazy_kwargs)
     PlotUtilities.xlabel("Time",labelpad=0)
     PlotUtilities.no_x_label(ax_zoom)
     PlotUtilities.tom_ticks(num_major=5,change_x=False)

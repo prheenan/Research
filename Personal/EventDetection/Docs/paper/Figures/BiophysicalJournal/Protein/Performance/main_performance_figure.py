@@ -89,7 +89,7 @@ def make_metric_plot(metrics,
             xlabel_dist = "Relative Error ($\mathbf{x_k}$)"
             xlabel_load = "Loading Rate (pN/s)"
             xlabel_rupture_force = \
-                PlotUtilities.force_string("F_R")
+                PlotUtilities.variable_string("F_R")
         else:
             xlabel_dist, xlabel_load,xlabel_rupture_force = "","",""
         n_string = r"N_{\mathrm{" + "{:s}".format(titles[i]) + "}}"

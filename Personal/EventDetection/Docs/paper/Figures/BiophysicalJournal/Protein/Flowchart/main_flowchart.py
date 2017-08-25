@@ -84,7 +84,7 @@ def run():
     kw = dict(title_kwargs=title_kwargs,axis_kwargs=kwargs_axis)
     arrow = "$\Downarrow$"
     prob_str = PlotUtilities.variable_string("P")
-    force_str = PlotUtilities.variable_string("F")
+    force_str = PlotUtilities.unit_string("F")
     probability_label = "log$_{\mathbf{10}}$" + "({:s})".format(prob_str)
     probability_label_post = probability_label
     n_cols = 3
@@ -106,7 +106,6 @@ def run():
                             legend_kwargs=dict(handlelength=0.75,ncol=2),
                             **kw)
     plt.xlim(xlim_time)
-    print(fec_scale_dict)
     Scalebar.x_scale_bar_and_ticks_relative(ax=ax_raw,**fec_scale_dict)
     tick_style()
     # # plot the 'raw' probability
@@ -129,7 +128,6 @@ def run():
     PlotUtilities.no_x_label(ax_adhesion)      
     plt.ylim(ylim_prob)
     plt.xlim(xlim_time)    
-    print(prob_scale_dict)
     Scalebar.x_scale_bar_and_ticks_relative(ax=ax_adhesion,
                                             **prob_scale_dict)
     tick_style()
