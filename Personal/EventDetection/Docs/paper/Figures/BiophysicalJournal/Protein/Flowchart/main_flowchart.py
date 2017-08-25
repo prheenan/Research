@@ -225,6 +225,7 @@ def run():
         Scalebar.x_scale_bar_and_ticks_relative(offset_y=0.1,offset_x=0.5,
                                                 width=width,ax=in_ax,
                                                 **common)
+        PlotUtilities.tom_ticks(ax=in_ax,num_major=2,change_x=False)
     loc_major = [-0.15,1.2]
     loc_minor = [-0.15,1.15]
     locs = [loc_major for _ in range(5)] + \
