@@ -14,9 +14,9 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 # Arguments:
 #### Arg 1: Description
 
+source ~/src_prh/GeneralUtil/bash/.profile
 # Returns:
-
-source ~/.profile
+rm -f *feather*.docx
 # copy all .png or .svg files in the protein directory
 # (-o is OR clause)
 find ../../../Figures/BiophysicalJournal/Protein/ \
@@ -24,4 +24,8 @@ find ../../../Figures/BiophysicalJournal/Protein/ \
 # re-make the word document
 p_pandoc scratch_prheenan.md supplemental_prheenan.md
 date_str=`date +%Y_%m_%d-%H.%M`
-cp scratch_prheenan.md.docx "feather_${date_str}.docx"
+out_name="feather_${date_str}.docx"
+cp scratch_prheenan.md.docx $out_name
+base_output="/Users/patrickheenan/Dropbox/Perkins Group AFM/FEATHER"
+cp figures "$base_output/Figures/"
+cp $out_name "$base_output/$out_name"
