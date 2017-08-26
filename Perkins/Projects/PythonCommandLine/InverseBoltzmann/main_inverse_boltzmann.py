@@ -6,9 +6,9 @@ import sys
 import matplotlib.pyplot as plt
 
 import os, sys,traceback
+path = os.path.abspath(os.path.dirname(__file__))
+os.chdir(path)
 sys.path.append('../../../../../')
-from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from GeneralUtil.python import GenUtilities
@@ -79,8 +79,6 @@ def parse_and_run():
 
 def run():
     # change to this scripts path
-    path = os.path.abspath(os.path.dirname(__file__))
-    os.chdir(path)
     try:
         parse_and_run()
     except:
