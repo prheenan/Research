@@ -55,6 +55,10 @@ def parse_and_run():
                         metavar="output_interpolated",
                         type=bool,required=False,default=True,
                         help=help_output)
+    parser.add_argument('-n_iters',
+                        metavar="n_iters",
+                        type=int,required=False,default=300,
+                        help="number of iterations")
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
@@ -68,8 +72,14 @@ def parse_and_run():
     extension = data.DataY
     interpolate_kwargs = dict(upscale=interpolation_factor)
     save_kw = dict(output_interpolated=args.output_interpolated)
+    common_deconvolve_kwargs = dict(p_0=None,
+                                    return_full=False,
+                                    r_0=1,
+                                    delta_tol=1e-9,
+                                    n_iters=args.n_iters)
     run_kw = dict(smart_interpolation=args.smart_interpolation,
-                  interpolate_kwargs=interpolate_kwargs)
+                  interpolate_kwargs=interpolate_kwargs,
+                  deconvolve_common_kwargs=common_deconvolve_kwargs)
     run_dict = dict(run_kwargs=run_kw,
                     save_kwargs=save_kw)
     InverseBoltzmannUtil.\
