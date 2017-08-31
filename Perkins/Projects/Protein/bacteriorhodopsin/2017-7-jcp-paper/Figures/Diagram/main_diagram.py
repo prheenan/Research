@@ -67,22 +67,19 @@ def run():
     # # make the plot 
     fig = PlotUtilities.figure((7,2))
     # create the 'top' gridspec
-    top_spec = gridspec.GridSpec(1,3)
+    top_spec = gridspec.GridSpec(1,3,left=0)
     # create separate axes for the image and FECs 
     image_spec = \
-        gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0,0])
+        gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0,0],
+                                        hspace=0,
+                                        wspace=0)
     data_spec = \
         gridspec.GridSpecFromSubplotSpec(1,2,subplot_spec=top_spec[0,1:],
-                                         hspace=0.05,wspace=0.05)
-    # create a separate axis for the previously-published data 
-    zoom_in_spec = gridspec.GridSpecFromSubplotSpec(3,1,
-                                                    subplot_spec=data_spec[:,1],
-                                                    wspace=0.06) 
+                                         hspace=0.05,wspace=0.12)
     # # plot the image 
     ax = plt.subplot(image_spec[:])
     plt.imshow(plt.imread("../Data/sample_cartoon.png"),aspect='auto')
     ax.axis('off')
-    xy_text = 0,np.mean(plt.ylim())
     # # plot the example fec and zoomed regions
     #
     # 'full' example 
@@ -129,15 +126,18 @@ def run():
         min_x = min(xlim)
         max_y = max(ylim)
         y_loc = max_y*0.9
-        x_kwargs =dict(unit="ms",width=widths_s[i],
+        line_kw = dict(linewidth=1.0,color='k')
+        x_kwargs =dict(unit="ms",width=widths_s[i],line_kwargs=line_kw,
                        unit_kwargs=dict(value_function=lambda x: x * 1e3))
+        y_kwargs = dict(unit="pN ",line_kwargs=line_kw,
+                        height=heights_pN[i])
         offset_x = Scalebar.rel_to_abs(ax_tmp,offsets_x[i],True)
         offset_y = Scalebar.rel_to_abs(ax_tmp,offsets_y[i],False)
         Scalebar.crossed_x_and_y(offset_x=offset_x,
                                  offset_y=offset_y,
                                  ax=ax_tmp,
                                  x_kwargs=x_kwargs,
-                                 y_kwargs=dict(unit="pN ",height=heights_pN[i]))
+                                 y_kwargs=y_kwargs)
         PlotUtilities.no_y_label(ax_tmp)
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.x_label_on_top(ax_tmp)        
@@ -145,10 +145,10 @@ def run():
         PlotUtilities.xlabel("Time")
     loc = [ [0.15,1.15],
             [-0.05,1.15],
-            [0.05,1.15],
-            [0.3,0.9]]
+            [-0.05,1.15]]
     PlotUtilities.label_tom(fig,loc=loc)
-    PlotUtilities.savefig(fig,"diagram.png",bbox_inches='tight')
+    PlotUtilities.save_png_and_svg(fig,"diagram",
+                                   subplots_adjust=dict(left=0,bottom=0.01))
     
 if __name__ == "__main__":
     run()

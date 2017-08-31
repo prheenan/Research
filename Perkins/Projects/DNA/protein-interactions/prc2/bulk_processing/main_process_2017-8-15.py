@@ -45,7 +45,7 @@ def run():
                                                  cache_dir=cache_dir)
     # note: vmin/vmax are in nm (as is height)                                                  
     vmin_nm = 0
-    vmax_nm = vmin_nm + 1
+    vmax_nm = vmin_nm + 1.5
     imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.Greys_r)    
     for im in images:
         src_file = im.SourceFilename()
