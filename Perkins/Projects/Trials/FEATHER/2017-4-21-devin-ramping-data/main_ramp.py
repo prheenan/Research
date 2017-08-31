@@ -7,11 +7,15 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,scipy
 sys.path.append("../../../../../../")
 from GeneralUtil.python import PlotUtilities
 from Research.Personal.EventDetection._2SplineEventDetector import Detector
 from Research.Personal.EventDetection.Util import Analysis,Plotting,InputOutput
+from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
+    InverseWeierstrass,WeierstrassUtil
+from scipy.ndimage.filters import uniform_filter1d
+from scipy.interpolate import UnivariateSpline
 
 
 def run():

@@ -11,4 +11,4 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
 # Description:
 
-/Applications/VMD\ 1.9.2.app/Contents/vmd/vmd_MACOSXX86 -dispdev text -e wat_sphere.tcl 
+vmd -dispdev text -e wat_sphere.tcl 

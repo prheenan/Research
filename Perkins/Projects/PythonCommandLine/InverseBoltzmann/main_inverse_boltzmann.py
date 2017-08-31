@@ -6,9 +6,9 @@ import sys
 import matplotlib.pyplot as plt
 
 import os, sys,traceback
+path = os.path.abspath(os.path.dirname(__file__))
+os.chdir(path)
 sys.path.append('../../../../../')
-from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from GeneralUtil.python import GenUtilities
@@ -40,7 +40,7 @@ def parse_and_run():
     help_smart = 'If true, interpolation_factor is ignored and the algorithm'+\
                  ' determines the interpolation factor by the standard devation'
     parser.add_argument('-smart_interpolation',metavar='smart_interpolation',
-                        type=bool,help=help_smart)
+                        type=bool,help=help_smart,required=False,default=True)
     help_gauss = "standard deviation of the (assumed gaussian) psf, in meters"
     parser.add_argument('-gaussian_stdev',metavar='gaussian_stdev',
                         type=float,help=help_gauss)
@@ -49,6 +49,16 @@ def parse_and_run():
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
+    help_output = ("If true, outputs the original number of bins requested." +\
+                  " Otherwise, outputs the interpolated result")
+    parser.add_argument('-output_interpolated',
+                        metavar="output_interpolated",
+                        type=bool,required=False,default=True,
+                        help=help_output)
+    parser.add_argument('-n_iters',
+                        metavar="n_iters",
+                        type=int,required=False,default=300,
+                        help="number of iterations")
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
@@ -57,27 +67,28 @@ def parse_and_run():
     data = load_separation_wave(in_file)
     extension = data.DataY
     # POST: have the data, determine how to interpolate
-    if (help_smart):
-        ext_bins,_ = InverseBoltzmannUtil.\
-                     get_extension_bins_and_distribution(extension,bins=bins)
-        plt.hist(extension,bins=ext_bins)
-        plt.show()
-        interpolation_factor = InverseBoltzmannUtil.upscale_factor_by_stdev(\
-                    extension_bins=ext_bins,
-                    gaussian_stdev=gaussian_stdev)
-    else:
-        interpolation_factor = args.interpolation_factor
+    interpolation_factor = args.interpolation_factor
     # get the extension in ~ unitless for (it will return to 'normal' after)
     extension = data.DataY
     interpolate_kwargs = dict(upscale=interpolation_factor)
+    save_kw = dict(output_interpolated=args.output_interpolated)
+    common_deconvolve_kwargs = dict(p_0=None,
+                                    return_full=False,
+                                    r_0=1,
+                                    delta_tol=1e-9,
+                                    n_iters=args.n_iters)
+    run_kw = dict(smart_interpolation=args.smart_interpolation,
+                  interpolate_kwargs=interpolate_kwargs,
+                  deconvolve_common_kwargs=common_deconvolve_kwargs)
+    run_dict = dict(run_kwargs=run_kw,
+                    save_kwargs=save_kw)
     InverseBoltzmannUtil.\
-        run_and_save_data(gaussian_stdev,extension,bins,out_file,
-                          interpolate_kwargs=interpolate_kwargs)
+        run_and_save_data(gaussian_stdev,extension,bins,out_file,**run_dict)
+                          
+    
 
 def run():
     # change to this scripts path
-    path = os.path.abspath(os.path.dirname(__file__))
-    os.chdir(path)
     try:
         parse_and_run()
     except:
