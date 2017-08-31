@@ -35,9 +35,9 @@ def run():
     x_size = 490
     y_size = 300
     y_height = 0.7
-    x_height = 1.07
     label_height = 0.52
     y_50 = 0.57
+    x_height = y_50 + 0.28cc
     y_text_arr = [ [0.025,y_height,"Force",text_label],
                    [0.36,y_height,"Force",text_label],
                    [0.69,y_height,"Free Energy",text_label],
@@ -47,8 +47,8 @@ def run():
                    [0.80,y_50+0.22,"0.5 kcal/mol",text_common]
                    ]
     x_text_arr = [ [0.15,x_height,"Extension",text_label],
-                   [0.45,x_height,"Time (ms)",text_label],
-                   [0.8,x_height,"Extension (nm)",text_label],
+                   [0.45,x_height,"Time",text_label],
+                   [0.8,x_height,"Extension",text_label],
                    # plot labels 
                    [0.01,label_height,"D",text_subplot_label],
                    [0.35,label_height,"E",text_subplot_label],

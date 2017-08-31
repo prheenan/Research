@@ -23,6 +23,8 @@ from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
 
 import copy 
 from matplotlib import gridspec
+import matplotlib.pyplot as plt
+import matplotlib.patches
 
 def run():
     """
@@ -143,6 +145,34 @@ def run():
         PlotUtilities.x_label_on_top(ax_tmp)        
         PlotUtilities.lazyLabel("","","")        
         PlotUtilities.xlabel("Time")
+    # add a single arrow on the last axis. See:
+    # https://www.cilyan.org/blog/2016/01/23/matplotlib-draw-between-subplots/
+    # 1. Get transformation operators for axis and figure
+    ax0tr = ax_example.transData # Axis 0 -> Display
+    ax1tr = ax_tmp.transData # Axis 1 -> Display
+    figtr = fig.transFigure.inverted() # Display -> Figure
+    # 2. Transform arrow start point from axis 0 to figure coordinates
+    ptB = figtr.transform(ax0tr.transform((85,50)))
+    # 3. Transform arrow end point from axis 1 to figure coordinates
+    tmp_ylim = ax_tmp.get_ylim()
+    max_y = np.max(tmp_ylim)
+    range_y = abs(np.diff(tmp_ylim))
+    tmp_xlim = ax_tmp.get_xlim()
+    range_x = abs(np.diff(tmp_xlim))
+    y_styles = [ (max_y-range_y*0.9,"arc3,rad=0.2"),
+                 (max_y-range_y*0.3,"arc3,rad=-0.2")]
+    for y,style in y_styles:                  
+        ptE = figtr.transform(ax1tr.transform((np.mean(tmp_xlim)*0.999,
+                                               y)))                                           
+        # 4. Create the patch
+        arrow = matplotlib.patches.FancyArrowPatch(
+            ptB, ptE, transform=fig.transFigure,  # Place arrow in figure coord system
+            fc = "g", connectionstyle=style, arrowstyle='simple', 
+            alpha = 0.3,linewidth=0,
+            mutation_scale = 20.
+        )
+        # 5. Add patch to list of objects to draw onto the figure
+        fig.patches.append(arrow)
     loc = [ [0.15,1.15],
             [-0.05,1.15],
             [-0.05,1.15]]
