@@ -37,7 +37,7 @@ def run():
     y_height = 0.7
     label_height = 0.52
     y_50 = 0.57
-    x_height = y_50 + 0.28cc
+    x_height = y_50 + 0.28
     y_text_arr = [ [0.025,y_height,"Force",text_label],
                    [0.36,y_height,"Force",text_label],
                    [0.69,y_height,"Free Energy",text_label],
