@@ -2,7 +2,7 @@
 
 P. Heenan, H. Yu, M. Siewny , T. Perkins
 
-ABSTRCT 
+ABSTRACT 
 
 
 Determining structural causes for membrane protein stability is a historically difficult problem. Single molecule force spectroscopy (SMFS) experiments can mechanically pull apart a molecule and determine its associated free energy landscape, and hence stability, as a function of molecular extension. Atomic force microscopy (AFM) is one SMFS technique that unfolds membrane proteins in their native lipid bilayers. Traditionally, AFM-SMFS data has been limited by poor instrumental time resolution, making state identification difficult, and the perturbing effect of the AFM cantilever, causing systematic overestimation of the landscape. Recent advancements in ultra-short ($<$L$>$=?m) cantilevers with 1$\upmu$s time resolution can detect previously obscured structural states within SMFS data. In addition, developments in data analysis techniques such as the inverse Weierstrass transform approximately remove the perturbation of the force probe on the landscape. By combining the advances in algorithmic analysis with improvements in cantilever technology, we reconstructed the energy landscape of the membrane protein bacteriorhodopsin as a function of molecular end-to-end distance with 2 angstrom resolution. The average energy of unfolding per amino acid was 0.7 $\pm$ 0.1 kcal/mol, in agreement with past work. However, there was significant variation in unfolding energy cost per amino acid within bacteriorhodopsin, from 0.5 kcal/mol in the A helix to 4 kcal/mol in the ED helix. Reconstructing the energy landscape as a function of molecular extension highlights that some structural elements of bacteriorhodopsin have a higher associated unfolding energy cost and improves scientific understanding of membrane protein stability. 
@@ -14,6 +14,8 @@ INTRO
 (SMFS to estimate landscapes, higher time resolution)
 
 (Landscape reconstruction techniques, full versus single-barrier)
+
+(Need for time resolution (for states) and deconvolution)
 
 METHODS
 
@@ -55,12 +57,22 @@ DISCUSSION / RESULTS
 
 (Discuss full energy landscape of bR -- compare average energy per amino acid and full landscape to previous results. )
 
+The unfolding energy of bacteriorhodopsin depends heavily on the structural element being unfolded. Figure {#ref_fig:helixE} reports the energy landscape and unfolding energy per amino acid as a function of molecular extension for the ED, CB, and A helices. Of these, the ED helix has the highest associated unfolding energy per amino acid, followed by the CB and A helices. Although this energy landscape provides a good estimation for the CB and A helices, the reconstruction of the ED helical pair is limited by its extremely high stiffness. 
 
-The local stiffness of bacteriorhodopsin introduced error in the reconstruction of the ED helix. The inverse Weierstrass requires that stiffness of the probe be much greater than the stiffness of the reconstructed landscape. As shown in {#ref_fig:helixE}, the greatest stiffness of the bacteriorhodopsin, at the top of the ED helix, is about 8 kcal/(mol$\cdot$ $\text{nm}^2$)$\approx$ 50pN/nm, larger than the cantilever stiffness of 20pN/nm. Therefore, the top of the ED Helix was likely poorly reconstructed by the inverse Weierstrass and represents a lower bound on the true landscape. For the CB and A helices of the protein, where the stiffness was at least an order of magnitude lower, the reconstruction of the landscape was better (XXX cite). In addition, the almost-neglible correction to the landscape from the $\ddot{A}$ term in the inverse Weierstrass transform outside of the ED Helix (Figure {#label_fig:full}) confirmed that higher-order corrections were unlikely to effect the landscape of the CB and A helices.
+The large stiffness of the ED helical pair of bacteriorhodopsin, compared to the force probe, introduced error in its energy landscape reconstruction. The inverse Weierstrass requires that stiffness of the probe be much greater than the stiffness of the reconstructed landscape. As shown in {#ref_fig:helixE}, the greatest stiffness of the bacteriorhodopsin, at the top of the ED helix, is about 8 kcal/(mol$\cdot$ $\text{nm}^2$)$\approx$ 50pN/nm, larger than the cantilever stiffness of 20pN/nm. Therefore, the top of the ED Helix was likely poorly reconstructed by the inverse Weierstrass and represents a lower bound on the true landscape. For the CB and A helices of the protein, where the stiffness was at least an order of magnitude lower, the reconstruction of the landscape was better (XXX cite). In addition, the almost-neglible correction to the landscape from the $\ddot{A}$ term in the inverse Weierstrass transform outside of the ED Helix (Figure {#ref_fig:full}) confirmed that higher-order corrections were unlikely to effect the landscape of the CB and A helices.
 
 (Discuss using greater stiffnesses) 
 
 (Discuss per-helix results)
 
-CONCLUSIONS 
+CONCLUSION
+
+()
+
+Further work: 
+
+* unfolding,refolding.
+* dependence on conditions 
+* comparison with equilibrium measurments
+* removing the effect of handles 
 
