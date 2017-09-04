@@ -28,8 +28,8 @@ def run():
     file_name = "defl.ibw"
     defl_volts_wave = PxpLoader.read_ibw_as_wave(file_name)
     defl_volts = defl_volts_wave.DataY
-    invols_nm_per_volt = 203
-    spring_pN_per_nM = 4
+    invols_nm_per_volt = 154.8
+    spring_pN_per_nM = 5.70
     force_pN = defl_volts * invols_nm_per_volt * spring_pN_per_nM
     # zero out to the maximum
     force_pN -= np.mean(force_pN)
