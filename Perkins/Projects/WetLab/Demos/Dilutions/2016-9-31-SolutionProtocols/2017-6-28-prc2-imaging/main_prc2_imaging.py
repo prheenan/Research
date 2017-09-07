@@ -55,44 +55,32 @@ def run():
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
                                   ConcString=ConcString,
                                   BufferString="TE") 
-    print("==== DNA (600bp) dilutions ===")
-    ConcString = "nM"
-    VolString = "uL"
-    # stock concentration
-    Stock = 1.3
-    dna_start_conc_600bp = 100
-    # Desired concentrations
-    Desired = [dna_start_conc_600bp]
-    # desired volumes (for each)
-    Volumes = [50]
-    DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
-                                  ConcString=ConcString,
-                                  BufferString="TE") 
     print("==== PRC2 dilutions ===")
     ConcString = "uM"
     VolString = "uL"
     # stock concentration
     Stock = 1
     # Desired concentrations for dna
-    Volume_total_inc = 40
-    dna_desired_pmol = 200
+    Volume_total_inc = 30
+    dna_desired_conc_nM = 4
+    dna_desired_pmol = dna_desired_conc_nM*Volume_total_inc
     ratio_prc2_dilution = 2
     dna_imaging_stock_conc_nM = \
         dna_desired_pmol/(Volume_total_inc)
     # base the PRC2 on it
-    Desired_prc2 = dna_imaging_stock_conc_nM/1000 * \
-                   np.array([20,8,2])
+    Desired_prc2 = ratio_prc2_dilution * dna_imaging_stock_conc_nM/1000 * \
+                   np.array([10,1] + [1/(4**i) for i in range(1,4)])
     num_extra = 1
     # desired volumes (for each)
     volume_1x = Volume_total_inc/ratio_prc2_dilution 
-    Volumes = [volume_1x,volume_1x,volume_1x*4]
+    Volumes = [2*volume_1x] + [volume_1x for _ in Desired_prc2[:-1]]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired_prc2,
                                   ConcString=ConcString,
-                                  BufferString="FLAG") 
-    print("=== Binding dilution ===")
+                                  BufferString="1x PRC2") 
+    print("=== Binding dilution (note: PRC2 already has 1x binding)===")
     dna_start_conc_inc = 50
     Stats = [ ["PRC2","x",ratio_prc2_dilution,1,0],
-              ["4x binding","x",4,1,0],
+              ["4x binding","x",4,1,1*volume_1x],
               ["DNA","nM",dna_start_conc_inc,dna_imaging_stock_conc_nM,0]]
     vol_units = "uL"
     DilutionUtil.PrintSolutionSteps(Stats,Volume_total_inc,vol_units,
