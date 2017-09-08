@@ -130,7 +130,14 @@ def prh_hist(data,**hist_kw):
     ax = plt.gca()
     plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,meanline=True,
                 showmeans=True,flierprops=dict(color='k',markersize=1))                
-    
+   
+def print_info(dist,name):
+    print("For {:s}:".format(name))
+    print("\t Median: {:.1f} nm".format(np.median(dist)*1e9))
+    print("\t Mean  : {:.1f} nm".format(np.mean(dist)*1e9))
+    print("\t Std   : {:.1f} nm".format(np.std(dist)*1e9))
+
+
 def run():
     """
     <Description>
@@ -169,6 +176,9 @@ def run():
     # POST: all the contour lengths are set in 'real' units ]  
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
+    print_info(L0_dna,"only DNA")
+    print_info(L0_protein,"DNA+PRC2")
+
     n_protein = (L0_protein).size
     n_dna = L0_dna.size
     fig = PlotUtilities.figure()            
