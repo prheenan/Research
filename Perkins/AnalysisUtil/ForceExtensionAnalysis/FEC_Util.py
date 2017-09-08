@@ -166,7 +166,20 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
-
+def name_func(i,e):
+    """
+    Args:
+        i: an arbitrary id integer  
+        e: TimeSepForce or SurfaceObject
+    Returns:
+        a name for saving object e (TimeSepForce_ into) file <i> (arbitrary)
+        See also: cache_individual_waves_in_directory and the name_func
+        parameter of CheckpointUtilities.multi_load
+    """
+    # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
+    file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
+    name = "{:s}_{:s}{:d}".format(file_name_src,
+                                  e.Meta.Name,i)
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
                                         force=False,load_func=None,**kwargs):
@@ -196,22 +209,12 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
         # by default, we read the pxps in the directory
         # and get the last return (TimeSepForce)
         load_func = lambda *args,**kwargs: \
-            concatenate_fec_from_single_directory(*args,**kwargs)[-1]            
-    GenUtilities.ensureDirExists(cache_dir)
-    files = GenUtilities.getAllFiles(cache_dir,ext=".pkl")
-    # if the files exist and we aren't forcing 
-    if (len(files) > 0 and not force):
-        return [CheckpointUtilities.lazy_load(f) for f in files[:limit]]
-    # get all the fecs
-    examples = load_func(pxp_dir,**kwargs)                    
-    for i,e in enumerate(examples):
-        # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
-        file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
-        name = "{:s}{:s}_{:s}{:d}.pkl".format(cache_dir,
-                                              file_name_src,
-                                              e.Meta.Name,i)
-        CheckpointUtilities.lazy_save(name,e)
-    return examples[:limit]
+            concatenate_fec_from_single_directory(*args,**kwargs)[-1]     
+    load_functor = lambda: load_func(pxp_dir,**kwargs)            
+    return CheckpointUtilities.multi_load(cache_dir=cache_dir,
+                                          load_func=load_functor,
+                                          force=force,limit=limit,
+                                          name_func=name_func)
 
 def _slice_by_property(obj,min_prop,max_prop,property_func):
     """

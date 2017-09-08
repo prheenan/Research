@@ -33,17 +33,21 @@ def cache_images_in_directory(pxp_dir,cache_dir,**kwargs):
     
 def smart_colorbar(im,ax=plt.gca(),fig=plt.gcf(),
                    divider_kw=dict(size="5%",pad=0.1),
-                   label="Height (nm)"):
+                   label="Height (nm)",add_space_only=False):
     """
     Makes a color bar on the given axis/figure by moving the axis over a little 
     """    
     # make a separate axis for the colorbar 
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.1)
-    PlotUtilities.colorbar(label,fig=fig,
-                           bar_kwargs=dict(mappable=im,cax=cax))    
+    if (not add_space_only):
+        PlotUtilities.colorbar(label,fig=fig,
+                               bar_kwargs=dict(mappable=im,cax=cax))    
+    else:
+        cax.axis('off')
+
     
-def make_image_plot(im,imshow_kwargs,pct=50):
+def make_image_plot(im,imshow_kwargs=dict(),pct=50):
     """
     Given an image object, makes a sensible plot 
     
