@@ -178,8 +178,9 @@ def name_func(i,e):
     """
     # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
     file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
-    name = "{:s}_{:s}{:d}".format(file_name_src,
+    name = "{:s}_{:s}_{:d}".format(file_name_src,
                                   e.Meta.Name,i)
+    return name                                  
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
                                         force=False,load_func=None,**kwargs):
