@@ -7,7 +7,8 @@ import sys
 
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
-from GeneralUtil.python import GenUtilities
+from GeneralUtil.python import GenUtilities,PlotUtilities
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def read_images_in_pxp_dir(dir,**kwargs):
     """
@@ -30,76 +31,42 @@ def cache_images_in_directory(pxp_dir,cache_dir,**kwargs):
                                                           **kwargs)
     return to_ret                                                  
     
-
-
-def PlotImage(Image,height_to_plot=None,fix_extent=False,aspect='auto',
-              cmap=plt.cm.Greys,range_plot=None,ax=None,**kwargs):
+def smart_colorbar(im,ax=plt.gca(),fig=plt.gcf(),
+                   divider_kw=dict(size="5%",pad=0.1),
+                   label="Height (nm)",add_space_only=False):
     """
-    Plots SurfaceImage as a greyscale map
+    Makes a color bar on the given axis/figure by moving the axis over a little 
+    """    
+    # make a separate axis for the colorbar 
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.1)
+    if (not add_space_only):
+        PlotUtilities.colorbar(label,fig=fig,
+                               bar_kwargs=dict(mappable=im,cax=cax))    
+    else:
+        cax.axis('off')
+
+    
+def make_image_plot(im,imshow_kwargs=dict(cmap=plt.cm.afmhot),pct=50):
+    """
+    Given an image object, makes a sensible plot 
     
     Args:
-         Image:  output of ReadImageAsObject
-         label: what to label (title) this with
-         **kwargs: passed to imshow
-    """
-    if (range_plot is None):
-        range_plot = Image.range_microns()
-    if (height_to_plot is None):
-        height_to_plot =Image.height_nm_rel()
-    if (fix_extent):
-        extent=[0,0,range_plot,range_plot]
-    else:
-        extent = None
-    if (ax is None):
-        ax = plt.gca()
-    im = ax.imshow(height_to_plot,extent=extent,
-                   cmap=cmap,aspect=aspect,**kwargs)
-    ax.invert_yaxis()
-    # remove the ticks
-    plt.tick_params(axis='both', which='both', bottom='off', top='off',
-                    right='off', left='off')
-    return im
-
-def PlotImageDistribution(Image,pct=95,bins=100,PlotLines=True,AddSigmas=True,
-                          **kwargs):
-    """
-    Plots the distribution of image heights, relative to the surface
-
-    Args:
-        Image: output of ReadImageAsObject
-        label: see PlotImage
-        pct: where we want to draw the line on the distribution, after the
-        cummulative probability is over this number [0,100]
-        
-        bins: number of bins for the histogram
-        kwargs: passed to hist
+        im: PxpLoader.SurfaceImage object
+        imshow_kwargs: passed directly to plt.imshow 
+        pct: where to put 'zero' default to median (probably the surface
     Returns:
-        tuple of <n,bins,patches>, se matplotlib.pyplot.hist
+        output of im_show
     """
-    height_nm_relative = Image.height_nm_rel()
-    n,bins,patches = plt.hist(height_nm_relative.ravel(),bins=bins,linewidth=0,
-                              edgecolor="none",alpha=0.3,
-                              normed=False,**kwargs)
-    bin_width = np.median(np.diff(bins))
-    height_nm_rel_encompassing_pct = np.percentile(height_nm_relative,pct)
-    if (PlotLines):
-        min_height = np.min(height_nm_relative.ravel())
-        max_height = np.max(height_nm_relative.ravel())
-        limits = np.linspace(start=min_height,stop=max_height,num=bins.size)
-        # fit symmetrically to between pct_min% and (100-pct_min)%
-        pct_min = 5
-        pct_max = 80
-        q_min,q_max = np.percentile(height_nm_relative,[pct_min,pct_max])
-        fit_idx = np.where( (height_nm_relative > q_min) &
-                            (height_nm_relative < q_max))
-        height_fit = height_nm_relative[fit_idx]
-        mu,std = norm.fit( height_fit)
-        n_points = height_fit.size
-        denormalize = n_points * bin_width
-        pdf = norm.pdf(limits,loc=mu,scale=std) * denormalize
-        plt.plot(limits,pdf,label=("Gaussian, stdev={:.2f}".format(std)))
-    plt.yscale('log')
-    n_limits = n[np.where(n>=1)]
-    plt.ylim([min(n_limits)/2,max(n_limits)*2])
-    return n,bins,patches
-
+    # offset the data
+    im_height = im.height_nm()
+    min_offset = np.percentile(im_height,pct)
+    im_height -= min_offset
+    range_microns = im.range_meters * 1e6
+    to_ret = plt.imshow(im_height.T,extent=[0,range_microns,0,range_microns],
+                        interpolation='bicubic',**imshow_kwargs)
+    PlotUtilities.tom_ticks()
+    micron_str = PlotUtilities.upright_mu("m")
+    PlotUtilities.lazyLabel(micron_str,micron_str,"",
+                            tick_kwargs=dict(direction='out'))    
+    return to_ret                                 
