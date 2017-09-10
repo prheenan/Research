@@ -24,6 +24,9 @@ class transform:
         self.imshow_kw = imshow_kw
 
 def subtract_background(image,deg=2,**kwargs):
+    """
+    subtracts a line of <deg> from each row in <images>
+    """
     image = image.height
     to_ret = image.copy().T
     shape = image.shape
@@ -44,11 +47,11 @@ def plot_with_background_corrected(args,imshow_kw_list=None):
     fig = PlotUtilities.figure((3.5,2*n))
     for i,a in enumerate(args):
         ax = plt.subplot(n,1,(i+1))
-        vmin,vmax = realistic_min_max(a)
-        if imshow_kw_list is not None:
-            m_list = imshow_kw_list[i]
+        m_list = imshow_kw_list[i]
+        if (m_list['cmap'] == plt.cm.afmhot):
+            vmin,vmax = realistic_min_max(a)
         else:
-            m_list = dict()
+            vmin,vmax = 0,None
         imshow_kwargs = dict(vmin=vmin,vmax=vmax,**m_list)
         im = ImageUtil.make_image_plot(a,pct=50,imshow_kwargs=imshow_kwargs)
         if (i == 0):
@@ -61,6 +64,7 @@ def plot_with_background_corrected(args,imshow_kw_list=None):
             ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig,add_space_only=True)
     return fig
 
+
 def _safe_apply(images,f):
     to_ret = []
     for ex in images:
@@ -70,8 +74,6 @@ def _safe_apply(images,f):
         tmp.height = ret
         to_ret.append(tmp) 
     return to_ret 
-
-
 
 def threshold(im,threshold_nm,rel_pct=50):
     """
@@ -99,8 +101,7 @@ def correct_background(images,**kw):
     return _safe_apply(images,lambda x: subtract_background(x,**kw))
 
 
-
-def blur_images(images,sigma=1,**kw):
+def blur_images(images,sigma=0.5,**kw):
     """
     See: thresholdimages, except adds a gaussian blur with sigma
     """
@@ -131,6 +132,24 @@ def label_images(images):
     """
     return _safe_apply(images,lambda x: measure.label(x.height,background=0))
 
+def skeleton_filter(images):
+    to_ret = []
+    for i in images:
+        tmp = copy.deepcopy(i)
+        props = measure.regionprops(tmp.height)
+        n = len(props)
+        n_lost = 0
+        for p in props:
+            diameter = p.equivalent_diameter
+            if (diameter < 5):
+                for i,j in p.coords:
+                    tmp.height[i,j] = 0 
+                n_lost += 1
+        if (n_lost < n):
+            to_ret.append(tmp)
+    return to_ret
+    
+
 def cache_images(cache_dir,func,**kw):
     """
     either caches or re-func to get an image transformaiton
@@ -144,8 +163,6 @@ def cache_images(cache_dir,func,**kw):
     """
     return CheckpointUtilities.multi_load(cache_dir,load_func=func,
                                           name_func=FEC_Util.name_func,**kw)
-
-
 
     
 def run():
@@ -166,15 +183,16 @@ def run():
     GenUtilities.ensureDirExists(out_dir)
     images = ImageUtil.cache_images_in_directory(pxp_dir=in_dir,
                                                  cache_dir=cache_dir_raw,
-                                                 limit=2)
+                                                 limit=4)
     corrected_dir = cache_dir_fmt.format("corrected")
-    images = [images[1]]
+    label_dict = dict(cmap=plt.cm.spectral)
     transforms = [transform("corrected",correct_background),
                   transform("gaussian",blur_images),
                   transform("threshold",threshold_images),
                   transform("binarize",binarize_images),
                   transform("skeletonize",skeletonize_images),
-                  transform("label",label_images,dict(cmap=plt.cm.spectral))]
+                  transform("label",label_images,label_dict),
+                  transform("skeleton_filter",skeleton_filter,label_dict)]
     last = images
     all_transforms = [last]
     for tx in transforms:
