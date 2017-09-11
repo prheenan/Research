@@ -214,15 +214,32 @@ def get_coordinate_path(coords):
     path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
     return coords[path]
 
-def snake_fit(image,initial):
-    to_fit = image.height
+def snake_fit(image,initial,w_line=5,w_edge=-5,max_px_move=0.5,beta=0.01):
+    to_fit = image
     min_image,max_image = np.min(to_fit),np.max(to_fit)
     to_fit =  ((to_fit - min_image)/(max_image - min_image))
     to_fit = to_fit.astype(np.float64)
-    return active_contour(to_fit,convergence=0.1,max_iterations=5e3,
+    return active_contour(to_fit,convergence=1e-2,max_iterations=20e3,
                           snake=initial.astype(np.float64),
-                          bc='free',w_line=5,w_edge=-5,max_px_move=0.5,
-                          alpha=0.1, beta=0.01, gamma=0.1)
+                          bc='free',w_line=w_line,w_edge=w_edge,
+                          max_px_move=max_px_move,
+                          alpha=0.1, beta=beta, gamma=0.1)
+
+def plot_fitting(image,coords,snake_coords=None):
+    endpoint_coord = coords[0]
+    n_coords = len(coords)
+    x = coords[:,0]
+    y = coords[:,1]
+    idx = np.arange(n_coords)
+    plt.imshow(image.height.T,origin='lower')
+    plt.plot(coords[:,0],coords[:,1],',')
+    plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
+    plt.plot(coords[:,0],coords[:,1],'g-',alpha=0.3)
+    plt.xlim(min(coords[:,0])*0.8,max(coords[:,0]*1.1))
+    plt.ylim(min(coords[:,1])*0.8,max(coords[:,1]*1.1))
+    if (snake_coords is not None):
+        plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
+        
 
 def run():
     """
@@ -259,32 +276,28 @@ def run():
         last = cache_images(tmp_dir,func = lambda: tx.function(last),
                             **force_def)
         all_transforms.append(last)
+    last_dir = tmp_dir
     # fit a spline to the original data using each of the connected
     # regions from the skeletonization 
     image,skeleton = images[-1],last[-1]
+    snake_input = image
     regions = measure.regionprops(skeleton.height)
     region = regions[0]
     coords = get_coordinate_path(region.coords)
-    snake_coords = snake_fit(image=image,initial=coords)
-    endpoint_coord = coords[0]
-    n_coords = len(coords)
-    x = coords[:,0]
-    y = coords[:,1]
-    idx = np.arange(n_coords)
-    f_x = scipy.interpolate.interp1d(x=idx,y=x)
-    f_y = scipy.interpolate.interp1d(x=idx,y=y)
-    interp_idx = np.linspace(0,n_coords-1,num=10*n_coords,endpoint=True)
-    x_interp = f_x(interp_idx)
-    y_interp = f_y(interp_idx)
-    plt.imshow(image.height.T,origin='lower')
-    plt.plot(coords[:,0],coords[:,1],',')
-    plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
-    plt.plot(coords[:,0],coords[:,1],'g-',alpha=0.3)
-    plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
-    plt.xlim(min(coords[:,0])*0.8,max(coords[:,0]*1.1))
-    plt.ylim(min(coords[:,1])*0.8,max(coords[:,1]*1.1))
-    plt.show()
-    last_dir = tmp_dir
+    input_image_to_snake = threshold(image,threshold_nm=0.2,rel_pct=50)
+    for w_edge in [-2**i for i in range(2,5)]:
+        for w_line in [2**i for i in range(2,5)]:
+            for beta in [1e-1,2e-1,4e-1,8e-1]:
+                fig = PlotUtilities.figure()
+                snake_coords = snake_fit(image=snake_input.height,
+                                         initial=coords,
+                                         w_line=w_line,w_edge=w_edge,beta=beta)
+                plot_fitting(snake_input,coords,snake_coords)
+                out_name = "{:s}_{:.2g}_{:.2g}_{:.2g}.png".format(out_dir,
+                                                                  w_edge,
+                                                                  w_line,
+                                                                  beta*100)
+                PlotUtilities.savefig(fig,out_name)
     # subtract the linear backround from each, save to a new cache 
     for i in range(len(images)):
         pipeline = [x[i] for x in all_transforms]
