@@ -219,10 +219,10 @@ def snake_fit(image,initial):
     min_image,max_image = np.min(to_fit),np.max(to_fit)
     to_fit =  ((to_fit - min_image)/(max_image - min_image))
     to_fit = to_fit.astype(np.float64)
-    return active_contour(to_fit,convergence=0.1,max_iterations=10e3,
+    return active_contour(to_fit,convergence=0.1,max_iterations=5e3,
                           snake=initial.astype(np.float64),
-                          bc='fixed',w_line=1,w_edge=-1,
-                          alpha=0.01, beta=0.1, gamma=0.001)
+                          bc='free',w_line=5,w_edge=-5,max_px_move=0.5,
+                          alpha=0.1, beta=0.01, gamma=0.1)
 
 def run():
     """
@@ -276,9 +276,6 @@ def run():
     interp_idx = np.linspace(0,n_coords-1,num=10*n_coords,endpoint=True)
     x_interp = f_x(interp_idx)
     y_interp = f_y(interp_idx)
-    plt.subplot(2,1,1)
-    plt.imshow(image.height.T,origin='lower')
-    plt.subplot(2,1,2)
     plt.imshow(image.height.T,origin='lower')
     plt.plot(coords[:,0],coords[:,1],',')
     plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
