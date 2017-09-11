@@ -214,6 +214,16 @@ def get_coordinate_path(coords):
     path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
     return coords[path]
 
+def snake_fit(image,initial):
+    to_fit = image.height
+    min_image,max_image = np.min(to_fit),np.max(to_fit)
+    to_fit =  ((to_fit - min_image)/(max_image - min_image))
+    to_fit = to_fit.astype(np.float64)
+    return active_contour(to_fit,convergence=0.1,max_iterations=10e3,
+                          snake=initial.astype(np.float64),
+                          bc='fixed',w_line=1,w_edge=-1,
+                          alpha=0.01, beta=0.1, gamma=0.001)
+
 def run():
     """
     <Description>
@@ -255,6 +265,7 @@ def run():
     regions = measure.regionprops(skeleton.height)
     region = regions[0]
     coords = get_coordinate_path(region.coords)
+    snake_coords = snake_fit(image=image,initial=coords)
     endpoint_coord = coords[0]
     n_coords = len(coords)
     x = coords[:,0]
@@ -266,11 +277,15 @@ def run():
     x_interp = f_x(interp_idx)
     y_interp = f_y(interp_idx)
     plt.subplot(2,1,1)
-    plt.imshow(image.height,origin='lower')
+    plt.imshow(image.height.T,origin='lower')
     plt.subplot(2,1,2)
-    plt.plot(coords[:,1],coords[:,0],',')
-    plt.plot(endpoint_coord[1],endpoint_coord[0],'go')
-    plt.plot(coords[:,1],coords[:,0],'g-',alpha=0.3)
+    plt.imshow(image.height.T,origin='lower')
+    plt.plot(coords[:,0],coords[:,1],',')
+    plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
+    plt.plot(coords[:,0],coords[:,1],'g-',alpha=0.3)
+    plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
+    plt.xlim(min(coords[:,0])*0.8,max(coords[:,0]*1.1))
+    plt.ylim(min(coords[:,1])*0.8,max(coords[:,1]*1.1))
     plt.show()
     last_dir = tmp_dir
     # subtract the linear backround from each, save to a new cache 
