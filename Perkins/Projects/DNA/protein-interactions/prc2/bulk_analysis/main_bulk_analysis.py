@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,copy
+import sys,copy,scipy
 sys.path.append("../../../../../../../")
 from Research.Perkins.AnalysisUtil.Images import  ImageUtil
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
@@ -15,7 +15,9 @@ from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from skimage.filters import gaussian
 from skimage.morphology import skeletonize
-from skimage import measure
+from skimage import measure,img_as_uint
+from skimage.segmentation import active_contour
+import networkx as nx
 
 class transform:
     def __init__(self,name,function,imshow_kw=dict(cmap=plt.cm.afmhot)):
@@ -148,7 +150,7 @@ def skeleton_filter(images):
         if (n_lost < n):
             to_ret.append(tmp)
     return to_ret
-    
+
 
 def cache_images(cache_dir,func,**kw):
     """
@@ -200,6 +202,61 @@ def run():
         last = cache_images(tmp_dir,func = lambda: tx.function(last),
                             **force_def)
         all_transforms.append(last)
+    # fit a spline to the original data using each of the connected
+    # regions from the skeletonization 
+    image,skeleton = images[-1],last[-1]
+    regions = measure.regionprops(skeleton.height)
+    coords = regions[0].coords
+    n_coords = len(coords)
+    distances = scipy.spatial.distance_matrix(coords,coords,p=2)
+    for i in range(n_coords):
+        distances[i,i] = np.inf
+    # check that the skeletonization is OK
+    maximum_of_minimum_distances = np.sqrt(2)
+    max_of_min = max(np.min(distances,axis=0))
+    assert abs(max_of_min - maximum_of_minimum_distances) < 1e-6 , \
+        "Skeletonization failed?"
+    # POST: distances okay; all pixels at most 1 away in x and y
+    # Now we need to decide on (possible arbitrary) endpoints. These should
+    # be the two nodes with the largest *second* lowest distances (all have
+    # at least one neighbor which is +/- 1 pixel; 'interior' nodes have at 
+    # least two '1-pixel' neighbords
+    second_lowest_distances = [sorted(row)[1] for row in distances]
+    # sorted from low to high; what we want is the highest, second lowest
+    sort_idx_second_highest = np.argsort(second_lowest_distances)
+    endpoint = sort_idx_second_highest[-1]
+    # POST: have endpoint. Add all the points with their two closest to the 
+    # graph (except the endpoint, where we only add its closest)
+    # create a graph of all the pixels
+    G = nx.Graph()
+    for i in range(n_coords):
+        closest_nodes = np.argsort(distances[i])
+        # add the closest
+        G.add_edge(i,closest_nodes[0])
+        if (i != endpoint):
+            # also add the second closest for all 'interior' nodes...
+            G.add_edge(i,closest_nodes[1])
+    path = list(nx.dfs_preorder_nodes(G,endpoint))
+    sort_idx = np.array(path)
+    x = coords[:,0]
+    y = coords[:,1]
+    idx = np.arange(n_coords)
+    f_x = scipy.interpolate.interp1d(x=idx,y=x)
+    f_y = scipy.interpolate.interp1d(x=idx,y=y)
+    interp_idx = np.linspace(0,n_coords-1,num=10*n_coords,endpoint=True)
+    x_interp = f_x(interp_idx)
+    y_interp = f_y(interp_idx)
+    plt.subplot(2,1,1)
+    plt.imshow(image.height,origin='lower')
+    plt.subplot(2,1,2)
+    plt.plot(coords[:,1],coords[:,0],',')
+    plt.plot(coords[endpoint,1],coords[endpoint,0],'go')
+    plt.plot(coords[sort_idx_second_highest[-2],1],
+             coords[sort_idx_second_highest[-2],0],'bo')
+    plt.plot(coords[:,1][path],coords[:,0][path],'g-',alpha=0.3)
+    plt.show()
+    for i in range(n_coords):
+        distances[i,i] = np.inf
     last_dir = tmp_dir
     # subtract the linear backround from each, save to a new cache 
     for i in range(len(images)):
