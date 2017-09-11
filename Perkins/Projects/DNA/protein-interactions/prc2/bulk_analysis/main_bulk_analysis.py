@@ -166,7 +166,54 @@ def cache_images(cache_dir,func,**kw):
     return CheckpointUtilities.multi_load(cache_dir,load_func=func,
                                           name_func=FEC_Util.name_func,**kw)
 
+def get_coordinate_path(coords):    
+    """
+    Returns a path of 'coords' (assumed a single <x,y> coordinates of a 
+    skeleton) such that:
+
+    1) the start (endpoint) has the highest, second-lowest distance (the lowest
+    distance is always +/- 1 pixel; the second lowest will be the greatest
+    for an endpoint)
     
+    2) all other points are separated from each other by at most 1 pixel
+
+    Args:
+        coords: the two-column array of pixel distances
+    Returns:
+        the sorted coordinate list
+    """
+    n_coords = len(coords)
+    distances = scipy.spatial.distance_matrix(coords,coords,p=2)
+    for i in range(n_coords):
+        distances[i,i] = np.inf
+    # check that the skeletonization is OK
+    maximum_of_minimum_distances = np.sqrt(2)
+    max_of_min = max(np.min(distances,axis=0))
+    assert abs(max_of_min - maximum_of_minimum_distances) < 1e-6 , \
+        "Skeletonization failed?"
+    # POST: distances okay; all pixels at most 1 away in x and y
+    # Now we need to decide on (possible arbitrary) endpoints. These should
+    # be the two nodes with the largest *second* lowest distances (all have
+    # at least one neighbor which is +/- 1 pixel; 'interior' nodes have at 
+    # least two '1-pixel' neighbords
+    second_lowest_distances = [sorted(row)[1] for row in distances]
+    # sorted from low to high; what we want is the highest, second lowest
+    sort_idx_second_highest = np.argsort(second_lowest_distances)
+    endpoint = sort_idx_second_highest[-1]
+    # POST: have endpoint. Add all the points with their two closest to the 
+    # graph (except the endpoint, where we only add its closest)
+    # create a graph of all the pixels
+    G = nx.Graph()
+    for i in range(n_coords):
+        closest_nodes = np.argsort(distances[i])
+        # add the closest
+        G.add_edge(i,closest_nodes[0])
+        if (i != endpoint):
+            # also add the second closest for all 'interior' nodes...
+            G.add_edge(i,closest_nodes[1])
+    path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
+    return coords[path]
+
 def run():
     """
     <Description>
@@ -206,38 +253,10 @@ def run():
     # regions from the skeletonization 
     image,skeleton = images[-1],last[-1]
     regions = measure.regionprops(skeleton.height)
-    coords = regions[0].coords
+    region = regions[0]
+    coords = get_coordinate_path(region.coords)
+    endpoint_coord = coords[0]
     n_coords = len(coords)
-    distances = scipy.spatial.distance_matrix(coords,coords,p=2)
-    for i in range(n_coords):
-        distances[i,i] = np.inf
-    # check that the skeletonization is OK
-    maximum_of_minimum_distances = np.sqrt(2)
-    max_of_min = max(np.min(distances,axis=0))
-    assert abs(max_of_min - maximum_of_minimum_distances) < 1e-6 , \
-        "Skeletonization failed?"
-    # POST: distances okay; all pixels at most 1 away in x and y
-    # Now we need to decide on (possible arbitrary) endpoints. These should
-    # be the two nodes with the largest *second* lowest distances (all have
-    # at least one neighbor which is +/- 1 pixel; 'interior' nodes have at 
-    # least two '1-pixel' neighbords
-    second_lowest_distances = [sorted(row)[1] for row in distances]
-    # sorted from low to high; what we want is the highest, second lowest
-    sort_idx_second_highest = np.argsort(second_lowest_distances)
-    endpoint = sort_idx_second_highest[-1]
-    # POST: have endpoint. Add all the points with their two closest to the 
-    # graph (except the endpoint, where we only add its closest)
-    # create a graph of all the pixels
-    G = nx.Graph()
-    for i in range(n_coords):
-        closest_nodes = np.argsort(distances[i])
-        # add the closest
-        G.add_edge(i,closest_nodes[0])
-        if (i != endpoint):
-            # also add the second closest for all 'interior' nodes...
-            G.add_edge(i,closest_nodes[1])
-    path = list(nx.dfs_preorder_nodes(G,endpoint))
-    sort_idx = np.array(path)
     x = coords[:,0]
     y = coords[:,1]
     idx = np.arange(n_coords)
@@ -250,13 +269,9 @@ def run():
     plt.imshow(image.height,origin='lower')
     plt.subplot(2,1,2)
     plt.plot(coords[:,1],coords[:,0],',')
-    plt.plot(coords[endpoint,1],coords[endpoint,0],'go')
-    plt.plot(coords[sort_idx_second_highest[-2],1],
-             coords[sort_idx_second_highest[-2],0],'bo')
-    plt.plot(coords[:,1][path],coords[:,0][path],'g-',alpha=0.3)
+    plt.plot(endpoint_coord[1],endpoint_coord[0],'go')
+    plt.plot(coords[:,1],coords[:,0],'g-',alpha=0.3)
     plt.show()
-    for i in range(n_coords):
-        distances[i,i] = np.inf
     last_dir = tmp_dir
     # subtract the linear backround from each, save to a new cache 
     for i in range(len(images)):
