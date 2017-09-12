@@ -214,35 +214,29 @@ def get_coordinate_path(coords):
     path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
     return coords[path]
 
-def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1):
+def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1,gamma=0.1):
     to_fit = image
     min_x,max_x = np.min(initial[:,0]),np.max(initial[:,0])
     min_y,max_y = np.min(initial[:,1]),np.max(initial[:,1])
     fudge_x = int(np.ceil((max_x-min_x) * 0.1))
     fudge_y = int(np.ceil((max_y-min_y) * 0.1))
-    """
-    lower_x = max(0,min_x-fudge_x)
-    lower_y = max(0,min_y-fudge_y)
-    to_fit = to_fit[0:max_x+fudge_x,
-                    0:max_y+fudge_y]
+    lower_x = 0#max(0,min_x-fudge_x)
+    lower_y = 0#max(0,min_y-fudge_y)
+    #to_fit = to_fit[lower_x:max_x+fudge_x,
+    #                lower_y:max_y+fudge_y]
     initial_x_shifted = initial[:,0]-lower_x
     initial_y_shifted = initial[:,1]-lower_y
     initial = np.array((initial_x_shifted,initial_y_shifted)).T
-    """
     min_image,max_image = np.min(to_fit),np.max(to_fit)
     to_fit =  ((to_fit - min_image)/(max_image - min_image)) * 256
     to_fit = to_fit.astype(np.uint8)
-    snake = active_contour(to_fit,convergence=0.1,max_iterations=1e3,
-                           snake=initial.astype(np.float64),
-                           bc='free',w_line=w_line,w_edge=w_edge,
-                           max_px_move=max_px_move,
-                           alpha=0.1, beta=beta, gamma=0.1)
-    plt.imshow(to_fit.T,origin="lower")
-    plt.plot(initial[:,0],initial[:,1],'r.')
-    plt.plot(snake[:,0],snake[:,1])
-    plt.ylim(0,max_y*1.2)
-    plt.xlim(0,max_x*1.2)
-    plt.show()
+    initial_snake = initial.astype(np.float64)
+    snake = active_contour(to_fit,convergence=1e-3,max_iterations=5e3,
+                           snake=initial_snake,w_line=w_line,
+                           w_edge=w_edge,beta=beta,gamma=gamma,
+                           bc='fixed',max_px_move=max_px_move)
+    snake[:,0] += lower_x
+    snake[:,1] += lower_y
     return snake
 
 
@@ -252,7 +246,7 @@ def plot_fitting(image,coords,snake_coords=None):
     x = coords[:,0]
     y = coords[:,1]
     idx = np.arange(n_coords)
-    plt.imshow(image.height.T,origin='lower')
+    plt.imshow(image.T,origin='lower')
     plt.plot(coords[:,0],coords[:,1],',')
     plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
     plt.plot(coords[:,0],coords[:,1],'g-',alpha=0.3)
@@ -322,22 +316,26 @@ def run():
         m_arr[x_l:x_h,y_l:y_h] = 1
     image_thresh.height *= m_arr
     # relax the coordinates onto the actual data
-    snake_input = image
-    coords = snake_fit(image.height,initial=coords)
-    coords_x = coords[:,0]
-    coords_y = coords[:,1]
-    # get the non-zero elements as <x,y> pairs
-    non_zero_coords = np.array([[i,j]
-                                for i,row in enumerate(image_thresh.height) 
-                                for j,ele in enumerate(row)
-                                if ele > 0 ])
-    image_coords = non_zero_coords[:,0:2]
-    x_full, y_full = non_zero_coords[:,0],non_zero_coords[:,1]
-    endpoint_coord = coords[0]
-    x_end,y_end = endpoint_coord[0],endpoint_coord[1]
-    x_rel,y_rel = x_full-x_end, y_full-y_end
-    # get the closest point on the skeleton for each part of the image
-    # fit x and y as a funciton of the coordinate number 
+    snake_input = image_thresh
+    for w_edge in [0,-4,-16]:
+        for w_line in [1,4,16]:
+            for beta in [1e-2,1e-1,1]:
+                for max_px_move in [0.1,0.3,2]:
+                    for gamma in [1e-6,1e-4,1e-2]:
+                        fig = PlotUtilities.figure()
+                        snake_coords = snake_fit(image.height,initial=coords,
+                                                 beta=beta,
+                                                 max_px_move=max_px_move,
+                                                 w_edge=w_edge,
+                                                 w_line=w_line,
+                                                 gamma=gamma)
+                        plot_fitting(snake_input.height,coords,snake_coords)
+                        name = "{:.2g}_{:.2g}_{:.2g}_{:.2g}_{:.2g}".\
+                               format(w_edge,w_line,beta*100,max_px_move*100,
+                                      gamma*1e6)
+                        plt.plot(coords[:,0],coords[:,1])
+                        out_name = "{:s}_fit_{:s}.png".format(out_dir,name)
+                        PlotUtilities.savefig(fig,out_name)
     """
     # see: 
 stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
@@ -351,7 +349,6 @@ stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-ma
     tck, u = splprep(fit_coords, per=0,u=None,s=np.sqrt(n_coords),task=0)
     u_new = np.linspace(u.min(), u.max(), 1000)
     x_new, y_new = splev(u_new, tck, der=0)
-
     fig = PlotUtilities.figure()
     plot_fitting(snake_input,coords)
     plt.plot(x_new, y_new, 'b')
