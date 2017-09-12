@@ -316,16 +316,12 @@ def run():
                                 for i,row in enumerate(image_thresh.height) 
                                 for j,ele in enumerate(row)
                                 if ele > 0 ])
+    image_coords = non_zero_coords[:,0:2]
     x_full, y_full = non_zero_coords[:,0],non_zero_coords[:,1]
     endpoint_coord = coords[0]
     x_end,y_end = endpoint_coord[0],endpoint_coord[1]
     x_rel,y_rel = x_full-x_end, y_full-y_end
-    # sort by the disance from the endpoint 
-    sort_idx = np.argsort(x_rel**2+y_rel**2)
-    x_rel = x_rel[sort_idx]
-    y_rel = y_rel[sort_idx]
-    # convert to polar coordinates
-    rho,phi = cart2pol(x_rel,y_rel)
+    # get the closest point on the skeleton for each part of the image
     # fit x and y as a funciton of the coordinate number 
     """
     # see: 
@@ -336,19 +332,17 @@ stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-ma
     https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
     """
     from scipy.interpolate import splprep, splev
-    fit_coords = np.array((rho,phi))
-    tck, u = splprep(fit_coords, per=0,u=None,s=n_coords)
+    fit_coords = np.array((coords_x,coords_y))
+    tck, u = splprep(fit_coords, per=0,u=None,s=np.sqrt(n_coords))
     u_new = np.linspace(u.min(), u.max(), 1000)
-    rho_new, phi_new = splev(u_new, tck, der=0)
-    x_new,y_new = pol2cart(rho, phi)
-    x_new += x_end
-    y_new += y_end
+    x_new, y_new = splev(u_new, tck, der=0)
+
     fig = PlotUtilities.figure()
     plot_fitting(snake_input,coords)
     plt.plot(x_new, y_new, 'b')
     out_name = "{:s}_fit.png".format(out_dir)
     PlotUtilities.savefig(fig,out_name)
-
+    exit(1)
     # subtract the linear backround from each, save to a new cache 
     for i in range(len(images)):
         pipeline = [x[i] for x in all_transforms]
