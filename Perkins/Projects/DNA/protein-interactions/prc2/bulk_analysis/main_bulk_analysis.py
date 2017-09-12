@@ -280,24 +280,55 @@ def run():
     # fit a spline to the original data using each of the connected
     # regions from the skeletonization 
     image,skeleton = images[-1],last[-1]
-    snake_input = image
     regions = measure.regionprops(skeleton.height)
     region = regions[0]
     coords = get_coordinate_path(region.coords)
-    input_image_to_snake = threshold(image,threshold_nm=0.2,rel_pct=50)
-    for w_edge in [-2**i for i in range(2,5)]:
-        for w_line in [2**i for i in range(2,5)]:
-            for beta in [1e-1,2e-1,4e-1,8e-1]:
-                fig = PlotUtilities.figure()
-                snake_coords = snake_fit(image=snake_input.height,
-                                         initial=coords,
-                                         w_line=w_line,w_edge=w_edge,beta=beta)
-                plot_fitting(snake_input,coords,snake_coords)
-                out_name = "{:s}_{:.2g}_{:.2g}_{:.2g}.png".format(out_dir,
-                                                                  w_edge,
-                                                                  w_line,
-                                                                  beta*100)
-                PlotUtilities.savefig(fig,out_name)
+    coords_x = coords[:,0]
+    coords_y = coords[:,1]
+    n_coords = len(coords)
+    binary_idx = 3 + 1
+    binary = all_transforms[binary_idx][-1]
+    image_thresh = copy.deepcopy(image)
+    image_thresh.height *= binary.height
+    fudge = 3
+    zero_x_low = coords_x - fudge
+    zero_x_high = coords_x + fudge
+    zero_y_low = coords_y - fudge
+    zero_y_high = coords_y + fudge
+    # get a mask with ones in the region...
+    m_arr = np.zeros(image.height.shape)
+    for x_l,x_h,y_l,y_h in zip(zero_x_low,zero_x_high,
+                               zero_y_low,zero_y_high):
+        m_arr[x_l:x_h,y_l:y_h] = 1
+    image_thresh.height *= m_arr
+    # get the non-zero elements as <x,y> pairs
+    snake_input = image_thresh
+    non_zero_coords = np.array([[i,j]
+                                for i,row in enumerate(image_thresh.height) 
+                                for j,ele in enumerate(row)
+                                if ele > 0 ])
+    x_full, y_full = non_zero_coords[:,0],non_zero_coords[:,1]
+    # fit x and y as a funciton of the coordinate number 
+    # XXX debugging...
+    """
+    # see: 
+stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
+    also:
+stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
+stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
+    """
+    from scipy.interpolate import splprep, splev
+    weights = 1/3
+    tck, u = splprep(coords.T, per=0,u=None,s=0)
+    print(u.shape,non_zero_coords.shape)
+    u_new = np.linspace(u.min(), u.max(), 1000)
+    x_new, y_new = splev(u_new, tck, der=0)
+    fig = PlotUtilities.figure()
+    plot_fitting(snake_input,coords)
+    plt.plot(x_new, y_new, 'b')
+    out_name = "{:s}_fit.png".format(out_dir)
+    PlotUtilities.savefig(fig,out_name)
+
     # subtract the linear backround from each, save to a new cache 
     for i in range(len(images)):
         pipeline = [x[i] for x in all_transforms]
