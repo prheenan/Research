@@ -17,7 +17,7 @@ from FitUtil.FreelyJointedChain.Python.Code import FJC
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
 from Research.Personal.EventDetection.Util import Analysis
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass
+    InverseWeierstrass,WeierstrassUtil
 
 def hairpin_plots(example,filter_fraction,out_path):
     n_filter = int(np.ceil(example.Force.size * filter_fraction))
@@ -46,8 +46,7 @@ def make_energy_landscape_plots(out_dir,energy_landscape_unfolding):
     f_one_half_N_arr = np.array([7,8.5,10,12,13,15])*1e-12        
     for i,tilt_N in enumerate(f_one_half_N_arr):
         fig = PlotUtilities.figure()    
-        IWT_Plot.plot_tilted_landscape(landscape_zeroed,f_one_half_N=tilt_N,
-                                       extension_zero_m=30e-9)
+        IWT_Plot.plot_tilted_landscape(landscape_zeroed,f_one_half_N=tilt_N)
         PlotUtilities.xlabel("Separation (nm)")    
         save_name = "{:s}free_landscape_tilted_{:d}_{:.2g}.png".\
                     format(out_dir,i,tilt_N*1e12)
@@ -180,6 +179,11 @@ def run():
     examples = FEC_Util.\
         cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
                                             cache_dir=cache_dir,limit=20)
+    # filter all the fecs 
+    good_splits_original = copy.deepcopy(examples)
+    n_points_f = lambda x: int(np.ceil(2e-3*s.Force.size))
+    examples = [FEC_Util.GetFilteredForce(s,n_points_f(s))
+                for s in examples]                                            
     ### XXX TODO
     # (1) correct for interference artifact
     # (2) get regions for WLC fit
@@ -210,16 +214,16 @@ def run():
     unfolding_retracts = [get_unfolding_slice_only(split_fec) 
                           for e in good_splits]
     refolding_experiments = \
-        [get_unfolding_and_refolding_slice(r) for r in split_fecs]
+        [get_unfolding_and_refolding_slice(r) for r in good_splits]
     # get the extension maximum and minimum bounds. 
-    ext_min_m = 30e-9
-    ext_max_m = 55e-9
+    ext_min_m = lambda s: min(s.Separation)
+    ext_max_m = lambda s: min(s.Separation) + 50e-9
     # slice the refolding experiments 
-    sliced_refolds = [FEC_Util.slice_by_separation(s,ext_min_m,ext_max_m)
+    sliced_refolds = [FEC_Util.slice_by_separation(s,ext_min_m(s),ext_max_m(s))
                       for s in refolding_experiments]                      
     # split the refolding experiments into iwt       
     iwt_refolds = [ \
-        IWT_Util.split_into_iwt_objects(s,
+        WeierstrassUtil.split_into_iwt_objects(s,
                                         fraction_for_vel=0.1,
                                         f_split=IWT_Util.split_by_max_sep)
         for s in  sliced_refolds]                                                                   
@@ -231,9 +235,10 @@ def run():
                           for u in unfolding_retracts]
     # convert to the type iwt needs                          
     final_unfolding_iwt = \
-        [IWT_Util.convert_to_iwt(r,frac_vel=0.2) for r in final_rupture_only]
+        [WeierstrassUtil.convert_to_iwt(r,frac_vel=0.2) 
+         for r in final_rupture_only]
     # get the iwt tx 
-    n_bins = 50
+    n_bins = 200
     energy_landscape_unfolding = CheckpointUtilities.\
         getCheckpoint("./landscape.pkl",
                       InverseWeierstrass.FreeEnergyAtZeroForce,force_iwt,
