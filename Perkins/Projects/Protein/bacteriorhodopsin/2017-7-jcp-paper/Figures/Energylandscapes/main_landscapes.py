@@ -137,10 +137,16 @@ def get_heatmap_data(time_sep_force_arr,bins=(100,100)):
     histogram = histogram.T            
     return histogram, x_edges,y_edges 
     
+def _get_landscapes(iwt_obj_subsets,n_bins):    
+    iwt_helix_data_tmp = \
+            [InverseWeierstrass.FreeEnergyAtZeroForce(objs,n_bins)
+             for objs in iwt_obj_subsets]    
+    return iwt_helix_data_tmp             
+    
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
-    force_read_data = False    
-    raw_data = IoUtilHao.read_and_cache_data_hao(None,force=force_read_data,
+    force_read_data = True    
+    raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
                                                  limit=None,
                                                  renormalize=False)
@@ -153,7 +159,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
-    N = 3
+    N_boostraps = 3
     for area,slice_tmp in zip(areas,raw_area_slices):
         # get the heatmap histograms
         heatmap_data = get_heatmap_data(slice_tmp)  
@@ -162,24 +168,18 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # delete the original list to free its memnory
         slice_tmp[:] = []
         n_objs = len(iwt_objs)
-        num_n = int(np.round(n_objs/N))
-        assert (n_objs % N == 0), \
-            "Need a multiple of {:d}, got {:d}".format(N,n_objs)
-        ids = [i for i in range(len(iwt_objs))]
-        # shuffle ids in-place
-        np.random.shuffle(ids)
-        # get the groups; 
-        # (1) ids was 0,1,2,...
-        # (2) it is shuffled to (e.g.) 8,1,3,0
-        # (3) we want to group (if N=2), like [ [8,1],[3,0], ...]
-        iwt_obj_subsets = [ [iwt_objs[j] 
-                             for j in ids[N*i:N*i+N]]
-                            for i in range(0,num_n)]
-        iwt_helix_data_tmp = \
-            [InverseWeierstrass.FreeEnergyAtZeroForce(objs,area.n_bins)
-             for objs in iwt_obj_subsets]
+        ids = np.arange(n_objs,dtype=np.int64)
+        # randomly choose the ids with replacement for bootstrapping
+        id_choices = [np.random.choice(ids,size=n_objs,replace=True)
+                      for i in range(N_boostraps)]
+        iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
+        functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
+        name_func = lambda  i,d: area.save_name + "_bootstrap_{:d}".format(i) 
+        iwt_tmp = CheckpointUtilities.multi_load("./",load_func=functor,
+                                                 force=force_read_data,
+                                                 name_func=name_func)
         # make the object we want for this 'area' slice
-        to_ret.append(cacheable_data(iwt_helix_data_tmp,heatmap_data))
+        to_ret.append(cacheable_data(iwt_tmp,heatmap_data))
     return to_ret
     
 def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
@@ -450,10 +450,9 @@ def run():
     flickering_dir = "../../LargerDataset/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
-    force_recalculation = False
-    final = False
+    force_recalculation = True
     GenUtilities.ensureDirExists(flickering_dir)
-    bin_size_meters = 0.3e-9
+    bin_size_meters = 0.2e-9
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)"),
@@ -462,10 +461,7 @@ def run():
         slice_area([50e-9,75e-9],"Helix A"),
         ]    
     for a in areas:
-        a.set_num_bins_by_bin_in_meters(bin_size_meters)
-    # turn on text rendering if we need it 
-    if (final):
-        PlotUtilities.tom_text_rendering()            
+        a.set_num_bins_by_bin_in_meters(bin_size_meters)         
     # read in the data 
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
