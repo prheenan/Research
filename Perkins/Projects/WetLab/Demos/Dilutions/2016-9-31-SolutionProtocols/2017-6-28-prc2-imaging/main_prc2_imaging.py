@@ -55,46 +55,32 @@ def run():
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
                                   ConcString=ConcString,
                                   BufferString="TE") 
-    print("==== DNA (600bp) dilutions ===")
-    ConcString = "nM"
-    VolString = "uL"
-    # stock concentration
-    Stock = 1.3
-    dna_start_conc_600bp = 100
-    # Desired concentrations
-    Desired = [dna_start_conc_600bp]
-    # desired volumes (for each)
-    Volumes = [50]
-    DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
-                                  ConcString=ConcString,
-                                  BufferString="TE") 
     print("==== PRC2 dilutions ===")
     ConcString = "uM"
     VolString = "uL"
     # stock concentration
     Stock = 1
     # Desired concentrations for dna
-    Volume_total_inc = 20
-    dna_desired_pmol = 200
-    ratio_prc2_dilution = 2
+    Volume_total_inc = 15
+    dna_desired_conc_nM = 20
+    dna_desired_pmol = dna_desired_conc_nM*Volume_total_inc
+    ratio_prc2_dilution = 4
     dna_imaging_stock_conc_nM = \
         dna_desired_pmol/(Volume_total_inc)
     # base the PRC2 on it
-    Desired_prc2 = dna_imaging_stock_conc_nM/1000 * \
-                   np.array([50,4,2,1/5])
+    Desired_prc2 = ratio_prc2_dilution * dna_imaging_stock_conc_nM/1000 * \
+                   np.array([4,1] + [1/(4**i) for i in range(1,3)])
     num_extra = 1
     # desired volumes (for each)
-    Volumes = [Volume_total_inc/ratio_prc2_dilution 
-               for d in Desired_prc2[:-3]] + \
-              [num_extra * Volume_total_inc/ratio_prc2_dilution 
-               for d in Desired_prc2[-3:]]
+    volume_1x = Volume_total_inc/ratio_prc2_dilution 
+    Volumes = [2*volume_1x] + [volume_1x for _ in Desired_prc2[:-1]]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired_prc2,
                                   ConcString=ConcString,
-                                  BufferString="FLAG") 
-    print("=== Binding dilution ===")
+                                  BufferString="1x PRC2") 
+    print("=== Binding dilution (note: PRC2 already has 1x binding)===")
     dna_start_conc_inc = 50
     Stats = [ ["PRC2","x",ratio_prc2_dilution,1,0],
-              ["4x binding","x",4,1,0],
+              ["4x binding","x",4,1,1*volume_1x],
               ["DNA","nM",dna_start_conc_inc,dna_imaging_stock_conc_nM,0]]
     vol_units = "uL"
     DilutionUtil.PrintSolutionSteps(Stats,Volume_total_inc,vol_units,
@@ -102,7 +88,8 @@ def run():
     # prc2 is in uM in 'Desired_prc2'.
     prc2_final_conc_nM = 1e3 * np.array(Desired_prc2)/ratio_prc2_dilution
     print("(Note: final molar ratios are: {:s})".\
-          format(["{:.2f}".format(s) for s in (1/dna_imaging_stock_conc_nM) * prc2_final_conc_nM]))
+          format(["{:.2f}".format(s) 
+                  for s in (1/dna_imaging_stock_conc_nM) * prc2_final_conc_nM]))
     print("Controls: "+
           "\n\t(1)replace Protein by equal volume 1x Buffer")
     print("=== Imaging Dilution ===")

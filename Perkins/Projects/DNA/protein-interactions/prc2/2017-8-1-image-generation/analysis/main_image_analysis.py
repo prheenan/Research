@@ -58,6 +58,8 @@ class tagged_image:
         self.image = plt.imread(self.image_path)
         self.worm_objects = worm_objects
         cond =  [w.has_dna_bound_protein for w in self.worm_objects]
+        assert len(cond) > 0 , "{:s} has no tagged data".format(image_path)
+        # POST: as least something to look at 
         self.protein_idx = np.where(cond)[0]
         self.dna_only_idx = np.where(~np.array(cond))[0]
     def subset(self,idx):
@@ -91,12 +93,15 @@ class tagged_image:
         return self._L0(self.traces_dna_only())
         
 
-def get_x_and_y_arrays(text_file):
+def get_x_and_y_arrays(text_file,size_images_pixels):
     """
     Returns: the x and y columns (0 and 1) of text_file 
     """
     data = np.loadtxt(text_file)
-    return data[:,0],data[:,1]
+    x = data[:,0]
+    y = data[:,1]
+    assert ((x > 1) & (y > 1)).all()
+    return x,y
     
 def get_contour_length(x,y):
     """
@@ -104,7 +109,7 @@ def get_contour_length(x,y):
     """
     return np.sum(np.sqrt(np.diff(x)**2 + np.diff(y)**2))
     
-def get_x_y_and_contour_lengths(text_files):
+def get_x_y_and_contour_lengths(text_files,size_images_pixels):
     """
     Gets all the worm_objects associated with text_files
     
@@ -115,9 +120,23 @@ def get_x_y_and_contour_lengths(text_files):
     """
     to_ret = []
     for t in text_files:
-        x,y = get_x_and_y_arrays(t)
+        x,y = get_x_and_y_arrays(t,size_images_pixels)
         to_ret.append(worm_object(x,y,t))
     return to_ret     
+
+def prh_hist(data,**hist_kw):
+    counts,_,_ = plt.hist(data,**hist_kw)
+    y = max(counts * 1.05)
+    ax = plt.gca()
+    plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,meanline=True,
+                showmeans=True,flierprops=dict(color='k',markersize=1))                
+   
+def print_info(dist,name):
+    print("For {:s}:".format(name))
+    print("\t Median: {:.1f} nm".format(np.median(dist)*1e9))
+    print("\t Mean  : {:.1f} nm".format(np.mean(dist)*1e9))
+    print("\t Std   : {:.1f} nm".format(np.std(dist)*1e9))
+
 
 def run():
     """
@@ -143,7 +162,8 @@ def run():
     for file_name in image_files:
         file_no_ext = file_name.replace(ext,"")
         these_text_files= [ t for t in text_files if str(file_no_ext) in str(t)]
-        objs_tmp = get_x_y_and_contour_lengths(these_text_files)
+        objs_tmp = get_x_y_and_contour_lengths(these_text_files,
+                                               size_images_pixels)
         im = plt.imread(file_name)
         assert (im.shape[0] == im.shape[1]) 
         assert (im.shape[0] == size_images_pixels)
@@ -156,6 +176,36 @@ def run():
     # POST: all the contour lengths are set in 'real' units ]  
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
+    print_info(L0_dna,"only DNA")
+    print_info(L0_protein,"DNA+PRC2")
+
+    n_protein = (L0_protein).size
+    n_dna = L0_dna.size
+    fig = PlotUtilities.figure()            
+    n_str = lambda n: "\n(N={:d})".format(n)
+    sanit_L0 = lambda x: x*1e6    
+    L0_dna_plot = sanit_L0(L0_dna)
+    L0_protein_plot = sanit_L0(L0_protein)
+    xmin = np.min(np.concatenate([L0_dna_plot,L0_protein_plot]))
+    xmax = np.max(np.concatenate([L0_dna_plot,L0_protein_plot]))
+    n_bins = 12
+    bins = np.linspace(xmin,xmax,endpoint=True,num=n_bins)
+    xlim = [0,xmax]
+    kw_dna = dict(color='g',alpha=0.3)
+    kw_protein = dict(color='b',hatch='//',alpha=0.7)
+    ax= plt.subplot(2,1,1)
+    prh_hist(L0_dna_plot,normed=True,bins=bins,
+             label="DNA Only" + n_str(n_dna),**kw_dna)
+    PlotUtilities.lazyLabel("","P (1/microns)","")
+    PlotUtilities.no_x_label(ax)
+    plt.xlim(xlim)
+    plt.subplot(2,1,2)    
+    prh_hist(L0_protein_plot,normed=True,bins=bins,
+             label="DNA+PRC2" + n_str(n_protein),**kw_protein)
+    PlotUtilities.lazyLabel("L0 (microns)","P (1/microns)","")
+    plt.xlim(xlim)
+    PlotUtilities.savefig(fig,out_dir + "hist.png",
+                          subplots_adjust=dict(hspace=0.03))
     for obj in objs_all:
         # plot each image with all the traces overlayed
         fig = PlotUtilities.figure()        

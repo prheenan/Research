@@ -43,6 +43,7 @@ function get_line_id(line_array_x,line_array_y)
 
 function save_and_draw_current_selection(suffix)
 {
+	run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel global");
 	output_dir = getDirectory("Image")
 	getSelectionCoordinates(line_array_x,line_array_y);
 	str_id =  get_line_id(line_array_x,line_array_y);
@@ -52,10 +53,6 @@ function save_and_draw_current_selection(suffix)
 	draw_array(line_array_x,line_array_y);
 }
 
-macro "save modified file [control-S]"
-{
-	File.saveString("Image","" + getDirectory("Image") + getTitle("Image") + "mod.tiff");
-} 
 
 macro "Save line segment as a dna-protein complex [C]"
 {

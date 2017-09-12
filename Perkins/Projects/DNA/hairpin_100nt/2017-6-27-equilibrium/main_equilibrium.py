@@ -178,7 +178,7 @@ def analyze(example,out_dir):
         histogram_plot(s)
         PlotUtilities.savefig(fig,"{:s}_hist_{:d}.png".format(out_dir,i))   
     # get a specific one for the equilibrium measurements 
-    bins_per_m = 1/(0.3e-10)
+    bins_per_m = 1/(0.5e-10)
     for idx_eq in range(0,24):
         slice_eq = slices[idx_eq]
         min_v,max_v = min(slice_eq.Separation),max(slice_eq.Separation)
