@@ -39,7 +39,7 @@ def parse_and_run():
     help_vel = '[0,1] of the separation vs time to fit for the velocity'
     parser.add_argument('-fraction_velocity_fit', 
                         metavar='fraction_velocity_fit', type=float,
-                        help=help_vel,**common)
+                        help=help_vel,required=False,default=0.25)
     parser.add_argument('-file_input',metavar="file_input",type=str,
                         help="path to the '.pxp' with the force, separation",
                         **common)
