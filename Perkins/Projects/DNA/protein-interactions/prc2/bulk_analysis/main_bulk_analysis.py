@@ -214,16 +214,37 @@ def get_coordinate_path(coords):
     path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
     return coords[path]
 
-def snake_fit(image,initial,w_line=5,w_edge=-5,max_px_move=0.5,beta=0.01):
+def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1):
     to_fit = image
+    min_x,max_x = np.min(initial[:,0]),np.max(initial[:,0])
+    min_y,max_y = np.min(initial[:,1]),np.max(initial[:,1])
+    fudge_x = int(np.ceil((max_x-min_x) * 0.1))
+    fudge_y = int(np.ceil((max_y-min_y) * 0.1))
+    """
+    lower_x = max(0,min_x-fudge_x)
+    lower_y = max(0,min_y-fudge_y)
+    to_fit = to_fit[0:max_x+fudge_x,
+                    0:max_y+fudge_y]
+    initial_x_shifted = initial[:,0]-lower_x
+    initial_y_shifted = initial[:,1]-lower_y
+    initial = np.array((initial_x_shifted,initial_y_shifted)).T
+    """
     min_image,max_image = np.min(to_fit),np.max(to_fit)
-    to_fit =  ((to_fit - min_image)/(max_image - min_image))
-    to_fit = to_fit.astype(np.float64)
-    return active_contour(to_fit,convergence=1e-2,max_iterations=20e3,
-                          snake=initial.astype(np.float64),
-                          bc='free',w_line=w_line,w_edge=w_edge,
-                          max_px_move=max_px_move,
-                          alpha=0.1, beta=beta, gamma=0.1)
+    to_fit =  ((to_fit - min_image)/(max_image - min_image)) * 256
+    to_fit = to_fit.astype(np.uint8)
+    snake = active_contour(to_fit,convergence=0.1,max_iterations=1e3,
+                           snake=initial.astype(np.float64),
+                           bc='free',w_line=w_line,w_edge=w_edge,
+                           max_px_move=max_px_move,
+                           alpha=0.1, beta=beta, gamma=0.1)
+    plt.imshow(to_fit.T,origin="lower")
+    plt.plot(initial[:,0],initial[:,1],'r.')
+    plt.plot(snake[:,0],snake[:,1])
+    plt.ylim(0,max_y*1.2)
+    plt.xlim(0,max_x*1.2)
+    plt.show()
+    return snake
+
 
 def plot_fitting(image,coords,snake_coords=None):
     endpoint_coord = coords[0]
@@ -239,16 +260,6 @@ def plot_fitting(image,coords,snake_coords=None):
     plt.ylim(min(coords[:,1])*0.8,max(coords[:,1]*1.1))
     if (snake_coords is not None):
         plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
-        
-def cart2pol(x, y):
-    rho = np.sqrt(x**2 + y**2)
-    phi = np.arctan2(y, x)
-    return (rho, phi)
-
-def pol2cart(rho, phi):
-    x = rho * np.cos(phi)
-    y = rho * np.sin(phi)
-    return(x, y)
 
 def run():
     """
@@ -292,14 +303,14 @@ def run():
     regions = measure.regionprops(skeleton.height)
     region = regions[0]
     coords = get_coordinate_path(region.coords)
-    coords_x = coords[:,0]
-    coords_y = coords[:,1]
     n_coords = len(coords)
     binary_idx = 3 + 1
     binary = all_transforms[binary_idx][-1]
     image_thresh = copy.deepcopy(image)
     image_thresh.height *= binary.height
     fudge = 3
+    coords_x = coords[:,0]
+    coords_y = coords[:,1]
     zero_x_low = coords_x - fudge
     zero_x_high = coords_x + fudge
     zero_y_low = coords_y - fudge
@@ -310,8 +321,12 @@ def run():
                                zero_y_low,zero_y_high):
         m_arr[x_l:x_h,y_l:y_h] = 1
     image_thresh.height *= m_arr
+    # relax the coordinates onto the actual data
+    snake_input = image
+    coords = snake_fit(image.height,initial=coords)
+    coords_x = coords[:,0]
+    coords_y = coords[:,1]
     # get the non-zero elements as <x,y> pairs
-    snake_input = image_thresh
     non_zero_coords = np.array([[i,j]
                                 for i,row in enumerate(image_thresh.height) 
                                 for j,ele in enumerate(row)
@@ -333,13 +348,14 @@ stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-ma
     """
     from scipy.interpolate import splprep, splev
     fit_coords = np.array((coords_x,coords_y))
-    tck, u = splprep(fit_coords, per=0,u=None,s=np.sqrt(n_coords))
+    tck, u = splprep(fit_coords, per=0,u=None,s=np.sqrt(n_coords),task=0)
     u_new = np.linspace(u.min(), u.max(), 1000)
     x_new, y_new = splev(u_new, tck, der=0)
 
     fig = PlotUtilities.figure()
     plot_fitting(snake_input,coords)
     plt.plot(x_new, y_new, 'b')
+    plt.plot(coords_x, coords_y, 'g--')
     out_name = "{:s}_fit.png".format(out_dir)
     PlotUtilities.savefig(fig,out_name)
     exit(1)
