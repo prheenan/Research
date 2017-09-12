@@ -30,15 +30,15 @@ class fig4c:
         self.energy_error = energy_error 
         
 def read_data(input_file,col_func,skip_header=1,delimiter=","):
-    cols = np.genfromtxt(base + input_file,skip_header=skip_header,
+    cols = np.genfromtxt(input_file,skip_header=skip_header,
                          delimiter=delimiter)    
     obj = col_func(cols)
     return obj    
         
-def save_output(base,input_file,col_func,**kw):
+def save_output(base,input_file,col_func=None,**kw):
     output_file = base + input_file + ".pkl"
     obj = CheckpointUtilities.getCheckpoint(output_file,read_data,False,
-                                            input_file,col_func,**kw)
+                                            base + input_file,col_func,**kw)
     return obj
     
 def convert_fig1d(cols):

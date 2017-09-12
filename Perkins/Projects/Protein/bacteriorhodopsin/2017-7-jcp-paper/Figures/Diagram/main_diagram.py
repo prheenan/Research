@@ -20,6 +20,9 @@ from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
+import figure_recreation
+from figure_recreation import fig1d,fig4ab,fig4c
+
 
 import copy 
 from matplotlib import gridspec
@@ -67,9 +70,9 @@ def run():
                for reg in zoom_regions_nm]
     ylim_pN_zoom = [50,120]
     # # make the plot 
-    fig = PlotUtilities.figure((7,2))
+    fig = PlotUtilities.figure((7,4))
     # create the 'top' gridspec
-    top_spec = gridspec.GridSpec(1,3,left=0)
+    top_spec = gridspec.GridSpec(2,3,left=0)
     # create separate axes for the image and FECs 
     image_spec = \
         gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0,0],
@@ -173,12 +176,52 @@ def run():
         )
         # 5. Add patch to list of objects to draw onto the figure
         fig.patches.append(arrow)
+    # read in the data ...
+    base_re = "./recreation_figure_data/"
+    # # Figure 4B from the science paper
+    fig4ab = figure_recreation.save_output(base_re,"Fig4AB.csv")  
+    ax_time = plt.subplot(top_spec[1,1])
+    plt.plot(fig4ab.time,fig4ab.force,linewidth=0.5)
+    min_x,max_x = plt.xlim()
+    range = [0.55,0.61]
+    min_x_new = min_x + (max_x-min_x)*range[0]
+    max_x_new = min_x + (max_x-min_x)*range[1]
+    ax_time.set_xlim(min_x_new,max_x_new)
+    ax_time.set_ylim(None,None)
+    unit_kwargs = dict(value_function =lambda x: x*1000,fmt="{:.0f}")
+    x_kwargs = dict(unit_kwargs=unit_kwargs,width=0.001,unit="ms")
+    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
+    y_font['rotation'] = 90
+    y_kwargs = dict(height=10,unit="pN",font_kwargs=y_font)
+    Scalebar.crossed_x_and_y_relative(offset_x=0.7,offset_y=0.08,
+                                      x_kwargs=x_kwargs,
+                                      y_kwargs=y_kwargs,
+                                      ax=ax_time)  
+    PlotUtilities.no_x_label(ax=ax_time)                                      
+    PlotUtilities.no_y_label(ax=ax_time)  
+    PlotUtilities.lazyLabel("Time","Force","")
+    # # figure 4C from the science paper -- the pfold energy landscape 
+    fig4c = figure_recreation.save_output(base_re,"Fig4C.csv")
+    ax_equil = plt.subplot(top_spec[1,2])
+    plt.errorbar(fig4c.x,fig4c.energy,fig4c.energy_error,fmt='ko-',
+                 mfc='w',zorder=0)                 
+    PlotUtilities.lazyLabel("Extension (nm)","Energy (kcal/mol)","")     
+    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
+    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
+    y_font['rotation'] = 90
+    y_kwargs = dict(height=2,unit="kcal/mol",font_kwargs=y_font)
+    Scalebar.crossed_x_and_y_relative(offset_x=0.25,offset_y=0.65,
+                                      x_kwargs=x_kwargs,
+                                      y_kwargs=y_kwargs,
+                                      ax=ax_equil)
+    PlotUtilities.no_x_label(ax=ax_equil)     
+    # XXX figure out what is wrong with this?
+    #PlotUtilities.no_y_label(ax=ax_equil)                                          
     loc = [ [0.15,1.15],
             [-0.05,1.15],
             [-0.05,1.15]]
     PlotUtilities.label_tom(fig,loc=loc)
-    PlotUtilities.save_png_and_svg(fig,"diagram",
-                                   subplots_adjust=dict(left=0,bottom=0.01))
+    PlotUtilities.save_png_and_svg(fig,"diagram")
     
 if __name__ == "__main__":
     run()
