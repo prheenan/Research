@@ -28,7 +28,8 @@ cd -
 cd ..
 # remove the output file, in case we already ran
 rm -f "$output_file"
-python main_iwt.py \
+python2 main_iwt.py \
+    -k_T 4.1e-21\
     -number_of_pairs 16\
     -flip_forces 0\
     -number_of_bins 150\

@@ -39,7 +39,10 @@ def parse_and_run():
     help_vel = '[0,1] of the separation vs time to fit for the velocity'
     parser.add_argument('-fraction_velocity_fit', 
                         metavar='fraction_velocity_fit', type=float,
-                        help=help_vel,**common)
+                        help=help_vel,required=False,default=0.25)
+    parser.add_argument('-k_T',metavar="k_T",type=float,
+                        help="Boltzmann energy, in joules",
+                        required=False,default=4.1e-21)
     parser.add_argument('-file_input',metavar="file_input",type=str,
                         help="path to the '.pxp' with the force, separation",
                         **common)
@@ -72,7 +75,8 @@ def parse_and_run():
                       number_of_bins=args.number_of_bins,
                       fraction_for_vel=args.fraction_velocity_fit,
                       velocity=args.velocity,
-                      flip_forces=args.flip_forces)
+                      flip_forces=args.flip_forces,
+                      kT=args.k_T)
     LandscapeObj = WeierstrassUtil.iwt_ramping_experiment(RawData[0],
                                                           **iwt_kwargs)
     # get the distance to the transition state etc
