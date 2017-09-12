@@ -240,6 +240,15 @@ def plot_fitting(image,coords,snake_coords=None):
     if (snake_coords is not None):
         plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
         
+def cart2pol(x, y):
+    rho = np.sqrt(x**2 + y**2)
+    phi = np.arctan2(y, x)
+    return (rho, phi)
+
+def pol2cart(rho, phi):
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return(x, y)
 
 def run():
     """
@@ -308,21 +317,32 @@ def run():
                                 for j,ele in enumerate(row)
                                 if ele > 0 ])
     x_full, y_full = non_zero_coords[:,0],non_zero_coords[:,1]
+    endpoint_coord = coords[0]
+    x_end,y_end = endpoint_coord[0],endpoint_coord[1]
+    x_rel,y_rel = x_full-x_end, y_full-y_end
+    # sort by the disance from the endpoint 
+    sort_idx = np.argsort(x_rel**2+y_rel**2)
+    x_rel = x_rel[sort_idx]
+    y_rel = y_rel[sort_idx]
+    # convert to polar coordinates
+    rho,phi = cart2pol(x_rel,y_rel)
     # fit x and y as a funciton of the coordinate number 
-    # XXX debugging...
     """
     # see: 
 stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
     also:
 stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
 stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
+    https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
     """
     from scipy.interpolate import splprep, splev
-    weights = 1/3
-    tck, u = splprep(coords.T, per=0,u=None,s=0)
-    print(u.shape,non_zero_coords.shape)
+    fit_coords = np.array((rho,phi))
+    tck, u = splprep(fit_coords, per=0,u=None,s=n_coords)
     u_new = np.linspace(u.min(), u.max(), 1000)
-    x_new, y_new = splev(u_new, tck, der=0)
+    rho_new, phi_new = splev(u_new, tck, der=0)
+    x_new,y_new = pol2cart(rho, phi)
+    x_new += x_end
+    y_new += y_end
     fig = PlotUtilities.figure()
     plot_fitting(snake_input,coords)
     plt.plot(x_new, y_new, 'b')
