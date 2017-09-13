@@ -213,7 +213,8 @@ def get_coordinate_path(coords):
         if (i != endpoint):
             # also add the second closest for all 'interior' nodes...
             G.add_edge(i,closest_nodes[1])
-    path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
+    edges = nx.bfs_edges(G=G, source=endpoint,reverse=False)
+    path = np.array([endpoint] + [e[1] for e in edges])
     return coords[path]
 
 def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1,gamma=0.1):
