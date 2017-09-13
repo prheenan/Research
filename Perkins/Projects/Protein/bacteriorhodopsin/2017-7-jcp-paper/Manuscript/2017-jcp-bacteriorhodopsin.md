@@ -1,3 +1,4 @@
+
 **Free Energy Landscape of Bacteriorhodopsin Reveals Local Variations in Unfolding Energy**
 
 P. Heenan, H. Yu, M. Siewny , T. Perkins
@@ -11,19 +12,13 @@ INTRO
 
 Determining the structural causes of membrane protein stability is critical due to the common role membrane proteins play as drug targets.  However, it remains difficult to apply traditional structural techniques such as X-ray crystallography [@stanley_process_2008]. Single molecule techniques such as fluorescence microscopy and atomic force microscopy (AFM) have emerged as powerful tools for determining a molecule stability by reconstructing its energy landscape.
 
-The energy landscape is a powerful conceptual framework for understanding protein folding and unfolding.  States are represented by minima in the energy landscape, and the protein folding process occurs as a path along the landscape. Single-molecule techniques have proven critical for identifying the the barrier between states and the distance between states. Transiently occupied states, known as folding intermediates, are difficult to measure [.....].
-
-(bridge...) 
-
-(Protein folding, emphasis on landscapes and transiently occupied states)
- 
-In AFM, the energy landscape is reconstructed as a function of molecular exseion, In particular, AFM experiments repeatedly mechaically disassociate membrane proteins. The energy landscape is reconstructed by application of the inverse Weierstrass transform of the Jarzynski free-energy integral, discussed below. (Figure reference?) 
-
-(bR..., previous bR studies)
+The energy landscape is a powerful conceptual framework for understanding protein folding and unfolding.  States are represented by minima in the energy landscape, and the protein folding process occurs as a path along the landscape. Single-molecule techniques have proven critical for identifying the the barrier between states and the distance between states [@Sapra1_Point_2006]. Measurement of transiently occupied states, with lifetimes of 10 $\mu$s or less, has traditionally been problematic due to poor time resolution [@janovjak_valleys_2008]. However, measuring these intermediates is required for a detailed understanding of the molecule energy landscape's shape and roughness.
 
 (SMFS to estimate landscapes, higher time resolution)
 
 (Need for time resolution (for states) and deconvolution)
+
+Identification of intermediate protein unfolding states has been accelerated by order-of-magnitude advances in AFM cantilever force precision and time resolution [@yu_hidden_2017].  [Call out pulling geometry] In our AFM experiments, the unfolding energy landscape of bacteriorhodopsin was reconstructed as a function of molecular extension by repeated mechanical disassociation of bacteriorhodopsin and application of the inverse Weierstrass transform of the Jarzynski free-energy integral, discussed below. The energy barriers between major states of bacteriorhodopsin have been measured using AFM as a function of point mutation [@sapra_point_2006], C- or N-terminal pulling geometry [@kessler_unfolding_2006], and environmental conditions such as temperature and salt content [@park_stabilizing_2007;preiner_free_2007]. However, these studies either failed to reconstruct the entire energy landscape, were limited by poor spatiotemporal resolution, or failed to remove the purturbative effect of the force probe on the energy landscape. This work reports the first energy landscape of bacteriorhodopsin which is reconstructed with single-ammino acid resolution and which removes the effect of the force probe on the energy landscape.
 
 
 
