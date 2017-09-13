@@ -211,7 +211,7 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
         # and get the last return (TimeSepForce)
         load_func = lambda *args,**kwargs: \
             concatenate_fec_from_single_directory(*args,**kwargs)[-1]     
-    load_functor = lambda: load_func(pxp_dir,**kwargs)            
+    load_functor = lambda: load_func(pxp_dir,**kwargs)          
     return CheckpointUtilities.multi_load(cache_dir=cache_dir,
                                           load_func=load_functor,
                                           force=force,limit=limit,
