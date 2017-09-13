@@ -249,7 +249,7 @@ def plot_fitting(image,coords,snake_coords=None):
     plt.imshow(image.T,origin='lower')
     plt.plot(coords[:,0],coords[:,1],',')
     plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
-    plt.plot(coords[:,0],coords[:,1],'g-',alpha=0.3)
+    plt.plot(coords[:,0],coords[:,1],'r-',alpha=0.3)
     plt.xlim(min(coords[:,0])*0.8,max(coords[:,0]*1.1))
     plt.ylim(min(coords[:,1])*0.8,max(coords[:,1]*1.1))
     if (snake_coords is not None):
@@ -315,27 +315,11 @@ def run():
                                zero_y_low,zero_y_high):
         m_arr[x_l:x_h,y_l:y_h] = 1
     image_thresh.height *= m_arr
+    where_non_zero_image_xy =np.where(image_thresh.height > 0)
+    where_non_zero_x,where_non_zero_y = where_non_zero_image_xy
     # relax the coordinates onto the actual data
     snake_input = image_thresh
-    for w_edge in [0,-4,-16]:
-        for w_line in [1,4,16]:
-            for beta in [1e-2,1e-1,1]:
-                for max_px_move in [0.1,0.3,2]:
-                    for gamma in [1e-6,1e-4,1e-2]:
-                        fig = PlotUtilities.figure()
-                        snake_coords = snake_fit(image.height,initial=coords,
-                                                 beta=beta,
-                                                 max_px_move=max_px_move,
-                                                 w_edge=w_edge,
-                                                 w_line=w_line,
-                                                 gamma=gamma)
-                        plot_fitting(snake_input.height,coords,snake_coords)
-                        name = "{:.2g}_{:.2g}_{:.2g}_{:.2g}_{:.2g}".\
-                               format(w_edge,w_line,beta*100,max_px_move*100,
-                                      gamma*1e6)
-                        plt.plot(coords[:,0],coords[:,1])
-                        out_name = "{:s}_fit_{:s}.png".format(out_dir,name)
-                        PlotUtilities.savefig(fig,out_name)
+    
     """
     # see: 
 stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
@@ -343,16 +327,71 @@ stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
 stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
 stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
     https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
+
+    ... also ...
+
+    https://stackoverflow.com/search?q=parametric+image+fit
+
+    especially:
+
+    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
+
+    and
+
+    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
     """
-    from scipy.interpolate import splprep, splev
-    fit_coords = np.array((coords_x,coords_y))
-    tck, u = splprep(fit_coords, per=0,u=None,s=np.sqrt(n_coords),task=0)
-    u_new = np.linspace(u.min(), u.max(), 1000)
-    x_new, y_new = splev(u_new, tck, der=0)
+    from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
+    n_non_zero = where_non_zero_x.size
+    # get the projection of the data onto the skeleton
+    para,perp = [],[]
+    skel_idx,skel_r = [],[]
+    for i,(x,y) in enumerate(zip(where_non_zero_x,where_non_zero_y)):
+        diff = np.sqrt((coords_x-x)**2 + (coords_y-y)**2)
+        closest_skeleton_idx = np.argmin(diff)
+        skeleton_tmp = coords[closest_skeleton_idx]
+        skeleton_norm = sum(np.abs(skeleton_tmp))
+        m_coords = [x,y] 
+        # projection of m_coords onto skeleton_tmp (ie: |m_coords| cos(theta)) 
+        skeleton_hat = skeleton_tmp/skeleton_norm
+        projection = np.dot(m_coords,skeleton_hat)
+        parallel_component = projection
+        perpendicular_component = np.cross(m_coords,skeleton_hat)
+        para.append(parallel_component)
+        perp.append(perpendicular_component)
+        skel_idx.append(closest_skeleton_idx)
+        skel_r.append(skeleton_tmp)
+    # sort the projection array by the distance along...
+    sort_idx = np.argsort(skel_idx)
+    para = np.array(para)[sort_idx]
+    perp = np.array(perp)[sort_idx]
+    skel_r = np.array(skel_r)[sort_idx]
+    skel_idx = np.array(skel_idx)[sort_idx]
+    sorted_image_x = where_non_zero_x[sort_idx]
+    sorted_image_y = where_non_zero_y[sort_idx]
+    skel_x = skel_r[:,0]
+    skel_y = skel_r[:,1]
+    n_points = para.size
+    tck,u = splprep([sorted_image_x,sorted_image_y],
+                    s=2*n_points,k=3)
+    unew = np.arange(0,1.01,0.01)
+    out = splev(unew,tck)
+    out_x ,out_y = out[0],out[1]
+    xlim = lambda : plt.xlim([50,150])
+    ylim = lambda : plt.ylim([0,100])
+    plt.subplot(3,1,1)
+    plt.plot(para,perp,'ro')
+    plt.subplot(3,1,2)
+    plt.plot(sorted_image_x,sorted_image_y,'b.')
+    plt.plot(out_x,out_y,'r-')
+    plt.subplot(3,1,3)
+    plt.imshow(image_thresh.height.T)
+    plt.plot(out_x,out_y,'r-')
+    xlim()
+    ylim()
+    plt.show()
     fig = PlotUtilities.figure()
-    plot_fitting(snake_input,coords)
-    plt.plot(x_new, y_new, 'b')
-    plt.plot(coords_x, coords_y, 'g--')
+    plot_fitting(snake_input.height,coords)
+    plt.plot(interp_x(ind_sort), interp_y(ind_sort), 'r,')
     out_name = "{:s}_fit.png".format(out_dir)
     PlotUtilities.savefig(fig,out_name)
     exit(1)
