@@ -31,7 +31,7 @@ import matplotlib.patches
 
 def run():
     """
-    <Description>
+    <Description>q
 
     Args:
         param1: This is the first param.
@@ -72,7 +72,7 @@ def run():
     # # make the plot 
     fig = PlotUtilities.figure((7,4))
     # create the 'top' gridspec
-    top_spec = gridspec.GridSpec(2,3,left=0)
+    top_spec = gridspec.GridSpec(2,3)
     # create separate axes for the image and FECs 
     image_spec = \
         gridspec.GridSpecFromSubplotSpec(1,1,subplot_spec=top_spec[0,0],
@@ -178,14 +178,41 @@ def run():
         fig.patches.append(arrow)
     # read in the data ...
     base_re = "./recreation_figure_data/"
+    # # Figure 1D from the science paper 
+    ax_fec_ensemble = plt.subplot(top_spec[1,0])
+    fig4d = figure_recreation.save_output(base_re,"Fig1D.csv")      
+    ylim = [0,160]
+    xlim = [18,32]
+    for x,y in zip(fig4d.x,fig4d.y):
+        plt.plot(x,y,alpha=1,linewidth=0.5)
+    for wlc_x,wlc_y in zip(fig4d.wlc_x,fig4d.wlc_y):
+        plt.plot(wlc_x,wlc_y,'b--',alpha=0.4,linewidth=1,zorder=0,dashes=(2,2))
+    ax_fec_ensemble.set_ylim(ylim)
+    ax_fec_ensemble.set_xlim(xlim)    
+    PlotUtilities.lazyLabel("Extension","Force","")        
+    x_kwargs = dict(width=3,unit="nm")
+    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
+    y_font['rotation'] = 90
+    y_kwargs = dict(height=25,unit="pN",font_kwargs=y_font)
+    Scalebar.crossed_x_and_y_relative(offset_x=0.22,offset_y=0.77,
+                                      x_kwargs=x_kwargs,
+                                      y_kwargs=y_kwargs,
+                                      ax=ax_fec_ensemble)    
+    PlotUtilities.no_x_label(ax=ax_fec_ensemble)                                      
+    PlotUtilities.no_y_label(ax=ax_fec_ensemble)  
     # # Figure 4B from the science paper
+    color_equil = 'rebeccapurple'
     fig4ab = figure_recreation.save_output(base_re,"Fig4AB.csv")  
     ax_time = plt.subplot(top_spec[1,1])
-    plt.plot(fig4ab.time,fig4ab.force,linewidth=0.5)
-    min_x,max_x = plt.xlim()
-    range = [0.55,0.61]
+    min_x,max_x = min(fig4ab.time),max(fig4ab.time)
+    range = [0.155,0.215]
     min_x_new = min_x + (max_x-min_x)*range[0]
     max_x_new = min_x + (max_x-min_x)*range[1]
+    idx = np.where( (fig4ab.time <= max_x_new) & (fig4ab.time >= min_x_new))
+    time = fig4ab.time[idx]
+    force = fig4ab.force[idx]
+    FEC_Plot._fec_base_plot(time,force,n_filter_points=200,
+                            style_data=dict(color=color_equil,alpha=0.3))
     ax_time.set_xlim(min_x_new,max_x_new)
     ax_time.set_ylim(None,None)
     unit_kwargs = dict(value_function =lambda x: x*1000,fmt="{:.0f}")
@@ -203,8 +230,10 @@ def run():
     # # figure 4C from the science paper -- the pfold energy landscape 
     fig4c = figure_recreation.save_output(base_re,"Fig4C.csv")
     ax_equil = plt.subplot(top_spec[1,2])
-    plt.errorbar(fig4c.x,fig4c.energy,fig4c.energy_error,fmt='ko-',
-                 mfc='w',zorder=0)                 
+    plt.errorbar(fig4c.x,fig4c.energy,fig4c.energy_error,color=color_equil,
+                 marker='o',
+                 mfc='w',zorder=0,markerfacecolor="None",capsize=2,elinewidth=1,
+                 linewidth=1)                 
     PlotUtilities.lazyLabel("Extension (nm)","Energy (kcal/mol)","")     
     x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
@@ -214,14 +243,27 @@ def run():
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_equil)
-    PlotUtilities.no_x_label(ax=ax_equil)     
+    # add in bell...
+    bell_mean = 0.64
+    bell_std = 0.09
+    x0,xf = ax_equil.get_xlim()
+    mean_x = bell_mean * (xf-x0) + x0
+    std_x = bell_std * (xf-x0)
+    color_bell = 'k'
+    plt.axvspan(mean_x-std_x,mean_x+std_x,color=color_bell,alpha=0.15)
+    plt.axvline(mean_x,color=color_bell,linestyle='--',zorder=0,alpha=0.7)
+    PlotUtilities.no_x_label(ax=ax_equil)         
+    t = ax_equil.annotate(s=r"$\Delta x^{\ddag}_{\mathrm{Bell}}$",
+                          xy=(0.4,0.3),color=color_bell,
+                          xycoords="axes fraction")
     # XXX figure out what is wrong with this?
-    #PlotUtilities.no_y_label(ax=ax_equil)                                          
+    PlotUtilities.no_y_label(ax=ax_equil)                                          
     loc = [ [0.15,1.15],
             [-0.05,1.15],
             [-0.05,1.15]]
     PlotUtilities.label_tom(fig,loc=loc)
     PlotUtilities.save_png_and_svg(fig,"diagram")
+    
     
 if __name__ == "__main__":
     run()
