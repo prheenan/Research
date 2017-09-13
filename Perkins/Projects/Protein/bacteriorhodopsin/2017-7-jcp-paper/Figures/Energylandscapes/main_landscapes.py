@@ -159,7 +159,8 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
-    N_boostraps = 3
+    skip = 20
+    N_boostraps = 60
     for area,slice_tmp in zip(areas,raw_area_slices):
         # get the heatmap histograms
         heatmap_data = get_heatmap_data(slice_tmp)  
@@ -169,12 +170,14 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         slice_tmp[:] = []
         n_objs = len(iwt_objs)
         ids = np.arange(n_objs,dtype=np.int64)
-        # randomly choose the ids with replacement for bootstrapping
-        id_choices = [np.random.choice(ids,size=n_objs,replace=True)
-                      for i in range(N_boostraps)]
+        # randomly choose the ids with replacement for bootstrapping\
+        choose_ids = lambda : np.random.choice(ids,size=n_objs,replace=True)
+        skipped = [choose_ids() for i in range(skip)]
+        id_choices = [choose_ids() for i in range(N_boostraps)]
         iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
         functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
-        name_func = lambda  i,d: area.save_name + "_bootstrap_{:d}".format(i) 
+        name_func = lambda  i,d: \
+            area.save_name + "_bootstrap_{:d}".format(i+skip) 
         iwt_tmp = CheckpointUtilities.multi_load("./",load_func=functor,
                                                  force=force_read_data,
                                                  name_func=name_func)
