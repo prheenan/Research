@@ -205,7 +205,7 @@ def get_coordinate_path(coords):
     # POST: have endpoint. Add all the points with their two closest to the 
     # graph (except the endpoint, where we only add its closest)
     # create a graph of all the pixels
-    G = nx.Graph()
+    G = nx.Graph(n=n_coords)
     for i in range(n_coords):
         closest_nodes = np.argsort(distances[i])
         # add the closest
@@ -213,8 +213,17 @@ def get_coordinate_path(coords):
         if (i != endpoint):
             # also add the second closest for all 'interior' nodes...
             G.add_edge(i,closest_nodes[1])
-    edges = nx.bfs_edges(G=G, source=endpoint,reverse=False)
-    path = np.array([endpoint] + [e[1] for e in edges])
+    """
+    see: 
+https://stackoverflow.com/questions/18794308/algorithm-to-cover-all-edges-given-starting-node
+
+https://networkx.github.io/documentation/networkx-1.9.1/reference/generated/networkx.algorithms.matching.max_weight_matching.html#networkx.algorithms.matching.max_weight_matching
+
+    also https://groups.google.com/forum/#!topic/networkx-discuss/NxbsY2dzkNk
+    
+    https://healthyalgorithms.com/2009/03/23/aco-in-python-minimum-weight-perfect-matchings-aka-matching-algorithms-and-reproductive-health-part-4/
+    """
+    path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
     return coords[path]
 
 def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1,gamma=0.1):
