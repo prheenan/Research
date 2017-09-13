@@ -18,6 +18,8 @@ from skimage.morphology import skeletonize
 from skimage import measure,img_as_uint
 from skimage.segmentation import active_contour
 import networkx as nx
+from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
+
 
 class transform:
     def __init__(self,name,function,imshow_kw=dict(cmap=plt.cm.afmhot)):
@@ -255,6 +257,71 @@ def plot_fitting(image,coords,snake_coords=None):
     if (snake_coords is not None):
         plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
 
+def get_spline_obj(image,coords,fudge=3,k=3,smooth_f_n=2):
+    """
+    Returns:
+        tuple of 
+    """
+    n_coords = len(coords)
+    coords_x = coords[:,0]
+    coords_y = coords[:,1]
+    # threshold the image outside of the skeleton area of interest
+    image_thresh = copy.deepcopy(image)
+    zero_x_low = coords_x - fudge
+    zero_x_high = coords_x + fudge
+    zero_y_low = coords_y - fudge
+    zero_y_high = coords_y + fudge
+    # get a mask with ones in the region...
+    m_arr = np.zeros(image.height.shape)
+    for x_l,x_h,y_l,y_h in zip(zero_x_low,zero_x_high,
+                               zero_y_low,zero_y_high):
+        m_arr[x_l:x_h,y_l:y_h] = 1
+    image_thresh.height *= m_arr
+    where_non_zero_image_xy =np.where(image_thresh.height > 0)
+    where_non_zero_x,where_non_zero_y = where_non_zero_image_xy
+    """
+    # Essentially trying to parameterize a curve basd on the skeleton. see: 
+stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
+    also:
+stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
+stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
+    https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
+
+    ... also ...
+
+    https://stackoverflow.com/search?q=parametric+image+fit
+
+    especially:
+
+    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
+
+    and
+
+    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
+    """
+    n_non_zero = where_non_zero_x.size
+    # get the projection of the data onto the skeleton
+    skel_idx = []
+    weights = []
+    for i,(x,y) in enumerate(zip(where_non_zero_x,where_non_zero_y)):
+        diff = np.sqrt((coords_x-x)**2 + (coords_y-y)**2)
+        closest_skeleton_idx = np.argmin(diff)
+        skel_idx.append(closest_skeleton_idx)
+        weights.append(image_thresh.height[x,y])
+    # sort the projection array by the distance along...
+    sort_idx = np.argsort(skel_idx)
+    sorted_image_x = where_non_zero_x[sort_idx]
+    sorted_image_y = where_non_zero_y[sort_idx]
+    f_excess = where_non_zero_y.size/len(coords_x)
+    # weight; sum by default is such that sum is M (being the size). use that
+    weights = np.array(weights)[sort_idx]
+    weights /= np.sum(weights)
+    weights *= weights.size
+    n_points = sorted_image_x.size
+    tck,_ = splprep([sorted_image_x,sorted_image_y],w=weights,per=0,
+                    s=f_excess*n_points/smooth_f_n,k=k,u=None,quiet=0)
+    return image_thresh,tck
+
 def run():
     """
     <Description>
@@ -293,102 +360,24 @@ def run():
     last_dir = tmp_dir
     # fit a spline to the original data using each of the connected
     # regions from the skeletonization 
-    image,skeleton = images[-1],last[-1]
-    regions = measure.regionprops(skeleton.height)
-    region = regions[0]
-    coords = get_coordinate_path(region.coords)
-    n_coords = len(coords)
-    binary_idx = 3 + 1
-    binary = all_transforms[binary_idx][-1]
-    image_thresh = copy.deepcopy(image)
-    image_thresh.height *= binary.height
-    fudge = 3
-    coords_x = coords[:,0]
-    coords_y = coords[:,1]
-    zero_x_low = coords_x - fudge
-    zero_x_high = coords_x + fudge
-    zero_y_low = coords_y - fudge
-    zero_y_high = coords_y + fudge
-    # get a mask with ones in the region...
-    m_arr = np.zeros(image.height.shape)
-    for x_l,x_h,y_l,y_h in zip(zero_x_low,zero_x_high,
-                               zero_y_low,zero_y_high):
-        m_arr[x_l:x_h,y_l:y_h] = 1
-    image_thresh.height *= m_arr
-    where_non_zero_image_xy =np.where(image_thresh.height > 0)
-    where_non_zero_x,where_non_zero_y = where_non_zero_image_xy
-    # relax the coordinates onto the actual data
-    snake_input = image_thresh
-    
-    """
-    # see: 
-stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
-    also:
-stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
-stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
-    https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
-
-    ... also ...
-
-    https://stackoverflow.com/search?q=parametric+image+fit
-
-    especially:
-
-    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
-
-    and
-
-    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
-    """
-    from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
-    n_non_zero = where_non_zero_x.size
-    # get the projection of the data onto the skeleton
-    para,perp = [],[]
-    skel_idx,skel_r = [],[]
-    for i,(x,y) in enumerate(zip(where_non_zero_x,where_non_zero_y)):
-        diff = np.sqrt((coords_x-x)**2 + (coords_y-y)**2)
-        closest_skeleton_idx = np.argmin(diff)
-        skeleton_tmp = coords[closest_skeleton_idx]
-        skeleton_norm = sum(np.abs(skeleton_tmp))
-        m_coords = [x,y] 
-        # projection of m_coords onto skeleton_tmp (ie: |m_coords| cos(theta)) 
-        skeleton_hat = skeleton_tmp/skeleton_norm
-        projection = np.dot(m_coords,skeleton_hat)
-        parallel_component = projection
-        perpendicular_component = np.cross(m_coords,skeleton_hat)
-        para.append(parallel_component)
-        perp.append(perpendicular_component)
-        skel_idx.append(closest_skeleton_idx)
-        skel_r.append(skeleton_tmp)
-    # sort the projection array by the distance along...
-    sort_idx = np.argsort(skel_idx)
-    para = np.array(para)[sort_idx]
-    perp = np.array(perp)[sort_idx]
-    skel_r = np.array(skel_r)[sort_idx]
-    skel_idx = np.array(skel_idx)[sort_idx]
-    sorted_image_x = where_non_zero_x[sort_idx]
-    sorted_image_y = where_non_zero_y[sort_idx]
-    skel_x = skel_r[:,0]
-    skel_y = skel_r[:,1]
-    n_points = para.size
-    tck,u = splprep([sorted_image_x,sorted_image_y],
-                    s=2*n_points,k=3)
-    unew = np.arange(0,1.01,0.01)
-    out = splev(unew,tck)
-    out_x ,out_y = out[0],out[1]
-    xlim = lambda : plt.xlim([50,150])
-    ylim = lambda : plt.ylim([0,100])
-    plt.subplot(3,1,1)
-    plt.plot(para,perp,'ro')
-    plt.subplot(3,1,2)
-    plt.plot(sorted_image_x,sorted_image_y,'b.')
-    plt.plot(out_x,out_y,'r-')
-    plt.subplot(3,1,3)
-    plt.imshow(image_thresh.height.T)
-    plt.plot(out_x,out_y,'r-')
-    xlim()
-    ylim()
-    plt.show()
+    for image,skeleton in zip([images[-2]],[last[-2]]):
+        regions = measure.regionprops(skeleton.height)
+        region = regions[0]
+        coords = get_coordinate_path(region.coords)
+        unew = np.linspace(0,1,endpoint=True,num=10*max(coords.shape))
+        image_thresh,tck = get_spline_obj(image,coords)
+        out = splev(unew,tck)
+        out_x ,out_y = out[0],out[1]
+        min_x,max_x = min(out_x),max(out_x)
+        range_v = (max_x-min_x) * 0.2
+        xlim = lambda : plt.xlim([min_x-range_v,max_x+range_v])
+        ylim = lambda : plt.ylim([min(out_y)-range_v,max(out_y+range_v)])
+        plt.imshow(image_thresh.height.T)
+        plt.plot(out_x,out_y,'r-')
+        plt.plot(coords[0,0],coords[0,1],'go')
+        xlim()
+        ylim()
+        plt.show()
     fig = PlotUtilities.figure()
     plot_fitting(snake_input.height,coords)
     plt.plot(interp_x(ind_sort), interp_y(ind_sort), 'r,')

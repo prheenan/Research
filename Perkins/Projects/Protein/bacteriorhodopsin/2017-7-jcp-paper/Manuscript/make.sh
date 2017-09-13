@@ -28,7 +28,7 @@ make_figure()
     pandoc $input_file \
 	--filter=./walk_figures.py\
 	--filter=./fulfill_figures.py\
-	--bibliography=${5:-./Masters.bib} \
+	--bibliography=${5:-./jcp_bR_energy_bibliography.bib}\
 	--from=markdown+yaml_metadata_block\
 	--csl=${4:-biophysical-journal.csl}\
 	--reference-docx=${3:-./Template/prh_template.docx}\

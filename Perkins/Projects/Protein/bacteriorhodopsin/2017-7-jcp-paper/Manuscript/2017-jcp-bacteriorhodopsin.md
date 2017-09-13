@@ -9,7 +9,7 @@ Determining the structural causes of membrane protein stability is critical due 
 
 INTRO
 
-Determining the structural causes of membrane protein stability is critical due to the common role membrane proteins play as drug targets.  However, it remains difficult to apply traditional structural techniques such as X-ray crystallography (cite). Single molecule techniques such as fluorescence microscopy and atomic force microscopy (AFM) have emerged as powerful tools for determining a molecule stability by reconstructing its energy landscape.
+Determining the structural causes of membrane protein stability is critical due to the common role membrane proteins play as drug targets.  However, it remains difficult to apply traditional structural techniques such as X-ray crystallography [@stanley_process_2008]. Single molecule techniques such as fluorescence microscopy and atomic force microscopy (AFM) have emerged as powerful tools for determining a molecule stability by reconstructing its energy landscape.
 
 The energy landscape is a powerful conceptual framework for understanding protein folding and unfolding.  States are represented by minima in the energy landscape, and the protein folding process occurs as a path along the landscape. Single-molecule techniques have proven critical for identifying the the barrier between states and the distance between states. Transiently occupied states, known as folding intermediates, are difficult to measure [.....].
 
