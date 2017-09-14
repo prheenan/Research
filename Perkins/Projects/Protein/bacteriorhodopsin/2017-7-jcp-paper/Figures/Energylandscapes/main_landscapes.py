@@ -194,7 +194,8 @@ def landscape_label():
     units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")
     PlotUtilities.lazyLabel("Extension (nm)",units_energy,"")            
     
-def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
+def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
+                   label_deltaG = PlotUtilities.variable_string("\Delta G")):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
     extension_nm = data._extension_grid_nm
@@ -206,7 +207,6 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     upper_delta_landscape = grad(landscape_upper)
     lower_delta_landscape = grad(landscape_lower)
     ax_energy = plt.gca()
-    label_deltaG = PlotUtilities.variable_string("\Delta G")    
     # plot the landscape and its standard deviation
     plt.plot(extension_nm,landscape_kcal_per_mol,
              label=label_deltaG,**kw_landscape)
@@ -365,17 +365,20 @@ def kwargs_correction():
     return [dict(color='r',linestyle='-.'),
             dict(color='b',linestyle='-',linewidth=0.3),
             dict(color='g',linestyle='--')]
-    
+            
+def kwargs_labels():
+    second_deriv =  r"\frac{1}{2\beta}\ln(1-\frac{\ddot{A}}{k})"                
+    return [PlotUtilities.variable_string(r"A"),
+            PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2k}"),
+            PlotUtilities.variable_string(second_deriv)]
+            
 def plot_with_corrections(data):
     ext_nm = data._extension_grid_nm   
     convert = data.from_Joules_to_kcal_per_mol()
     energies = [data._grid_property(lambda x: x.free_energy_A * convert),
                 data._grid_property(lambda x: -1 * x.first_deriv_term * convert),
                 data._grid_property(lambda x: x.second_deriv_term* convert)]
-    second_deriv =  r"\frac{1}{2\beta}\ln(1-\frac{\ddot{A}}{k})"                
-    labels = [PlotUtilities.variable_string(r"A"),
-              PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2k}"),
-              PlotUtilities.variable_string(second_deriv)]
+    labels = kwargs_labels()
     kwargs = kwargs_correction()
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol                
     for i,e in enumerate(energies):
@@ -413,7 +416,11 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     ax_correction.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=0.35)
-    PlotUtilities.legend(handlelength=2,loc=(0.15,0.07),ncol=3)
+    legend_font_size = 9                         
+    legend = PlotUtilities.legend(handlelength=2,loc=(0.15,0.07),ncol=3,
+                                  fontsize=legend_font_size,handletextpad=0.4)
+    for i,text in enumerate(legend.get_texts()):
+        plt.setp(text, color = kwargs_correction()[i]['color'])    
     # make the inset plot 
     axins = zoomed_inset_axes(ax_correction, zoom=2, loc=2,
                               borderpad=0.8) 
@@ -452,10 +459,20 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     ax_correction.set_xlim(xlim_fec)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
-                   plot_derivative=False)    
+                   plot_derivative=False,label_deltaG=" ")    
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=0.3)
+    # add in the equation notation
+    strings,colors = [],[]
+    labels = kwargs_labels()
+    # add in the appropriate symbols 
+    strings = ["$\Delta G$ = ",labels[0]," + ",labels[1]," - ",labels[2]]
+    colors = ['k','r','k','b','k','g']
+    x,y = Scalebar.x_and_y_to_abs(x_rel=0.08,y_rel=0.85,ax=ax_energy)        
+    Annotations.rainbow_text(x,y,strings=strings,colors=colors,
+                             ax=ax_energy,size=legend_font_size)
+    PlotUtilities.legend(handlelength=0.5,loc=(0.03,0.8))                             
     PlotUtilities.no_x_label(ax_energy)                         
     PlotUtilities.save_png_and_svg(fig,out_name)  
     
