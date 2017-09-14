@@ -145,7 +145,6 @@ def _get_landscapes(iwt_obj_subsets,n_bins):
     
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
-    force_read_data = True    
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
                                                  limit=None,
@@ -159,9 +158,12 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
-    skip = 20
-    N_boostraps = 60
+    skip = 0
+    N_boostraps = 20
     for area,slice_tmp in zip(areas,raw_area_slices):
+        # for each area, use the same starting seed 
+        # (that the data are consistent)
+        np.random.seed(42)
         # get the heatmap histograms
         heatmap_data = get_heatmap_data(slice_tmp)  
         # get the landscapes (we use N, to get an error)
@@ -172,14 +174,19 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         ids = np.arange(n_objs,dtype=np.int64)
         # randomly choose the ids with replacement for bootstrapping\
         choose_ids = lambda : np.random.choice(ids,size=n_objs,replace=True)
+        # skip the first N (if we already chose those, assuming a consistent 
+        # seed)
         skipped = [choose_ids() for i in range(skip)]
+        # get the actual ids we want 
         id_choices = [choose_ids() for i in range(N_boostraps)]
         iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
         functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
         name_func = lambda  i,d: \
             area.save_name + "_bootstrap_{:d}".format(i+skip) 
-        iwt_tmp = CheckpointUtilities.multi_load("./",load_func=functor,
-                                                 force=force_read_data,
+        cache_dir = "./{:s}/".format(area.save_name)
+        GenUtilities.ensureDirExists(cache_dir)
+        iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
+                                                 force=False,
                                                  name_func=name_func)
         # make the object we want for this 'area' slice
         to_ret.append(cacheable_data(iwt_tmp,heatmap_data))
