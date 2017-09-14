@@ -29,6 +29,11 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import matplotlib.patches
 
+def velocity_annotate(ax,v,y,x=0.65,color='g'):
+    s = r"$v$ = {:d} nm/s".format(int(np.round(v)))
+    Scalebar.relative_annotate(ax=ax,s=s,
+                               xy=(x,y),
+                               color=color,bbox=dict(color='w',pad=0))
 def run():
     """
     <Description>q
@@ -97,9 +102,18 @@ def run():
     PlotUtilities.tom_ticks(ax=ax_example,num_major=5,change_x=False)    
     PlotUtilities.tom_ticks(ax=ax_example,num_major=4,change_y=False)                              
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
-        dict_tmp = dict(**dict_plot)
-        dict_tmp['style_data']['color'] = color[-1]
-        FEC_Plot._fec_base_plot(x_func(r),y_func(r),**dict_tmp)
+        # put a box around the region 
+        x,y = x_func(r),y_func(r)
+        x_min,x_max = min(x),max(x)
+        y_min,y_max = min(y),max(y)
+        fudge = (x_max-x_min) * 0.2
+        xy = [x_min,y_min]
+        width = (x_max-x_min) + fudge
+        height = (y_max-y_min) + fudge
+        r = matplotlib.patches.Rectangle(xy=xy,width=width,height=height,
+                                         facecolor="None",linestyle='--',
+                                         edgecolor='k',zorder=10,linewidth=0.75)
+        ax_example.add_patch(r)
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
     for x,name,color in regions_nm:
@@ -107,17 +121,19 @@ def run():
     # plot the adhesion regions
     plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.95',
                 linewidth=0)
-    PlotUtilities.lazyLabel("Extension (nm)","Force (pN)","")   
+    PlotUtilities.lazyLabel("Extension","Force","")   
     PlotUtilities.x_label_on_top(ax_example)
     PlotUtilities.no_x_label(ax_example)
     PlotUtilities.no_y_label(ax_example)
     x_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),width=15,unit="nm")
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),
                     height=40,unit="pN")
-    Scalebar.crossed_x_and_y_relative(offset_x=0.22,offset_y=0.58,
+    Scalebar.crossed_x_and_y_relative(offset_x=0.55,offset_y=0.58,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_example)    
+    # add in the velocity annotation
+    velocity_annotate(ax=ax_example,v=300,y=0.8)
     # # plot all the zoomed regions 
     offsets_x = [0.85]
     offsets_y = [0.65]
@@ -171,34 +187,6 @@ def run():
         PlotUtilities.x_label_on_top(ax_tmp)        
         PlotUtilities.lazyLabel("","","")        
         PlotUtilities.xlabel("Time")
-    # add a single arrow on the last axis. See:
-    # https://www.cilyan.org/blog/2016/01/23/matplotlib-draw-between-subplots/
-    # 1. Get transformation operators for axis and figure
-    ax0tr = ax_example.transData # Axis 0 -> Display
-    ax1tr = ax_tmp.transData # Axis 1 -> Display
-    figtr = fig.transFigure.inverted() # Display -> Figure
-    # 2. Transform arrow start point from axis 0 to figure coordinates
-    ptB = figtr.transform(ax0tr.transform((85,50)))
-    # 3. Transform arrow end point from axis 1 to figure coordinates
-    tmp_ylim = ax_tmp.get_ylim()
-    max_y = np.max(tmp_ylim)
-    range_y = abs(np.diff(tmp_ylim))
-    tmp_xlim = ax_tmp.get_xlim()
-    range_x = abs(np.diff(tmp_xlim))
-    y_styles = [ (max_y-range_y*0.9,"arc3,rad=0.2"),
-                 (max_y-range_y*0.3,"arc3,rad=-0.2")]
-    for y,style in y_styles:                  
-        ptE = figtr.transform(ax1tr.transform((np.mean(tmp_xlim)*0.999,
-                                               y)))                                           
-        # 4. Create the patch
-        arrow = matplotlib.patches.FancyArrowPatch(
-            ptB, ptE, transform=fig.transFigure,  # Place arrow in figure coord system
-            fc = "g", connectionstyle=style, arrowstyle='simple', 
-            alpha = 0.3,linewidth=0,
-            mutation_scale = 20.
-        )
-        # 5. Add patch to list of objects to draw onto the figure
-        fig.patches.append(arrow)
     # read in the data ...
     base_re = "./recreation_figure_data/"
     # # Figure 1D from the science paper 
@@ -251,6 +239,7 @@ def run():
     PlotUtilities.no_x_label(ax=ax_time)                                      
     PlotUtilities.no_y_label(ax=ax_time)  
     PlotUtilities.lazyLabel("Time","Force","")
+    velocity_annotate(ax=ax_time,v=0,y=0.8,color=color_equil)
     # # figure 4C from the science paper -- the pfold energy landscape 
     fig4c = figure_recreation.save_output(base_re,"Fig4C.csv")
     ax_equil = plt.subplot(top_spec[1,2])
@@ -261,7 +250,7 @@ def run():
                  marker='o',
                  mfc='w',zorder=0,markerfacecolor="None",capsize=2,elinewidth=1,
                  linewidth=1)                 
-    PlotUtilities.lazyLabel("Extension (nm)","Energy (kcal/mol)","")     
+    PlotUtilities.lazyLabel("Extension (nm)","Energy","")     
     x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
