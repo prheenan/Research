@@ -20,6 +20,8 @@ from skimage.segmentation import active_contour
 import networkx as nx
 from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
 
+from sklearn.neighbors import NearestNeighbors
+from route.postman import single_chinese_postman_path
 
 class transform:
     def __init__(self,name,function,imshow_kw=dict(cmap=plt.cm.afmhot)):
@@ -205,14 +207,28 @@ def get_coordinate_path(coords):
     # POST: have endpoint. Add all the points with their two closest to the 
     # graph (except the endpoint, where we only add its closest)
     # create a graph of all the pixels
-    G = nx.Graph(n=n_coords)
+    G = nx.Graph()
+    n_neightbors = 2
+    # sort the data so the endpoint is first?
+    print(endpoint)
+    sorted_idx = list(np.arange(endpoint,n_coords)) + \
+                 list(np.arange(0,endpoint))
+    sorted_idx= np.array(sorted_idx)
+    distances = distances[sorted_idx]
+    coords = coords[sorted_idx]
     for i in range(n_coords):
-        closest_nodes = np.argsort(distances[i])
-        # add the closest
-        G.add_edge(i,closest_nodes[0])
+        dist_tmp = distances[i]
+        closest_nodes = np.argsort(dist_tmp)
+        # add the closest N
+        dist_sort = dist_tmp[closest_nodes]
+        G.add_edge(i,closest_nodes[0],weight=dist_sort[0])
         if (i != endpoint):
-            # also add the second closest for all 'interior' nodes...
-            G.add_edge(i,closest_nodes[1])
+            G.add_edge(i,closest_nodes[1],weight=dist_sort[1])
+    graph,path = single_chinese_postman_path(G)
+    print(path,n_coords)
+    for i in range(len(path)):
+        print(len(set(path[:i])),i,n_coords)
+    path = path[:152]
     """
     see: 
 https://stackoverflow.com/questions/18794308/algorithm-to-cover-all-edges-given-starting-node
@@ -223,7 +239,9 @@ https://networkx.github.io/documentation/networkx-1.9.1/reference/generated/netw
     
     https://healthyalgorithms.com/2009/03/23/aco-in-python-minimum-weight-perfect-matchings-aka-matching-algorithms-and-reproductive-health-part-4/
     """
-    path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
+    coords_x = np.array(coords[:,0])
+    coords_y = np.array(coords[:,1])
+
     return coords[path]
 
 def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1,gamma=0.1):
@@ -329,7 +347,7 @@ stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-ma
     weights *= weights.size
     n_points = sorted_image_x.size
     tck,_ = splprep([sorted_image_x,sorted_image_y],w=weights,per=0,
-                    s=f_excess*n_points/smooth_f_n,k=k,u=None,quiet=0)
+                    s=f_excess*n_points*smooth_f_n,k=k,u=None,quiet=0)
     return image_thresh,tck
 
 def run():
@@ -382,6 +400,12 @@ def run():
         range_v = (max_x-min_x) * 0.2
         xlim = lambda : plt.xlim([min_x-range_v,max_x+range_v])
         ylim = lambda : plt.ylim([min(out_y)-range_v,max(out_y+range_v)])
+        plt.subplot(2,1,1)
+        plt.imshow(skeleton.height.T)
+        plt.plot(coords[:,0],coords[:,1],'r-')
+        xlim()
+        ylim()
+        plt.subplot(2,1,2)
         plt.imshow(image_thresh.height.T)
         plt.plot(out_x,out_y,'r-')
         plt.plot(coords[0,0],coords[0,1],'go')
