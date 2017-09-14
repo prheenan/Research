@@ -107,16 +107,7 @@ def run():
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
         # put a box around the region 
         x,y = x_func(r),y_func(r)
-        x_min,x_max = min(x),max(x)
-        y_min,y_max = min(y),max(y)
-        fudge = (x_max-x_min) * 0.2
-        xy = [x_min,y_min]
-        width = (x_max-x_min) + fudge
-        height = (y_max-y_min) + fudge
-        r = matplotlib.patches.Rectangle(xy=xy,width=width,height=height,
-                                         facecolor="None",linestyle='--',
-                                         edgecolor='k',zorder=10,linewidth=0.75)
-        ax_example.add_patch(r)
+        Scalebar.add_rectangle(ax_example,[min(x),max(x)],[min(y),max(y)])
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
     for x,name,color in regions_nm:

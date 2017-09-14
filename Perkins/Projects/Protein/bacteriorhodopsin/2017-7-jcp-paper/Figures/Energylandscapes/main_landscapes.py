@@ -192,9 +192,7 @@ def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     
 def landscape_label():
     units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")
-
-    PlotUtilities.lazyLabel("Molecular extension",units_energy,
-                            "")            
+    PlotUtilities.lazyLabel("Extension (nm)",units_energy,"")            
     
 def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
@@ -208,9 +206,10 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     upper_delta_landscape = grad(landscape_upper)
     lower_delta_landscape = grad(landscape_lower)
     ax_energy = plt.gca()
+    label_deltaG = PlotUtilities.variable_string("\Delta G")    
     # plot the landscape and its standard deviation
     plt.plot(extension_nm,landscape_kcal_per_mol,
-             linestyle=':',**kw_landscape)
+             label=label_deltaG,**kw_landscape)
     plt.fill_between(x=extension_nm,
                      y1=landscape_lower,
                      y2=landscape_upper,
@@ -220,7 +219,7 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
     if (plot_derivative):
         limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
                         max(delta_landscape_kcal_per_mol_per_amino_acid)]
-        units_energy_delta = PlotUtilities.variable_string("\Delta G") + \
+        units_energy_delta = label_deltaG + \
                              r" per AA (kcal/(mol $\cdot$ AA))"                        
         label = units_energy_delta
         difference_color = 'rebeccapurple'
@@ -231,7 +230,8 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True):
         # plot the energy delta and its bounds, based on the bounds on the
         #        landscape    
         ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-                  color=difference_color,linestyle='-',linewidth=1.5)   
+                  color=difference_color,linestyle='-',linewidth=1.5,
+                  label=label)   
         PlotUtilities.tom_ticks(ax=ax_2,change_x=False,num_major=5)
    
         return ax_energy,ax_2
@@ -245,11 +245,8 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     # make a second x axis for the number of ammino acids 
     xlim_fec = plt.xlim()
     limits = np.array(xlim_fec) * amino_acids_per_nm
-    ax_2 = PlotUtilities.secondAxis(ax_heat,"Extension (AA)",limits,
-                                     secondY =False)
     tick_kwargs = dict(axis='both',color='w',which='both')                                 
     ax_heat.tick_params(**tick_kwargs)                                         
-    ax_2.tick_params(**tick_kwargs)
     plt.xlim(xlim_fec)
     PlotUtilities.no_x_label(ax_heat)    
     
@@ -272,7 +269,7 @@ def landscape_kwargs():
     """
     Returns: a list of keywords for the entire listscape, ED,CB, and A helices 
     """
-    kwargs = [ dict(kw_heatmap=dict(cmap=plt.cm.Greys_r),
+    kwargs = [ dict(kw_heatmap=dict(cmap=plt.cm.afmhot),
                     kw_landscape=dict(color='k')),
                dict(kw_heatmap=dict(cmap=plt.cm.Blues_r),
                     kw_landscape=dict(color='royalblue')),
@@ -320,8 +317,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         kw_landscape = kw_tmp['kw_landscape']
         color = kw_landscape['color']      
         _, ax_2 = plot_landscape(data_landscape,xlim=[None,None],
-                              kw_landscape=kw_landscape,
-                              plot_derivative=True)
+                                 kw_landscape=kw_landscape,
+                                 plot_derivative=True)
         second_axs.append(ax_2)                    
         Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_tmp,
                                                 **kw_scalebars[i])
@@ -352,18 +349,23 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
-def setup_pedagogy_ticks(ax,offset_y=0.6):
+def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.6):
     font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
-    font_kwargs['horizontalalignment'] = 'left'
-    scale_kwargs = dict(height=30,
-                        offset_x=0.7,
-                        offset_y=offset_y,
-                        ax=ax,
-                        fudge_text_pct=dict(x=0.05,y=0),
-                        font_kwargs=font_kwargs)
-    Scalebar.y_scale_bar_and_ticks_relative(unit="kcal/mol ",**scale_kwargs)   
+    x_heat_kw['font_kwargs']['color'] = 'k'
+    x_heat_kw['line_kwargs']['color'] = 'k'
+    y_heat_kw['font_kwargs']['color'] = 'k'
+    y_heat_kw['line_kwargs']['color'] = 'k'  
+    y_heat_kw['unit'] = 'kcal/mol '
+    Scalebar.crossed_x_and_y_relative(scale_bar_x,offset_y,ax=ax,
+                                      x_kwargs=x_heat_kw,
+                                      y_kwargs=y_heat_kw)
     PlotUtilities.no_y_label(ax)                                              
 
+def kwargs_correction():     
+    return [dict(color='r',linestyle='-.'),
+            dict(color='b',linestyle='-',linewidth=0.3),
+            dict(color='g',linestyle='--')]
+    
 def plot_with_corrections(data):
     ext_nm = data._extension_grid_nm   
     convert = data.from_Joules_to_kcal_per_mol()
@@ -374,14 +376,10 @@ def plot_with_corrections(data):
     labels = [PlotUtilities.variable_string(r"A"),
               PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2k}"),
               PlotUtilities.variable_string(second_deriv)]
-    kwargs = [dict(color='r',linestyle='-.'),
-              dict(color='b',linestyle='-',linewidth=0.3),
-              dict(color='g',linestyle='--')]
+    kwargs = kwargs_correction()
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol                
     for i,e in enumerate(energies):
-        plt.plot(ext_nm,np.mean(e,axis=0),label=labels[i],**kwargs[i])
-    plt.plot(ext_nm,landscape_kcal_per_mol,color='k',linestyle=':',
-             label=PlotUtilities.variable_string(r"\Delta G"))        
+        plt.plot(ext_nm,np.mean(e,axis=0),label=labels[i],**kwargs[i])  
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
@@ -392,50 +390,70 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_plot(heatmap_data,data.amino_acids_per_nm(),
                  kw_heatmap=kw['kw_heatmap'])
     xlim_fec = plt.xlim()
+    ax_heat.set_ylim([0,150])
+    PlotUtilities.no_x_label(ax_heat)
+    PlotUtilities.no_y_label(ax_heat)   
+    common_kw = dict(color='w')
+    x_font,y_font = Scalebar.\
+        font_kwargs_modified(x_kwargs=common_kw,
+                             y_kwargs=common_kw)
+    heat_kw_common = dict(line_kwargs=dict(color='w',linewidth=1.5))
+    x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,**heat_kw_common)
+    y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
+    # add a scale bar for the heatmap...
+    scale_bar_x = 0.80
+    Scalebar.crossed_x_and_y_relative(scale_bar_x,0.7,ax=ax_heat,
+                                      x_kwargs=x_heat_kw,
+                                      y_kwargs=y_heat_kw)
     # # plot the energy landscape...
     ax_correction = plt.subplot(3,1,2)    
     plot_with_corrections(data)
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
-    setup_pedagogy_ticks(ax_correction)
-    PlotUtilities.legend(handlelength=2,loc=(0.3,0.07),ncol=2)
+    setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
+                         offset_y=0.35)
+    PlotUtilities.legend(handlelength=2,loc=(0.15,0.07),ncol=3)
     # make the inset plot 
-    axins = zoomed_inset_axes(ax_correction, zoom=3, loc=2,
+    axins = zoomed_inset_axes(ax_correction, zoom=2.5, loc=2,
                               borderpad=0.8) 
     plot_with_corrections(data)
-    plt.xlim([17,22])
-    plt.ylim([-1,22])
+    xlim_box = [17,24]
+    ylim_box = [-1,19]
+    plt.xlim(xlim_box)
+    plt.ylim(ylim_box)
     PlotUtilities.no_x_anything(axins)
     PlotUtilities.no_y_anything(axins)
     # add in scale bars
-    kw_common = dict(line_kwargs=dict(linewidth=0.5,color='k'))
-    common_font_inset = dict(fontsize=4)
+    kw_common = dict(line_kwargs=dict(linewidth=0.75,color='k'))
+    common_font_inset = dict(fontsize=6)
     x_kwargs = dict(verticalalignment='top',**common_font_inset)
     x_font,y_font = Scalebar.\
         font_kwargs_modified(x_kwargs=x_kwargs,
-                             y_kwargs=dict(**common_font_inset))
+                             y_kwargs=dict(horizontalalignment='left',
+                                           **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines                              
     fudge_x = dict(x=0,y=-0.5)
-    fudge_y = dict(x=-0.03,y=0)
-    Scalebar.crossed_x_and_y_relative(0.425,0.75,ax=axins,
-                                      x_kwargs=dict(width=1,unit="nm",
+    fudge_y = dict(x=0.03,y=0)
+    Scalebar.crossed_x_and_y_relative(0.74,0.48,ax=axins,
+                                      x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
                                                     fudge_text_pct=fudge_x,
                                                     **kw_common),
-                                      y_kwargs=dict(height=4,unit='kcal/\nmol',
+                                      y_kwargs=dict(height=8,unit='kcal/\nmol',
                                                     font_kwargs=y_font,
                                                     fudge_text_pct=fudge_y,                                                    
                                                     **kw_common))
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
-    color_box = 'rebeccapurple'
-    mark_inset(ax_correction, axins, loc1=2, loc2=4, fc="none", ec=color_box,
-               linestyle='--',zorder=np.inf,alpha=0.7)               
+    color_box = 'rebeccapurple'           
     PlotUtilities.color_frame('rebeccapurple',ax=axins) 
+    Scalebar.add_rectangle(ax_correction,xlim_box,ylim_box,edgecolor=color_box)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
                    plot_derivative=False)    
-    setup_pedagogy_ticks(ax_energy,offset_y=0.3)
+    setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
+                         offset_y=0.3)
+    PlotUtilities.no_x_label(ax_energy)                         
     PlotUtilities.save_png_and_svg(fig,out_name)  
     
     
@@ -453,7 +471,7 @@ def run():
     flickering_dir = "../../LargerDataset/"
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
-    force_recalculation = True
+    force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
     bin_size_meters = 0.2e-9
     # write down the areas we want to look at 
