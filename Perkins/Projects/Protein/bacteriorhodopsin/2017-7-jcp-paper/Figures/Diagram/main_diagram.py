@@ -59,6 +59,7 @@ def run():
     # fix the manual offset
     example_plot.Force -= 7.1
     plot_examples = [example_plot]
+    vel_m_per_s = example_plot.Velocity
     x_func = lambda y: y.Separation
     y_func = lambda y: y.Force 
     ylim_pN = [-20,155]
@@ -134,8 +135,8 @@ def run():
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_example)    
-    # add in the velocity annotation
-    velocity_annotate(ax=ax_example,v=300,y=0.8)
+    # add in the velocity annotation (in nm/s, from m/s)
+    velocity_annotate(ax=ax_example,v=vel_m_per_s*1e9,y=0.8)
     # # plot all the zoomed regions 
     offsets_x = [0.85]
     offsets_y = [0.65]
