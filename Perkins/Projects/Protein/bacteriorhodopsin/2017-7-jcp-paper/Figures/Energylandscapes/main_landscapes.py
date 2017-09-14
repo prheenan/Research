@@ -551,9 +551,9 @@ def run():
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
                       force_recalculation,areas,flickering_dir,bin_size_meters)
-    #make_pedagogical_plot(data_to_analyze[0],landscape_kwargs()[0])
+    make_pedagogical_plot(data_to_analyze[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
-    #make_detalied_plots(data_to_analyze,areas)
+    make_detalied_plots(data_to_analyze,areas)
     # make the 'gallery' plots.
     make_gallery_plot(areas,data_to_analyze)
     
