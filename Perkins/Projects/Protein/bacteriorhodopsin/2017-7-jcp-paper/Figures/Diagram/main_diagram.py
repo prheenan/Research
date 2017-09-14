@@ -290,7 +290,7 @@ def run():
     loc = [loc_upper,loc_upper,loc_upper,   
            loc_lower,loc_lower,loc_lower]
     PlotUtilities.label_tom(fig,loc=loc)
-    subplots_adjust = dict(hspace=0.05,wspace=0.12)
+    subplots_adjust = dict(hspace=0.07,wspace=0.15)
     PlotUtilities.save_png_and_svg(fig,"diagram",
                                    subplots_adjust=subplots_adjust)
     
