@@ -13,7 +13,7 @@ import sys
 sys.path.append("../../../../../../../../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
-from GeneralUtil.python.Plot import Scalebar
+from GeneralUtil.python.Plot import Scalebar,Annotations 
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
@@ -410,15 +410,16 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     plot_with_corrections(data)
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
+    ax_correction.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=0.35)
     PlotUtilities.legend(handlelength=2,loc=(0.15,0.07),ncol=3)
     # make the inset plot 
-    axins = zoomed_inset_axes(ax_correction, zoom=2.5, loc=2,
+    axins = zoomed_inset_axes(ax_correction, zoom=2, loc=2,
                               borderpad=0.8) 
     plot_with_corrections(data)
-    xlim_box = [17,24]
-    ylim_box = [-1,19]
+    xlim_box = [17.3,26]
+    ylim_box = [-2,19]
     plt.xlim(xlim_box)
     plt.ylim(ylim_box)
     PlotUtilities.no_x_anything(axins)
@@ -433,8 +434,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                            **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines                              
     fudge_x = dict(x=0,y=-0.5)
-    fudge_y = dict(x=0.03,y=0)
-    Scalebar.crossed_x_and_y_relative(0.74,0.48,ax=axins,
+    fudge_y = dict(x=-0.25,y=0.1)
+    Scalebar.crossed_x_and_y_relative(0.82,0.48,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
                                                     fudge_text_pct=fudge_x,
@@ -447,10 +448,12 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     # connecting lines between the bbox and the inset axes area
     color_box = 'rebeccapurple'           
     PlotUtilities.color_frame('rebeccapurple',ax=axins) 
-    Scalebar.add_rectangle(ax_correction,xlim_box,ylim_box,edgecolor=color_box)
+    Annotations.add_rectangle(ax_correction,xlim_box,ylim_box,edgecolor=color_box)
+    ax_correction.set_xlim(xlim_fec)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
                    plot_derivative=False)    
+    ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=0.3)
     PlotUtilities.no_x_label(ax_energy)                         

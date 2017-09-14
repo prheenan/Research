@@ -13,7 +13,7 @@ import sys,matplotlib as mpl
 sys.path.append("../../../../../../../../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
-from GeneralUtil.python.Plot import Scalebar
+from GeneralUtil.python.Plot import Scalebar,Annotations
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
@@ -31,9 +31,9 @@ import matplotlib.patches
 
 def velocity_annotate(ax,v,y,x=0.65,color='g'):
     s = r"$v$ = {:d} nm/s".format(int(np.round(v)))
-    Scalebar.relative_annotate(ax=ax,s=s,
-                               xy=(x,y),
-                               color=color,bbox=dict(color='w',pad=0))
+    Annotations.relative_annotate(ax=ax,s=s,
+                                  xy=(x,y),
+                                  color=color,bbox=dict(color='w',pad=0))
 def run():
     """
     <Description>q
@@ -107,7 +107,7 @@ def run():
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
         # put a box around the region 
         x,y = x_func(r),y_func(r)
-        Scalebar.add_rectangle(ax_example,[min(x),max(x)],[min(y),max(y)])
+        Annotations.add_rectangle(ax_example,[min(x),max(x)],[min(y),max(y)])
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
     for x,name,color in regions_nm:
