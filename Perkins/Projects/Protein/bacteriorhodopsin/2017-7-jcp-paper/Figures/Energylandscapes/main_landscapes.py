@@ -395,11 +395,13 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     
 def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.6):
     font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
+    # fix the keywords relative to the heatmap
     x_heat_kw['font_kwargs']['color'] = 'k'
     x_heat_kw['line_kwargs']['color'] = 'k'
     y_heat_kw['font_kwargs']['color'] = 'k'
     y_heat_kw['line_kwargs']['color'] = 'k'  
     y_heat_kw['unit'] = 'kcal/mol '
+    y_heat_kw['height'] = 30
     Scalebar.crossed_x_and_y_relative(scale_bar_x,offset_y,ax=ax,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)

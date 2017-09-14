@@ -29,7 +29,7 @@ from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import matplotlib.patches
 
-def velocity_annotate(ax,v,y,x=0.65,color='g'):
+def velocity_annotate(ax,v,y=0.9,x=0.8,color='g'):
     s = r"$v$ = {:d} nm/s".format(int(np.round(v)))
     Annotations.relative_annotate(ax=ax,s=s,
                                   xy=(x,y),
@@ -64,7 +64,7 @@ def run():
     y_func = lambda y: y.Force 
     ylim_pN = [-20,155]
     xlim_nm = [5,75]
-    zoom_regions_nm = [ [61.5,63]]
+    zoom_regions_nm = [ [61.5,63.6]]
     adhesion_max_nm = 19
     # plot the helical regions...
     ed_end = 29
@@ -127,10 +127,10 @@ def run():
                                       y_kwargs=y_kwargs,
                                       ax=ax_example)    
     # add in the velocity annotation (in nm/s, from m/s)
-    velocity_annotate(ax=ax_example,v=vel_m_per_s*1e9,y=0.8)
+    velocity_annotate(ax=ax_example,v=vel_m_per_s*1e9)
     # # plot all the zoomed regions 
-    offsets_x = [0.85]
-    offsets_y = [0.65]
+    offsets_x = [0.8]
+    offsets_y = [0.67]
     heights_pN = [10]
     widths_s = [0.001]
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
@@ -159,13 +159,14 @@ def run():
         y_range = abs(np.diff(ylim)) 
         x_range = abs(np.diff(xlim)) 
         ylim = [ylim[0],ylim[1]+y_range*0.05]
-        xlim = [xlim[0],xlim[1]+x_range*0.1]        
+        xlim = [xlim[0],xlim[1]+x_range*0.01]        
         ax_tmp.set_ylim(ylim)
         ax_tmp.set_xlim(xlim)
         min_x = min(xlim)
         max_y = max(ylim)
         y_loc = max_y*0.9
         x_kwargs =dict(unit="ms",width=widths_s[i],
+                       fudge_text_pct=dict(x=0.2,y=0),
                        unit_kwargs=dict(value_function=lambda x: x * 1e3))
         y_kwargs = dict(unit="pN ",
                         height=heights_pN[i])
@@ -210,7 +211,7 @@ def run():
     fig4ab = figure_recreation.save_output(base_re,"Fig4AB.csv")  
     ax_time = plt.subplot(top_spec[1,1])
     min_x,max_x = min(fig4ab.time),max(fig4ab.time)
-    range = [0.155,0.215]
+    range = [0.55,0.59]
     min_x_new = min_x + (max_x-min_x)*range[0]
     max_x_new = min_x + (max_x-min_x)*range[1]
     idx = np.where( (fig4ab.time <= max_x_new) & (fig4ab.time >= min_x_new))
@@ -221,19 +222,20 @@ def run():
                                             linewidth=0.75))
     ax_time.set_xlim(min_x_new,max_x_new)
     ax_time.set_ylim(None,None)
-    unit_kwargs = dict(value_function =lambda x: x*1000,fmt="{:.0f}")
-    x_kwargs = dict(unit_kwargs=unit_kwargs,width=0.001,unit="ms")
+    unit_kwargs = dict(value_function =lambda x: x*1e6,fmt="{:.0f}")
+    unit_micro_s = PlotUtilities.upright_mu() + "m"
+    x_kwargs = dict(unit_kwargs=unit_kwargs,width=500e-6,unit=unit_micro_s)
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(height=10,unit="pN",font_kwargs=y_font)
-    Scalebar.crossed_x_and_y_relative(offset_x=0.7,offset_y=0.08,
+    Scalebar.crossed_x_and_y_relative(offset_x=0.5,offset_y=0.08,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_time)  
     PlotUtilities.no_x_label(ax=ax_time)                                      
     PlotUtilities.no_y_label(ax=ax_time)  
     PlotUtilities.lazyLabel("Time","Force","")
-    velocity_annotate(ax=ax_time,v=0,y=0.8,color=color_equil)
+    velocity_annotate(ax=ax_time,v=0,color=color_equil)
     # # figure 4C from the science paper -- the pfold energy landscape 
     fig4c = figure_recreation.save_output(base_re,"Fig4C.csv")
     ax_equil = plt.subplot(top_spec[1,2])
