@@ -3,22 +3,26 @@
 
 P. Heenan, H. Yu, M. Siewny , T. Perkins
 
-ABSTRACT 
+# ABSTRACT 
 
 
 Determining the structural causes of membrane protein stability is critical due to the common role membrane proteins play as drug targets.  We used atomic force microscopy (AFM) to mechanically pull apart the membrane protein bacteriorhodopsin and determine its associated free energy landscape, and hence stability, as a function of molecular extension. Traditionally, AFM data has been limited by poor instrumental time resolution, making state identification difficult, and the perturbing effect of the AFM cantilever, causing systematic errors in determining the landscape. Recent advancements in ultra-short ($<$L$>$=?m) cantilevers with 1$\upmu$s time resolution can detect previously obscured structural states within SMFS data. In addition, algorithmic developments such as the inverse Weierstrass transform of the Jarzynski free-energy integral approximately remove the perturbation of the force probe on the landscape. The need for higher-resolution energy landscape reconstructions can be fulfilled by combining the advances in algorithmic analysis with novel cantilever technology. For this work, using these improvements, we reconstructed the energy landscape of the membrane protein bacteriorhodopsin in its native lipid bilayer as a function of molecular end-to-end distance with 2 angstrom resolution. The average energy of unfolding per amino acid was 0.7 $\pm$ 0.1 kcal/mol, in agreement with past work. However, there was significant variation in unfolding energy cost per amino acid within bacteriorhodopsin, from 0.5 kcal/mol near the C-terminal end of the A helix to 4 kcal/mol close to the C-terminal end of the the ED helical pair. Reconstructing bacteriorhodopsin's energy landscape as a function of molecular extension highlights that some structural elements of bacteriorhodopsin have a higher associated unfolding energy cost. 
 
-INTRO
+# INTRO
 
-Determining the structural causes of membrane protein stability is critical due to the common role membrane proteins play as drug targets.  Single molecule techniques such as fluorescence microscopy and atomic force microscopy (AFM) have emerged as powerful tools for studying mebrane proteins in their native lipid bilayers and determining molecular stability by energy landscape reconstruction [@stanley_process_2008].
+Determining the structural causes of membrane protein stability is critical due to the common role membrane proteins play as drug targets.  In cells, membrane proteins are embededded in a lipid bilayer, and quantifying the intra- and inter-molecular forces driving membrane protein folding into a bilayer remains challenging. Single molecule techniques such as fluorescence microscopy and atomic force microscopy (AFM) have emerged as powerful tools for studying mebrane proteins in their native lipid bilayers and determining molecular stability and folding pathways by energy landscape reconstruction [@stanley_process_2008].
 
-The energy landscape is a powerful theoretical framework for understanding protein folding and unfolding.  States are represented by minima in an energy landscape, and the protein folding process occurs as a path along the landscape. Single-molecule techniques have measured barriers between states, distances between states, and even determined the entire molecular energy landscape [@sapra_point_2006]. Using single-molecule technqiues to measure transiently occupied states, with lifetimes of 10 $\mu$s or less, has traditionally been problematic due to poor time resolution [@janovjak_valleys_2008]. However, quantifying the location and lifetime of an intermediates as a function of reaction coordinate is required for a detailed understanding of the energy landscape's shape and roughness.
+The energy landscape is a powerful theoretical framework for understanding protein folding and unfolding.  Structual states are represented by minima in an energy landscape, and protein folding occurs as a path along the landscape. Alhough many paths are possible, due to local minima in the landscape and the stochastic nature of protein folding and unfolding, not all pathways are equally likely. Single-molecule techniques have helped elucidate folding pathways by measuring barriers between states, distances between states, and even the entire molecular energy landscape [@sapra_point_2006]. Using single-molecule technqiues to measure rarely occupied states during an unfolding pathway has traditionally been problematic due to poor time resolution [@janovjak_valleys_2008]. However, quantifying the location and lifetime of an intermediates as a function of reaction coordinate is required for a detailed understanding of the energy landscape's shape and roughness.
 
-Identification of intermediate protein unfolding states has been accelerated by order-of-magnitude advances in AFM cantilever force precision and time resolution [@yu_hidden_2017]. In our AFM experiments, the unfolding energy landscape of bacteriorhodopsin was reconstructed as a function of molecular extension by repeated mechanical disassociation of bacteriorhodopsin in its native lipid bilayer (see Figure {#ref_fig:diagram}a). The resulting data were transformed into an energy landscape by application of the inverse Weierstrass transform of the Jarzynski free-energy integral, discussed below. Although energy barriers between major states of bacteriorhodopsin have been measured using AFM as a function of point mutation [@sapra_point_2006]; C- or N-terminal pulling geometry [@kessler_unfolding_2006]; and environmental conditions [@park_stabilizing_2007;preiner_free_2007], these studies either failed to reconstruct the entire energy landscape; were limited by poor spatiotemporal resolution; or failed to remove the perturbative effect of the force probe on the energy landscape. This work reports the first energy landscape of bacteriorhodopsin which is reconstructed with single-amino acid resolution and which removes the effect of the force probe on the energy landscape.
+Identification of intermediate protein unfolding states has been accelerated by order-of-magnitude advances in AFM cantilever force precision and time resolution [@yu_hidden_2017]. By taking advantage of these improvements, our experiments reconstructed the unfolding energy landscape of bacteriorhodopsin in its native lipid bilayer as a function of molecular extension by repeated mechanical disassociation (see Figure {#ref_fig:diagram}a). The reconstruction applied the inverse Weierstrass transform of the Jarzynski free-energy integral, discussed below. Although energy barriers between major states of bacteriorhodopsin have been measured using AFM as a function of point mutation [@sapra_point_2006]; C- or N-terminal pulling geometry [@kessler_unfolding_2006]; and environmental conditions [@park_stabilizing_2007;preiner_free_2007], these studies either failed to reconstruct the entire energy landscape; were limited by poor spatiotemporal resolution; or failed to remove the perturbative effect of the force probe on the energy landscape. This work reports the first energy landscape of bacteriorhodopsin which is reconstructed with single-amino acid resolution and which removes the effect of the force probe on the energy landscape.
 
-METHODS
+# METHODS
 
 (Discuss science paper, Figure 1)
+
+## Experimental
+
+The details surrounding cantilever modification and sample preparation are discussed elsewhere [@yu_hidden_2017]. Briefly [...] 
 
 (Discuss full energy landscape reconstruction)
 
@@ -27,13 +31,15 @@ METHODS
 {#label_fig:diagram} **Bacteriorhodopsin's energy landscape determined by single-molecule force spectroscopy.** (**A**) A cartoon of the pulling geometry used to unfold bR. (**B**) A representative force versus molecular extension curve, or force-extension curve. The first 20nm of all curves are not analyzed due to non-specific surface adhesion. The colored bars correspond to the regions where the helical pairs from (A) rupture. Many such curves are used for reconstruction an energy landscape via an inverse Weierstrass transform. (**C**) A detailed plot of the A helix, which exhibits transitions between states. (**D**) A plot detailing many force extension curves of bR with worm-like chain polymer fits overlayed onto major states. (**E**) An equilibrium assay demonstrates rapid transitions between intermediate states in the E helix. (**F**) The energy landscape obtained via applying  $p_{\text{fold}}$ to equilibrium data as in (E) (XXX). Figures (D-F) are reproduced with permission from XXX.
 ----
 
+## Landscape reconstruction
+
 Jarzynski's equality (@Jarzynski1996Nonequilibrium) is a thermodynamic relationship between the Helmholtz free energy of a system, $A(z)$, along a reaction coordinate $z$ to the measured work done along that coordinate, $W(z)$:
 
 $e^{-\beta A(z)} = <e^{-\beta W(z)}>$,
 
-where the average is taken over many independent experiments, each starting and ending at the same choice of z. For AFM-SMFS, the Helmholtz energy includes the energy stored in the cantilever used to apply forces. Jarzynski's equality is exact only in the limit as $N \rightarrow \infty$, but is approximately true for finite $N$. The equality is remarkable because it relates the work done during many repetitions of a non-equilibrium process to the equilibrium free energy difference as a function of the reaction coordinate. In practice, SMFS experiments apply Jarzynski's equality by repeatedly folding or unfolding a single molecule of interest using a force probe. In this case, and the work is the integral of the force as a function of the reaction coordinate $z$, where $z$ is the position of the cantilever. For example, a linear ramp moving from $z_0$ with constant velocity $v_0$ would have $z(t)=v_0 t + z_0$.
+where the average is taken over many independent experiments, each starting and ending at the same choice of z. For AFM-SMFS, the Helmholtz energy includes the energy stored in the cantilever used to apply forces. Jarzynski's equality is exact only in the limit as $N \rightarrow \infty$, but is approximately true for finite $N$. The equality is remarkable because it relates the work done during many repetitions of a non-equilibrium process to the equilibrium free energy difference as a function of the reaction coordinate. In practice, SMFS experiments apply Jarzynski's equality by repeatedly folding or unfolding a single molecule of interest using a force probe. In this case, and the work is the integral of the force as a function of the reaction coordinate $z$, where $z$ is the position of the cantilever's base. For example, a linear ramp moving from $z_0$ with constant velocity $v_0$ would have $z(t)=v_0 t + z_0$.
 
-The effect of the force probe on the energy landscape must be removed for an accurate determination of an energy landscape and the molecular extension. The inverse Weierstrass transform determines molecular free energy as a function of molecular extension by correcting for the perturbation of the force probe. The correction modifies Jarzynski's equality assuming a stiff, harmonic pulling apparatus (@Hummer2010_free). The weighted histogram analysis method (@Minh2008_optimized) can be used when the probe is not a harmonic spring (*e.g.* with DNA molecules linking the probe to the system of interest) or when the probe stiffness, including possible linkers, is not much greater than the system stiffness.
+The effect of the force probe on the energy landscape must be removed for an accurate determination of an energy landscape and the molecular extension. The inverse Weierstrass transform of Jarzynski's free-energy integral, hereafter referred to as the inverse Weierstass transform, determines molecular free energy as a function of molecular extension by correcting for the perturbation of the force probe. The correction modifies Jarzynski's equality assuming a stiff, harmonic pulling apparatus (@Hummer2010_free). The weighted histogram analysis method (@Minh2008_optimized) can be used when the probe is not a harmonic spring (*e.g.* with DNA molecules linking the probe to the system of interest) or when the probe stiffness, including possible linkers, is not much greater than the system stiffness.
 
 ----
 ![](./Figures/iwt_diagram.png)
@@ -42,7 +48,7 @@ The effect of the force probe on the energy landscape must be removed for an acc
 
 Figure 2 demonstrates the inverse Weierstrass as applied to bacteriorhodopsin. Figure 2a is a heatmap of 168 force-extension curves. This heatmap represents the ensemble of measurements needed for applying Jarzynski's inequality and the corrections of the inverse Weierstrass transform. Figure 2b shows A(z) as obtained by Jarzynski's inequality (@Jarzynski1996Nonequilibrium), as well as the inverse Weierstrass corrections which are functions of A(z), the stiffness $k$, and the temperature. The corrections were obtained as in @Hummer2010_free and @Mihn2008_Free. 
 
-DISCUSSION / RESULTS
+# DISCUSSION / RESULTS
 
 
 ----
@@ -59,13 +65,14 @@ The unfolding energy of bacteriorhodopsin depends on the structural element bein
 
 The large stiffness of the ED helical pair of bacteriorhodopsin, compared to the force probe, introduced error in its energy landscape reconstruction. The inverse Weierstrass requires that stiffness of the probe be much greater than the stiffness of the reconstructed landscape. As shown in {#ref_fig:helixE}, the greatest stiffness of the bacteriorhodopsin, at the top of the ED helix, is about 8 kcal/(mol$\cdot$ $\text{nm}^2$)$\approx$ 50pN/nm, larger than the cantilever stiffness of 20pN/nm. Therefore, the top of the ED Helix was likely poorly reconstructed by the inverse Weierstrass and represents a lower bound on the true landscape. For the CB and A helices of the protein, where the stiffness was at least an order of magnitude lower, the reconstruction of the landscape was better (XXX cite). In addition, the almost-negligible correction to the landscape from the $\ddot{A}$ term in the inverse Weierstrass transform outside of the ED Helix (Figure {#ref_fig:full}) confirmed that higher-order corrections were unlikely to effect the landscape of the CB and A helices.
 
+# CONCLUSION
+
+
 (Discuss using greater stiffnesses) 
 
 (Discuss per-helix results)
 
-CONCLUSION
-
-()
+(Discuss applying to environmental, other puling methods, site-specific (GF helix), retinol, etc etc.)
 
 Further work: 
 
