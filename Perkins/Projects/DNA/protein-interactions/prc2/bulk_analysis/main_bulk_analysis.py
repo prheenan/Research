@@ -220,15 +220,20 @@ def get_coordinate_path(coords):
         dist_tmp = distances[i]
         closest_nodes = np.argsort(dist_tmp)
         # add the closest N
-        dist_sort = dist_tmp[closest_nodes]
-        G.add_edge(i,closest_nodes[0],weight=dist_sort[0])
-        if (i != endpoint):
-            G.add_edge(i,closest_nodes[1],weight=dist_sort[1])
+        j = 0
+        G.add_edge(i,closest_nodes[0],weight=1)
+        G.add_edge(i,closest_nodes[1],weight=1)
+    print("connectivity")
+    remove_all_but_one = list(nx.minimum_edge_cut(G))
+    for r in remove_all_but_one[:-1]:
+        g.remove_edge(*r)
+    print(nx.node_connectivity(G))
+    nx.draw(G)
+    plt.show()
     graph,path = single_chinese_postman_path(G)
     print(path,n_coords)
     for i in range(len(path)):
         print(len(set(path[:i])),i,n_coords)
-    path = path[:152]
     """
     see: 
 https://stackoverflow.com/questions/18794308/algorithm-to-cover-all-edges-given-starting-node
