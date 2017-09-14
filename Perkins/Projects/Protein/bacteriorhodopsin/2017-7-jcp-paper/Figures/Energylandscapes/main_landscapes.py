@@ -189,11 +189,7 @@ def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     # XXX ? digitize all the ids so we know what bin they fall into...
     X,Y = np.meshgrid(x_edges,y_edges)
     plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
-    
-def landscape_label():
-    units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")
-    PlotUtilities.lazyLabel("Extension (nm)",units_energy,"")            
-    
+        
 def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
                    label_deltaG = PlotUtilities.variable_string("\Delta G")):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
@@ -206,37 +202,65 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
     landscape_lower =landscape_kcal_per_mol-std_landscape_kcal_per_mol 
     upper_delta_landscape = grad(landscape_upper)
     lower_delta_landscape = grad(landscape_lower)
-    ax_energy = plt.gca()
-    # plot the landscape and its standard deviation
-    plt.plot(extension_nm,landscape_kcal_per_mol,
-             label=label_deltaG,**kw_landscape)
-    plt.fill_between(x=extension_nm,
-                     y1=landscape_lower,
-                     y2=landscape_upper,
-                     alpha=0.15,**kw_landscape)          
-    landscape_label()
     # make a second axis for the number of ammino acids 
+    limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
+                    max(delta_landscape_kcal_per_mol_per_amino_acid)]    
+    limits_energy = [min(landscape_kcal_per_mol),max(landscape_kcal_per_mol)]
+    units_energy_delta = label_deltaG + \
+                         r" per AA (kcal/(mol $\cdot$ AA))"   
+    units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")                         
+    difference_color = 'rebeccapurple'    
+    landscape_color = kw_landscape['color']
     if (plot_derivative):
-        limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
-                        max(delta_landscape_kcal_per_mol_per_amino_acid)]
-        units_energy_delta = label_deltaG + \
-                             r" per AA (kcal/(mol $\cdot$ AA))"                        
-        label = units_energy_delta
-        difference_color = 'rebeccapurple'
-        ax_2 = PlotUtilities.secondAxis(ax_energy,
-                                        label=label,color=difference_color,
-                                        limits=limits_delta,secondY =True,
-                                        tick_color=difference_color)
+        PlotUtilities.lazyLabel("Extension (nm)",units_energy_delta,"")
+        PlotUtilities.ylabel(units_energy_delta,color=difference_color)
+    else:
+        PlotUtilities.lazyLabel("Extension (nm)","","")  
+        PlotUtilities.ylabel(units_energy,color=landscape_color)       
+    # the derivative goes on the main axis in this case...
+    if (plot_derivative):
+        ax_delta = plt.gca()
+        ax_2 = PlotUtilities.secondAxis(ax_delta,
+                                        label=units_energy,color=landscape_color,
+                                        limits=limits_energy,secondY =True,
+                                        tick_color=landscape_color)
+        ax_energy = ax_2
+        to_ret = ax_delta,ax_energy
+    else:
+        ax_energy = plt.gca()
+        ax_delta = None
+        to_ret = ax_energy
+    # filter the data if we need to 
+    if (xlim is not None and xlim[1] is not None):
+        idx= np.where( (extension_nm > xlim[0]) & (extension_nm < xlim[1]))
+    else:
+        idx =np.arange(extension_nm.size)
+    # plot the landscape and its standard deviation
+    ax_energy.plot(extension_nm[idx],landscape_kcal_per_mol[idx],
+                   label=label_deltaG,**kw_landscape)
+    ax_energy.fill_between(x=extension_nm[idx],
+                           y1=landscape_lower[idx],
+                           y2=landscape_upper[idx],
+                           alpha=0.15,**kw_landscape)      
+    rotation = -90 
+    if plot_derivative:
+        kw_y = dict(rotation=-90,x=-0.3)
+    else:
+        kw_y = dict()
+    PlotUtilities.ylabel(ax=ax_energy,lab=units_energy,**kw_y)
+    if plot_derivative:
+        ax_energy.yaxis.set_label_coords(1.2,0.5)
+    if (plot_derivative):                           
         # plot the energy delta and its bounds, based on the bounds on the
         #        landscape    
-        ax_2.plot(extension_nm,delta_landscape_kcal_per_mol_per_amino_acid,
-                  color=difference_color,linestyle='-',linewidth=1.5,
-                  label=label)   
-        PlotUtilities.tom_ticks(ax=ax_2,change_x=False,num_major=5)
-   
-        return ax_energy,ax_2
-    else:
-        return ax_energy
+        ax_delta.plot(extension_nm[idx],
+                      delta_landscape_kcal_per_mol_per_amino_acid[idx],
+                      color=difference_color,linestyle='-',linewidth=1.5)
+        PlotUtilities.tom_ticks(ax=ax_delta,change_x=False,num_major=5)
+        PlotUtilities.color_axis_ticks(color=landscape_color,ax=ax_energy,
+                                       spine_name='right')                                                 
+
+    return to_ret
               
 def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     ax_heat = plt.gca()
@@ -292,7 +316,7 @@ def make_detalied_plots(data_to_analyze,areas):
         PlotUtilities.label_tom(fig,axis_func=axis_func)
         PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))    
     
-def normalize_axes(ax_list):
+def normalize_axes(ax_list,manual_min=None):
     """
     ensures all the y axes in ax_list have the same limits
     """
@@ -300,14 +324,21 @@ def normalize_axes(ax_list):
     min_ylim = np.min([ax.get_ylim() for ax in ax_list])
     range = max_ylim-min_ylim
     fudge = range * 0.02
+    min_v = min_ylim-fudge
+    if (manual_min is not None):
+        min_v = manual_min    
     for ax in ax_list:
-        ax.set_ylim([min_ylim-fudge,max_ylim+fudge])    
+        ax.set_ylim([min_v,max_ylim+fudge])    
     
 def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
-    axs,second_axs = [],[]
-    kw_scalebars = [dict(offset_x=0.5,offset_y=0.05),
-                    dict(offset_x=0.3,offset_y=0.9),
-                    dict(offset_x=0.3,offset_y=0.92)]
+    axs,first_axs,second_axs = [],[],[]
+    offset_y = 0.05
+    kw_scalebars = [dict(offset_x=0.5,offset_y=offset_y),
+                    dict(offset_x=0.35,offset_y=offset_y),
+                    dict(offset_x=0.5,offset_y=offset_y)]
+    xlims = [ [None,None],[None,None],[None,59.1]    ]   
+    arrow_x = 0.63
+    arrow_y = [0.65,0.65,0.55]
     for i,(a,data) in enumerate(zip(helical_areas,helical_data)):
         kw_tmp = helical_kwargs[i]
         data_landscape = landscape_data(data.landscape)
@@ -316,29 +347,42 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         axs.append(ax_tmp)
         kw_landscape = kw_tmp['kw_landscape']
         color = kw_landscape['color']      
-        _, ax_2 = plot_landscape(data_landscape,xlim=[None,None],
-                                 kw_landscape=kw_landscape,
-                                 plot_derivative=True)
+        ax_1, ax_2 = plot_landscape(data_landscape,xlim=xlims[i],
+                                    kw_landscape=kw_landscape,
+                                    plot_derivative=True)
+        first_axs.append(ax_1)                                 
         second_axs.append(ax_2)                    
-        Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_tmp,
-                                                **kw_scalebars[i])
-        PlotUtilities.no_x_label(ax_tmp)          
-        PlotUtilities.tom_ticks(ax=ax_tmp,num_major=7,change_x=False)       
-        if (i != 0):
+        PlotUtilities.tom_ticks(ax=ax_2,num_major=7,change_x=False)       
+        last_idx = len(helical_areas)-1
+        ax_1.annotate("",xytext=(arrow_x,arrow_y[i]),textcoords='axes fraction',
+                      xy=(0.9,arrow_y[i]),xycoords='axes fraction',
+                      arrowprops=dict(facecolor=color,alpha=0.7,
+                                      edgecolor="None"))
+        if (i > 0):
             PlotUtilities.ylabel("")
-            PlotUtilities.no_y_label(ax_tmp)
             PlotUtilities.xlabel("")
-        else:
-            # first one is special 
-            first_special = dict(offset_x=0.5,offset_y=0.8)
-            Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=1,ax=ax_tmp,
-                                                    **first_special)            
-        if (i != len(helical_areas)-1):
+        if (i != last_idx):
             ax_2.set_ylabel("")
-            PlotUtilities.no_y_label(ax_2)
+            PlotUtilities.no_x_label(ax_1)
+            PlotUtilities.no_x_label(ax_2)            
         PlotUtilities.title(a.plot_title,color=color)
-    normalize_axes(axs)
+    # make all the axes consistent            
+    normalize_axes(first_axs)
     normalize_axes(second_axs)
+    # determine where the min need to be for the zeros to be OK
+    min_y,max_y = first_axs[0].get_ylim()
+    normalized_zero = -min_y/(max_y-min_y)
+    min_y_second,max_y_second = second_axs[0].get_ylim()
+    # want f = 0-min/(max-min) --> min = f*max/(f-1)
+    needed_min = normalized_zero * max_y_second / (normalized_zero-1)
+    normalize_axes(second_axs,manual_min=needed_min)    
+    # after normalization, add in the scale bars 
+    for i,(ax_1,ax_2) in enumerate(zip(first_axs,second_axs)):
+        Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_2,
+                                                **kw_scalebars[i])
+        PlotUtilities.no_x_label(ax_2)     
+            
+    
     
 def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     # skip the first one (the entire landscape )
@@ -497,9 +541,9 @@ def run():
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)"),
-        slice_area([18e-9,27e-9],"Helix ED"),
-        slice_area([33e-9,50e-9],"Helix CB"),
-        slice_area([50e-9,75e-9],"Helix A"),
+        slice_area([18e-9,27e-9],"ED helical pair"),
+        slice_area([33e-9,50e-9],"CB helical pair"),
+        slice_area([50e-9,75e-9],"A helix"),
         ]    
     for a in areas:
         a.set_num_bins_by_bin_in_meters(bin_size_meters)         
@@ -507,9 +551,9 @@ def run():
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
                       force_recalculation,areas,flickering_dir,bin_size_meters)
-    make_pedagogical_plot(data_to_analyze[0],landscape_kwargs()[0])
+    #make_pedagogical_plot(data_to_analyze[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
-    make_detalied_plots(data_to_analyze,areas)
+    #make_detalied_plots(data_to_analyze,areas)
     # make the 'gallery' plots.
     make_gallery_plot(areas,data_to_analyze)
     
