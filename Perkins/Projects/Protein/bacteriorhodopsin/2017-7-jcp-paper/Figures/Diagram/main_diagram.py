@@ -62,8 +62,8 @@ def run():
     adhesion_max_nm = 19
     # plot the helical regions...
     regions_nm = [ [[adhesion_max_nm,30],"ED Helix",'royalblue'],
-                   [[31,45],"CB Helix",'orangered'],
-                   [[55,65],"A Helix",'g']]
+                   [[30,45],"CB Helix",'orangered'],
+                   [[45,66],"A Helix",'g']]
     colors_regions = [regions_nm[-1]]                        
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
@@ -90,7 +90,7 @@ def run():
     # 'full' example 
     ax_example = plt.subplot(data_spec[:,0])
     alpha_data = 0.4
-    color_data = 'k'
+    color_data = 'g'
     dict_plot = dict(n_filter_points=1000,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
@@ -106,15 +106,13 @@ def run():
         FEC_Plot._fec_base_plot(x_func(r),y_func(r),**dict_tmp)
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
-    ymin = 0.80
-    ymax = 0.85
     for x,name,color in regions_nm:
-        plt.axvspan(*x,color=color,ymin=ymin,ymax=ymax,alpha=0.3,linewidth=0)
+        plt.axvspan(*x,color=color,alpha=0.3,linewidth=0)
     # plot the adhesion regions
     mpl.rcParams['hatch.color'] = '0.85'
-    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.95',hatch='--',
+    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.95',
                 linewidth=0)
-    PlotUtilities.lazyLabel("Molecular extension (nm)","Force (pN)","")   
+    PlotUtilities.lazyLabel("Extension (nm)","Force (pN)","")   
     PlotUtilities.x_label_on_top(ax_example)
     # # plot all the zoomed regions 
     offsets_x = [0.9,0.5]
@@ -212,7 +210,8 @@ def run():
     time = fig4ab.time[idx]
     force = fig4ab.force[idx]
     FEC_Plot._fec_base_plot(time,force,n_filter_points=200,
-                            style_data=dict(color=color_equil,alpha=0.3))
+                            style_data=dict(color=color_equil,alpha=0.3,
+                                            linewidth=0.75))
     ax_time.set_xlim(min_x_new,max_x_new)
     ax_time.set_ylim(None,None)
     unit_kwargs = dict(value_function =lambda x: x*1000,fmt="{:.0f}")
