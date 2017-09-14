@@ -66,9 +66,11 @@ def run():
     zoom_regions_nm = [ [61.5,63]]
     adhesion_max_nm = 19
     # plot the helical regions...
-    regions_nm = [ [[adhesion_max_nm,30],"ED Helix",'royalblue'],
-                   [[30,45],"CB Helix",'orangered'],
-                   [[45,67],"A Helix",'g']]
+    ed_end = 29
+    cb_end = 45
+    regions_nm = [ [[adhesion_max_nm,ed_end],"ED Helix",'royalblue'],
+                   [[ed_end,cb_end],"CB Helix",'orangered'],
+                   [[cb_end,67],"A Helix",'g']]
     colors_regions = [regions_nm[-1]]                        
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
@@ -93,7 +95,7 @@ def run():
     ax_example = plt.subplot(data_spec[:,0])
     alpha_data = 0.4
     color_data = 'g'
-    dict_plot = dict(n_filter_points=1000,
+    dict_plot = dict(n_filter_points=2000,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
     x_full_plot = x_func(example_plot)                                     
