@@ -457,7 +457,7 @@ def run():
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)"),
-        slice_area([18e-9,27e-9],"Helix ED"),
+        slice_area([18e-9,28e-9],"Helix ED"),
         slice_area([33e-9,50e-9],"Helix CB"),
         slice_area([50e-9,75e-9],"Helix A"),
         ]    
