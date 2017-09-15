@@ -34,6 +34,34 @@ def velocity_annotate(ax,v,y=0.9,x=0.8,color='g'):
     Annotations.relative_annotate(ax=ax,s=s,
                                   xy=(x,y),
                                   color=color,bbox=dict(color='w',pad=0))
+                                  
+def regions_and_colors():
+    adhesion_max_nm = 19
+    # plot the helical regions...
+    ed_end = 29
+    cb_end = 45
+    regions_colors = [ [[adhesion_max_nm,ed_end],'royalblue'],
+                       [[ed_end,cb_end],'orangered'],
+                       [[cb_end,67],'g']]
+    return regions_colors                       
+                   
+                                  
+def add_helical_boxes(ax,alpha=0.3):
+    labels_helical_region = ["ED","CB","A"]
+    ymin_box,ymax_box = 0.05,0.15
+    regions_colors = regions_and_colors()
+    for i,(x,color) in enumerate(regions_colors):
+        ax.axvspan(*x,ymin=ymin_box,ymax=ymax_box,color=color,alpha=alpha,
+                    linewidth=0)
+        ymin,ymax = plt.ylim()
+        y_f = (ymin_box+ymax_box)/2 
+        y = y_f * (ymax-ymin) + ymin
+        x_text = np.mean(x)
+        s = labels_helical_region[i]
+        Annotations._annotate(ax=ax,s=s,xy=(x_text,y),
+                              horizontalalignment='center',
+                              verticalalignment='center',color=color,
+                              bbox=dict(alpha=0,pad=0))                                  
 def run():
     """
     <Description>q
@@ -66,12 +94,9 @@ def run():
     xlim_nm = [5,75]
     zoom_regions_nm = [ [61.5,63.6]]
     adhesion_max_nm = 19
-    # plot the helical regions...
-    ed_end = 29
-    cb_end = 45
-    regions_nm = [ [[adhesion_max_nm,ed_end],"ED Helix",'royalblue'],
-                   [[ed_end,cb_end],"CB Helix",'orangered'],
-                   [[cb_end,67],"A Helix",'g']]
+    region_labels = ["ED Helix","CB Helix","A Helix"]
+    region_colors = regions_and_colors()
+    regions_nm = [[x,l,c] for l,(x,c) in zip(region_labels,region_colors)]
     colors_regions = [regions_nm[-1]]                        
     # slice the regions 
     regions = [FEC_Util.slice_by_separation(example_plot,*reg) 
@@ -110,10 +135,9 @@ def run():
         Annotations.add_rectangle(ax_example,[min(x),max(x)],[min(y),max(y)])
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
-    for x,name,color in regions_nm:
-        plt.axvspan(*x,color=color,alpha=0.3,linewidth=0)
+    add_helical_boxes(ax=ax_example)
     # plot the adhesion regions
-    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.95',
+    plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.85',
                 linewidth=0)
     PlotUtilities.lazyLabel("Extension","Force","")   
     PlotUtilities.x_label_on_top(ax_example)
@@ -271,7 +295,7 @@ def run():
                           xycoords="axes fraction")
     PlotUtilities.no_y_label(ax=ax_equil)    
     loc_upper = [-0.05,1.05]
-    loc_lower = [-0.05,0.95]
+    loc_lower = [-0.05,1.0]
     loc = [loc_upper,loc_upper,loc_upper,   
            loc_lower,loc_lower,loc_lower]
     PlotUtilities.label_tom(fig,loc=loc)

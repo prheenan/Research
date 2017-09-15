@@ -376,7 +376,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         ax_1.annotate("",xytext=(arrow_x,arrow_y[i]),textcoords='axes fraction',
                       xy=(0.9,arrow_y[i]),xycoords='axes fraction',
                       arrowprops=dict(facecolor=color,alpha=0.7,
-                                      edgecolor="None",width=5,headwidth=10))
+                                      edgecolor="None",width=4,headwidth=10,
+                                      headlength=5))
         if (i > 0):
             PlotUtilities.ylabel("")
             PlotUtilities.xlabel("")
@@ -470,7 +471,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
     scale_bar_x = 0.80
-    Scalebar.crossed_x_and_y_relative(scale_bar_x,0.7,ax=ax_heat,
+    Scalebar.crossed_x_and_y_relative(scale_bar_x,0.55,ax=ax_heat,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
     # # plot the energy landscape...
