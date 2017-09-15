@@ -85,13 +85,14 @@ class landscape_data:
         return 3     
     @property
     def _delta_landscapes_kcal_per_mol_per_AA(self):
-        dy = np.gradient(self._raw_uninterpolared_landscapes_kcal_per_mol,
-                         **self.mean_std_opt())
+        dy_kcal_mol = [np.gradient(y,**self.mean_std_opt()) 
+                       for y in self._landscapes_kcal_per_mol]
         ext_nm = self._extensions_nm                   
-        dx = np.gradient(ext_nm,**self.mean_std_opt())
+        dx_nm = [np.gradient(x) for x in ext_nm]
+        dx_aa = [d * self.amino_acids_per_nm() for d in dx_nm]
         # get the individual gradients
-        gradients_per_aa = [(dy_i/(dx_i))  * self.amino_acids_per_nm()
-                            for dy_i,dx_i in zip(dy,dx)]
+        gradients_per_aa = [(dy_i/(dx_i))  
+                            for dy_i,dx_i in zip(dy_kcal_mol,dx_aa)]
         grid_x = self._extension_grid_nm                            
         to_ret =  grid_interpolate_arrays(ext_nm,gradients_per_aa,grid_x)
         return to_ret 
@@ -206,9 +207,15 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
     grad = lambda x: np.gradient(x)/(np.gradient(extension_aa))
     delta_landscape_kcal_per_mol_per_amino_acid = grad(landscape_kcal_per_mol)
     landscape_upper = landscape_kcal_per_mol+std_landscape_kcal_per_mol
-    landscape_lower =landscape_kcal_per_mol-std_landscape_kcal_per_mol 
-    upper_delta_landscape = grad(landscape_upper)
-    lower_delta_landscape = grad(landscape_lower)
+    landscape_lower =landscape_kcal_per_mol-std_landscape_kcal_per_mol
+    delta_landscape_kcal_per_mol_per_amino_acid = \
+        data.mean_delta_landscape_kcal_per_mol_per_AA
+    std_delta_landscape_kcal_per_mol_per_AA = \
+        data.std_delta_landscape_kcal_per_mol_per_AA
+    upper_delta_landscape = delta_landscape_kcal_per_mol_per_amino_acid+\
+                            std_delta_landscape_kcal_per_mol_per_AA
+    lower_delta_landscape = delta_landscape_kcal_per_mol_per_amino_acid-\
+                            std_delta_landscape_kcal_per_mol_per_AA
     # make a second axis for the number of ammino acids 
     limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
                     max(delta_landscape_kcal_per_mol_per_amino_acid)]    
@@ -244,17 +251,19 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
         idx =np.arange(extension_nm.size)
     # plot the landscape and its standard deviation
     ax_energy.plot(extension_nm[idx],landscape_kcal_per_mol[idx],
-                   label=label_deltaG,**kw_landscape)
+                   label=label_deltaG,zorder=10,**kw_landscape)
     ax_energy.fill_between(x=extension_nm[idx],
                            y1=landscape_lower[idx],
                            y2=landscape_upper[idx],
-                           alpha=0.15,**kw_landscape)      
-    rotation = -90 
+                           alpha=0.15,zorder=10,**kw_landscape)      
+    # the energy y label should be rotated if it is on the right                            
+    rotation = -90    
     if plot_derivative:
         kw_y = dict(rotation=-90,x=-0.3)
     else:
         kw_y = dict()
     PlotUtilities.ylabel(ax=ax_energy,lab=units_energy,**kw_y)
+    # move the y label to the right slightly i we are using both axes 
     if plot_derivative:
         ax_energy.yaxis.set_label_coords(1.2,0.5)
     if (plot_derivative):                           
@@ -263,9 +272,12 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
         ax_delta.plot(extension_nm[idx],
                       delta_landscape_kcal_per_mol_per_amino_acid[idx],
                       color=difference_color,linestyle='-',linewidth=1.5)
-        PlotUtilities.tom_ticks(ax=ax_delta,change_x=False,num_major=5)
         PlotUtilities.color_axis_ticks(color=landscape_color,ax=ax_energy,
-                                       spine_name='right')                                                 
+                                       spine_name='right')   
+        ax_delta.fill_between(x=extension_nm[idx],
+                              y1=lower_delta_landscape[idx],
+                              y2=upper_delta_landscape[idx],
+                              alpha=0.15,color=difference_color)                                           
 
     return to_ret
               
@@ -344,7 +356,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
                     dict(offset_x=0.35,offset_y=offset_y),
                     dict(offset_x=0.5,offset_y=offset_y)]
     xlims = [ [None,None],[None,None],[None,59.1]    ]   
-    arrow_x = 0.63
+    arrow_x = 0.75
     arrow_y = [0.65,0.65,0.55]
     for i,(a,data) in enumerate(zip(helical_areas,helical_data)):
         kw_tmp = helical_kwargs[i]
@@ -359,12 +371,12 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
                                     plot_derivative=True)
         first_axs.append(ax_1)                                 
         second_axs.append(ax_2)                    
-        PlotUtilities.tom_ticks(ax=ax_2,num_major=7,change_x=False)       
+        PlotUtilities.tom_ticks(ax=ax_2,num_major=5,change_x=False)       
         last_idx = len(helical_areas)-1
         ax_1.annotate("",xytext=(arrow_x,arrow_y[i]),textcoords='axes fraction',
                       xy=(0.9,arrow_y[i]),xycoords='axes fraction',
                       arrowprops=dict(facecolor=color,alpha=0.7,
-                                      edgecolor="None"))
+                                      edgecolor="None",width=5,headwidth=10))
         if (i > 0):
             PlotUtilities.ylabel("")
             PlotUtilities.xlabel("")
@@ -396,7 +408,7 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     helical_areas = areas[1:]
     helical_data = data_to_analyze[1:]
     helical_kwargs = landscape_kwargs()[1:]
-    fig = PlotUtilities.figure((7,3.25))
+    fig = PlotUtilities.figure((7,2.5))
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
