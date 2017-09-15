@@ -159,7 +159,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 20
+    N_boostraps = 100
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
@@ -504,8 +504,8 @@ def run():
     # write down the areas we want to look at 
     areas = [\
         slice_area([18e-9,75e-9],"Full (no adhesion)"),
-        slice_area([18e-9,27e-9],"Helix ED"),
-        slice_area([33e-9,50e-9],"Helix CB"),
+        slice_area([18e-9,28e-9],"Helix ED"),
+        slice_area([28e-9,50e-9],"Helix CB"),
         slice_area([50e-9,75e-9],"Helix A"),
         ]    
     for a in areas:
