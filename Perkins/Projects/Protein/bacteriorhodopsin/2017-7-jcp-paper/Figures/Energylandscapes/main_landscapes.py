@@ -11,6 +11,9 @@ import sys
 
 
 sys.path.append("../../../../../../../../")
+sys.path.append("../")
+import jcp_fig_util
+
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 from GeneralUtil.python.Plot import Scalebar,Annotations 
@@ -474,6 +477,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     Scalebar.crossed_x_and_y_relative(scale_bar_x,0.55,ax=ax_heat,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
+    jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.9,alpha=1.0,
+                                   font_color='w')
     # # plot the energy landscape...
     ax_correction = plt.subplot(3,1,2)    
     plot_with_corrections(data)
