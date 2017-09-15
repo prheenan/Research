@@ -11,6 +11,7 @@ import sys,matplotlib as mpl
 
 
 sys.path.append("../../../../../../../../")
+sys.path.append("../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 from GeneralUtil.python.Plot import Scalebar,Annotations
@@ -23,6 +24,7 @@ from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
 import figure_recreation
 from figure_recreation import fig1d,fig4ab,fig4c
 
+import jcp_fig_util
 
 import copy 
 from matplotlib import gridspec
@@ -34,34 +36,7 @@ def velocity_annotate(ax,v,y=0.9,x=0.8,color='g'):
     Annotations.relative_annotate(ax=ax,s=s,
                                   xy=(x,y),
                                   color=color,bbox=dict(color='w',pad=0))
-                                  
-def regions_and_colors():
-    adhesion_max_nm = 19
-    # plot the helical regions...
-    ed_end = 29
-    cb_end = 45
-    regions_colors = [ [[adhesion_max_nm,ed_end],'royalblue'],
-                       [[ed_end,cb_end],'orangered'],
-                       [[cb_end,67],'g']]
-    return regions_colors                       
-                   
-                                  
-def add_helical_boxes(ax,alpha=0.3):
-    labels_helical_region = ["ED","CB","A"]
-    ymin_box,ymax_box = 0.05,0.15
-    regions_colors = regions_and_colors()
-    for i,(x,color) in enumerate(regions_colors):
-        ax.axvspan(*x,ymin=ymin_box,ymax=ymax_box,color=color,alpha=alpha,
-                    linewidth=0)
-        ymin,ymax = plt.ylim()
-        y_f = (ymin_box+ymax_box)/2 
-        y = y_f * (ymax-ymin) + ymin
-        x_text = np.mean(x)
-        s = labels_helical_region[i]
-        Annotations._annotate(ax=ax,s=s,xy=(x_text,y),
-                              horizontalalignment='center',
-                              verticalalignment='center',color=color,
-                              bbox=dict(alpha=0,pad=0))                                  
+                           
 def run():
     """
     <Description>q
@@ -95,7 +70,7 @@ def run():
     zoom_regions_nm = [ [61.5,63.6]]
     adhesion_max_nm = 19
     region_labels = ["ED Helix","CB Helix","A Helix"]
-    region_colors = regions_and_colors()
+    region_colors = jcp_fig_util.regions_and_colors()
     regions_nm = [[x,l,c] for l,(x,c) in zip(region_labels,region_colors)]
     colors_regions = [regions_nm[-1]]                        
     # slice the regions 
@@ -135,7 +110,7 @@ def run():
         Annotations.add_rectangle(ax_example,[min(x),max(x)],[min(y),max(y)])
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
-    add_helical_boxes(ax=ax_example)
+    jcp_fig_util.add_helical_boxes(ax=ax_example)
     # plot the adhesion regions
     plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.85',
                 linewidth=0)
