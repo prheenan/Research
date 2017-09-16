@@ -30,7 +30,7 @@ The details of sample preparation are discussed elsewhere [@yu_hidden_2017]. Bri
 
 ### Data acquisition
 
-Modified BioLever Fast cantilevers (AC10DS, Olympus) were used for data acquisition. The cantilever modification procedure is discussed elsewhere [@edwards_optimizing_2017] and results in cantilevers with improved force precision, lower force drift, and microsecond temporal resolution. The modified cantilevers were pressed into the purple membrane at 900 pN for 1 s and then retracted from the surface at a constant velocity of 300 nm/s. The force-extension curves were filtered as previously described to remove uninterpretable data and an interference artifact [@yu_hidden_2017]. The unfolding of the GF helical pair was usually uninterprtable due to due to variable tip-membrane non-specific adhesion; only the ED, CB, and A helices were used for energy landscape reconstruction.
+Modified BioLever Fast cantilevers (AC10DS, Olympus) were used for data acquisition. The cantilever modification procedure is discussed elsewhere [@edwards_optimizing_2017] and results in cantilevers with improved force precision, lower force drift, and microsecond temporal resolution. The modified cantilevers were pressed into the purple membrane at 900 pN for 1 s and then retracted from the surface at a constant velocity of 300 nm/s. Data were recorded at 5MHz, then smoothed with a second-order, 500-point Savitsky-Golay filter for all subsequent analysis. The force-extension curves were filtered as previously described to remove uninterpretable data and an interference artifact [@yu_hidden_2017]. The unfolding of the GF helical pair was usually uninterprtable due to due to variable tip-membrane non-specific adhesion; only the ED, CB, and A helices were used for energy landscape reconstruction.
 
 ----
 ![](./Figures/diagram.png)
@@ -69,20 +69,14 @@ The unfolding energy of bacteriorhodopsin depends on the structural element bein
 
 The large stiffness of the ED helical pair of bacteriorhodopsin, compared to the force probe, introduced error in its energy landscape reconstruction. The inverse Weierstrass requires that stiffness of the probe be much greater than the stiffness of the reconstructed landscape. As shown in {#ref_fig:helixE}, the greatest stiffness of the bacteriorhodopsin, at the top of the ED helix, is about 8 kcal/(mol$\cdot$ $\text{nm}^2$)$\approx$ 50pN/nm, larger than the cantilever stiffness of 20pN/nm. Therefore, the top of the ED Helix was likely poorly reconstructed by the inverse Weierstrass and represents a lower bound on the true landscape. For the CB and A helices of the protein, where the stiffness was at least an order of magnitude lower, the reconstruction of the landscape was better (XXX cite). In addition, the almost-negligible correction to the landscape from the $\ddot{A}$ term in the inverse Weierstrass transform outside of the ED Helix (Figure {#ref_fig:full}) confirmed that higher-order corrections were unlikely to effect the landscape of the CB and A helices.
 
-(Discuss full energy landscape of bR -- compare average energy per amino acid and full landscape to previous results. )
-
+The energy landscape of {#ref_fig:helixE} shows significant variation in unfolding energy per amino acid as a function of end-to-end distance. The average unfolding energy per amino acid is 0.58 $\pm$ 0.03 kcal/mol, in close agreement with past single-molecule results of $\approx$ 0.7 kcal/mol per amino acid [@janovjak_valleys_2008] and bulk denaturation which report between 0.5 and 0.8 kcal/mol per amino acid [@white_membrane_1999]. However, in our work the unfolding energies per amino acid varied by more than an order of magnitude, from 4 kcal/mol at the C-terminal end of the ED helix to 0.2 kcal/mol at the C-terminal end of the A helix. The average unfolding energy per amino acid near the top of the ED helix, 3 $\pm$ 1 kcal/mol, supported a previous equilibrium result of 2.7 $\pm$ 0.1 kcal/mol [yu_hidden_2017]. This agreement between the unfolding energies obtained by equilibrium and dynamic force spectropy in this region underscores the local variability in unfolding cost in bacteriorhodopsin.
 
 
 # CONCLUSION
 
-[xxx bridge...]
-
-The reconstruction presented provides insight into the unfolding energies ... . The
-
+The energy landscape reconstruction presented here highlights that not all amino acids within bacteriorhodopsin have the same unfolding energy. The reconstruction could be improved by increasing the stiffness of the cantilever, providing a more accurate reconstruction of the particularly stiff regions of the landscape. Using site-specific chemistry would allow for reconstruction of the GF helical pair of bacteriorhopsin, a region currently uninterpretable due to no-specific adhesion of the tip to the surface. Energy landscape reconstructions are very powerful when applied to refolding experiments, in which the molecule is unfolded and then refolded repeatedly. Refolding experiments would focus on specific portions of bacteriorhodopsin that can reversibly fold and unfold, such as the top of the ED helix, and would easily compare with equilibrium studies. In addition, the energy cost associated only with dissasociating higher-order structure within the protein could be obtained by removing the contribution of stretching the unfolded polyprotein chain. Finally, reconstructing the energy landscape with high resolution as a function of buffer conditions, pulling geometry, or point mutations would dramatically improve the current understanding of protein energy landscapes. 
 
 (Discuss using greater stiffnesses) 
-
-(Discuss per-helix results)
 
 (Discuss applying to environmental, other puling methods, site-specific (GF helix), retinol, etc etc.)
 
