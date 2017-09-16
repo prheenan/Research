@@ -74,16 +74,5 @@ The energy landscape of {#ref_fig:helixE} shows significant variation in unfoldi
 
 # CONCLUSION
 
-The energy landscape reconstruction presented here highlights that not all amino acids within bacteriorhodopsin have the same unfolding energy. The reconstruction could be improved by increasing the stiffness of the cantilever, providing a more accurate reconstruction of the particularly stiff regions of the landscape. Using site-specific chemistry would allow for reconstruction of the GF helical pair of bacteriorhopsin, a region currently uninterpretable due to no-specific adhesion of the tip to the surface. Energy landscape reconstructions are very powerful when applied to refolding experiments, in which the molecule is unfolded and then refolded repeatedly. Refolding experiments would focus on specific portions of bacteriorhodopsin that can reversibly fold and unfold, such as the top of the ED helix, and would easily compare with equilibrium studies. In addition, the energy cost associated only with dissasociating higher-order structure within the protein could be obtained by removing the contribution of stretching the unfolded polyprotein chain. Finally, reconstructing the energy landscape with high resolution as a function of buffer conditions, pulling geometry, or point mutations would dramatically improve the current understanding of protein energy landscapes. 
-
-(Discuss using greater stiffnesses) 
-
-(Discuss applying to environmental, other puling methods, site-specific (GF helix), retinol, etc etc.)
-
-Further work: 
-
-* unfolding,refolding.
-* dependence on conditions 
-* comparison with equilibrium measurements
-* removing the effect of handles 
+The energy landscape reconstruction presented here highlights that not all amino acids within bacteriorhodopsin have the same unfolding energy. The reconstruction could be improved by increasing the stiffness of the cantilever, providing a more accurate reconstruction of the particularly stiff regions of the landscape. The landscape would also be improved by adopting site-specific chemistry and reconstruction of the GF helical pair of bacteriorhopsin, a region currently uninterpretable due to non-specific adhesion of the tip to the surface. The quality of energy landscape reconstruction would increase if applied to refolding experiments, in which the molecule is unfolded and then refolded repeatedly. Refolding experiments would focus on specific portions of bacteriorhodopsin that can reversibly fold and unfold, such as the top of the ED helix, and such experiments would easily compare with equilibrium studies, providing an indepdent method for energy landscape reconstruction. In addition, the energy cost associated only with dissasociating higher-order structure within the protein could be obtained by subtracting the energetic contribution of stretching already-unfolded polyprotein chain. Finally, reconstructing the energy landscape with high resolution as a function of buffer conditions, pulling geometry, or point mutations would dramatically improve the current understanding of protein energy landscapes. 
 
