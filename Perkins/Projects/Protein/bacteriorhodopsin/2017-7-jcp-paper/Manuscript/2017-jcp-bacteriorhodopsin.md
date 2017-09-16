@@ -22,13 +22,15 @@ Our order-of-magnitude advances in AFM cantilever force precision and time resol
 
 # METHODS
 
-(Discuss science paper, Figure 1)
-
 ## Experimental
 
-The details surrounding cantilever modification and sample preparation are discussed elsewhere [@yu_hidden_2017]. Briefly...
+### Sample preparation
 
-(Discuss full energy landscape reconstruction)
+The details of sample preparation are discussed elsewhere [@yu_hidden_2017]. Briefly, bacteriorhpdopsin in its native lipid bilayer was purified from *Halobacterium salinarium* and stored at -80$^\circ$C at 2.4 mg/mL. For use, this bR stock was diluted to 1.2 $\textmu$g/mL in 10mM Tris-HCl (pH 7.8), 300mM KCL and sonicated for 3 minutes. A 50 $\textmu$L portion of this stock was deposited on freshly-cleaved, V1 mica for 1 hour, then 5 times with a total of 1 mL of imaging buffer (10mM Tris-HCl (pH 7.8), 150 mM KCL].
+
+### Data acquisition
+
+Modified BioLever Fast cantilevers (AC10DS, Olympus) were used for data acquisition. The cantilever modification procedure is discussed elsewhere [@edwards_optimizing_2017] and results in cantilevers with improved force precision, lower force drift, and microsecond temporal resolution. The modified cantilevers were pressed into the purple membrane at 900 pN for 1 s and then retracted from the surface at a constant velocity of 300 nm/s. The force-extension curves were filtered as previously described to remove uninterpretable data and an interference artifact present in the optical lever arm due to the small size of the cantilevers [@yu_hidden_2017]. The unfolding of the GF helical pair was usually uninterprtable due to due to variable tip-membrane non-specific adhesion; only the ED, CB, and A helices were used for energy landscape reconstruction.
 
 ----
 ![](./Figures/diagram.png)
@@ -37,11 +39,13 @@ The details surrounding cantilever modification and sample preparation are discu
 
 ## Landscape reconstruction
 
+Energy landscape reconstruction of the ED, CB, and A helical pairs of bacteriorhodopsin was accomplished by the inverse Weierstrass transform of the Jayzynski free energy integral. As discussed below, the Jarzynski free energy integral, referred to as the Jarzynski equality, reconstructs the Helmholtz free energy of the system (*i.e.* cantilever and molecule) as a function of molecular extension. The inverse Weierstrass transform approximately removes the contribution of the cantilever to the landscape obtained by Jarzynski's equality. 
+
 Jarzynski's equality [@jarzynski_nonequilibrium_1997] is a thermodynamic relationship between the Helmholtz free energy of a system, $A(z)$, along a reaction coordinate $z$ to the measured work done along that coordinate, $W(z)$:
 
 $e^{-\beta A(z)} = <e^{-\beta W(z)}>$,
 
-where the average is taken over many independent experiments, each starting and ending at the same choice of z. For AFM-SMFS, the Helmholtz energy includes the energy stored in the cantilever used to apply forces. Jarzynski's equality is exact only in the limit as $N \rightarrow \infty$, but is approximately true for finite $N$. The equality is remarkable because it relates the work done during many repetitions of a non-equilibrium process to the equilibrium free energy difference as a function of the reaction coordinate. In practice, SMFS experiments apply Jarzynski's equality by repeatedly folding or unfolding a single molecule of interest using a force probe. In this case, and the work is the integral of the force as a function of the reaction coordinate $z$, where $z$ is the position of the cantilever's base. For example, a linear ramp moving from $z_0$ with constant velocity $v_0$ would have $z(t)=v_0 t + z_0$.
+where the average is taken over many independent experiments, each starting and ending at the same choice of z. For AFM-SMFS, the Helmholtz energy includes the energy stored in the cantilever used to apply forces. Jarzynski's equality is exact only in the limit as $N \rightarrow \infty$, but is approximately true for finite $N$. The equality is remarkable because it relates the work done during many repetitions of a non-equilibrium process to the equilibrium free energy difference as a function of the reaction coordinate. In practice, SMFS experiments apply Jarzynski's equality by repeatedly folding or unfolding a single molecule of interest using a force probe. In this case, the work is the integral of the force as a function of the reaction coordinate $z$, where $z$ is the position of the cantilever's base. For example, a linear ramp moving from $z_0$ with constant velocity $v_0$ would have $z(t)=v_0 t + z_0$.
 
 The effect of the force probe on the energy landscape must be removed for an accurate determination of an energy landscape and the molecular extension. The inverse Weierstrass transform of Jarzynski's free-energy integral, hereafter referred to as the inverse Weierstass transform, determines molecular free energy as a function of molecular extension by correcting for the perturbation of the force probe. The correction modifies Jarzynski's equality assuming a stiff, harmonic pulling apparatus [@hummer_free_2010]. The weighted histogram analysis method [@minh_optimized_2008] can be used when the probe is not a harmonic spring (*e.g.* with DNA molecules linking the probe to the system of interest) or when the probe stiffness, including possible linkers, is not much greater than the system stiffness.
 
@@ -50,7 +54,7 @@ The effect of the force probe on the energy landscape must be removed for an acc
 {#label_fig:full} **Energy landscape reconstruction of bacteriorhodopsin reveals significant intra-molecule variation in unfolding energy.**  (**A**) A heat map of all force-extension curves used in this work. Data within 20nm of the surface are excluded due to surface adhesion. (**B**) The Helmholtz free energy, the red, dashed and dotted line $A(z)$, was corrected [@hummer_free_2010] to obtain the free energy as a function of molecular extension, the black dotted line $\Delta G_0$. The derivative and second derivative of the Helmholtz free energy, denoted by a dot, are with respect to extension. (**C**) The $\Delta G_0$ from (B), where the shaded region gives the standard deviation from three non-overlapping subsets of the data in (A). 
 ----
 
-Figure 2 demonstrates the inverse Weierstrass as applied to bacteriorhodopsin. Figure 2a is a heatmap of 168 force-extension curves. This heatmap represents the ensemble of measurements needed for applying Jarzynski's inequality and the corrections of the inverse Weierstrass transform. Figure 2b shows A(z) as obtained by Jarzynski's inequality [@jarzynski_nonequilibrium_1997], as well as the inverse Weierstrass corrections which are functions of A(z), the stiffness $k$, and the temperature. The corrections were obtained as in described previously [@hummer_free_2010;@minh_optimized_2008]. 
+{#ref_fig:full} demonstrates the inverse Weierstrass as applied to bacteriorhodopsin. {#ref_fig:full}a is a heatmap of 168 force-extension curves. This heatmap represents the ensemble of measurements needed for applying Jarzynski's inequality and the corrections of the inverse Weierstrass transform. {#ref_fig:full}b shows A(z) as obtained by Jarzynski's inequality [@jarzynski_nonequilibrium_1997], as well as the inverse Weierstrass corrections which are functions of A(z), the stiffness $k$, and the temperature. The corrections were obtained as in described previously [@hummer_free_2010;@minh_optimized_2008]. {#ref_fig:full}c represents the free energy of the ED, CB, and A helical pairs of bacteriorhodopsin.
 
 # DISCUSSION / RESULTS
 
@@ -61,13 +65,13 @@ Figure 2 demonstrates the inverse Weierstrass as applied to bacteriorhodopsin. F
 ----
 
 
-(Motivation for full energy landscape reconstruction) 
-
-(Discuss full energy landscape of bR -- compare average energy per amino acid and full landscape to previous results. )
-
 The unfolding energy of bacteriorhodopsin depends on the structural element being unfolded. Figure {#ref_fig:helixE} reports the energy landscape and unfolding energy per amino acid as a function of molecular extension for the ED, CB, and A helices. Of these, the ED helix has the highest associated unfolding energy per amino acid, followed by the CB and A helices. Although this energy landscape provides a good estimation for the CB and A helices, the reconstruction of the ED helical pair is limited by its extremely high stiffness. 
 
 The large stiffness of the ED helical pair of bacteriorhodopsin, compared to the force probe, introduced error in its energy landscape reconstruction. The inverse Weierstrass requires that stiffness of the probe be much greater than the stiffness of the reconstructed landscape. As shown in {#ref_fig:helixE}, the greatest stiffness of the bacteriorhodopsin, at the top of the ED helix, is about 8 kcal/(mol$\cdot$ $\text{nm}^2$)$\approx$ 50pN/nm, larger than the cantilever stiffness of 20pN/nm. Therefore, the top of the ED Helix was likely poorly reconstructed by the inverse Weierstrass and represents a lower bound on the true landscape. For the CB and A helices of the protein, where the stiffness was at least an order of magnitude lower, the reconstruction of the landscape was better (XXX cite). In addition, the almost-negligible correction to the landscape from the $\ddot{A}$ term in the inverse Weierstrass transform outside of the ED Helix (Figure {#ref_fig:full}) confirmed that higher-order corrections were unlikely to effect the landscape of the CB and A helices.
+
+(Discuss full energy landscape of bR -- compare average energy per amino acid and full landscape to previous results. )
+
+
 
 # CONCLUSION
 
