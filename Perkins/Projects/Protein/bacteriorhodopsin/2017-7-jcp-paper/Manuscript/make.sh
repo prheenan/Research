@@ -28,9 +28,10 @@ make_figure()
     pandoc $input_file \
 	--filter=./walk_figures.py\
 	--filter=./fulfill_figures.py\
+        --filter=pandoc-citeproc\
 	--bibliography=${5:-./jcp_bR_energy_bibliography.bib}\
 	--from=markdown+yaml_metadata_block\
-	--csl=${4:-biophysical-journal.csl}\
+	--csl=${4:-cite_style.csl}\
 	--reference-docx=${3:-./Template/prh_template.docx}\
         --metadata link-citations=true\
 	--verbose \
