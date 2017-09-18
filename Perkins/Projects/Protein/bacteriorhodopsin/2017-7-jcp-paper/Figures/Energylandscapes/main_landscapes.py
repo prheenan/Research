@@ -162,7 +162,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
-    skip = 100
+    skip = 300
     N_boostraps = 200
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
