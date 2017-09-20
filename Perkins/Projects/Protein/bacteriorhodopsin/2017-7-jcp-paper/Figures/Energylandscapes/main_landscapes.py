@@ -359,8 +359,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
                     dict(offset_x=0.35,offset_y=offset_y),
                     dict(offset_x=0.5,offset_y=offset_y)]
     xlims = [ [None,None],[None,None],[None,59.1]    ]   
-    arrow_x = 0.75
-    arrow_y = [0.65,0.65,0.55]
+    arrow_x = [0.55,0.5,0.60]
+    arrow_y = [0.60,0.6,0.5]
     for i,(a,data) in enumerate(zip(helical_areas,helical_data)):
         kw_tmp = helical_kwargs[i]
         data_landscape = landscape_data(data.landscape)
@@ -376,8 +376,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         second_axs.append(ax_2)                    
         PlotUtilities.tom_ticks(ax=ax_2,num_major=5,change_x=False)       
         last_idx = len(helical_areas)-1
-        ax_1.annotate("",xytext=(arrow_x,arrow_y[i]),textcoords='axes fraction',
-                      xy=(0.9,arrow_y[i]),xycoords='axes fraction',
+        ax_1.annotate("",xytext=(arrow_x[i],arrow_y[i]),textcoords='axes fraction',
+                      xy=(arrow_x[i]+0.2,arrow_y[i]),xycoords='axes fraction',
                       arrowprops=dict(facecolor=color,alpha=0.7,
                                       edgecolor="None",width=4,headwidth=10,
                                       headlength=5))
@@ -416,7 +416,7 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
-def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.6):
+def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9):
     font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
     # fix the keywords relative to the heatmap
     x_heat_kw['font_kwargs']['color'] = 'k'
@@ -424,16 +424,16 @@ def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.6):
     y_heat_kw['font_kwargs']['color'] = 'k'
     y_heat_kw['line_kwargs']['color'] = 'k'  
     y_heat_kw['unit'] = 'kcal/mol '
-    y_heat_kw['height'] = 30
+    y_heat_kw['height'] = 40
     Scalebar.crossed_x_and_y_relative(scale_bar_x,offset_y,ax=ax,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
     PlotUtilities.no_y_label(ax)                                              
 
 def kwargs_correction():     
-    return [dict(color='r',linestyle='-.'),
-            dict(color='b',linestyle='-',linewidth=0.3),
-            dict(color='g',linestyle='--')]
+    return [dict(color='teal',linestyle='-.'),
+            dict(color='m',linestyle='-',linewidth=0.75),
+            dict(color='saddlebrown',linestyle='--')]
             
 def kwargs_labels():
     second_deriv =  r"\frac{1}{2\beta}\ln(1-\frac{\ddot{A}}{k})"                
@@ -473,7 +473,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,**heat_kw_common)
     y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
-    scale_bar_x = 0.80
+    scale_bar_x = 0.83
     Scalebar.crossed_x_and_y_relative(scale_bar_x,0.55,ax=ax_heat,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
@@ -484,11 +484,12 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     plot_with_corrections(data)
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
-    ax_correction.set_xlim(xlim_fec)                         
+    ax_correction.set_xlim(xlim_fec)            
+    offset_y_pedagogy = 0.40
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
-                         offset_y=0.35)
+                         offset_y=offset_y_pedagogy)
     legend_font_size = 9                         
-    legend = PlotUtilities.legend(handlelength=2,loc=(0.15,0.07),ncol=3,
+    legend = PlotUtilities.legend(handlelength=1.5,loc=(0.15,0.07),ncol=3,
                                   fontsize=legend_font_size,handletextpad=0.4)
     for i,text in enumerate(legend.get_texts()):
         plt.setp(text, color = kwargs_correction()[i]['color'])    
@@ -533,13 +534,15 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                    plot_derivative=False,label_deltaG=" ")    
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
-                         offset_y=0.3)
+                         offset_y=offset_y_pedagogy)
     # add in the equation notation
     strings,colors = [],[]
     labels = kwargs_labels()
     # add in the appropriate symbols 
     strings = ["$\Delta G$ = ",labels[0]," + ",labels[1]," - ",labels[2]]
-    colors = ['k','r','k','b','k','g']
+    colors_labels = [c['color'] for c in kwargs_correction()]
+    colors = ["k"] + [item for list in [[c,"k"] for c in colors_labels]
+                      for item in list]
     x,y = Scalebar.x_and_y_to_abs(x_rel=0.08,y_rel=0.85,ax=ax_energy)        
     Annotations.rainbow_text(x,y,strings=strings,colors=colors,
                              ax=ax_energy,size=legend_font_size)
