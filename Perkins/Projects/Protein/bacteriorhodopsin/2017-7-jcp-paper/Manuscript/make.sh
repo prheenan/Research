@@ -25,7 +25,7 @@ make_figure()
     # note: metadata can be set as follows: 
     # stackoverflow.com/questions/26431719/pandoc-citations-without-appending-the-references-bibliography
     input_file="2017-jcp-bacteriorhodopsin.md" 
-    pandoc $input_file \
+    pandoc $input_file style.yaml\
 	--filter=./walk_figures.py\
 	--filter=./fulfill_figures.py\
         --filter=pandoc-citeproc\
