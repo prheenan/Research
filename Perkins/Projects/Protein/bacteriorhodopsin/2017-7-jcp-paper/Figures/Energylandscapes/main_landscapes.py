@@ -204,6 +204,10 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                                                  cache_directory=flickering_dir,
                                                  limit=10,
                                                  renormalize=False)
+    # only look at data with ~300nm/s
+    v_exp = 300e-9
+    raw_data = [r for r in raw_data 
+                if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
     raw_area_slices = [[] for _ in areas]
     area_bounds = [get_area_bounds(raw_data,area) for area in areas]
     # fix all the spring constants. XXX need to account for this...
@@ -260,29 +264,32 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
 def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     # XXX ? digitize all the ids so we know what bin they fall into...
     X,Y = np.meshgrid(x_edges,y_edges)
+    X -= np.min(X)
     plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
         
 def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
                    label_deltaG = PlotUtilities.variable_string("\Delta G")):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
+    landscape_kcal_per_mol -= min(landscape_kcal_per_mol)
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
     extension_nm = data._extension_grid_nm
+    extension_nm -= min(extension_nm)
     extension_aa = data.amino_acids_per_nm() * extension_nm
     grad = lambda x: np.gradient(x)/(np.gradient(extension_aa))
     delta_landscape_kcal_per_mol_per_amino_acid = grad(landscape_kcal_per_mol)
     landscape_upper = landscape_kcal_per_mol+std_landscape_kcal_per_mol
     landscape_lower =landscape_kcal_per_mol-std_landscape_kcal_per_mol
-    delta_landscape_kcal_per_mol_per_amino_acid = 0
-        #data.mean_delta_landscape_kcal_per_mol_per_AA
-    std_delta_landscape_kcal_per_mol_per_AA = 0
-        #data.std_delta_landscape_kcal_per_mol_per_AA
+    delta_landscape_kcal_per_mol_per_amino_acid = \
+        data.mean_delta_landscape_kcal_per_mol_per_AA
+    std_delta_landscape_kcal_per_mol_per_AA = \
+        data.std_delta_landscape_kcal_per_mol_per_AA
     upper_delta_landscape = delta_landscape_kcal_per_mol_per_amino_acid+\
                             std_delta_landscape_kcal_per_mol_per_AA
     lower_delta_landscape = delta_landscape_kcal_per_mol_per_amino_acid-\
                             std_delta_landscape_kcal_per_mol_per_AA
     # make a second axis for the number of ammino acids 
-    limits_delta = [None,None]#[min(delta_landscape_kcal_per_mol_per_amino_acid),
-                   # max(delta_landscape_kcal_per_mol_per_amino_acid)]    
+    limits_delta = [min(delta_landscape_kcal_per_mol_per_amino_acid),
+                    max(delta_landscape_kcal_per_mol_per_amino_acid)]    
     limits_energy = [min(landscape_kcal_per_mol),max(landscape_kcal_per_mol)]
     units_energy_delta = label_deltaG + \
                          r" per AA (kcal/(mol $\cdot$ AA))"   
@@ -333,15 +340,15 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
     if (plot_derivative):                           
         # plot the energy delta and its bounds, based on the bounds on the
         #        landscape    
-        #ax_delta.plot(extension_nm[idx],
-        #              delta_landscape_kcal_per_mol_per_amino_acid[idx],
-        #              color=difference_color,linestyle='-',linewidth=1.5)
+        ax_delta.plot(extension_nm[idx],
+                      delta_landscape_kcal_per_mol_per_amino_acid[idx],
+                      color=difference_color,linestyle='-',linewidth=1.5)
         PlotUtilities.color_axis_ticks(color=landscape_color,ax=ax_energy,
                                        spine_name='right')   
-        #ax_delta.fill_between(x=extension_nm[idx],
-        #                      y1=lower_delta_landscape[idx],
-        #                      y2=upper_delta_landscape[idx],
-        #                      alpha=0.15,color=difference_color)                                           
+        ax_delta.fill_between(x=extension_nm[idx],
+                              y1=lower_delta_landscape[idx],
+                              y2=upper_delta_landscape[idx],
+                              alpha=0.15,color=difference_color)                                           
 
     return to_ret
               
@@ -506,16 +513,18 @@ def kwargs_labels():
             PlotUtilities.variable_string(second_deriv)]
             
 def plot_with_corrections(data):
-    ext_nm = data._extension_grid_nm   
+    ext_nm = data._extension_grid_nm.copy()
+    ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
     energies = [data._grid_property(lambda x: x.A_z * convert),
                 data._grid_property(lambda x: -1 * x.first_deriv_term * convert),
                 data._grid_property(lambda x: x.second_deriv_term* convert)]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
-    landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol                
+    landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol             
     for i,e in enumerate(energies):
-        plt.plot(ext_nm,np.mean(e,axis=0),label=labels[i],**kwargs[i])  
+        energy_rel = np.mean(e,axis=0)
+        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])  
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
@@ -559,11 +568,11 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     for i,text in enumerate(legend.get_texts()):
         plt.setp(text, color = kwargs_correction()[i]['color'])    
     # make the inset plot 
-    axins = zoomed_inset_axes(ax_correction, zoom=2, loc=2,
+    axins = zoomed_inset_axes(ax_correction, zoom=4, loc=2,
                               borderpad=0.8) 
     plot_with_corrections(data)
-    xlim_box = [17.3,26]
-    ylim_box = [-2,19]
+    xlim_box = [1,6]
+    ylim_box = [-3,15]
     plt.xlim(xlim_box)
     plt.ylim(ylim_box)
     PlotUtilities.no_x_anything(axins)
@@ -578,7 +587,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                            **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines                              
     fudge_x = dict(x=0,y=-0.5)
-    fudge_y = dict(x=-0.25,y=0.1)
+    fudge_y = dict(x=0,y=0.1)
     Scalebar.crossed_x_and_y_relative(0.82,0.48,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
