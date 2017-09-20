@@ -30,6 +30,7 @@ from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 import copy 
 from matplotlib import gridspec
 import scipy
+from scipy.interpolate import LSQUnivariateSpline
 
 class cacheable_data:
     def __init__(self,landscape,heatmap_data,heatmap_data_z):
@@ -98,7 +99,7 @@ class landscape_data:
                             for dy_i,dx_i in zip(dy_kcal_mol,dx_aa)]
         grid_x = self._extension_grid_nm                            
         to_ret =  grid_interpolate_arrays(ext_nm,gradients_per_aa,grid_x)
-        return 0 
+        return to_ret 
     def mean_std_opt(self):
         return dict(axis=0)
     @property        
@@ -174,17 +175,38 @@ def get_area_bounds(objs,area):
     # POST: all the bounds match 
     return to_ret
     
+def _filter_single_landscape(landscape_obj,bins):
+    to_ret = copy.deepcopy(landscape_obj)
+    # fit a spline at the given bins
+    x = to_ret.q 
+    min_x,max_x = min(x),max(x)
+    good_idx =np.where( (bins >= min_x) & (bins <= max_x))
+    bins_relevant = bins[good_idx]
+    to_ret.q = bins
+    kw = dict(x=x,t=bins_relevant[1:-1],ext='const',k=3)
+    f_filter = lambda y_tmp: LSQUnivariateSpline(y=y_tmp,**kw)(bins)
+    to_ret.energy = f_filter(to_ret.energy)
+    to_ret.A_z = f_filter(to_ret.A_z)
+    to_ret.first_deriv_term = f_filter(to_ret.first_deriv_term)
+    to_ret.second_deriv_term = f_filter(to_ret.second_deriv_term)
+    return to_ret
+    
+def filter_landscapes(landscapes,n_bins):
+    min_v = min([min(l.q) for l in landscapes])
+    max_v = max([max(l.q) for l in landscapes])
+    bins = np.linspace(min_v,max_v,n_bins)
+    to_ret = [_filter_single_landscape(l,bins) for l in landscapes]
+    return to_ret
+
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
                                                  limit=10,
                                                  renormalize=False)
-    for r in raw_data:
-        print(r.SpringConstant,r.Velocity)
     raw_area_slices = [[] for _ in areas]
     area_bounds = [get_area_bounds(raw_data,area) for area in areas]
-    # fix all the spring constants
+    # fix all the spring constants. XXX need to account for this...
     mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant for r in raw_data])
     for r in raw_data:
         r.LowResData.meta.SpringConstant = mean_spring_constant
@@ -194,7 +216,6 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
            idx_0,idx_f = area_bounds[j][i]
            s = slice(idx_0,idx_f,1)
            this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
-           print(i,j,r.Force.size,this_area.Force.size,idx_f-idx_0)
            raw_area_slices[j].append(this_area)
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
@@ -229,8 +250,11 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
                                                  force=False,
                                                  name_func=name_func)
+        # get the filtered version of the landscape, using the specified bin
+        # size 
+        filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)
         # make the object we want for this 'area' slice
-        to_ret.append(cacheable_data(iwt_tmp,*heatmap_data))
+        to_ret.append(cacheable_data(filtered_iwt,*heatmap_data))
     return to_ret
     
 def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
