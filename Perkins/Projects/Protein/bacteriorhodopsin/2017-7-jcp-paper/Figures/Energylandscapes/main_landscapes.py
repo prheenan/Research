@@ -151,7 +151,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=10,
                                                  renormalize=False)
     raw_area_slices = [[] for _ in areas]
     for i,r in enumerate(raw_data):
@@ -162,8 +162,8 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
-    skip = 300
-    N_boostraps = 200
+    skip = 0
+    N_boostraps = 500
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
