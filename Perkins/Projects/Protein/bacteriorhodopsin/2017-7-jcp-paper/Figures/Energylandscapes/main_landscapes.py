@@ -143,9 +143,30 @@ def get_heatmap_data(time_sep_force_arr,bins=(100,100)):
     
 def _get_landscapes(iwt_obj_subsets,n_bins):    
     iwt_helix_data_tmp = \
-            [InverseWeierstrass.FreeEnergyAtZeroForce(objs,n_bins)
+            [InverseWeierstrass.free_energy_inverse_weierstrass(objs)
              for objs in iwt_obj_subsets]    
     return iwt_helix_data_tmp             
+    
+def get_area_bounds(objs,area):
+    z_0,z_1 = area.ext_bounds
+    average_v = np.mean([r.Velocity for r in objs])    
+    dt_step = objs[0].Time[1] - objs[0].Time[0]
+    z_0_arr = [int(np.round(z_0/(o.Velocity*dt_step))) for o in objs]
+    average_idx_delta = int(np.round((z_1-z_0)/(average_v *dt_step)))
+    # determine how large the delta can actually, so all the objects
+    # lie on the grid
+    sizes = [o.Force.size for o in objs]
+    actual_delta = min([min(average_idx_delta,s-z_tmp)
+                        for z_tmp,s in zip(z_0_arr,sizes)])
+    z_f_arr = [z + actual_delta for z in z_0_arr]
+    to_ret = [ [z0,zf] for z0,zf in zip(z_0_arr,z_f_arr)]
+    for i,bounds in enumerate(to_ret):
+        np.testing.assert_allclose(np.diff(bounds),np.diff(to_ret[0]))
+        assert(bounds[-1] < objs[i].Force.size)
+    # POST: all the bounds match 
+    return to_ret
+    
+    
     
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
@@ -153,11 +174,19 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                                                  cache_directory=flickering_dir,
                                                  limit=10,
                                                  renormalize=False)
+    min_size = np.min([r.Force.size for r in raw_data])
+    for r in raw_data:
+        print(r.SpringConstant,r.Velocity)
     raw_area_slices = [[] for _ in areas]
+    area_bounds = [get_area_bounds(raw_data,area) for area in areas]
+    # fix all the spring constants
     for i,r in enumerate(raw_data):
         r.Force -= offset_N
         for j,area in enumerate(areas):
-           this_area = FEC_Util.slice_by_separation(r,*area.ext_bounds)
+           idx_0,idx_f = area_bounds[j][i]
+           s = slice(idx_0,idx_f,1)
+           this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
+           print(i,j,r.Force.size,this_area.Force.size,idx_f-idx_0)
            raw_area_slices[j].append(this_area)
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None

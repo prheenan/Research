@@ -269,7 +269,7 @@ def slice_by_separation(obj,*args,**kwargs):
     
     """
     return _slice_by_property(obj,*args,property_func = lambda x: x.Separation,
-                              **kwargs)                               
+                              **kwargs)                                            
     
 def MakeTimeSepForceFromSlice(Obj,Slice):
     """
@@ -279,19 +279,8 @@ def MakeTimeSepForceFromSlice(Obj,Slice):
         Obj:
         Slice:
     """
-    ToRet = TimeSepForceObj.TimeSepForceObj()
-    # note: we make a copy, to avoid any reference funny business
-    GetSlice = lambda x: x[Slice].copy()
-    ToRet.LowResData = DataObj(GetSlice(Obj.Time),
-                               GetSlice(Obj.Separation),
-                               GetSlice(Obj.Force),
-                               copy.deepcopy(Obj.Meta))
-    # copy the events over...
-    try:
-        if (Obj.has_events):
-            ToRet.Events = Obj.Events
-    except:
-        pass
+    ToRet = copy.deepcopy(Obj)
+    ToRet = ToRet._slice(Slice)
     return ToRet
 
 
