@@ -30,7 +30,6 @@ from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 import copy 
 from matplotlib import gridspec
 import scipy
-from scipy.interpolate import LSQUnivariateSpline
 
 class cacheable_data:
     def __init__(self,landscape,heatmap_data,heatmap_data_z):
@@ -173,21 +172,7 @@ def get_area_bounds(objs,area):
     # POST: all the bounds match 
     return to_ret
     
-def _filter_single_landscape(landscape_obj,bins):
-    to_ret = copy.deepcopy(landscape_obj)
-    # fit a spline at the given bins
-    x = to_ret.q 
-    min_x,max_x = min(x),max(x)
-    good_idx =np.where( (bins >= min_x) & (bins <= max_x))
-    bins_relevant = bins[good_idx]
-    to_ret.q = bins
-    kw = dict(x=x,t=bins_relevant[1:-1],ext='const',k=3)
-    f_filter = lambda y_tmp: LSQUnivariateSpline(y=y_tmp,**kw)(bins)
-    to_ret.energy = f_filter(to_ret.energy)
-    to_ret.A_z = f_filter(to_ret.A_z)
-    to_ret.first_deriv_term = f_filter(to_ret.first_deriv_term)
-    to_ret.second_deriv_term = f_filter(to_ret.second_deriv_term)
-    return to_ret
+
     
 def filter_landscapes(landscapes,n_bins):
     # zero everything; don't care about absolute offsets.
@@ -196,14 +181,15 @@ def filter_landscapes(landscapes,n_bins):
     min_v = 0
     max_v = max([max(l.q) for l in landscapes])
     bins = np.linspace(min_v,max_v,n_bins)
-    to_ret = [_filter_single_landscape(l,bins) for l in landscapes]
+    to_ret = [WeierstrassUtil._filter_single_landscape(l,bins) 
+              for l in landscapes]
     return to_ret
 
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=10,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -226,7 +212,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 500
+    N_boostraps = 3
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
