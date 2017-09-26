@@ -106,7 +106,9 @@ def crop_slice(data,f=0.3):
 from skimage.morphology import skeletonize,medial_axis,dilation
 from skimage import measure
 from scipy.interpolate import LSQUnivariateSpline
-        
+from skimage.segmentation import active_contour
+from skimage.filters import gaussian
+
 def spline_fit(image_obj,worm_object):
     image = image_obj.height_nm_rel()
     x = worm_object._x_raw
@@ -146,26 +148,32 @@ def spline_fit(image_obj,worm_object):
     skeleton_zeroed = dilation(skeleton_zeroed,selem=selem)
     # mask the original data with the skeletonized one
     image_single_region = skeleton_zeroed * image_cropped
-    x_region,y_region = np.where(image_single_region > 0)
+    good_idx = np.where(image_single_region > 0)
+    x_region,y_region = good_idx
+    z_region = image_single_region[good_idx]
     xy_skel = np.array((x_region,y_region)).T
     xy_rel = np.array((x_rel,y_rel)).T
     # get the closest trace index (ie: 'hand picked' pixel')
     # to each pixel in the data
     distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
     closest_idx = np.argmin(distance_matrix,axis=1)
+    snake_input_image = gaussian(image_single_region,0.5)
+    min_v,max_v = np.min(snake_input_image),np.max(snake_input_image)
+    snake_input_image = (snake_input_image - min_v)/(max_v-min_v) 
+    print(np.max(snake_input_image),np.min(snake_input_image))
+    snake = active_contour(snake_input_image,w_line=1e9,w_edge=-1e15,bc='fixed',
+                           snake=xy_rel, alpha=1e-3, beta=1, gamma=1e-3,
+                           max_iterations=10e3)    
     # sort the pixels by where they are, relative to the trace index
     sorted_idx = np.argsort(closest_idx) 
     x_region_sorted = x_region[sorted_idx]
     y_region_sorted = y_region[sorted_idx]
-    # fit a spline to all the pixels 
-    x_spline,y_spline = _spline(x=x_region_sorted,y=y_region_sorted)
-    plt.plot(x_region_sorted,y_region_sorted,'r.-')
-    plt.plot(x_rel,y_rel,'b--')    
-    plt.plot(x_spline,y_spline,'g-')
-    plt.imshow(image_single_region.T,origin='lower')
+    N = x_region_sorted.size        
+    plt.plot(snake[:,0],snake[:,1])
+    plt.plot(xy_rel[:,0],xy_rel[:,1],color='g')
+    plt.imshow(snake_input_image.T)
     plt.show()
-    
-        
+
 def _spline(x,y,k=3,s=None,num=None):
     if (num is None):
         num = len(x) * 20
