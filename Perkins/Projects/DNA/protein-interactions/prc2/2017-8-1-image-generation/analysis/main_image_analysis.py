@@ -152,6 +152,7 @@ def spline_fit(image_obj,worm_object):
     distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
     closest_idx = np.argmin(distance_matrix,axis=0)
     # 
+    print(closest_idx.size)
     plt.plot(x_region[closest_idx],y_region[closest_idx],'r-')
     plt.plot(x_rel,y_rel,'b--')    
     plt.imshow(image_single_region.T,origin='lower')
