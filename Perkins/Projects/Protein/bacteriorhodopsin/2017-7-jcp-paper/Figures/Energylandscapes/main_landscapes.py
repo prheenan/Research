@@ -30,11 +30,13 @@ from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 import copy 
 from matplotlib import gridspec
 import scipy
+from scipy.interpolate import LSQUnivariateSpline
 
 class cacheable_data:
-    def __init__(self,landscape,heatmap_data):
+    def __init__(self,landscape,heatmap_data,heatmap_data_z):
         self.landscape = landscape
         self.heatmap_data = heatmap_data
+        self.heatmap_data_z = heatmap_data_z
 
 class slice_area:
     def __init__(self,ext_bounds,plot_title):
@@ -56,9 +58,7 @@ class landscape_data:
     @property        
     def _extension_grid_nm(self):
         # get the extensions...
-        ext_nm = self._extensions_nm
-        assert sum([len(e) == len(ext_nm[0]) for e in ext_nm]) == len(ext_nm) ,\
-            "Not all landscapes binned the same way..."            
+        ext_nm = self._extensions_nm        
         # get the absolute min and max
         min_all = np.max([min(e) for e in ext_nm])
         max_all = np.min([max(e) for e in ext_nm])
@@ -68,7 +68,7 @@ class landscape_data:
     def from_Joules_to_kcal_per_mol(self):
         return IWT_Util.kT_to_kcal_per_mol() * (1/self.kT)
     def _raw_uninterpolared_landscapes_kcal_per_mol(self,l):
-        return l.EnergyLandscape * self.from_Joules_to_kcal_per_mol()
+        return l.G_0 * self.from_Joules_to_kcal_per_mol()
     def _grid_property(self,property_func):
         grid = self._extension_grid_nm
         # get the raw data
@@ -83,11 +83,12 @@ class landscape_data:
         return self._grid_property(func)
     @property                        
     def _extensions_nm(self):
-        return [l.Extensions * 1e9 for l in self.landscape_objs]
+        return [l.q * 1e9 for l in self.landscape_objs]
     def amino_acids_per_nm(self):
         return 3     
     @property
     def _delta_landscapes_kcal_per_mol_per_AA(self):
+        
         dy_kcal_mol = [np.gradient(y,**self.mean_std_opt()) 
                        for y in self._landscapes_kcal_per_mol]
         ext_nm = self._extensions_nm                   
@@ -127,43 +128,105 @@ def grid_interpolate_arrays(x_arr,y_arr,x_grid):
         to_ret.append(tmp_grid)                                     
     return to_ret
                        
-def get_heatmap_data(time_sep_force_arr,bins=(100,100)):        
-    sep_nm = [t.Separation*1e9 for t in time_sep_force_arr]
-    force_pN = [t.Force*1e12 for t in time_sep_force_arr]
-    id_array = [ i for i,_ in enumerate(time_sep_force_arr)]
+def heatmap(x,y,bins):                       
     # concatenate everything
-    cat_sep_nm = np.concatenate(sep_nm)
-    cat_force_pN = np.concatenate(force_pN)
+    cat_x = np.concatenate(x)
+    cat_y = np.concatenate(y)
     # SEE: histogram2d documentation
     histogram, x_edges,y_edges = \
-        np.histogram2d(cat_sep_nm,cat_force_pN,bins=bins)
+        np.histogram2d(cat_x,cat_y,bins=bins)
     # each row should list y; transpose so this is the case 
     histogram = histogram.T            
     return histogram, x_edges,y_edges 
     
-def _get_landscapes(iwt_obj_subsets,n_bins):    
-    iwt_helix_data_tmp = \
-            [InverseWeierstrass.FreeEnergyAtZeroForce(objs,n_bins)
-             for objs in iwt_obj_subsets]    
-    return iwt_helix_data_tmp             
+def get_heatmap_data(time_sep_force_arr,bins=(100,100)):        
+    sep_nm = [t.Separation*1e9 for t in time_sep_force_arr]
+    z_nm = [t.ZSnsr*1e9 for t in time_sep_force_arr]
+    force_pN = [t.Force*1e12 for t in time_sep_force_arr]
+    heatmap_force_extension = heatmap(sep_nm,force_pN,bins=bins)
+    heatmap_force_z = heatmap(z_nm,force_pN,bins=bins)
+    return heatmap_force_extension,heatmap_force_z
+
     
+def _get_landscapes(iwt_obj_subsets,n_bins):    
+    for objs in iwt_obj_subsets:
+        yield InverseWeierstrass.free_energy_inverse_weierstrass(objs)
+            
+def get_area_bounds(objs,area):
+    z_0,z_1 = area.ext_bounds
+    average_v = np.mean([r.Velocity for r in objs])    
+    dt_step = objs[0].Time[1] - objs[0].Time[0]
+    z_0_arr = [ (np.where(o.Separation <= z_0)[0][-1]) for o in objs]
+    average_idx_delta = int(np.round((z_1-z_0)/(average_v *dt_step)))
+    # determine how large the delta can actually, so all the objects
+    # lie on the grid
+    sizes = [o.Force.size for o in objs]
+    actual_delta = min([min(average_idx_delta,s-z_tmp-1)
+                        for z_tmp,s in zip(z_0_arr,sizes)])
+    z_f_arr = [z + actual_delta for z in z_0_arr]
+    to_ret = [ [z0,zf] for z0,zf in zip(z_0_arr,z_f_arr)]
+    for i,bounds in enumerate(to_ret):
+        np.testing.assert_allclose(np.diff(bounds),np.diff(to_ret[0]))
+        n = objs[i].Force.size
+        assert(bounds[-1] < n) , \
+            "{:d}/{:d}".format(bounds[-1],n)
+    # POST: all the bounds match 
+    return to_ret
+    
+def _filter_single_landscape(landscape_obj,bins):
+    to_ret = copy.deepcopy(landscape_obj)
+    # fit a spline at the given bins
+    x = to_ret.q 
+    min_x,max_x = min(x),max(x)
+    good_idx =np.where( (bins >= min_x) & (bins <= max_x))
+    bins_relevant = bins[good_idx]
+    to_ret.q = bins
+    kw = dict(x=x,t=bins_relevant[1:-1],ext='const',k=3)
+    f_filter = lambda y_tmp: LSQUnivariateSpline(y=y_tmp,**kw)(bins)
+    to_ret.energy = f_filter(to_ret.energy)
+    to_ret.A_z = f_filter(to_ret.A_z)
+    to_ret.first_deriv_term = f_filter(to_ret.first_deriv_term)
+    to_ret.second_deriv_term = f_filter(to_ret.second_deriv_term)
+    return to_ret
+    
+def filter_landscapes(landscapes,n_bins):
+    # zero everything; don't care about absolute offsets.
+    for l in landscapes:
+        l.q -= min(l.q)
+    min_v = 0
+    max_v = max([max(l.q) for l in landscapes])
+    bins = np.linspace(min_v,max_v,n_bins)
+    to_ret = [_filter_single_landscape(l,bins) for l in landscapes]
+    return to_ret
+
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
                                                  limit=None,
                                                  renormalize=False)
+    # only look at data with ~300nm/s
+    v_exp = 300e-9
+    raw_data = [r for r in raw_data 
+                if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
     raw_area_slices = [[] for _ in areas]
+    area_bounds = [get_area_bounds(raw_data,area) for area in areas]
+    # fix all the spring constants. XXX need to account for this...
+    mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant for r in raw_data])
+    for r in raw_data:
+        r.LowResData.meta.SpringConstant = mean_spring_constant
     for i,r in enumerate(raw_data):
         r.Force -= offset_N
         for j,area in enumerate(areas):
-           this_area = FEC_Util.slice_by_separation(r,*area.ext_bounds)
+           idx_0,idx_f = area_bounds[j][i]
+           s = slice(idx_0,idx_f,1)
+           this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
            raw_area_slices[j].append(this_area)
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 20
+    N_boostraps = 500
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
@@ -192,20 +255,26 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
                                                  force=False,
                                                  name_func=name_func)
+        # get the filtered version of the landscape, using the specified bin
+        # size 
+        filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)
         # make the object we want for this 'area' slice
-        to_ret.append(cacheable_data(iwt_tmp,heatmap_data))
+        to_ret.append(cacheable_data(filtered_iwt,*heatmap_data))
     return to_ret
     
 def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     # XXX ? digitize all the ids so we know what bin they fall into...
     X,Y = np.meshgrid(x_edges,y_edges)
+    X -= np.min(X)
     plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
         
 def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
                    label_deltaG = PlotUtilities.variable_string("\Delta G")):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
+    landscape_kcal_per_mol -= min(landscape_kcal_per_mol)
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
     extension_nm = data._extension_grid_nm
+    extension_nm -= min(extension_nm)
     extension_aa = data.amino_acids_per_nm() * extension_nm
     grad = lambda x: np.gradient(x)/(np.gradient(extension_aa))
     delta_landscape_kcal_per_mol_per_amino_acid = grad(landscape_kcal_per_mol)
@@ -294,22 +363,25 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     tick_kwargs = dict(axis='both',color='w',which='both')                                 
     ax_heat.tick_params(**tick_kwargs)                                         
     plt.xlim(xlim_fec)
-    PlotUtilities.no_x_label(ax_heat)    
     
-def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict()): 
+def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
+                          xlim=None): 
     """
     Creates a plot of
     """
     heatmap_data = data_to_plot.heatmap_data
     data_landscape = landscape_data(data_to_plot.landscape)
+        
     # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
     heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm(),
                  kw_heatmap=kw_heatmap)
-    xlim_fec = plt.xlim()
+    if (xlim is None):                 
+        xlim = plt.xlim()
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
-    plot_landscape(data_landscape,xlim_fec,kw_landscape=kw_landscape)
+    plot_landscape(data_landscape,xlim,kw_landscape=kw_landscape)
+    return ax_heat,ax_energy
 
 def landscape_kwargs():
     """
@@ -332,7 +404,7 @@ def make_detalied_plots(data_to_analyze,areas):
     kwargs = landscape_kwargs()
     for i,d in enumerate(data_to_analyze):
         fig = PlotUtilities.figure((3.25,5))     
-        create_landscape_plot(d,**(kwargs[i]))
+        ax = create_landscape_plot(d,xlim=[None,None],**(kwargs[i]))
         out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
         axis_func = lambda x: [x[0],x[2]]
         PlotUtilities.label_tom(fig,axis_func=axis_func)
@@ -442,16 +514,18 @@ def kwargs_labels():
             PlotUtilities.variable_string(second_deriv)]
             
 def plot_with_corrections(data):
-    ext_nm = data._extension_grid_nm   
+    ext_nm = data._extension_grid_nm.copy()
+    ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
-    energies = [data._grid_property(lambda x: x.free_energy_A * convert),
+    energies = [data._grid_property(lambda x: x.A_z * convert),
                 data._grid_property(lambda x: -1 * x.first_deriv_term * convert),
                 data._grid_property(lambda x: x.second_deriv_term* convert)]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
-    landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol                
+    landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol             
     for i,e in enumerate(energies):
-        plt.plot(ext_nm,np.mean(e,axis=0),label=labels[i],**kwargs[i])  
+        energy_rel = np.mean(e,axis=0)
+        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])  
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
@@ -462,6 +536,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_plot(heatmap_data,data.amino_acids_per_nm(),
                  kw_heatmap=kw['kw_heatmap'])
     xlim_fec = plt.xlim()
+    PlotUtilities.no_x_label(ax_heat)    
     ax_heat.set_ylim([0,150])
     PlotUtilities.no_x_label(ax_heat)
     PlotUtilities.no_y_label(ax_heat)   
@@ -494,11 +569,11 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     for i,text in enumerate(legend.get_texts()):
         plt.setp(text, color = kwargs_correction()[i]['color'])    
     # make the inset plot 
-    axins = zoomed_inset_axes(ax_correction, zoom=2, loc=2,
+    axins = zoomed_inset_axes(ax_correction, zoom=4, loc=2,
                               borderpad=0.8) 
     plot_with_corrections(data)
-    xlim_box = [17.3,26]
-    ylim_box = [-2,19]
+    xlim_box = [1,6]
+    ylim_box = [-3,15]
     plt.xlim(xlim_box)
     plt.ylim(ylim_box)
     PlotUtilities.no_x_anything(axins)
@@ -513,7 +588,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                            **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines                              
     fudge_x = dict(x=0,y=-0.5)
-    fudge_y = dict(x=-0.25,y=0.1)
+    fudge_y = dict(x=0,y=0.1)
     Scalebar.crossed_x_and_y_relative(0.82,0.48,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
@@ -569,11 +644,15 @@ def run():
     GenUtilities.ensureDirExists(flickering_dir)
     bin_size_meters = 0.2e-9
     # write down the areas we want to look at 
+    adhesion_min = 17e-9
+    ed_max = 32e-9
+    cd_max = 48e-9
+    a_max = 65e-9
     areas = [\
-        slice_area([18e-9,75e-9],"Full (no adhesion)"),
-        slice_area([18e-9,27e-9],"ED helical pair"),
-        slice_area([33e-9,50e-9],"CB helical pair"),
-        slice_area([50e-9,75e-9],"A helix"),
+        slice_area([adhesion_min,a_max],"Full (no adhesion)"),
+        slice_area([adhesion_min,ed_max],"Helix ED"),
+        slice_area([ed_max,cd_max],"Helix CB"),
+        slice_area([cd_max,a_max],"Helix A"),
         ]    
     for a in areas:
         a.set_num_bins_by_bin_in_meters(bin_size_meters)         
