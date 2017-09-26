@@ -18,6 +18,10 @@ from skimage.morphology import skeletonize
 from skimage import measure,img_as_uint
 from skimage.segmentation import active_contour
 import networkx as nx
+from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
+
+from sklearn.neighbors import NearestNeighbors
+from route.postman import single_chinese_postman_path
 
 class transform:
     def __init__(self,name,function,imshow_kw=dict(cmap=plt.cm.afmhot)):
@@ -204,14 +208,45 @@ def get_coordinate_path(coords):
     # graph (except the endpoint, where we only add its closest)
     # create a graph of all the pixels
     G = nx.Graph()
+    n_neightbors = 2
+    # sort the data so the endpoint is first?
+    print(endpoint)
+    sorted_idx = list(np.arange(endpoint,n_coords)) + \
+                 list(np.arange(0,endpoint))
+    sorted_idx= np.array(sorted_idx)
+    distances = distances[sorted_idx]
+    coords = coords[sorted_idx]
     for i in range(n_coords):
-        closest_nodes = np.argsort(distances[i])
-        # add the closest
-        G.add_edge(i,closest_nodes[0])
-        if (i != endpoint):
-            # also add the second closest for all 'interior' nodes...
-            G.add_edge(i,closest_nodes[1])
-    path = np.array(list(nx.dfs_preorder_nodes(G,endpoint)))
+        dist_tmp = distances[i]
+        closest_nodes = np.argsort(dist_tmp)
+        # add the closest N
+        j = 0
+        G.add_edge(i,closest_nodes[0],weight=1)
+        G.add_edge(i,closest_nodes[1],weight=1)
+    print("connectivity")
+    remove_all_but_one = list(nx.minimum_edge_cut(G))
+    for r in remove_all_but_one[:-1]:
+        g.remove_edge(*r)
+    print(nx.node_connectivity(G))
+    nx.draw(G)
+    plt.show()
+    graph,path = single_chinese_postman_path(G)
+    print(path,n_coords)
+    for i in range(len(path)):
+        print(len(set(path[:i])),i,n_coords)
+    """
+    see: 
+https://stackoverflow.com/questions/18794308/algorithm-to-cover-all-edges-given-starting-node
+
+https://networkx.github.io/documentation/networkx-1.9.1/reference/generated/networkx.algorithms.matching.max_weight_matching.html#networkx.algorithms.matching.max_weight_matching
+
+    also https://groups.google.com/forum/#!topic/networkx-discuss/NxbsY2dzkNk
+    
+    https://healthyalgorithms.com/2009/03/23/aco-in-python-minimum-weight-perfect-matchings-aka-matching-algorithms-and-reproductive-health-part-4/
+    """
+    coords_x = np.array(coords[:,0])
+    coords_y = np.array(coords[:,1])
+
     return coords[path]
 
 def snake_fit(image,initial,w_line=5,w_edge=0,max_px_move=1,beta=1,gamma=0.1):
@@ -249,11 +284,76 @@ def plot_fitting(image,coords,snake_coords=None):
     plt.imshow(image.T,origin='lower')
     plt.plot(coords[:,0],coords[:,1],',')
     plt.plot(endpoint_coord[0],endpoint_coord[1],'go')
-    plt.plot(coords[:,0],coords[:,1],'g-',alpha=0.3)
+    plt.plot(coords[:,0],coords[:,1],'r-',alpha=0.3)
     plt.xlim(min(coords[:,0])*0.8,max(coords[:,0]*1.1))
     plt.ylim(min(coords[:,1])*0.8,max(coords[:,1]*1.1))
     if (snake_coords is not None):
         plt.plot(snake_coords[:,0],snake_coords[:,1],'r.-',linewidth=0.3)
+
+def get_spline_obj(image,coords,fudge=3,k=3,smooth_f_n=2):
+    """
+    Returns:
+        tuple of 
+    """
+    n_coords = len(coords)
+    coords_x = coords[:,0]
+    coords_y = coords[:,1]
+    # threshold the image outside of the skeleton area of interest
+    image_thresh = copy.deepcopy(image)
+    zero_x_low = coords_x - fudge
+    zero_x_high = coords_x + fudge
+    zero_y_low = coords_y - fudge
+    zero_y_high = coords_y + fudge
+    # get a mask with ones in the region...
+    m_arr = np.zeros(image.height.shape)
+    for x_l,x_h,y_l,y_h in zip(zero_x_low,zero_x_high,
+                               zero_y_low,zero_y_high):
+        m_arr[x_l:x_h,y_l:y_h] = 1
+    image_thresh.height *= m_arr
+    where_non_zero_image_xy =np.where(image_thresh.height > 0)
+    where_non_zero_x,where_non_zero_y = where_non_zero_image_xy
+    """
+    # Essentially trying to parameterize a curve basd on the skeleton. see: 
+stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
+    also:
+stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
+stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
+    https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
+
+    ... also ...
+
+    https://stackoverflow.com/search?q=parametric+image+fit
+
+    especially:
+
+    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
+
+    and
+
+    stackoverflow.com/questions/22556381/approximating-data-with-a-multi-segment-cubic-bezier-curve-and-a-distance-as-wel/22582447#22582447
+    """
+    n_non_zero = where_non_zero_x.size
+    # get the projection of the data onto the skeleton
+    skel_idx = []
+    weights = []
+    for i,(x,y) in enumerate(zip(where_non_zero_x,where_non_zero_y)):
+        diff = np.sqrt((coords_x-x)**2 + (coords_y-y)**2)
+        closest_skeleton_idx = np.argmin(diff)
+        skel_idx.append(closest_skeleton_idx)
+        weights.append(image_thresh.height[x,y])
+    # sort the projection array by the distance along...
+    sort_idx = np.argsort(skel_idx)
+    sorted_image_x = where_non_zero_x[sort_idx]
+    sorted_image_y = where_non_zero_y[sort_idx]
+    f_excess = where_non_zero_y.size/len(coords_x)
+    # weight; sum by default is such that sum is M (being the size). use that
+    weights = np.array(weights)[sort_idx]
+    weights /= np.sum(weights)
+    weights *= weights.size
+    n_points = sorted_image_x.size
+    tck,_ = splprep([sorted_image_x,sorted_image_y],w=weights,per=0,
+                    s=f_excess*n_points*smooth_f_n,k=k,u=None,quiet=0)
+    return image_thresh,tck
 
 def run():
     """
@@ -293,66 +393,33 @@ def run():
     last_dir = tmp_dir
     # fit a spline to the original data using each of the connected
     # regions from the skeletonization 
-    image,skeleton = images[-1],last[-1]
-    regions = measure.regionprops(skeleton.height)
-    region = regions[0]
-    coords = get_coordinate_path(region.coords)
-    n_coords = len(coords)
-    binary_idx = 3 + 1
-    binary = all_transforms[binary_idx][-1]
-    image_thresh = copy.deepcopy(image)
-    image_thresh.height *= binary.height
-    fudge = 3
-    coords_x = coords[:,0]
-    coords_y = coords[:,1]
-    zero_x_low = coords_x - fudge
-    zero_x_high = coords_x + fudge
-    zero_y_low = coords_y - fudge
-    zero_y_high = coords_y + fudge
-    # get a mask with ones in the region...
-    m_arr = np.zeros(image.height.shape)
-    for x_l,x_h,y_l,y_h in zip(zero_x_low,zero_x_high,
-                               zero_y_low,zero_y_high):
-        m_arr[x_l:x_h,y_l:y_h] = 1
-    image_thresh.height *= m_arr
-    # relax the coordinates onto the actual data
-    snake_input = image_thresh
-    for w_edge in [0,-4,-16]:
-        for w_line in [1,4,16]:
-            for beta in [1e-2,1e-1,1]:
-                for max_px_move in [0.1,0.3,2]:
-                    for gamma in [1e-6,1e-4,1e-2]:
-                        fig = PlotUtilities.figure()
-                        snake_coords = snake_fit(image.height,initial=coords,
-                                                 beta=beta,
-                                                 max_px_move=max_px_move,
-                                                 w_edge=w_edge,
-                                                 w_line=w_line,
-                                                 gamma=gamma)
-                        plot_fitting(snake_input.height,coords,snake_coords)
-                        name = "{:.2g}_{:.2g}_{:.2g}_{:.2g}_{:.2g}".\
-                               format(w_edge,w_line,beta*100,max_px_move*100,
-                                      gamma*1e6)
-                        plt.plot(coords[:,0],coords[:,1])
-                        out_name = "{:s}_fit_{:s}.png".format(out_dir,name)
-                        PlotUtilities.savefig(fig,out_name)
-    """
-    # see: 
-stackoverflow.com/questions/31464345/fitting-a-closed-curve-to-a-set-of-points
-    also:
-stackoverflow.com/questions/32046582/spline-with-constraints-at-border/32421626#32421626
-stackoverflow.com/questions/36830942/reordering-image-skeleton-coordinates-to-make-interp1d-work-better
-    https://stackoverflow.com/questions/41659075/how-to-specify-the-number-of-knot-points-when-using-scipy-splprep
-    """
-    from scipy.interpolate import splprep, splev
-    fit_coords = np.array((coords_x,coords_y))
-    tck, u = splprep(fit_coords, per=0,u=None,s=np.sqrt(n_coords),task=0)
-    u_new = np.linspace(u.min(), u.max(), 1000)
-    x_new, y_new = splev(u_new, tck, der=0)
+    for image,skeleton in zip([images[-2]],[last[-2]]):
+        regions = measure.regionprops(skeleton.height)
+        region = regions[0]
+        coords = get_coordinate_path(region.coords)
+        unew = np.linspace(0,1,endpoint=True,num=10*max(coords.shape))
+        image_thresh,tck = get_spline_obj(image,coords)
+        out = splev(unew,tck)
+        out_x ,out_y = out[0],out[1]
+        min_x,max_x = min(out_x),max(out_x)
+        range_v = (max_x-min_x) * 0.2
+        xlim = lambda : plt.xlim([min_x-range_v,max_x+range_v])
+        ylim = lambda : plt.ylim([min(out_y)-range_v,max(out_y+range_v)])
+        plt.subplot(2,1,1)
+        plt.imshow(skeleton.height.T)
+        plt.plot(coords[:,0],coords[:,1],'r-')
+        xlim()
+        ylim()
+        plt.subplot(2,1,2)
+        plt.imshow(image_thresh.height.T)
+        plt.plot(out_x,out_y,'r-')
+        plt.plot(coords[0,0],coords[0,1],'go')
+        xlim()
+        ylim()
+        plt.show()
     fig = PlotUtilities.figure()
-    plot_fitting(snake_input,coords)
-    plt.plot(x_new, y_new, 'b')
-    plt.plot(coords_x, coords_y, 'g--')
+    plot_fitting(snake_input.height,coords)
+    plt.plot(interp_x(ind_sort), interp_y(ind_sort), 'r,')
     out_name = "{:s}_fit.png".format(out_dir)
     PlotUtilities.savefig(fig,out_name)
     exit(1)

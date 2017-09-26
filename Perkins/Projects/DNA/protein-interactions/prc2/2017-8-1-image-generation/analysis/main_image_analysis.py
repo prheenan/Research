@@ -8,14 +8,14 @@ from __future__ import unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt
 import sys,matplotlib,os,copy
-from skimage.segmentation import active_contour
 from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
 
 from GeneralUtil.python import GenUtilities,PlotUtilities
+from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
 
 class worm_object:
-    def __init__(self,x,y,text_file):
+    def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
         """
         object for keeping track of an x,y trace
         
@@ -23,8 +23,10 @@ class worm_object:
             x,y: thew coordinates 
             text_file: where this trace came from 
         """
-        self.x = x
-        self.y = y
+        self._x_raw = x
+        self._y_raw = y
+        self.spline_kwargs=spline_kwargs
+        self.x,self.y = spline_fit(x,y,**spline_kwargs)
         self.L0_pixels = get_contour_length(self.x,self.y)
         self.L0_meters = None
         self.file_name = text_file
@@ -92,6 +94,16 @@ class tagged_image:
         """
         return self._L0(self.traces_dna_only())
         
+
+def spline_fit(x,y,k=3,s=0,num=None):
+    if (num is None):
+        num = len(x) * 20
+    tck,_ = splprep([x,y],per=0,
+                    s=s,k=k,u=None)
+    u = np.linspace(0,1,num=num,endpoint=True)
+    out = splev(u,tck)
+    out_x ,out_y = out[0],out[1]
+    return out_x,out_y
 
 def get_x_and_y_arrays(text_file,size_images_pixels):
     """
@@ -178,7 +190,6 @@ def run():
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
     print_info(L0_dna,"only DNA")
     print_info(L0_protein,"DNA+PRC2")
-
     n_protein = (L0_protein).size
     n_dna = L0_dna.size
     fig = PlotUtilities.figure()            
