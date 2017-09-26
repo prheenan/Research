@@ -149,11 +149,9 @@ def get_heatmap_data(time_sep_force_arr,bins=(100,100)):
 
     
 def _get_landscapes(iwt_obj_subsets,n_bins):    
-    iwt_helix_data_tmp = \
-            [InverseWeierstrass.free_energy_inverse_weierstrass(objs)
-             for objs in iwt_obj_subsets]    
-    return iwt_helix_data_tmp             
-    
+    for objs in iwt_obj_subsets:
+        yield InverseWeierstrass.free_energy_inverse_weierstrass(objs)
+            
 def get_area_bounds(objs,area):
     z_0,z_1 = area.ext_bounds
     average_v = np.mean([r.Velocity for r in objs])    
@@ -225,7 +223,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 3
+    N_boostraps = 500
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
