@@ -22,7 +22,7 @@ def read_images_in_pxp_dir(dir,**kwargs):
 
 def cache_images_in_directory(pxp_dir,cache_dir,**kwargs):
     """
-    conveniewnce wrapper. See FEC_Util. cache_individual_waves_in_directory, 
+    conveniewnce wrapper. See FEC_Util.cache_individual_waves_in_directory, 
     except for images 
     """
     load_func = read_images_in_pxp_dir

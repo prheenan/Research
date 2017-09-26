@@ -38,8 +38,9 @@ def run():
         This is a description of what is returned.
     """
     base_dir = "./data/"
-    out_dir = "./out/"
-    cache_dir = "./cache/"
+    # put the images and in the cache in the same place...
+    cache_dir = base_dir + "./cache/"
+    out_dir = cache_dir
     GenUtilities.ensureDirExists(cache_dir)
     GenUtilities.ensureDirExists(out_dir)    
     images = ImageUtil.cache_images_in_directory(base_dir,cache_dir)
@@ -55,12 +56,14 @@ def run():
         ax.set_axis_off()
         fig.add_axes(ax)
         height_nm_rel = i.height_nm_rel()
-        vmin,vmax = np.percentile(height_nm_rel,[80,99.5])
+        height_nm_rel -= np.median(height_nm_rel)
+        vmin,vmax = [0.0,1]
         ax.imshow(height_nm_rel,cmap=plt.cm.Greys_r,vmin=vmin,vmax=vmax,
                   aspect='normal')
         size_microns = i.range_meters * 1e6                
         size_str = "_{:.2g}microns".format(size_microns)
-        save_name =out_dir + i.SourceFilename() + i.Name() + size_str + ".tiff"
+        save_name =out_dir + i.SourceFilename() + ".pxp_"+ i.Name() + \
+                    size_str + ".tiff"
         fig.savefig(save_name,dpi=dpi)
 
 

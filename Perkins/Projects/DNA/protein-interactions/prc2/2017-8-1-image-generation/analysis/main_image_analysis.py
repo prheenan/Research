@@ -140,8 +140,12 @@ def prh_hist(data,**hist_kw):
     counts,_,_ = plt.hist(data,**hist_kw)
     y = max(counts * 1.05)
     ax = plt.gca()
-    plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,meanline=True,
-                showmeans=True,flierprops=dict(color='k',markersize=1))                
+    try:
+        plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,meanline=True,
+                    showmeans=True,flierprops=dict(color='k',markersize=1))
+    except IndexError:
+        # not enough data 
+        pass
    
 def print_info(dist,name):
     print("For {:s}:".format(name))
@@ -160,8 +164,8 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    in_dir = "./in/"
-    out_dir = "./out/"
+    in_dir = "in/"
+    out_dir = "out/"
     ext = ".tiff"
     ext_text = ".txt"
     GenUtilities.ensureDirExists(out_dir)
