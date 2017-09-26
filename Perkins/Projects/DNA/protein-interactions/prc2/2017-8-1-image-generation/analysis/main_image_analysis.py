@@ -7,11 +7,11 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,matplotlib,os,copy
+import sys,matplotlib,os,copy,scipy
 from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
 
-from GeneralUtil.python import GenUtilities,PlotUtilities
+from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
 from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
 
 class worm_object:
@@ -26,8 +26,9 @@ class worm_object:
         self._x_raw = x
         self._y_raw = y
         self.spline_kwargs=spline_kwargs
-        self.x,self.y = spline_fit(x,y,**spline_kwargs)
-        self.L0_pixels = get_contour_length(self.x,self.y)
+        # XXX fix...
+        #self.x,self.y = spline_fit(x,y,**spline_kwargs)
+        #self.L0_pixels = get_contour_length(self.x,self.y)
         self.L0_meters = None
         self.file_name = text_file
     def set_meters_per_pixel(self,m_per_pixel):
@@ -48,7 +49,7 @@ class worm_object:
         return self.L0_meters       
 
 class tagged_image:
-    def __init__(self,image_path,worm_objects):
+    def __init__(self,image,worm_objects):
         """
         Grouping of an images and the associated traces on items
         
@@ -56,11 +57,12 @@ class tagged_image:
             image_path: the file name of the image
             worm_objects: list of worm_objects associated with this image
         """
-        self.image_path = image_path
-        self.image = plt.imread(self.image_path)
+        self.image = image
         self.worm_objects = worm_objects
         cond =  [w.has_dna_bound_protein for w in self.worm_objects]
-        assert len(cond) > 0 , "{:s} has no tagged data".format(image_path)
+        assert len(cond) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
+        for w in worm_objects:
+            spline_fit(self.image,w)
         # POST: as least something to look at 
         self.protein_idx = np.where(cond)[0]
         self.dna_only_idx = np.where(~np.array(cond))[0]
@@ -94,8 +96,69 @@ class tagged_image:
         """
         return self._L0(self.traces_dna_only())
         
-
-def spline_fit(x,y,k=3,s=0,num=None):
+def crop_slice(data,f=0.3):
+    v_min,v_max = min(data),max(data)
+    v_range = v_max-v_min
+    n_v = int(np.ceil(f * v_range))
+    v_low,v_high = max(0,v_min-n_v),v_max+n_v
+    return slice(int(v_low),int(v_high),1)
+        
+from skimage.morphology import skeletonize,medial_axis,dilation
+from skimage import measure
+        
+def spline_fit(image_obj,worm_object):
+    image = image_obj.height_nm_rel()
+    x = worm_object._x_raw
+    y = worm_object._y_raw
+    slice_x = crop_slice(x)
+    slice_y = crop_slice(y)
+    print(slice_x,slice_y)
+    # the matrix is transposed, so swap x and y
+    background_image = np.percentile(image,50)
+    image_cropped = image[slice_y,slice_x]
+    x_rel = x-slice_x.start
+    y_rel = y-slice_y.start
+    # threshold anything less than 0.2nM
+    image_thresh = image_cropped.copy()
+    image_thresh[np.where(image_thresh < background_image+0.2)] = 0 
+    # binarize the image
+    image_binary = image_thresh.copy()
+    image_binary[np.where(image_binary > 0)] = 1
+    print(image_binary.shape)
+    # skeletonize the image
+    image_skeleton = skeletonize(image_binary)
+    image_label = measure.label(image_skeleton,background=0)
+    props = measure.regionprops(image_label) 
+    diameters = [p.equivalent_diameter for p in props]
+    max_prop_idx = np.argmax(diameters)
+    largest_skeleton_props = props[max_prop_idx]
+    # zero out everything not the one we want 
+    skeleton_zeroed = np.zeros(image_cropped.shape)
+    # XXX 
+    # take the largest object in the view, zero everything else
+    # order the points in that object by the x-y point 
+    x_skel = largest_skeleton_props.coords[:,1]
+    y_skel = largest_skeleton_props.coords[:,0]
+    for x_tmp,y_tmp in zip(x_skel,y_skel):
+        skeleton_zeroed[x_tmp,y_tmp] = 1
+    # dilated skeleton; make it 'fat'
+    dilation_size = 3 
+    selem = np.ones((dilation_size,dilation_size))
+    skeleton_zeroed = dilation(skeleton_zeroed,selem=selem)
+    # mask the original data with the skeletonized one
+    image_single_region = skeleton_zeroed * image_cropped
+    xy_skel = np.array((x_skel,y_skel)).T
+    xy_rel = np.array((x_rel,y_rel)).T
+    # get the closest index for each skeleton point 
+    distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
+    closest_idx = np.argmin(distance_matrix,axis=0)
+    # 
+    plt.plot(x_skel[closest_idx],y_skel[closest_idx],'r-')
+    plt.plot(x_rel,y_rel,'b--')    
+    plt.imshow(image_single_region.T,origin='lower')
+    plt.show()
+        
+def _spline(x,y,k=3,s=0,num=None):
     if (num is None):
         num = len(x) * 20
     tck,_ = splprep([x,y],per=0,
@@ -166,7 +229,7 @@ def run():
     """
     in_dir = "in/"
     out_dir = "out/"
-    ext = ".tiff"
+    ext = ".pkl"
     ext_text = ".txt"
     GenUtilities.ensureDirExists(out_dir)
     image_files = GenUtilities.getAllFiles(in_dir,ext=ext)
@@ -177,14 +240,17 @@ def run():
     objs_all = []                        
     for file_name in image_files:
         file_no_ext = file_name.replace(ext,"")
-        these_text_files= [ t for t in text_files if str(file_no_ext) in str(t)]
+        file_no_number = file_no_ext.split("_")[0]
+        these_text_files= [ t for t in text_files 
+                            if str(file_no_number) in str(t)]
         objs_tmp = get_x_y_and_contour_lengths(these_text_files,
                                                size_images_pixels)
-        im = plt.imread(file_name)
+        image_obj = CheckpointUtilities.lazy_load(file_name)
+        im = image_obj.height_nm_rel()
         assert (im.shape[0] == im.shape[1]) 
         assert (im.shape[0] == size_images_pixels)
         # POST: dimensions are OK 
-        objs_all.append(tagged_image(file_name,objs_tmp))
+        objs_all.append(tagged_image(image_obj,objs_tmp))
     # POST: we have all the data. Go ahead and set the conversion factor
     for o in objs_all:
         for wlc in o.worm_objects:
