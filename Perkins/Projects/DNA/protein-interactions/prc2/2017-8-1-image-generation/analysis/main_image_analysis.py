@@ -105,7 +105,7 @@ def crop_slice(data,f=0.3):
         
 from skimage.morphology import skeletonize,medial_axis,dilation
 from skimage import measure
-from scipy.interpolate import griddata
+from scipy.interpolate import LSQUnivariateSpline
         
 def spline_fit(image_obj,worm_object):
     image = image_obj.height_nm_rel()
@@ -141,7 +141,7 @@ def spline_fit(image_obj,worm_object):
     for x_tmp,y_tmp in zip(x_skel,y_skel):
         skeleton_zeroed[x_tmp,y_tmp] = 1
     # dilated skeleton; make it 'fat'
-    dilation_size = 3 
+    dilation_size = 3
     selem = np.ones((dilation_size,dilation_size))
     skeleton_zeroed = dilation(skeleton_zeroed,selem=selem)
     # mask the original data with the skeletonized one
@@ -154,15 +154,14 @@ def spline_fit(image_obj,worm_object):
     distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
     closest_idx = np.argmin(distance_matrix,axis=1)
     # sort the pixels by where they are, relative to the trace index
-    sorted_idx = np.argsort(closest_idx)
-    print(closest_idx.size,x_region.size)
+    sorted_idx = np.argsort(closest_idx) 
     x_region_sorted = x_region[sorted_idx]
     y_region_sorted = y_region[sorted_idx]
     # fit a spline to all the pixels 
     x_spline,y_spline = _spline(x=x_region_sorted,y=y_region_sorted)
-    plt.plot(x_region_sorted,y_region_sorted,'r-')
+    plt.plot(x_region_sorted,y_region_sorted,'r.-')
     plt.plot(x_rel,y_rel,'b--')    
-    plt.plot(x_spline,y_spline,'r-')
+    plt.plot(x_spline,y_spline,'g-')
     plt.imshow(image_single_region.T,origin='lower')
     plt.show()
     
