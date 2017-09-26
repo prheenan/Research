@@ -15,11 +15,12 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 #### Arg 1: Description
 
 set -x
-python main_iwt.py \
-    -number_of_pairs 16 \
-    -number_of_bins  80 \
-    -f_one_half 10e-12 \
-    -fraction_velocity_fit 0.5 \
+python2 main_iwt.py\
+    -number_of_pairs 16\
+    -number_of_bins 80\
+    -f_one_half 10e-12\
+    -k_T 4.1e-21\
+    -velocity 20e-9\
     -flip_forces 0 \
     -file_input ./Examples/input.pxp \
     -file_output landscape.csv

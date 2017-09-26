@@ -23,7 +23,7 @@ class BoundsObj:
         self.force_one_half_N = force_one_half_N
 
 class TiltedLandscape:
-    def __init__(self,landscape,f_one_half_N=0,kT=4.1e-21,
+    def __init__(self,landscape,f_one_half_N=0,
                  extension_zero_m=0):
         """
         Creates a new tilted landscape object
@@ -35,10 +35,10 @@ class TiltedLandscape:
             extension_zero : the zero point of extension in meters, for tilting
         """
 
-        self.kT = kT
-        ext = landscape.Extensions - extension_zero_m
-        self.Landscape_kT =  landscape.EnergyLandscape/kT
-        self.Tilted_kT = self.Landscape_kT - (ext*f_one_half_N)/kT
+        self.kT = landscape.kT
+        ext = landscape.q - extension_zero_m
+        self.Landscape_kT =  landscape.G_0/self.kT
+        self.Tilted_kT = self.Landscape_kT - (ext*f_one_half_N)/self.kT
         landscape_ext_nm = ext * 1e9
         self.MinG = min(self.Landscape_kT)
         self.landscape_ext_nm = landscape_ext_nm

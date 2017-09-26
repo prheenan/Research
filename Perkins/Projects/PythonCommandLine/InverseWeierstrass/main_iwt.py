@@ -36,13 +36,12 @@ def parse_and_run():
     parser.add_argument('-f_one_half', metavar='f_one_half', type=float,
                         help='force at which half the pop is folded/unfolded',
                         **common)
-    help_vel = '[0,1] of the separation vs time to fit for the velocity'
-    parser.add_argument('-fraction_velocity_fit', 
-                        metavar='fraction_velocity_fit', type=float,
-                        help=help_vel,required=False,default=0.25)
     parser.add_argument('-k_T',metavar="k_T",type=float,
                         help="Boltzmann energy, in joules",
                         required=False,default=4.1e-21)
+    parser.add_argument('-z_0',metavar="z_0",type=float,
+                        help="Stage position offset from surface, in meters",
+                        required=False,default=0)
     parser.add_argument('-file_input',metavar="file_input",type=str,
                         help="path to the '.pxp' with the force, separation",
                         **common)
@@ -52,7 +51,7 @@ def parse_and_run():
                " present, then it is used to determing the velocity instead" +\
                " of fraction_velocity_fit"
     parser.add_argument('-velocity',metavar="velocity",type=float,default=0,
-                        help=vel_help,required=False)
+                        help=vel_help,required=True)
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
@@ -72,13 +71,15 @@ def parse_and_run():
                         format(in_file))
     # POST: have just one. Go ahead and break it up
     iwt_kwargs = dict(number_of_pairs=args.number_of_pairs,
-                      number_of_bins=args.number_of_bins,
-                      fraction_for_vel=args.fraction_velocity_fit,
-                      velocity=args.velocity,
+                      v=args.velocity,
                       flip_forces=args.flip_forces,
-                      kT=args.k_T)
+                      kT=args.k_T,
+                      z_0=args.z_0)
     LandscapeObj = WeierstrassUtil.iwt_ramping_experiment(RawData[0],
                                                           **iwt_kwargs)
+    # filter the landscape object 
+    LandscapeObj= WeierstrassUtil._bin_landscape(landscape_obj=LandscapeObj,
+                                                 n_bins=args.number_of_bins)
     # get the distance to the transition state etc
     all_landscape = [-np.inf,np.inf]    
     Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half)
