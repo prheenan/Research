@@ -105,6 +105,7 @@ def crop_slice(data,f=0.3):
         
 from skimage.morphology import skeletonize,medial_axis,dilation
 from skimage import measure
+from scipy.interpolate import griddata
         
 def spline_fit(image_obj,worm_object):
     image = image_obj.height_nm_rel()
@@ -148,19 +149,29 @@ def spline_fit(image_obj,worm_object):
     x_region,y_region = np.where(image_single_region > 0)
     xy_skel = np.array((x_region,y_region)).T
     xy_rel = np.array((x_rel,y_rel)).T
-    # get the closest index for each skeleton point 
+    # get the closest trace index (ie: 'hand picked' pixel')
+    # to each pixel in the data
     distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
-    closest_idx = np.argmin(distance_matrix,axis=0)
-    # 
-    print(closest_idx.size)
-    plt.plot(x_region[closest_idx],y_region[closest_idx],'r-')
+    closest_idx = np.argmin(distance_matrix,axis=1)
+    # sort the pixels by where they are, relative to the trace index
+    sorted_idx = np.argsort(closest_idx)
+    print(closest_idx.size,x_region.size)
+    x_region_sorted = x_region[sorted_idx]
+    y_region_sorted = y_region[sorted_idx]
+    # fit a spline to all the pixels 
+    x_spline,y_spline = _spline(x=x_region_sorted,y=y_region_sorted)
+    plt.plot(x_region_sorted,y_region_sorted,'r-')
     plt.plot(x_rel,y_rel,'b--')    
+    plt.plot(x_spline,y_spline,'r-')
     plt.imshow(image_single_region.T,origin='lower')
     plt.show()
+    
         
-def _spline(x,y,k=3,s=0,num=None):
+def _spline(x,y,k=3,s=None,num=None):
     if (num is None):
         num = len(x) * 20
+    if (s is None):
+        s = x.size*2
     tck,_ = splprep([x,y],per=0,
                     s=s,k=k,u=None)
     u = np.linspace(0,1,num=num,endpoint=True)
