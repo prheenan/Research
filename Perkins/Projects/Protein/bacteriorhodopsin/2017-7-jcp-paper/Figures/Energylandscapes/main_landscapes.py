@@ -190,7 +190,10 @@ def _filter_single_landscape(landscape_obj,bins):
     return to_ret
     
 def filter_landscapes(landscapes,n_bins):
-    min_v = min([min(l.q) for l in landscapes])
+    # zero everything; don't care about absolute offsets.
+    for l in landscapes:
+        l.q -= min(l.q)
+    min_v = 0
     max_v = max([max(l.q) for l in landscapes])
     bins = np.linspace(min_v,max_v,n_bins)
     to_ret = [_filter_single_landscape(l,bins) for l in landscapes]
