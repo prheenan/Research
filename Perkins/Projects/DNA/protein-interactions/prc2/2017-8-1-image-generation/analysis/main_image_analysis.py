@@ -112,7 +112,6 @@ def spline_fit(image_obj,worm_object):
     y = worm_object._y_raw
     slice_x = crop_slice(x)
     slice_y = crop_slice(y)
-    print(slice_x,slice_y)
     # the matrix is transposed, so swap x and y
     background_image = np.percentile(image,50)
     image_cropped = image[slice_y,slice_x]
@@ -124,7 +123,6 @@ def spline_fit(image_obj,worm_object):
     # binarize the image
     image_binary = image_thresh.copy()
     image_binary[np.where(image_binary > 0)] = 1
-    print(image_binary.shape)
     # skeletonize the image
     image_skeleton = skeletonize(image_binary)
     image_label = measure.label(image_skeleton,background=0)
@@ -147,13 +145,14 @@ def spline_fit(image_obj,worm_object):
     skeleton_zeroed = dilation(skeleton_zeroed,selem=selem)
     # mask the original data with the skeletonized one
     image_single_region = skeleton_zeroed * image_cropped
-    xy_skel = np.array((x_skel,y_skel)).T
+    x_region,y_region = np.where(image_single_region > 0)
+    xy_skel = np.array((x_region,y_region)).T
     xy_rel = np.array((x_rel,y_rel)).T
     # get the closest index for each skeleton point 
     distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
     closest_idx = np.argmin(distance_matrix,axis=0)
     # 
-    plt.plot(x_skel[closest_idx],y_skel[closest_idx],'r-')
+    plt.plot(x_region[closest_idx],y_region[closest_idx],'r-')
     plt.plot(x_rel,y_rel,'b--')    
     plt.imshow(image_single_region.T,origin='lower')
     plt.show()
