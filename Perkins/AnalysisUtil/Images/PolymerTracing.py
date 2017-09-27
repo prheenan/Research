@@ -19,6 +19,27 @@ from scipy.interpolate import LSQUnivariateSpline
 from skimage.segmentation import active_contour
 from skimage.filters import gaussian
 
+class spline_fit_obj(object):
+    # spline_fit_obj: class for holding all information about a given spline fit
+
+    class spline_info(object):
+        # holds low-level information on the actual fitting used
+        def __init__(self,u,tck,spline,deriv):
+            self.u = u
+            self.tck = tck
+            self.spline = spline
+            self.deriv = deriv
+    def __init__(self,L,cos_angle,Lp_nm,image_cropped,image_threshold,fit_xy,
+                 fit_spline):
+        self.Lp_nm=Lp_nm
+        self.cos_angle=cos_angle
+        self.L=L
+        self.image_cropped=image_cropped,
+        self.image_threshold=image_threshold
+        # fit_xy are the data which we fit to get Lp_nm
+        self.fit_xy = fit_xy
+        self.fit_spline= fit_spline
+
 class worm_object:
     def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
         """
@@ -64,7 +85,13 @@ class tagged_image:
         cond =  [w.has_dna_bound_protein for w in self.worm_objects]
         assert len(cond) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
         for w in worm_objects:
-            spline_fit(self.image,w)
+            tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
+            plt.subplot(2,1,1)
+            plt.plot(*tmp_fit.fit_xy,color='g',marker='o',linewidth=0.5)
+            plt.subplot(2,1,2)
+            plt.plot(*tmp_fit.fit_spline.spline)
+            plt.imshow(tmp_fit.image_threshold.T,origin='lower')
+            plt.show()
         # POST: as least something to look at 
         self.protein_idx = np.where(cond)[0]
         self.dna_only_idx = np.where(~np.array(cond))[0]
@@ -193,10 +220,8 @@ def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
     persistence_length = 1/coeffs
     return persistence_length,log_mean_angle,coeffs
 
-def spline_fit(image_obj,worm_object):
+def spline_fit(image_obj,x,y):
     image = image_obj.height_nm_rel()
-    x = worm_object._x_raw
-    y = worm_object._y_raw
     slice_x = crop_slice(x)
     slice_y = crop_slice(y)
     # the matrix is transposed, so swap x and y
@@ -211,8 +236,9 @@ def spline_fit(image_obj,worm_object):
     xy_rel = np.array((x_rel,y_rel)).T
     # fit a spline to r(t)=(x(t),y(t)) to the manually-tagged data
     u,tck,spline,deriv = _u_tck_spline_and_derivative(x_rel,y_rel)
-    x_spline,y_spline = spline
-    nm_per_px = (2e-6/512) * 1e9
+    assert image.shape[0] == image.shape[1] , \
+        "Non square image unsupported"
+    nm_per_px = (image_obj.range_meters/image.shape[0]) * 1e9
     cos_angle,flat_L0 = \
         angles_and_contour_lengths(spline,deriv,
                                    min_change_px=0,max_change_px=100/nm_per_px)
@@ -223,10 +249,13 @@ def spline_fit(image_obj,worm_object):
     L_nm = edges * nm_per_px
     Lp_nm,log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
-    predicted = np.polyval(coeffs,x=L_nm)
-    plt.plot(L_nm,log_mean_angle,'go',linewidth=0.5)
-    plt.plot(L_nm,predicted,'b--',linewidth=2)
-    plt.show()
+    fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
+    return  spline_fit_obj(Lp_nm=Lp_nm,cos_angle=cos_angle,L=L_nm,
+                           image_cropped=image_cropped,
+                           image_threshold=image_single_region,
+                           fit_xy=[L_nm,log_mean_angle],
+                           fit_spline=fit_spline_info)
+
 
 def angles_and_contour_lengths(spline,deriv,
                                min_change_px=0,max_change_px=np.inf):
