@@ -390,35 +390,35 @@ def make_detalied_plots(data_to_analyze,areas):
     kwargs = landscape_kwargs()
     for i,d in enumerate(data_to_analyze):
         fig = PlotUtilities.figure((3.25,5))     
-        ax = create_landscape_plot(d,xlim=[None,None],**(kwargs[i]))
+        ax = create_landscape_plot(d,xlim=None,**(kwargs[i]))
         out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
         axis_func = lambda x: [x[0],x[2]]
         PlotUtilities.label_tom(fig,axis_func=axis_func)
         PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))    
     
-def normalize_axes(ax_list,manual_min=None):
+def normalize_axes(ax_list,manual_min=None,fudge_f=0.0):
     """
     ensures all the y axes in ax_list have the same limits
     """
     max_ylim = np.max([ax.get_ylim() for ax in ax_list])
     min_ylim = np.min([ax.get_ylim() for ax in ax_list])
     range = max_ylim-min_ylim
-    fudge = range * 0.02
+    fudge = range * fudge_f
     min_v = min_ylim-fudge
     if (manual_min is not None):
         min_v = manual_min    
     for ax in ax_list:
-        ax.set_ylim([min_v,max_ylim+fudge])    
+        ax.set_ylim([min_v,max_ylim+fudge/2])    
     
 def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
     axs,first_axs,second_axs = [],[],[]
-    offset_y = 0.05
-    kw_scalebars = [dict(offset_x=0.5,offset_y=offset_y),
+    offset_y = 0.2
+    kw_scalebars = [dict(offset_x=0.35,offset_y=offset_y),
                     dict(offset_x=0.35,offset_y=offset_y),
-                    dict(offset_x=0.5,offset_y=offset_y)]
-    xlims = [ [None,None],[None,None],[None,59.1]    ]   
-    arrow_x = [0.55,0.5,0.60]
-    arrow_y = [0.60,0.6,0.5]
+                    dict(offset_x=0.35,offset_y=offset_y)]
+    xlims = [ [None,None],[None,None],[None,15]    ]   
+    arrow_x = [0.55,0.5,0.7]
+    arrow_y = [0.65,0.60,0.52]
     for i,(a,data) in enumerate(zip(helical_areas,helical_data)):
         kw_tmp = helical_kwargs[i]
         data_landscape = landscape_data(data.landscape)
@@ -448,8 +448,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
             PlotUtilities.no_x_label(ax_2)            
         PlotUtilities.title(a.plot_title,color=color)
     # make all the axes consistent            
-    normalize_axes(first_axs)
-    normalize_axes(second_axs)
+    normalize_axes(first_axs,fudge_f=0.05)
+    normalize_axes(second_axs,fudge_f=0.3)
     # determine where the min need to be for the zeros to be OK
     min_y,max_y = first_axs[0].get_ylim()
     normalized_zero = -min_y/(max_y-min_y)
@@ -526,7 +526,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     ax_heat.set_ylim([0,150])
     PlotUtilities.no_x_label(ax_heat)
     PlotUtilities.no_y_label(ax_heat)   
-    common_kw = dict(color='w')
+    fontsize_scalebar = 6 
+    common_kw = dict(color='w',fontsize=fontsize_scalebar)
     x_font,y_font = Scalebar.\
         font_kwargs_modified(x_kwargs=common_kw,
                              y_kwargs=common_kw)
@@ -539,14 +540,14 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
     jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.9,alpha=1.0,
-                                   font_color='w')
+                                   font_color='w',offset_bool=True)
     # # plot the energy landscape...
     ax_correction = plt.subplot(3,1,2)    
     plot_with_corrections(data)
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
     ax_correction.set_xlim(xlim_fec)            
-    offset_y_pedagogy = 0.40
+    offset_y_pedagogy = 0.35
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=offset_y_pedagogy)
     legend_font_size = 9                         
@@ -555,27 +556,27 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     for i,text in enumerate(legend.get_texts()):
         plt.setp(text, color = kwargs_correction()[i]['color'])    
     # make the inset plot 
-    axins = zoomed_inset_axes(ax_correction, zoom=4, loc=2,
+    axins = zoomed_inset_axes(ax_correction, zoom=3, loc=2,
                               borderpad=0.8) 
     plot_with_corrections(data)
-    xlim_box = [1,6]
-    ylim_box = [-3,15]
+    xlim_box = [1,5]
+    ylim_box = [-3,28]
     plt.xlim(xlim_box)
     plt.ylim(ylim_box)
     PlotUtilities.no_x_anything(axins)
     PlotUtilities.no_y_anything(axins)
     # add in scale bars
     kw_common = dict(line_kwargs=dict(linewidth=0.75,color='k'))
-    common_font_inset = dict(fontsize=6)
+    common_font_inset = dict(fontsize=fontsize_scalebar)
     x_kwargs = dict(verticalalignment='top',**common_font_inset)
     x_font,y_font = Scalebar.\
         font_kwargs_modified(x_kwargs=x_kwargs,
-                             y_kwargs=dict(horizontalalignment='left',
+                             y_kwargs=dict(horizontalalignment='right',
                                            **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines                              
     fudge_x = dict(x=0,y=-0.5)
     fudge_y = dict(x=0,y=0.1)
-    Scalebar.crossed_x_and_y_relative(0.82,0.48,ax=axins,
+    Scalebar.crossed_x_and_y_relative(0.55,0.66,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
                                                     fudge_text_pct=fudge_x,
@@ -595,7 +596,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                    plot_derivative=False,label_deltaG=" ")    
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
-                         offset_y=offset_y_pedagogy)
+                         offset_y=0.2)
     # add in the equation notation
     strings,colors = [],[]
     labels = kwargs_labels()
