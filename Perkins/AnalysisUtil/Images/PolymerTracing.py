@@ -30,8 +30,9 @@ class spline_fit_obj(object):
             self.spline = spline
             self.deriv = deriv
     def __init__(self,L,cos_angle,Lp_nm,image_cropped,image_threshold,fit_xy,
-                 fit_spline):
+                 fit_spline,L0_nm):
         self.Lp_nm=Lp_nm
+        self.L0_nm=L0_nm
         self.cos_angle=cos_angle
         self.L=L
         self.image_cropped=image_cropped,
@@ -217,7 +218,7 @@ def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
     log_mean_angle = -np.log(mean_cos_angle)
     # fit to -log<Cos(angle)> to edges_nm
     coeffs = np.polyfit(x=L,y=log_mean_angle,deg=1)
-    persistence_length = 1/coeffs
+    persistence_length = 1/coeffs[0]
     return persistence_length,log_mean_angle,coeffs
 
 def spline_fit(image_obj,x,y):
@@ -239,7 +240,7 @@ def spline_fit(image_obj,x,y):
     assert image.shape[0] == image.shape[1] , \
         "Non square image unsupported"
     nm_per_px = (image_obj.range_meters/image.shape[0]) * 1e9
-    cos_angle,flat_L0 = \
+    cos_angle,flat_L0,L0_px = \
         angles_and_contour_lengths(spline,deriv,
                                    min_change_px=0,max_change_px=100/nm_per_px)
     # do some checks to make sure the data are sensible
@@ -247,10 +248,11 @@ def spline_fit(image_obj,x,y):
     # POST: data are reasonable
     edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
     L_nm = edges * nm_per_px
+    L0_nm = L0_px * nm_per_px
     Lp_nm,log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
     fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
-    return  spline_fit_obj(Lp_nm=Lp_nm,cos_angle=cos_angle,L=L_nm,
+    return  spline_fit_obj(Lp_nm=Lp_nm,L0_nm=L0_nm,cos_angle=cos_angle,L=L_nm,
                            image_cropped=image_cropped,
                            image_threshold=image_single_region,
                            fit_xy=[L_nm,log_mean_angle],
@@ -284,6 +286,7 @@ def angles_and_contour_lengths(spline,deriv,
     d_spline = np.sqrt(dx_spline**2 + dy_spline**2)
     assert (dx_spline <= d_spline).all()
     contour_lengths = np.cumsum(d_spline)
+    L0 = contour_lengths[-1]
     n = x_spline.shape[0]
     contour_length_matrix = np.zeros((n,n))
     cos_angle_matrix = np.zeros((n,n))
@@ -305,7 +308,7 @@ def angles_and_contour_lengths(spline,deriv,
     # sort everything by L0...
     flat_L0 = flat_L0[sort_idx]
     cos_angle = sanit(cos_angle_matrix)[sort_idx]
-    return cos_angle,flat_L0
+    return cos_angle,flat_L0,L0
 
 def _spline_u_and_tck(x,y,k=3,s=None,num=None):
     """
