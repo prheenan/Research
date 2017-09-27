@@ -366,7 +366,11 @@ def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
         xlim = plt.xlim()
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
-    plot_landscape(data_landscape,xlim,kw_landscape=kw_landscape)
+    ax1,ax2 = plot_landscape(data_landscape,xlim,kw_landscape=kw_landscape)
+    normalize_and_set_zeros([ax1],[ax2])
+    ax1.set_xlim(xlim)
+    ax2.set_xlim(xlim)
+    ax_heat.set_xlim(xlim)
     return ax_heat,ax_energy
 
 def landscape_kwargs():
