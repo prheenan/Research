@@ -96,11 +96,8 @@ def run():
         assert (im.shape[0] == im.shape[1]) 
         assert (im.shape[0] == size_images_pixels)
         # POST: dimensions are OK 
-        objs_all.append(PolymerTracing.tagged_image(image_obj,objs_tmp))
-    # POST: we have all the data. Go ahead and set the conversion factor
-    for o in objs_all:
-        for wlc in o.worm_objects:
-            wlc.set_meters_per_pixel(conversion_meters_per_px)
+        img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_no_number)
+        objs_all.append(img)
     # POST: all the contour lengths are set in 'real' units ]  
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
@@ -136,11 +133,12 @@ def run():
     for obj in objs_all:
         # plot each image with all the traces overlayed
         fig = PlotUtilities.figure()        
-        plt.imshow(obj.image)
+        plt.imshow(obj.image.height_nm_rel())
         # plot each DNA trace
         for o in obj.worm_objects:
+            xy_abs = o.inf.x_y_abs
             color = "g" if o.has_dna_bound_protein else "r"
-            plt.plot(o.x,o.y,color=color,linewidth=0.25)
+            plt.plot(*xy_abs,color=color,linewidth=0.25)
         out_name = os.path.basename(obj.image_path)
         PlotUtilities.savefig(fig,out_dir + out_name + ".png")
 

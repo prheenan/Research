@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,scipy
+import sys,scipy,copy
 
 from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
 
@@ -43,14 +43,17 @@ class spline_fit_obj(object):
         self.fit_xy = fit_xy
         self.fit_spline= fit_spline
     @property
+    def x_y_rel(self):
+        return self.fit_spline.spline
+    @property
     def x_y_abs(self):
         """
         Returns: the x and y coordinates in the absolute, original image coords
         """
-        x_rel,y_rel = self.fit_spline.spline
+        x_rel,y_rel = self.x_y_rel
         return x_rel+self.x0,y_rel+self.y0
 
-class worm_object:
+class worm_object(object):
     def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
         """
         object for keeping track of an x,y trace
@@ -62,14 +65,12 @@ class worm_object:
         self._x_raw = x
         self._y_raw = y
         self.spline_kwargs=spline_kwargs
-        self.L0_meters = None
         self.file_name = text_file
-    def set_meters_per_pixel(self,m_per_pixel):
-        """
-        Sets the scale in meters/pixel to m_per_pixel. Needed for L0_meters
-        """
-        self.m_per_pixel = m_per_pixel
-        self.L0_meters = self.L0_pixels * self.m_per_pixel
+        self.inf = None
+    def assert_fit(self):
+        assert self.inf is not None
+    def set_spline_info(self,inf):
+        self.inf = inf
     @property
     def has_dna_bound_protein(self):
         """
@@ -78,12 +79,11 @@ class worm_object:
         return "protein" in self.file_name.lower()
     @property
     def L0(self):
-        assert self.L0_meters is not None
-        return self.L0_meters       
-
+        self.assert_fit()
+        return (self.inf.L0_nm * 1e-9)
 
 class tagged_image:
-    def __init__(self,image,worm_objects):
+    def __init__(self,image,worm_objects,file_no_number):
         """
         Grouping of an images and the associated traces on items
         
@@ -91,19 +91,14 @@ class tagged_image:
             image_path: the file name of the image
             worm_objects: list of worm_objects associated with this image
         """
+        self.image_path = file_no_number
         self.image = image
         self.worm_objects = worm_objects
         cond =  [w.has_dna_bound_protein for w in self.worm_objects]
         assert len(cond) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
         for w in worm_objects:
             tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
-            plt.subplot(2,1,1)
-            plt.plot(*tmp_fit.fit_xy,color='g',marker='o',linewidth=0.5)
-            plt.subplot(2,1,2)
-            x,y = tmp_fit.x_y_abs
-            plt.plot(x,y,color='r',linewidth=2)
-            plt.imshow(self.image.height_nm_rel())
-            plt.show()
+            w.set_spline_info(tmp_fit)
         # POST: as least something to look at 
         self.protein_idx = np.where(cond)[0]
         self.dna_only_idx = np.where(~np.array(cond))[0]
