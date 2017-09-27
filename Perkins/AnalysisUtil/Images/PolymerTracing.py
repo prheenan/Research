@@ -107,6 +107,19 @@ def crop_slice(data,f=0.3):
     return slice(int(v_low),int(v_high),1)
 
 def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
+    """
+    Returns: single-region of interest
+    
+    Args:
+        height_cropped_nm: image, elements are in nm
+        background_image: value considered the background for height_cropped_nm
+        thresold_nm: for thresholding, the minimum above the background
+        to be considered not noise
+
+    Returns:
+        image, same shape as height_cropped_nm. everything not in the largest
+        skeleton region is set to zero
+    """
     # threshold anything less than x nM
     image_thresh = height_cropped_nm.copy()
     image_thresh[np.where(image_thresh < background_image+threshold_nm)] = 0 
@@ -136,15 +149,31 @@ def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
     image_single_region = skeleton_zeroed * height_cropped_nm
     return image_single_region
 
-def get_mean_angle_vs_L(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
-    bins = np.linspace(0,max(flat_L0),num=n_bins)
-    mean_cos_angle,edges,_ = \
-        binned_statistic(x=flat_L0,values=cosine_of_angle,bins=bins)
+def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
+    """
+    Gets L and <cos(theta(L))>
+
+    Args:
+        cos_angle: length N, element i is angle between two segmens
+        L: length N, element i is contour length between same segments as 
+        cos_angle
+        
+        n_bins: we will average cos_angle in this many bins from its min to max
+       
+        min_cos_angle: we cant use when <cos(Theta)> <= 0,since that would go
+        negative when we take a log. So, only look where above this value
+
+    Returns:
+       tuple of L_[avg,j],<Cos(Theta_[avg,j])>, where j runs 0 to n_bins-1
+    """
+    bins = np.linspace(min(cos_angle),max(L),num=n_bins)
+    mean_cos_angle,edges,_ = binned_statistic(x=L,values=cos_angle,
+                                              bins=bins)
     # last edge is right bin
     edges = edges[:-1]
     # filter to the bins with at least f% of the total size
     f_min_size = 1/(bins.size)
-    values,_ = np.histogram(a=flat_L0,bins=bins)
+    values,_ = np.histogram(a=L,bins=bins)
     # only look at where cos(theta) is reasonable positive, otherwise we 
     # cant take a log. This amounts to only looking in the upper quarant 
     good_idx = np.where(mean_cos_angle > min_cos_angle)
@@ -173,13 +202,13 @@ def spline_fit(image_obj,worm_object):
     u,tck,spline,deriv = _u_tck_spline_and_derivative(x_rel,y_rel)
     x_spline,y_spline = spline
     nm_per_px = (2e-6/512) * 1e9
-    cosine_of_angle,flat_L0 = \
+    cos_angle,flat_L0 = \
         angles_and_contour_lengths(spline,deriv,
                                    min_change_px=0,max_change_px=100/nm_per_px)
     # do some checks to make sure the data are sensible
-    assert ((cosine_of_angle <= 1) & (cosine_of_angle >= -1)).all()
+    assert ((cos_angle <= 1) & (cos_angle >= -1)).all()
     # POST: data are reasonable
-    edges,mean_cos_angle = get_mean_angle_vs_L(cos_angle,L,n_bins=50)
+    edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
     edges_nm = edges*nm_per_px
     log_mean_angle = -np.log(mean_cos_angle)
     # fit to -log<Cos(angle)> to edges_nm
