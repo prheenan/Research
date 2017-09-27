@@ -182,6 +182,17 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     edges = sanit(edges)
     return edges,mean_cos_angle
 
+def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
+    """
+    Returns: the persistence length, -Log(<Cos(Theta(L))), and linear polynomial
+             coefficients for a given <Cos(Theta(L))>
+    """
+    log_mean_angle = -np.log(mean_cos_angle)
+    # fit to -log<Cos(angle)> to edges_nm
+    coeffs = np.polyfit(x=L,y=log_mean_angle,deg=1)
+    persistence_length = 1/coeffs
+    return persistence_length,log_mean_angle,coeffs
+
 def spline_fit(image_obj,worm_object):
     image = image_obj.height_nm_rel()
     x = worm_object._x_raw
@@ -209,14 +220,12 @@ def spline_fit(image_obj,worm_object):
     assert ((cos_angle <= 1) & (cos_angle >= -1)).all()
     # POST: data are reasonable
     edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
-    edges_nm = edges*nm_per_px
-    log_mean_angle = -np.log(mean_cos_angle)
-    # fit to -log<Cos(angle)> to edges_nm
-    coeffs = np.polyfit(x=edges_nm,y=log_mean_angle,deg=1)
-    persistence_length_nm,offset_nm = 1/coeffs,coeffs[1]
-    predicted = np.polyval(coeffs,x=edges_nm)
-    plt.plot(edges_nm,log_mean_angle,'go',linewidth=0.5)
-    plt.plot(edges_nm,predicted,'b--',linewidth=2)
+    L_nm = edges * nm_per_px
+    Lp_nm,log_mean_angle,coeffs = \
+        Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
+    predicted = np.polyval(coeffs,x=L_nm)
+    plt.plot(L_nm,log_mean_angle,'go',linewidth=0.5)
+    plt.plot(L_nm,predicted,'b--',linewidth=2)
     plt.show()
 
 def angles_and_contour_lengths(spline,deriv,
