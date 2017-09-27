@@ -14,6 +14,8 @@ sys.path.append("../../../../../../../../")
 from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
 from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
 
+from scipy.stats import binned_statistic
+
 class worm_object:
     def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
         """
@@ -135,7 +137,6 @@ def spline_fit(image_obj,worm_object):
     largest_skeleton_props = props[max_prop_idx]
     # zero out everything not the one we want 
     skeleton_zeroed = np.zeros(image_cropped.shape)
-    # XXX 
     # take the largest object in the view, zero everything else
     # order the points in that object by the x-y point 
     x_skel = largest_skeleton_props.coords[:,1]
@@ -157,34 +158,105 @@ def spline_fit(image_obj,worm_object):
     # to each pixel in the data
     distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
     closest_idx = np.argmin(distance_matrix,axis=1)
-    snake_input_image = gaussian(image_single_region,0.5)
-    min_v,max_v = np.min(snake_input_image),np.max(snake_input_image)
-    snake_input_image = (snake_input_image - min_v)/(max_v-min_v) 
-    print(np.max(snake_input_image),np.min(snake_input_image))
-    snake = active_contour(snake_input_image,w_line=1e9,w_edge=-1e15,bc='fixed',
-                           snake=xy_rel, alpha=1e-3, beta=1, gamma=1e-3,
-                           max_iterations=10e3)    
-    # sort the pixels by where they are, relative to the trace index
-    sorted_idx = np.argsort(closest_idx) 
-    x_region_sorted = x_region[sorted_idx]
-    y_region_sorted = y_region[sorted_idx]
-    N = x_region_sorted.size        
-    plt.plot(snake[:,0],snake[:,1])
-    plt.plot(xy_rel[:,0],xy_rel[:,1],color='g')
-    plt.imshow(snake_input_image.T)
+    # fit a spline to r(t)=(x(t),y(t)) to the manually-tagged data
+    spline,deriv = _spline_and_derivative(x_rel,y_rel)
+    x_spline,y_spline = spline
+    nm_per_px = (2e-6/512) * 1e9
+    cosine_of_angle,flat_L0 = \
+        angles_and_contour_lengths(spline,deriv,
+                                   min_change_px=0,max_change_px=100/nm_per_px)
+    # do some checks to make sure the data are sensible
+    assert ((cosine_of_angle <= 1) & (cosine_of_angle >= -1)).all()
+    # POST: data are reasonable
+    bins = np.linspace(0,max(flat_L0),num=50)
+    mean_cos_angle,edges,_ = \
+        binned_statistic(x=flat_L0,values=cosine_of_angle,bins=bins)
+    # last edge is right bin
+    edges = edges[:-1]
+    # filter to the bins with at least f% of the total size
+    f_min_size = 1/(1.5*bins.size)
+    values,_ = np.histogram(a=flat_L0,bins=bins)
+    # only look at where cos(theta) is reasonable positive, otherwise we 
+    # cant take a log. This amounts to only looking in the upper quarant 
+    good_idx = np.where(mean_cos_angle > np.exp(-2))
+    sanit = lambda x: x[good_idx]
+    mean_cos_angle = sanit(mean_cos_angle)
+    edges = sanit(edges)
+    edges_nm = edges*nm_per_px
+    log_mean_angle = -np.log(mean_cos_angle)
+    # fit to -log<Cos(angle)> to edges_nm
+    coeffs = np.polyfit(x=edges_nm,y=log_mean_angle,deg=1)
+    persistence_length_nm,offset_nm = 1/coeffs,coeffs[1]
+    predicted = np.polyval(coeffs,x=edges_nm)
+    plt.plot(edges_nm,log_mean_angle,'go',linewidth=0.5)
+    plt.plot(edges_nm,predicted,'b--',linewidth=2)
     plt.show()
 
-def _spline(x,y,k=3,s=None,num=None):
+def angles_and_contour_lengths(spline,deriv,
+                               min_change_px=0,max_change_px=np.inf):
+    """
+    gets Cos(Theta(i)) and L(i), where i runs along the spline order given,
+    and L is the contour length between segments chosen at index i
+
+    Args:
+        spline: tuple of x_spline,y_spline -- x and y values of the line, size N
+        deriv: the continuous derivative of spline, size N
+        <min/max>_change_px: the minimum and maximum pixel changes
+    Returns:
+        tuple of Cos(Theta(i)) and L(i) 
+    """
+    # get the x and y coordinates of the spline
+    x_spline,y_spline = spline
+    x_deriv,y_deriv = deriv
+    deriv_unit_vector = np.array((x_deriv,y_deriv))
+    deriv_unit_vector /= np.sqrt(np.sum(np.abs(deriv_unit_vector**2),axis=0))
+    assert ((np.sum(deriv_unit_vector**2,axis=0) -1) < 1e-6).all() , \
+        "Unit vectors not correct"
+    # POST: unit vector are normalized, |v| = 1
+    dx_spline = np.array([0] + list(np.diff(x_spline)))
+    dy_spline = np.array([0] + list(np.diff(y_spline)))
+    # d_spline(i) is the change from i-i to i (zero if i=0)
+    d_spline = np.sqrt(dx_spline**2 + dy_spline**2)
+    assert (dx_spline <= d_spline).all()
+    contour_lengths = np.cumsum(d_spline)
+    n = x_spline.shape[0]
+    contour_length_matrix = np.zeros((n,n))
+    cos_angle_matrix = np.zeros((n,n))
+    for i in range(n):
+        for j in range(i,n):
+            # only fill in the upper part of the matrix; avoid double-counting
+            contour_length_matrix[i,j] = contour_lengths[j] - contour_lengths[i]
+            # cos(theta_[a,b]) = (a . b)/(|a|*|b|) = (a . b)
+            # (for |a|=|b|=1)
+            cos_angle_tmp = np.dot(deriv_unit_vector[:,i],
+                                   deriv_unit_vector[:,j])
+            cos_angle_matrix[i,j] = cos_angle_tmp
+    # POST: matrix is fileld in, determine where the value are valid
+    ok_idx = np.where( (contour_length_matrix > min_change_px) &
+                       (contour_length_matrix < max_change_px))
+    sanit = lambda x: x[ok_idx].flatten()
+    flat_L0 = sanit(contour_length_matrix)
+    sort_idx = np.argsort(flat_L0)
+    # sort everything by L0...
+    flat_L0 = flat_L0[sort_idx]
+    cos_angle = sanit(cos_angle_matrix)[sort_idx]
+    return cos_angle,flat_L0
+
+def _spline_u_and_tck(x,y,k=3,s=None,num=None):
     if (num is None):
         num = len(x) * 20
     if (s is None):
-        s = x.size*2
+        s = 0
     tck,_ = splprep([x,y],per=0,
                     s=s,k=k,u=None)
     u = np.linspace(0,1,num=num,endpoint=True)
-    out = splev(u,tck)
-    out_x ,out_y = out[0],out[1]
-    return out_x,out_y
+    return u,tck
+
+def _spline_and_derivative(x,y,*kw):
+    u,tck = _spline_u_and_tck(x,y)
+    spline = splev(x=u,tck=tck,der=0)
+    deriv = splev(x=u,tck=tck,der=1)
+    return spline,deriv
 
 def get_x_and_y_arrays(text_file,size_images_pixels):
     """
