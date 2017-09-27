@@ -447,16 +447,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
             PlotUtilities.no_x_label(ax_1)
             PlotUtilities.no_x_label(ax_2)            
         PlotUtilities.title(a.plot_title,color=color)
-    # make all the axes consistent            
-    normalize_axes(first_axs,fudge_f=0.05)
-    normalize_axes(second_axs,fudge_f=0.3)
-    # determine where the min need to be for the zeros to be OK
-    min_y,max_y = first_axs[0].get_ylim()
-    normalized_zero = -min_y/(max_y-min_y)
-    min_y_second,max_y_second = second_axs[0].get_ylim()
-    # want f = 0-min/(max-min) --> min = f*max/(f-1)
-    needed_min = normalized_zero * max_y_second / (normalized_zero-1)
-    normalize_axes(second_axs,manual_min=needed_min)    
+    normalize_and_set_zeros(first_axs,second_axs)
     # after normalization, add in the scale bars 
     for i,(ax_1,ax_2) in enumerate(zip(first_axs,second_axs)):
         Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=5,ax=ax_2,
@@ -464,6 +455,17 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         PlotUtilities.no_x_label(ax_2)     
             
     
+def normalize_and_set_zeros(first_axs,second_axs,fudge_1=0.05,fudge_2=0.3):
+    # make all the axes consistent            
+    normalize_axes(first_axs,fudge_f=fudge_1)
+    normalize_axes(second_axs,fudge_f=fudge_2)
+    # determine where the min need to be for the zeros to be OK
+    min_y,max_y = first_axs[0].get_ylim()
+    normalized_zero = -min_y/(max_y-min_y)
+    min_y_second,max_y_second = second_axs[0].get_ylim()
+    # want f = 0-min/(max-min) --> min = f*max/(f-1)
+    needed_min = normalized_zero * max_y_second / (normalized_zero-1)
+    normalize_axes(second_axs,manual_min=needed_min)       
     
 def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     # skip the first one (the entire landscape )
