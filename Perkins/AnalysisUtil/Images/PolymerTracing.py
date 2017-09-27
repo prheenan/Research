@@ -31,9 +31,6 @@ class worm_object:
         self._x_raw = x
         self._y_raw = y
         self.spline_kwargs=spline_kwargs
-        # XXX fix...
-        #self.x,self.y = spline_fit(x,y,**spline_kwargs)
-        #self.L0_pixels = get_contour_length(self.x,self.y)
         self.L0_meters = None
         self.file_name = text_file
     def set_meters_per_pixel(self,m_per_pixel):
@@ -109,20 +106,10 @@ def crop_slice(data,f=0.3):
     v_low,v_high = max(0,v_min-n_v),v_max+n_v
     return slice(int(v_low),int(v_high),1)
 
-def spline_fit(image_obj,worm_object):
-    image = image_obj.height_nm_rel()
-    x = worm_object._x_raw
-    y = worm_object._y_raw
-    slice_x = crop_slice(x)
-    slice_y = crop_slice(y)
-    # the matrix is transposed, so swap x and y
-    background_image = np.percentile(image,50)
-    image_cropped = image[slice_y,slice_x]
-    x_rel = x-slice_x.start
-    y_rel = y-slice_y.start
-    # threshold anything less than 0.2nM
-    image_thresh = image_cropped.copy()
-    image_thresh[np.where(image_thresh < background_image+0.2)] = 0 
+def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
+    # threshold anything less than x nM
+    image_thresh = height_cropped_nm.copy()
+    image_thresh[np.where(image_thresh < background_image+threshold_nm)] = 0 
     # binarize the image
     image_binary = image_thresh.copy()
     image_binary[np.where(image_binary > 0)] = 1
@@ -134,7 +121,7 @@ def spline_fit(image_obj,worm_object):
     max_prop_idx = np.argmax(diameters)
     largest_skeleton_props = props[max_prop_idx]
     # zero out everything not the one we want 
-    skeleton_zeroed = np.zeros(image_cropped.shape)
+    skeleton_zeroed = np.zeros(image_thresh.shape)
     # take the largest object in the view, zero everything else
     # order the points in that object by the x-y point 
     x_skel = largest_skeleton_props.coords[:,1]
@@ -146,7 +133,23 @@ def spline_fit(image_obj,worm_object):
     selem = np.ones((dilation_size,dilation_size))
     skeleton_zeroed = dilation(skeleton_zeroed,selem=selem)
     # mask the original data with the skeletonized one
-    image_single_region = skeleton_zeroed * image_cropped
+    image_single_region = skeleton_zeroed * height_cropped_nm
+    return image_single_region
+
+def spline_fit(image_obj,worm_object):
+    image = image_obj.height_nm_rel()
+    x = worm_object._x_raw
+    y = worm_object._y_raw
+    slice_x = crop_slice(x)
+    slice_y = crop_slice(y)
+    # the matrix is transposed, so swap x and y
+    background_image = np.percentile(image,50)
+    image_cropped = image[slice_y,slice_x]
+    x_rel = x-slice_x.start
+    y_rel = y-slice_y.start
+    image_single_region = \
+        get_region_of_interest(height_cropped_nm=image_cropped,
+                               background_image=background_image)
     good_idx = np.where(image_single_region > 0)
     x_region,y_region = good_idx
     z_region = image_single_region[good_idx]
