@@ -30,9 +30,11 @@ class spline_fit_obj(object):
             self.spline = spline
             self.deriv = deriv
     def __init__(self,L,cos_angle,Lp_nm,image_cropped,image_threshold,fit_xy,
-                 fit_spline,L0_nm):
+                 fit_spline,L0_nm,x0,y0):
         self.Lp_nm=Lp_nm
         self.L0_nm=L0_nm
+        self.x0=x0
+        self.y0=y0
         self.cos_angle=cos_angle
         self.L=L
         self.image_cropped=image_cropped,
@@ -40,6 +42,13 @@ class spline_fit_obj(object):
         # fit_xy are the data which we fit to get Lp_nm
         self.fit_xy = fit_xy
         self.fit_spline= fit_spline
+    @property
+    def x_y_abs(self):
+        """
+        Returns: the x and y coordinates in the absolute, original image coords
+        """
+        x_rel,y_rel = self.fit_spline.spline
+        return x_rel+self.x0,y_rel+self.y0
 
 class worm_object:
     def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
@@ -72,6 +81,7 @@ class worm_object:
         assert self.L0_meters is not None
         return self.L0_meters       
 
+
 class tagged_image:
     def __init__(self,image,worm_objects):
         """
@@ -90,8 +100,9 @@ class tagged_image:
             plt.subplot(2,1,1)
             plt.plot(*tmp_fit.fit_xy,color='g',marker='o',linewidth=0.5)
             plt.subplot(2,1,2)
-            plt.plot(*tmp_fit.fit_spline.spline)
-            plt.imshow(tmp_fit.image_threshold.T,origin='lower')
+            x,y = tmp_fit.x_y_abs
+            plt.plot(x,y,color='r',linewidth=2)
+            plt.imshow(self.image.height_nm_rel())
             plt.show()
         # POST: as least something to look at 
         self.protein_idx = np.where(cond)[0]
@@ -165,8 +176,8 @@ def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
     skeleton_zeroed = np.zeros(image_thresh.shape)
     # take the largest object in the view, zero everything else
     # order the points in that object by the x-y point 
-    x_skel = largest_skeleton_props.coords[:,1]
-    y_skel = largest_skeleton_props.coords[:,0]
+    x_skel = largest_skeleton_props.coords[:,0]
+    y_skel = largest_skeleton_props.coords[:,1]
     for x_tmp,y_tmp in zip(x_skel,y_skel):
         skeleton_zeroed[x_tmp,y_tmp] = 1
     # dilated skeleton; make it 'fat'
@@ -228,8 +239,9 @@ def spline_fit(image_obj,x,y):
     # the matrix is transposed, so swap x and y
     background_image = np.percentile(image,50)
     image_cropped = image[slice_y,slice_x]
-    x_rel = x-slice_x.start
-    y_rel = y-slice_y.start
+    x0,y0 = slice_x.start,slice_y.start
+    x_rel = x-x0
+    y_rel = y-y0
     image_single_region = \
             get_region_of_interest(height_cropped_nm=image_cropped,
                                    background_image=background_image)
@@ -253,7 +265,7 @@ def spline_fit(image_obj,x,y):
         Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
     fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
     return  spline_fit_obj(Lp_nm=Lp_nm,L0_nm=L0_nm,cos_angle=cos_angle,L=L_nm,
-                           image_cropped=image_cropped,
+                           image_cropped=image_cropped,x0=x0,y0=y0,
                            image_threshold=image_single_region,
                            fit_xy=[L_nm,log_mean_angle],
                            fit_spline=fit_spline_info)
