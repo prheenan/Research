@@ -136,6 +136,23 @@ def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
     image_single_region = skeleton_zeroed * height_cropped_nm
     return image_single_region
 
+def get_mean_angle_vs_L(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
+    bins = np.linspace(0,max(flat_L0),num=n_bins)
+    mean_cos_angle,edges,_ = \
+        binned_statistic(x=flat_L0,values=cosine_of_angle,bins=bins)
+    # last edge is right bin
+    edges = edges[:-1]
+    # filter to the bins with at least f% of the total size
+    f_min_size = 1/(bins.size)
+    values,_ = np.histogram(a=flat_L0,bins=bins)
+    # only look at where cos(theta) is reasonable positive, otherwise we 
+    # cant take a log. This amounts to only looking in the upper quarant 
+    good_idx = np.where(mean_cos_angle > min_cos_angle)
+    sanit = lambda x: x[good_idx]
+    mean_cos_angle = sanit(mean_cos_angle)
+    edges = sanit(edges)
+    return edges,mean_cos_angle
+
 def spline_fit(image_obj,worm_object):
     image = image_obj.height_nm_rel()
     x = worm_object._x_raw
@@ -148,17 +165,10 @@ def spline_fit(image_obj,worm_object):
     x_rel = x-slice_x.start
     y_rel = y-slice_y.start
     image_single_region = \
-        get_region_of_interest(height_cropped_nm=image_cropped,
-                               background_image=background_image)
+            get_region_of_interest(height_cropped_nm=image_cropped,
+                                   background_image=background_image)
     good_idx = np.where(image_single_region > 0)
-    x_region,y_region = good_idx
-    z_region = image_single_region[good_idx]
-    xy_skel = np.array((x_region,y_region)).T
     xy_rel = np.array((x_rel,y_rel)).T
-    # get the closest trace index (ie: 'hand picked' pixel')
-    # to each pixel in the data
-    distance_matrix = scipy.spatial.distance_matrix(xy_skel,xy_rel)
-    closest_idx = np.argmin(distance_matrix,axis=1)
     # fit a spline to r(t)=(x(t),y(t)) to the manually-tagged data
     u,tck,spline,deriv = _u_tck_spline_and_derivative(x_rel,y_rel)
     x_spline,y_spline = spline
@@ -169,20 +179,7 @@ def spline_fit(image_obj,worm_object):
     # do some checks to make sure the data are sensible
     assert ((cosine_of_angle <= 1) & (cosine_of_angle >= -1)).all()
     # POST: data are reasonable
-    bins = np.linspace(0,max(flat_L0),num=50)
-    mean_cos_angle,edges,_ = \
-        binned_statistic(x=flat_L0,values=cosine_of_angle,bins=bins)
-    # last edge is right bin
-    edges = edges[:-1]
-    # filter to the bins with at least f% of the total size
-    f_min_size = 1/(1.5*bins.size)
-    values,_ = np.histogram(a=flat_L0,bins=bins)
-    # only look at where cos(theta) is reasonable positive, otherwise we 
-    # cant take a log. This amounts to only looking in the upper quarant 
-    good_idx = np.where(mean_cos_angle > np.exp(-2))
-    sanit = lambda x: x[good_idx]
-    mean_cos_angle = sanit(mean_cos_angle)
-    edges = sanit(edges)
+    edges,mean_cos_angle = get_mean_angle_vs_L(cos_angle,L,n_bins=50)
     edges_nm = edges*nm_per_px
     log_mean_angle = -np.log(mean_cos_angle)
     # fit to -log<Cos(angle)> to edges_nm
