@@ -33,11 +33,14 @@ class spline_info(object):
 
 class polymer_info(object):
     # holds low-level information about the polymer itself
-    def __init__(self,L_m,cos_angle,Lp_m,L0_m):
+    def __init__(self,L_m,cos_angle,Lp_m,L0_m,L_binned,cos_angle_binned,coeffs):
         self.L_m = L_m
         self.cos_angle = cos_angle
         self.Lp_m = Lp_m
         self.L0_m = L0_m
+        self.L_binned = L_binned
+        self.cos_angle_binned = cos_angle_binned
+        self.coeffs = coeffs
 
 class spline_fit_obj(object):
     # spline_fit_obj: class for holding all information about a given spline fit
@@ -106,6 +109,16 @@ class worm_object(object):
         """
         self.assert_fit()
         return (self.inf.L0_m)
+    @property
+    def L_and_cos_angles(self):
+        """
+        Returns: the contour lengths, L(i) and cos(angle(L(i)))
+        """
+        self.assert_fit()
+        L = self.inf.polymer_info_obj.L_m
+        cos_angles = self.inf.polymer_info_obj.cos_angle
+        return L,cos_angles
+    
 
 class tagged_image:
     def __init__(self,image,worm_objects,file_no_number):
@@ -154,10 +167,22 @@ class tagged_image:
         Returns the persistence length of the given subset 
         """
         return self._subset_f(lambda s: s.Lp,subset)
+    def _L_and_cos_angle(self,subset):
+        """
+        Returns: the concatenatation of all L and Cos(Theta(L)) for this subset
+        """
+        L_and_angles = self._subset_f(lambda s: s.L_and_cos_angles,subset)
+        return sorted_concatenated_x_and_y_lists(L_and_angles)
     def _f_dna_protein(self,f):
-        return f(self.traces_dna_protein())
+        return f(self.dna_protein_subset)
     def _f_dna_only(self,f):
-        return f(self.traces_dna_only())
+        return f(self.dna_subset)
+    @property
+    def dna_subset(self):
+        return self.traces_dna_only()
+    @property
+    def dna_protein_subset(self):
+        return self.traces_dna_protein()
     def L0_protein_dna(self):
         """
         Returns: the contour length, in meters, of the traces on DNA-protein 
@@ -171,6 +196,19 @@ class tagged_image:
         """
         return self._f_dna_only(self._L0)
         
+def sorted_concatenated_x_and_y_lists(x_y):
+    """
+    Args:
+        x_y: list, each element is x,y
+    Returns: 
+        tuple of concatenated x, concatenated y
+    """
+    cat = lambda i: np.concatenate([x[i] for x in x_y])
+    x = cat(0)
+    y = cat(1)
+    # sort by contour length
+    sort_idx = np.argsort(x)
+    return x[sort_idx],y[sort_idx]    
 
 def crop_slice(data,f=1):
     v_min,v_max = min(data),max(data)
@@ -241,7 +279,7 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     Returns:
        tuple of L_[avg,j],<Cos(Theta_[avg,j])>, where j runs 0 to n_bins-1
     """
-    bins = np.linspace(min(cos_angle),max(L),num=n_bins)
+    bins = np.linspace(min(L),max(L),num=n_bins)
     mean_cos_angle,edges,_ = binned_statistic(x=L,values=cos_angle,
                                               bins=bins)
     # last edge is right bin
@@ -273,6 +311,17 @@ def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
     return persistence_length,log_mean_angle,coeffs
 
 def spline_fit(image_obj,x,y):
+    """
+    Returns an instance of spline_fit_obj applied to x,y trace coords
+    of image_obj
+
+    Args:
+        image_obj: e.g. PxpLoader.SurfaceImage
+        x,y : the x and y coordinates of the area of interst on image_obj
+
+    Returns:
+        spline_fit_obj
+    """
     image = image_obj.height_nm_rel()
     slice_x = crop_slice(x)
     slice_y = crop_slice(y)
@@ -295,25 +344,57 @@ def spline_fit(image_obj,x,y):
     cos_angle,flat_L0,L0_px = \
         angles_and_contour_lengths(spline,deriv,
                                    min_change_px=0,
-                                   max_change_px=100e-9/m_per_px)
+                                   max_change_px=200e-9/m_per_px)
     # POST: cos_angle and flat_L0 and reasonable
     edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
-    L_m = edges * m_per_px
+    L_m = flat_L0 * m_per_px
+    L_binned_m = edges * m_per_px
     L0_m = L0_px * m_per_px
-    Lp_m,log_mean_angle,_ = \
-        Lp_log_mean_angle_and_coeffs(L_m,mean_cos_angle)
+    Lp_m,log_mean_angle,coeffs = \
+        Lp_log_mean_angle_and_coeffs(L_binned_m,mean_cos_angle)
     # do some data checking.        
     assert L0_m > 0 , "L0 must be positive"
     assert Lp_m > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
     fit_spline_info = spline_info(u,tck,spline,deriv,x0_px=x0, y0_px=y0)
     polymer_info_obj =polymer_info(L_m=L_m, cos_angle=cos_angle,
-                                   Lp_m=Lp_m,L0_m=L0_m)
+                                   Lp_m=Lp_m,L0_m=L0_m,L_binned = L_binned_m,
+                                   cos_angle_binned = mean_cos_angle,
+                                   coeffs=coeffs)
     return  spline_fit_obj(image_cropped=image_cropped,
                            image_threshold=image_single_region,
                            polymer_info_obj=polymer_info_obj,
                            fit_spline=fit_spline_info)
 
+def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
+    """
+    from an ensemble of tagged images, determines the persistence length,
+    given all of their data
+
+    Args:
+        objs_all: list, each element is a TaggedImage instance
+        <min/max>_m: the minimum and maximum region to fit (default: fits
+        all valid data,where <cos(theta)> 0)
+
+    Returns:
+        instance of polymer_info_obj, applied to the ensemble represented by
+        objs_all
+    """
+    L_and_angles = [o._L_and_cos_angle(subset=o.dna_subset) for o in objs_all]
+    # concatenate all the angles and L0
+    L,angles = sorted_concatenated_x_and_y_lists(L_and_angles)
+    L_binned_m,mean_angle_binned = \
+        get_L_and_mean_angle(angles, L, n_bins=n_bins,min_cos_angle=0)
+    good_idx = np.where( (L_binned_m >= min_m) & (L_binned_m <= max_m))
+    L_binned = L_binned_m[good_idx]
+    mean_angle_binned = mean_angle_binned[good_idx]
+    Lp_m, log_mean_angle,coeffs = \
+        Lp_log_mean_angle_and_coeffs(L_binned, mean_angle_binned)
+    polymer_info_obj = polymer_info(L_m=L, cos_angle=angles,
+                                    Lp_m=Lp_m,L0_m=None,L_binned = L_binned_m,
+                                    cos_angle_binned=mean_angle_binned,
+                                    coeffs = coeffs)
+    return polymer_info_obj
 
 def angles_and_contour_lengths(spline,deriv,
                                min_change_px=0,max_change_px=np.inf):
