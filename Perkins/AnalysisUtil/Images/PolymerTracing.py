@@ -327,8 +327,22 @@ def angles_and_contour_lengths(spline,deriv,
     n = x_spline.shape[0]
     contour_length_matrix = _difference_matrix(contour_lengths,contour_lengths)
     cos_angle_matrix = _dot_matrix(deriv_unit_vector.T,deriv_unit_vector.T)
+    cos_angle_matrix = np.maximum(-1,cos_angle_matrix)
+    cos_angle_matrix = np.minimum(1,cos_angle_matrix)
+    # only look at the upper triangular part
+    idx_upper_tri = np.triu_indices(n)
+    idx_upper_tri_no_diag =np.triu_indices(n,k=1)
+    # angle should be finite, between -1 and 1
+    assert ((cos_angle_matrix >= -1) & \
+            (cos_angle_matrix <= 1) & \
+            (np.isfinite(cos_angle_matrix))).all()
+    # upper diagonal should have >0 contour length
+    assert (contour_length_matrix[idx_upper_tri_no_diag] > 0).all() , \
+        "Contour lengths should be positive"
+    # POST: contour lengths[i,j] make sense for j>=i, which is what we want
+    contour_length_matrix = contour_length_matrix[idx_upper_tri]
+    cos_angle_matrix = cos_angle_matrix[idx_upper_tri]
     # do some data checking
-    assert np.isfinite(cos_angle_matrix).all()
     # POST: matrix is fileld in, determine where the value are valid
     ok_idx = np.where( (contour_length_matrix > min_change_px) &
                        (contour_length_matrix < max_change_px))
@@ -378,9 +392,9 @@ def _difference_matrix(v1,v2):
     Args:
         v<1/2>: the two vectors to subtract, size n and m
     Returns:
-        matrix, size n X m, element i is v1[i]-v2[j]
+        matrix, size n X m, element i,j  is v1[j]-v2[i]
     """
-    return v1[:,np.newaxis] - v2
+    return (v2 - v1[:,np.newaxis])
 
 def _dot_matrix(v1,v2):
     """

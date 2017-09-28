@@ -26,8 +26,7 @@ def _single_difference_test(v1=np.random.rand(500),v2=np.random.rand(500)):
     expected = np.zeros((n,m))
     for i in range(n):
         for j in range(m):
-            # only fill in the upper part of the matrix; avoid double-counting
-            expected[i,j] = v1[i]-v2[j]
+            expected[i,j] = v2[j]-v1[i]
     diff = PolymerTracing._difference_matrix(v1,v2)
     np.testing.assert_allclose(diff,expected)
 
