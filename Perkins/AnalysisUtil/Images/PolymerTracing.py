@@ -231,12 +231,16 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     # filter to the bins with at least f% of the total size
     f_min_size = 1/(bins.size)
     values,_ = np.histogram(a=L,bins=bins)
+    bins_with_data = np.where(values > 0)
+    mean_cos_angle = mean_cos_angle[bins_with_data]
+    edges = edges[bins_with_data]
     # only look at where cos(theta) is reasonable positive, otherwise we 
     # cant take a log. This amounts to only looking in the upper quad
-    good_idx = np.where( (mean_cos_angle > min_cos_angle) )
+    good_idx = np.where((mean_cos_angle > min_cos_angle))
     sanit = lambda x: x[good_idx]
     mean_cos_angle = sanit(mean_cos_angle)
     edges = sanit(edges)
+    assert edges.size > 0 , "Couldn't find data to fit"
     return edges,mean_cos_angle
 
 def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
@@ -283,7 +287,7 @@ def spline_fit(image_obj,x,y):
         Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
     # do some data checking.        
     assert L0_nm > 0 , "L0 must be positive"
-    #assert Lp_nm > 0 , "Lp must be positive"
+    assert Lp_nm > 0 , "Lp must be positive"
     fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
     return  spline_fit_obj(Lp_nm=Lp_nm,L0_nm=L0_nm,cos_angle=cos_angle,L=L_nm,
                            image_cropped=image_cropped,x0=x0,y0=y0,
@@ -321,17 +325,8 @@ def angles_and_contour_lengths(spline,deriv,
     contour_lengths = np.cumsum(d_spline)
     L0 = contour_lengths[-1]
     n = x_spline.shape[0]
-    contour_length_matrix = np.zeros((n,n))
-    cos_angle_matrix = np.zeros((n,n))
-    for i in range(n):
-        for j in range(i,n):
-            # only fill in the upper part of the matrix; avoid double-counting
-            contour_length_matrix[i,j] = contour_lengths[j] - contour_lengths[i]
-            # cos(theta_[a,b]) = (a . b)/(|a|*|b|) = (a . b)
-            # (for |a|=|b|=1)
-            cos_angle_tmp = np.dot(deriv_unit_vector[:,i],
-                                   deriv_unit_vector[:,j])
-            cos_angle_matrix[i,j] = cos_angle_tmp
+    contour_length_matrix = _difference_matrix(contour_lengths,contour_lengths)
+    cos_angle_matrix = _dot_matrix(deriv_unit_vector.T,deriv_unit_vector.T)
     # do some data checking
     assert np.isfinite(cos_angle_matrix).all()
     # POST: matrix is fileld in, determine where the value are valid
@@ -357,7 +352,7 @@ def _spline_u_and_tck(x,y,k=3,s=None,num=None):
         tuple of <u,tck>, where tck is needed for (e.g.) splev
     """
     if (num is None):
-        num = len(x) * 3
+        num = len(x) * 10
     if (s is None):
         s = 0
     tck,_ = splprep([x,y],per=0,
@@ -377,3 +372,21 @@ def _u_tck_spline_and_derivative(x,y,*kw):
     spline = splev(x=u,tck=tck,der=0)
     deriv = splev(x=u,tck=tck,der=1)
     return u,tck,spline,deriv
+
+def _difference_matrix(v1,v2):
+    """
+    Args:
+        v<1/2>: the two vectors to subtract, size n and m
+    Returns:
+        matrix, size n X m, element i is v1[i]-v2[j]
+    """
+    return v1[:,np.newaxis] - v2
+
+def _dot_matrix(v1,v2):
+    """
+    Args:
+        see _difference_matrix
+    Returns:
+        matrix M, where element i,j is v1[i] . v2[j]
+    """
+    return np.dot(v1,v2.T)
