@@ -12,8 +12,8 @@ import sys
 
 sys.path.append("../../../../../../../../")
 sys.path.append("../")
-import jcp_fig_util
-
+import jcp_fig_util,GenerateLandscapes
+from GenerateLandscapes import slice_area,cacheable_data,landscape_data
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 from GeneralUtil.python.Plot import Scalebar,Annotations 
@@ -31,102 +31,6 @@ import copy
 from matplotlib import gridspec
 import scipy
 
-class cacheable_data:
-    def __init__(self,landscape,heatmap_data,heatmap_data_z):
-        self.landscape = landscape
-        self.heatmap_data = heatmap_data
-        self.heatmap_data_z = heatmap_data_z
-
-class slice_area:
-    def __init__(self,ext_bounds,plot_title):
-        self.ext_bounds = ext_bounds
-        self.plot_title = plot_title
-        self.n_bins = None
-    def set_num_bins_by_bin_in_meters(self,bin_size_meters):
-        self.n_bins = \
-            int(np.ceil(abs(np.diff(self.ext_bounds))/bin_size_meters))
-    @property
-    def save_name(self):
-        return self.plot_title.replace(" ","_") + ".pkl"
-        
-        
-class landscape_data:
-    def __init__(self,landscape_objs,kT=4.1e-21):
-        self.landscape_objs = landscape_objs
-        self.kT = 4.1e-21
-    @property        
-    def _extension_grid_nm(self):
-        # get the extensions...
-        ext_nm = self._extensions_nm        
-        # get the absolute min and max
-        min_all = np.max([min(e) for e in ext_nm])
-        max_all = np.min([max(e) for e in ext_nm])
-        # get the grid to interpolate onto
-        grid = np.linspace(min_all,max_all,num=len(ext_nm[0]),endpoint=True)   
-        return grid   
-    def from_Joules_to_kcal_per_mol(self):
-        return IWT_Util.kT_to_kcal_per_mol() * (1/self.kT)
-    def _raw_uninterpolared_landscapes_kcal_per_mol(self,l):
-        return l.G_0 * self.from_Joules_to_kcal_per_mol()
-    def _grid_property(self,property_func):
-        grid = self._extension_grid_nm
-        # get the raw data
-        raw_y = [property_func(o) for o in self.landscape_objs]
-        return grid_interpolate_arrays(self._extensions_nm,raw_y,grid)
-    @property                
-    def _landscapes_kcal_per_mol(self):
-        """
-        get the landscapes in kcal per mol 
-        """
-        func = self._raw_uninterpolared_landscapes_kcal_per_mol
-        return self._grid_property(func)
-    @property                        
-    def _extensions_nm(self):
-        return [l.q * 1e9 for l in self.landscape_objs]
-    def amino_acids_per_nm(self):
-        return 3     
-    @property
-    def _delta_landscapes_kcal_per_mol_per_AA(self):
-        
-        dy_kcal_mol = [np.gradient(y,**self.mean_std_opt()) 
-                       for y in self._landscapes_kcal_per_mol]
-        ext_nm = self._extensions_nm                   
-        dx_nm = [np.gradient(x) for x in ext_nm]
-        dx_aa = [d * self.amino_acids_per_nm() for d in dx_nm]
-        # get the individual gradients
-        gradients_per_aa = [(dy_i/(dx_i))  
-                            for dy_i,dx_i in zip(dy_kcal_mol,dx_aa)]
-        grid_x = self._extension_grid_nm                            
-        to_ret =  grid_interpolate_arrays(ext_nm,gradients_per_aa,grid_x)
-        return to_ret 
-    def mean_std_opt(self):
-        return dict(axis=0)
-    @property        
-    def mean_landscape_kcal_per_mol(self):
-        # get the landscapes, XXX need to interpolate back onto uniform grid. 
-        return np.mean(self._landscapes_kcal_per_mol,**self.mean_std_opt())
-    @property                
-    def std_landscape_kcal_per_mol(self):
-        return np.std(self._landscapes_kcal_per_mol,**self.mean_std_opt())
-    @property        
-    def mean_delta_landscape_kcal_per_mol_per_AA(self):
-        return np.mean(self._delta_landscapes_kcal_per_mol_per_AA,
-                       **self.mean_std_opt())
-    @property                               
-    def std_delta_landscape_kcal_per_mol_per_AA(self):
-        return np.std(self._delta_landscapes_kcal_per_mol_per_AA,
-                       **self.mean_std_opt())     
-
-def grid_interpolate_arrays(x_arr,y_arr,x_grid):
-    to_ret = []
-    for x, y in zip(x_arr,y_arr):
-        # get the interpolated data
-        tmp_grid = scipy.interpolate.griddata(points=x,
-                                              values=y,
-                                              xi=x_grid)
-        to_ret.append(tmp_grid)                                     
-    return to_ret
-                       
 def heatmap(x,y,bins):                       
     # concatenate everything
     cat_x = np.concatenate(x)
@@ -170,83 +74,6 @@ def get_area_bounds(objs,area):
         assert(bounds[-1] < n) , \
             "{:d}/{:d}".format(bounds[-1],n)
     # POST: all the bounds match 
-    return to_ret
-    
-
-    
-def filter_landscapes(landscapes,n_bins):
-    # zero everything; don't care about absolute offsets.
-    for l in landscapes:
-        l.q -= min(l.q)
-    min_v = 0
-    max_v = min([max(l.q) for l in landscapes])
-    bins = np.linspace(min_v,max_v,n_bins)
-    to_ret = [WeierstrassUtil._filter_single_landscape(l,bins) 
-              for l in landscapes]
-    return to_ret
-
-def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
-                       offset_N=7.1e-12):
-    raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
-                                                 cache_directory=flickering_dir,
-                                                 limit=None,
-                                                 renormalize=False)
-    # only look at data with ~300nm/s
-    v_exp = 300e-9
-    raw_data = [r for r in raw_data 
-                if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
-    raw_area_slices = [[] for _ in areas]
-    area_bounds = [get_area_bounds(raw_data,area) for area in areas]
-    # fix all the spring constants. XXX need to account for this...
-    mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant 
-                                    for r in raw_data])
-    for r in raw_data:
-        r.LowResData.meta.SpringConstant = mean_spring_constant
-    for i,r in enumerate(raw_data):
-        r.Force -= offset_N
-        for j,area in enumerate(areas):
-           idx_0,idx_f = area_bounds[j][i]
-           s = slice(idx_0,idx_f,1)
-           this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
-           raw_area_slices[j].append(this_area)
-        # r is no longer needed; stop referencing it to make space
-        raw_data[i] = None
-    to_ret = []
-    skip = 0
-    N_boostraps = 500
-    for area,slice_tmp in zip(areas,raw_area_slices):
-        # for each area, use the same starting seed 
-        # (that the data are consistent)
-        np.random.seed(42)
-        # get the heatmap histograms
-        heatmap_data = get_heatmap_data(slice_tmp)  
-        # get the landscapes (we use N, to get an error)
-        iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
-        # delete the original list to free its memnory
-        slice_tmp[:] = []
-        n_objs = len(iwt_objs)
-        ids = np.arange(n_objs,dtype=np.int64)
-        # randomly choose the ids with replacement for bootstrapping\
-        choose_ids = lambda : np.random.choice(ids,size=n_objs,replace=True)
-        # skip the first N (if we already chose those, assuming a consistent 
-        # seed)
-        skipped = [choose_ids() for i in range(skip)]
-        # get the actual ids we want 
-        id_choices = [choose_ids() for i in range(N_boostraps)]
-        iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
-        functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
-        name_func = lambda  i,d: \
-            area.save_name + "_bootstrap_{:d}".format(i+skip) 
-        cache_dir = "./{:s}/".format(area.save_name)
-        GenUtilities.ensureDirExists(cache_dir)
-        iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
-                                                 force=False,
-                                                 name_func=name_func)
-        # get the filtered version of the landscape, using the specified bin
-        # size 
-        filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)
-        # make the object we want for this 'area' slice
-        to_ret.append(cacheable_data(filtered_iwt,*heatmap_data))
     return to_ret
     
 def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
@@ -642,6 +469,7 @@ def run():
     ed_max = 32e-9
     cd_max = 48e-9
     a_max = 65e-9
+    slice_area = GenerateLandscapes.slice_area
     areas = [\
         slice_area([adhesion_min,a_max],"Full (no adhesion)"),
         slice_area([adhesion_min,ed_max],"Helix ED"),
@@ -651,8 +479,9 @@ def run():
     for a in areas:
         a.set_num_bins_by_bin_in_meters(bin_size_meters)         
     # read in the data 
+    f = GenerateLandscapes.get_cacheable_data
     data_to_analyze = CheckpointUtilities.\
-        getCheckpoint("./cached_landscapes.pkl",get_cacheable_data,
+        getCheckpoint("./cached_landscapes.pkl",f,
                       force_recalculation,areas,flickering_dir,bin_size_meters)
     make_pedagogical_plot(data_to_analyze[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
