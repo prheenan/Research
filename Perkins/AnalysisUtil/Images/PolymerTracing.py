@@ -277,17 +277,16 @@ def spline_fit(image_obj,x,y):
     cos_angle,flat_L0,L0_px = \
         angles_and_contour_lengths(spline,deriv,
                                    min_change_px=0,max_change_px=100/nm_per_px)
-    # do some checks to make sure the data are sensible
-    assert ((cos_angle <= 1) & (cos_angle >= -1)).all()
-    # POST: data are reasonable
+    # POST: cos_angle and flat_L0 and reasonable
     edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
     L_nm = edges * nm_per_px
     L0_nm = L0_px * nm_per_px
-    Lp_nm,log_mean_angle,coeffs = \
+    Lp_nm,log_mean_angle,_ = \
         Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
     # do some data checking.        
     assert L0_nm > 0 , "L0 must be positive"
     assert Lp_nm > 0 , "Lp must be positive"
+    # POST: most basic polymer stuff is OK.
     fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
     return  spline_fit_obj(Lp_nm=Lp_nm,L0_nm=L0_nm,cos_angle=cos_angle,L=L_nm,
                            image_cropped=image_cropped,x0=x0,y0=y0,
@@ -332,18 +331,18 @@ def angles_and_contour_lengths(spline,deriv,
     # only look at the upper triangular part
     idx_upper_tri = np.triu_indices(n)
     idx_upper_tri_no_diag =np.triu_indices(n,k=1)
-    # angle should be finite, between -1 and 1
+    # angle should be finite, between -1 and 1, also be finite
     assert ((cos_angle_matrix >= -1) & \
             (cos_angle_matrix <= 1) & \
             (np.isfinite(cos_angle_matrix))).all()
     # upper diagonal should have >0 contour length
     assert (contour_length_matrix[idx_upper_tri_no_diag] > 0).all() , \
         "Contour lengths should be positive"
-    # POST: contour lengths[i,j] make sense for j>=i, which is what we want
+    # POST: contour lengths and angles make sense; we only want upper triangular
+    # (*including* the trivial 0,0 point along the diagonal)
     contour_length_matrix = contour_length_matrix[idx_upper_tri]
     cos_angle_matrix = cos_angle_matrix[idx_upper_tri]
-    # do some data checking
-    # POST: matrix is fileld in, determine where the value are valid
+    # POST: matrix is filled in, determine where the value are valid
     ok_idx = np.where( (contour_length_matrix > min_change_px) &
                        (contour_length_matrix < max_change_px))
     sanit = lambda x: x[ok_idx].flatten()
