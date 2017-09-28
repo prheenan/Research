@@ -78,7 +78,17 @@ class worm_object(object):
         """
         return "protein" in self.file_name.lower()
     @property
+    def Lp(self):
+        """
+        Returns: the persistence length, in meters
+        """
+        self.assert_fit()    
+        return (self.inf.Lp_nm * 1e-9)
+    @property
     def L0(self):
+        """
+        Returns: the contour length, in meters
+        """
         self.assert_fit()
         return (self.inf.L0_nm * 1e-9)
 
@@ -114,23 +124,34 @@ class tagged_image:
         Returns: the traces on this object on DNA (only)
         """
         return self.subset(self.dna_only_idx)    
+    def _subset_f(self,f,subset):
+        return np.array([f(s) for s in subset])
     def _L0(self,subset):
         """
         Returns the contour length of the given subset 
         """
-        return np.array([s.L0 for s in subset])
+        return self._subset_f(lambda s: s.L0,subset)
+    def _Lp(self,subset):
+        """
+        Returns the persistence length of the given subset 
+        """
+        return self._subset_f(lambda s: s.Lp,subset)
+    def _f_dna_protein(self,f):
+        return f(self.traces_dna_protein())
+    def _f_dna_only(self,f):
+        return f(self.traces_dna_only())
     def L0_protein_dna(self):
         """
         Returns: the contour length, in meters, of the traces on DNA-protein 
         complex in this image 
         """    
-        return self._L0(self.traces_dna_protein())
+        return self._f_dna_protein(self._L0)
     def L0_dna_only(self):
         """
         Returns: the contour length, in meters, of the traces on DNA in this
         image 
         """
-        return self._L0(self.traces_dna_only())
+        return self._f_dna_only(self._L0)
         
 
 def crop_slice(data,f=0.3):
@@ -140,7 +161,7 @@ def crop_slice(data,f=0.3):
     v_low,v_high = max(0,v_min-n_v),v_max+n_v
     return slice(int(v_low),int(v_high),1)
 
-def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
+def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.0):
     """
     Returns: single-region of interest
     
@@ -165,6 +186,8 @@ def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.2):
     image_label = measure.label(image_skeleton,background=0)
     props = measure.regionprops(image_label) 
     diameters = [p.equivalent_diameter for p in props]
+    # XXX just use x,y, dialyze that?
+    assert len(diameters) > 0 , "Couldn't find any objects in region"
     max_prop_idx = np.argmax(diameters)
     largest_skeleton_props = props[max_prop_idx]
     # zero out everything not the one we want 
@@ -329,7 +352,7 @@ def _spline_u_and_tck(x,y,k=3,s=None,num=None):
         tuple of <u,tck>, where tck is needed for (e.g.) splev
     """
     if (num is None):
-        num = len(x) * 20
+        num = len(x) * 3
     if (s is None):
         s = 0
     tck,_ = splprep([x,y],per=0,

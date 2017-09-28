@@ -14,14 +14,14 @@ sys.path.append("../../../../../../../../")
 from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing
 
-def get_x_and_y_arrays(text_file,size_images_pixels):
+def get_x_and_y_arrays(text_file):
     """
     Returns: the x and y columns (0 and 1) of text_file 
     """
     data = np.loadtxt(text_file)
     x = data[:,0]
     y = data[:,1]
-    assert ((x > 1) & (y > 1)).all()
+    assert ((x >= 1) & (y > 1)).all()
     return x,y
     
 def get_contour_length(x,y):
@@ -30,7 +30,7 @@ def get_contour_length(x,y):
     """
     return np.sum(np.sqrt(np.diff(x)**2 + np.diff(y)**2))
     
-def get_x_y_and_contour_lengths(text_files,size_images_pixels):
+def get_x_y_and_contour_lengths(text_files):
     """
     Gets all the worm_objects associated with text_files
     
@@ -41,7 +41,7 @@ def get_x_y_and_contour_lengths(text_files,size_images_pixels):
     """
     to_ret = []
     for t in text_files:
-        x,y = get_x_and_y_arrays(t,size_images_pixels)
+        x,y = get_x_and_y_arrays(t)
         to_ret.append(PolymerTracing.worm_object(x,y,t))
     return to_ret     
 
@@ -62,6 +62,20 @@ def print_info(dist,name):
     print("\t Mean  : {:.1f} nm".format(np.mean(dist)*1e9))
     print("\t Std   : {:.1f} nm".format(np.std(dist)*1e9))
 
+def yield_files(image_files,text_files,size_images_meters):
+    for file_name in image_files:
+        file_no_ext = file_name.replace(".pkl","")
+        file_no_number = file_name.rsplit("_",1)[0]
+        these_text_files= [ t for t in text_files 
+                            if str(file_no_number) in str(t)]
+        image_obj = CheckpointUtilities.lazy_load(file_name)
+        # only look at images of size size_images_meters
+        if ( abs(image_obj.range_meters -size_images_meters) > 1e-6):
+            continue
+        objs_tmp = get_x_y_and_contour_lengths(these_text_files)
+        # POST: dimensions are OK 
+        img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_no_number)
+        yield img
 
 def run():
     """
@@ -80,27 +94,21 @@ def run():
     GenUtilities.ensureDirExists(out_dir)
     image_files = GenUtilities.getAllFiles(in_dir,ext=ext)
     text_files = GenUtilities.getAllFiles(in_dir,ext=ext_text)
+    # filter only to those image files which are 2um
     size_images_meters = 2e-6
     size_images_pixels = 512
     conversion_meters_per_px = size_images_meters / size_images_pixels  
-    objs_all = []                        
-    for file_name in image_files:
-        file_no_ext = file_name.replace(ext,"")
-        file_no_number = file_no_ext.split("_")[0]
-        these_text_files= [ t for t in text_files 
-                            if str(file_no_number) in str(t)]
-        objs_tmp = get_x_y_and_contour_lengths(these_text_files,
-                                               size_images_pixels)
-        image_obj = CheckpointUtilities.lazy_load(file_name)
-        im = image_obj.height_nm_rel()
-        assert (im.shape[0] == im.shape[1]) 
+    objs_all = list(yield_files(image_files,text_files,size_images_meters))
+    for o in objs_all:
+        im = o.image.height_nm_rel()
+        assert (im.shape[0] == im.shape[1])
         assert (im.shape[0] == size_images_pixels)
-        # POST: dimensions are OK 
-        img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_no_number)
-        objs_all.append(img)
     # POST: all the contour lengths are set in 'real' units ]  
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
+    Lp_dna = np.concatenate([o._f_dna_only(o._Lp) for o in objs_all])
+    print(np.mean(Lp_dna))
+    print(np.std(Lp_dna))
     print_info(L0_dna,"only DNA")
     print_info(L0_protein,"DNA+PRC2")
     n_protein = (L0_protein).size
