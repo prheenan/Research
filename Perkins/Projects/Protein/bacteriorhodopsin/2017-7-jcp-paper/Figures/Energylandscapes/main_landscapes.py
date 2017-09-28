@@ -37,12 +37,14 @@ def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
         
 def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
+                   zero_q=True,
                    label_deltaG = PlotUtilities.variable_string("\Delta G")):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
     landscape_kcal_per_mol -= min(landscape_kcal_per_mol)
     std_landscape_kcal_per_mol = data.std_landscape_kcal_per_mol
     extension_nm = data._extension_grid_nm
-    extension_nm -= min(extension_nm)
+    if (zero_q):
+        extension_nm -= min(extension_nm)
     extension_aa = data.amino_acids_per_nm() * extension_nm
     grad = lambda x: np.gradient(x)/(np.gradient(extension_aa))
     delta_landscape_kcal_per_mol_per_amino_acid = grad(landscape_kcal_per_mol)
@@ -133,7 +135,7 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     plt.xlim(xlim_fec)
     
 def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
-                          xlim=None):
+                          xlim=None,zero_q=True):
     """
     Creates a plot of
     """
@@ -143,11 +145,13 @@ def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
     ax_heat = plt.subplot(2,1,1)
     heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm(),
                  kw_heatmap=kw_heatmap)
-    if (xlim is None):                 
-        xlim = plt.xlim()
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
-    ax1,ax2 = plot_landscape(data_landscape,xlim,kw_landscape=kw_landscape)
+    ax1,ax2 = plot_landscape(data_landscape,xlim,kw_landscape=kw_landscape,
+                             zero_q=zero_q)
+    if (xlim is None):
+        xlim = ax1.get_xlim()
+        xlim = np.maximum(0,xlim)
     normalize_and_set_zeros([ax1],[ax2])
     ax1.set_xlim(xlim)
     ax2.set_xlim(xlim)
@@ -177,7 +181,7 @@ def make_detalied_plots(data_to_analyze,areas):
         fig = PlotUtilities.figure((3.25,5))
         mdata = data_to_analyze[i]
         example = mdata.landscape[0]
-        ax = create_landscape_plot(mdata,xlim=None,**kwargs[i])
+        ax = create_landscape_plot(mdata,xlim=None,zero_q=False,**kwargs[i])
         ax_heat = ax[0]
         PlotUtilities.no_x_label(ax_heat)
         out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
@@ -426,7 +430,7 @@ def run():
     adhesion_min = 17e-9
     ed_max = 32e-9
     cd_max = 48e-9
-    a_max = 65e-9
+    a_max = 70e-9
     slice_area = GenerateLandscapes.slice_area
     kw = dict(min_v_m=adhesion_min)
     areas = [\
