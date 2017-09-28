@@ -33,11 +33,11 @@ class spline_info(object):
 
 class polymer_info(object):
     # holds low-level information about the polymer itself
-    def __init__(self,L_nm,cos_angle,Lp_nm,L0_nm):
-        self.L_nm = L_nm
+    def __init__(self,L_m,cos_angle,Lp_m,L0_m):
+        self.L_m = L_m
         self.cos_angle = cos_angle
-        self.Lp_nm = Lp_nm
-        self.L0_nm = L0_nm
+        self.Lp_m = Lp_m
+        self.L0_m = L0_m
 
 class spline_fit_obj(object):
     # spline_fit_obj: class for holding all information about a given spline fit
@@ -62,11 +62,11 @@ class spline_fit_obj(object):
         x0,y0 = self.x0_y0
         return x_rel+x0,y_rel+y0
     @property
-    def L0_nm(self):
-        return self.polymer_info_obj.L0_nm
+    def L0_m(self):
+        return self.polymer_info_obj.L0_m
     @property
-    def Lp_nm(self):
-        return self.polymer_info_obj.Lp_nm
+    def Lp_m(self):
+        return self.polymer_info_obj.Lp_m
 
 class worm_object(object):
     def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
@@ -98,14 +98,14 @@ class worm_object(object):
         Returns: the persistence length, in meters
         """
         self.assert_fit()    
-        return (self.inf.Lp_nm * 1e-9)
+        return (self.inf.Lp_m)
     @property
     def L0(self):
         """
         Returns: the contour length, in meters
         """
         self.assert_fit()
-        return (self.inf.L0_nm * 1e-9)
+        return (self.inf.L0_m)
 
 class tagged_image:
     def __init__(self,image,worm_objects,file_no_number):
@@ -291,23 +291,24 @@ def spline_fit(image_obj,x,y):
     u,tck,spline,deriv = _u_tck_spline_and_derivative(x_rel,y_rel)
     assert image.shape[0] == image.shape[1] , \
         "Non square image unsupported"
-    nm_per_px = (image_obj.range_meters/image.shape[0]) * 1e9
+    m_per_px = (image_obj.range_meters/image.shape[0])
     cos_angle,flat_L0,L0_px = \
         angles_and_contour_lengths(spline,deriv,
-                                   min_change_px=0,max_change_px=100/nm_per_px)
+                                   min_change_px=0,
+                                   max_change_px=100e-9/m_per_px)
     # POST: cos_angle and flat_L0 and reasonable
     edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
-    L_nm = edges * nm_per_px
-    L0_nm = L0_px * nm_per_px
-    Lp_nm,log_mean_angle,_ = \
-        Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
+    L_m = edges * m_per_px
+    L0_m = L0_px * m_per_px
+    Lp_m,log_mean_angle,_ = \
+        Lp_log_mean_angle_and_coeffs(L_m,mean_cos_angle)
     # do some data checking.        
-    assert L0_nm > 0 , "L0 must be positive"
-    assert Lp_nm > 0 , "Lp must be positive"
+    assert L0_m > 0 , "L0 must be positive"
+    assert Lp_m > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
     fit_spline_info = spline_info(u,tck,spline,deriv,x0_px=x0, y0_px=y0)
-    polymer_info_obj =polymer_info(L_nm=L_nm, cos_angle=cos_angle,
-                                   Lp_nm=Lp_nm,L0_nm=L0_nm)
+    polymer_info_obj =polymer_info(L_m=L_m, cos_angle=cos_angle,
+                                   Lp_m=Lp_m,L0_m=L0_m)
     return  spline_fit_obj(image_cropped=image_cropped,
                            image_threshold=image_single_region,
                            polymer_info_obj=polymer_info_obj,
