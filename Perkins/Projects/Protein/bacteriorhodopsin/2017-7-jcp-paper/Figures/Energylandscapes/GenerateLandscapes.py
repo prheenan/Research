@@ -7,7 +7,12 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys,scipy
+import sys
+sys.path.append("../")
+
+import scipy
+from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
+
 
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
@@ -112,6 +117,33 @@ def grid_interpolate_arrays(x_arr,y_arr,x_grid):
         to_ret.append(tmp_grid)                                     
     return to_ret   
     
+    
+def _get_landscapes(iwt_obj_subsets,n_bins):    
+    for objs in iwt_obj_subsets:
+        yield InverseWeierstrass.free_energy_inverse_weierstrass(objs)
+            
+def get_area_bounds(objs,area):
+    z_0,z_1 = area.ext_bounds
+    average_v = np.mean([r.Velocity for r in objs])    
+    dt_step = objs[0].Time[1] - objs[0].Time[0]
+    z_0_arr = [ (np.where(o.Separation <= z_0)[0][-1]) for o in objs]
+    average_idx_delta = int(np.round((z_1-z_0)/(average_v *dt_step)))
+    # determine how large the delta can actually, so all the objects
+    # lie on the grid
+    sizes = [o.Force.size for o in objs]
+    actual_delta = min([min(average_idx_delta,s-z_tmp-1)
+                        for z_tmp,s in zip(z_0_arr,sizes)])
+    z_f_arr = [z + actual_delta for z in z_0_arr]
+    to_ret = [ [z0,zf] for z0,zf in zip(z_0_arr,z_f_arr)]
+    for i,bounds in enumerate(to_ret):
+        np.testing.assert_allclose(np.diff(bounds),np.diff(to_ret[0]))
+        n = objs[i].Force.size
+        assert(bounds[-1] < n) , \
+            "{:d}/{:d}".format(bounds[-1],n)
+    # POST: all the bounds match 
+    return to_ret
+    
+    
 def filter_landscapes(landscapes,n_bins):
     # zero everything; don't care about absolute offsets.
     for l in landscapes:
@@ -123,11 +155,57 @@ def filter_landscapes(landscapes,n_bins):
               for l in landscapes]
     return to_ret
 
+def heatmap(x,y,bins):                       
+    # concatenate everything
+    cat_x = np.concatenate(x)
+    cat_y = np.concatenate(y)
+    # SEE: histogram2d documentation
+    histogram, x_edges,y_edges = \
+        np.histogram2d(cat_x,cat_y,bins=bins)
+    # each row should list y; transpose so this is the case 
+    histogram = histogram.T            
+    return histogram, x_edges,y_edges 
+    
+def get_heatmap_data(time_sep_force_arr,bins=(100,100)):        
+    sep_nm = [t.Separation*1e9 for t in time_sep_force_arr]
+    z_nm = [t.ZSnsr*1e9 for t in time_sep_force_arr]
+    force_pN = [t.Force*1e12 for t in time_sep_force_arr]
+    heatmap_force_extension = heatmap(sep_nm,force_pN,bins=bins)
+    heatmap_force_z = heatmap(z_nm,force_pN,bins=bins)
+    return heatmap_force_extension,heatmap_force_z
+    
+    
+def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps):
+    heatmap_data = get_heatmap_data(slice_tmp)  
+    # get the landscapes (we use N, to get an error)
+    iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
+    # delete the original list to free its memnory
+    slice_tmp[:] = []
+    n_objs = len(iwt_objs)
+    ids = np.arange(n_objs,dtype=np.int64)
+    # randomly choose the ids with replacement for bootstrapping\
+    choose_ids = lambda : np.random.choice(ids,size=n_objs,replace=True)
+    # skip the first N (if we already chose those, assuming a consistent 
+    # seed)
+    skipped = [choose_ids() for i in range(skip)]
+    # get the actual ids we want 
+    id_choices = [choose_ids() for i in range(N_boostraps)]
+    iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
+    functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
+    name_func = lambda  i,d: \
+        area.save_name + "_bootstrap_{:d}".format(i+skip) 
+    cache_dir = "./{:s}/".format(area.save_name)
+    GenUtilities.ensureDirExists(cache_dir)
+    iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
+                                             force=False,
+                                             name_func=name_func)   
+    return heatmap_data,iwt_tmp                                             
+    
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=3,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -151,35 +229,15 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 500
+    limit_bootstrap = 5
+    N_boostraps = 5
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
         np.random.seed(42)
         # get the heatmap histograms
-        heatmap_data = get_heatmap_data(slice_tmp)  
-        # get the landscapes (we use N, to get an error)
-        iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
-        # delete the original list to free its memnory
-        slice_tmp[:] = []
-        n_objs = len(iwt_objs)
-        ids = np.arange(n_objs,dtype=np.int64)
-        # randomly choose the ids with replacement for bootstrapping\
-        choose_ids = lambda : np.random.choice(ids,size=n_objs,replace=True)
-        # skip the first N (if we already chose those, assuming a consistent 
-        # seed)
-        skipped = [choose_ids() for i in range(skip)]
-        # get the actual ids we want 
-        id_choices = [choose_ids() for i in range(N_boostraps)]
-        iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
-        functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
-        name_func = lambda  i,d: \
-            area.save_name + "_bootstrap_{:d}".format(i+skip) 
-        cache_dir = "./{:s}/".format(area.save_name)
-        GenUtilities.ensureDirExists(cache_dir)
-        iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
-                                                 force=False,
-                                                 name_func=name_func)
+        heatmap_data,iwt_tmp = \
+            single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps)
         # get the filtered version of the landscape, using the specified bin
         # size 
         filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)

@@ -9,9 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-
-sys.path.append("../../../../../../../../")
 sys.path.append("../")
+sys.path.append("../../../../../../../../")
 import jcp_fig_util,GenerateLandscapes
 from GenerateLandscapes import slice_area,cacheable_data,landscape_data
 from IgorUtil.PythonAdapter import PxpLoader
@@ -31,51 +30,6 @@ import copy
 from matplotlib import gridspec
 import scipy
 
-def heatmap(x,y,bins):                       
-    # concatenate everything
-    cat_x = np.concatenate(x)
-    cat_y = np.concatenate(y)
-    # SEE: histogram2d documentation
-    histogram, x_edges,y_edges = \
-        np.histogram2d(cat_x,cat_y,bins=bins)
-    # each row should list y; transpose so this is the case 
-    histogram = histogram.T            
-    return histogram, x_edges,y_edges 
-    
-def get_heatmap_data(time_sep_force_arr,bins=(100,100)):        
-    sep_nm = [t.Separation*1e9 for t in time_sep_force_arr]
-    z_nm = [t.ZSnsr*1e9 for t in time_sep_force_arr]
-    force_pN = [t.Force*1e12 for t in time_sep_force_arr]
-    heatmap_force_extension = heatmap(sep_nm,force_pN,bins=bins)
-    heatmap_force_z = heatmap(z_nm,force_pN,bins=bins)
-    return heatmap_force_extension,heatmap_force_z
-
-    
-def _get_landscapes(iwt_obj_subsets,n_bins):    
-    for objs in iwt_obj_subsets:
-        yield InverseWeierstrass.free_energy_inverse_weierstrass(objs)
-            
-def get_area_bounds(objs,area):
-    z_0,z_1 = area.ext_bounds
-    average_v = np.mean([r.Velocity for r in objs])    
-    dt_step = objs[0].Time[1] - objs[0].Time[0]
-    z_0_arr = [ (np.where(o.Separation <= z_0)[0][-1]) for o in objs]
-    average_idx_delta = int(np.round((z_1-z_0)/(average_v *dt_step)))
-    # determine how large the delta can actually, so all the objects
-    # lie on the grid
-    sizes = [o.Force.size for o in objs]
-    actual_delta = min([min(average_idx_delta,s-z_tmp-1)
-                        for z_tmp,s in zip(z_0_arr,sizes)])
-    z_f_arr = [z + actual_delta for z in z_0_arr]
-    to_ret = [ [z0,zf] for z0,zf in zip(z_0_arr,z_f_arr)]
-    for i,bounds in enumerate(to_ret):
-        np.testing.assert_allclose(np.diff(bounds),np.diff(to_ret[0]))
-        n = objs[i].Force.size
-        assert(bounds[-1] < n) , \
-            "{:d}/{:d}".format(bounds[-1],n)
-    # POST: all the bounds match 
-    return to_ret
-    
 def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     # XXX ? digitize all the ids so we know what bin they fall into...
     X,Y = np.meshgrid(x_edges,y_edges)
