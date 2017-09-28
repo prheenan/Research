@@ -154,7 +154,7 @@ class tagged_image:
         return self._f_dna_only(self._L0)
         
 
-def crop_slice(data,f=0.3):
+def crop_slice(data,f=1):
     v_min,v_max = min(data),max(data)
     v_range = v_max-v_min
     n_v = int(np.ceil(f * v_range))
@@ -232,8 +232,8 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     f_min_size = 1/(bins.size)
     values,_ = np.histogram(a=L,bins=bins)
     # only look at where cos(theta) is reasonable positive, otherwise we 
-    # cant take a log. This amounts to only looking in the upper quarant 
-    good_idx = np.where(mean_cos_angle > min_cos_angle)
+    # cant take a log. This amounts to only looking in the upper quad
+    good_idx = np.where( (mean_cos_angle > min_cos_angle) )
     sanit = lambda x: x[good_idx]
     mean_cos_angle = sanit(mean_cos_angle)
     edges = sanit(edges)
@@ -281,6 +281,9 @@ def spline_fit(image_obj,x,y):
     L0_nm = L0_px * nm_per_px
     Lp_nm,log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_nm,mean_cos_angle)
+    # do some data checking.        
+    assert L0_nm > 0 , "L0 must be positive"
+    #assert Lp_nm > 0 , "Lp must be positive"
     fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
     return  spline_fit_obj(Lp_nm=Lp_nm,L0_nm=L0_nm,cos_angle=cos_angle,L=L_nm,
                            image_cropped=image_cropped,x0=x0,y0=y0,
@@ -329,6 +332,8 @@ def angles_and_contour_lengths(spline,deriv,
             cos_angle_tmp = np.dot(deriv_unit_vector[:,i],
                                    deriv_unit_vector[:,j])
             cos_angle_matrix[i,j] = cos_angle_tmp
+    # do some data checking
+    assert np.isfinite(cos_angle_matrix).all()
     # POST: matrix is fileld in, determine where the value are valid
     ok_idx = np.where( (contour_length_matrix > min_change_px) &
                        (contour_length_matrix < max_change_px))
