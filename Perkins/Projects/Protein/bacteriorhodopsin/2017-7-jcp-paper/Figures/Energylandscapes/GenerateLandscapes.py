@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append("../")
 
-import scipy
+import scipy,copy
 from Research.Perkins.Projects.Protein.bacteriorhodopsin import IoUtilHao
 
 
@@ -21,30 +21,44 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot    
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 
-class cacheable_data:
+class cacheable_data(object):
     def __init__(self,landscape,heatmap_data,heatmap_data_z):
         self.landscape = landscape
         self.heatmap_data = heatmap_data
         self.heatmap_data_z = heatmap_data_z
+    def __deepcopy__(self, memo={}):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k,v in self.__dict__.items():
+            setattr(result,k,copy.deepcopy(v,memo))
+        return result
 
-class slice_area:
-    def __init__(self,ext_bounds,plot_title):
-        self.ext_bounds = ext_bounds
+class slice_area(object):
+    def __init__(self,ext_bounds,plot_title,min_v_m):
+        self.ext_bounds = np.array(ext_bounds)
         self.plot_title = plot_title
         self.n_bins = None
+        self.min_v_m = min_v_m
     def set_num_bins_by_bin_in_meters(self,bin_size_meters):
         self.n_bins = \
             int(np.ceil(abs(np.diff(self.ext_bounds))/bin_size_meters))
+    @property
+    def ext_bounds_nm(self):
+        return self.ext_bounds * 1e9
+    @property
+    def ext_bounds_nm_rel(self):
+        return self.ext_bounds_nm - (self.min_v_m*1e9)
     @property
     def save_name(self):
         return self.plot_title.replace(" ","_") + ".pkl"
         
         
-class landscape_data:
+class landscape_data(object):
     def __init__(self,landscape_objs,kT=4.1e-21):
         self.landscape_objs = landscape_objs
         self.kT = 4.1e-21
-    @property        
+    @property
     def _extension_grid_nm(self):
         # get the extensions...
         ext_nm = self._extensions_nm        
@@ -205,43 +219,35 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=3,
+                                                 limit=5,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
     raw_data = [r for r in raw_data 
                 if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
-    raw_area_slices = [[] for _ in areas]
+    raw_area_slices = []
     area_bounds = [get_area_bounds(raw_data,area) for area in areas]
     # fix all the spring constants. XXX need to account for this...
     mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant 
                                     for r in raw_data])
     for r in raw_data:
         r.LowResData.meta.SpringConstant = mean_spring_constant
+    # fix the constant offset added        
     for i,r in enumerate(raw_data):
         r.Force -= offset_N
-        for j,area in enumerate(areas):
-           idx_0,idx_f = area_bounds[j][i]
-           s = slice(idx_0,idx_f,1)
-           this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
-           raw_area_slices[j].append(this_area)
+    # make the slice needed (the 'full' dataset)
+    for i,r in enumerate(raw_data):
+        idx_0,idx_f = area_bounds[0][i]
+        s = slice(idx_0,idx_f,1)
+        this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
+        raw_area_slices.append(this_area)
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
     to_ret = []
     skip = 0
-    limit_bootstrap = 5
     N_boostraps = 5
-    for area,slice_tmp in zip(areas,raw_area_slices):
-        # for each area, use the same starting seed 
-        # (that the data are consistent)
-        np.random.seed(42)
-        # get the heatmap histograms
-        heatmap_data,iwt_tmp = \
-            single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps)
-        # get the filtered version of the landscape, using the specified bin
-        # size 
-        filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)
-        # make the object we want for this 'area' slice
-        to_ret.append(cacheable_data(filtered_iwt,*heatmap_data))
-    return to_ret
-                           
+    heatmap_data,iwt_tmp = \
+        single_area_landscape_bootstrap(areas[0],raw_area_slices,
+                                        skip,N_boostraps)   
+    filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)                                        
+    return cacheable_data(filtered_iwt,*heatmap_data)                           

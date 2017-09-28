@@ -133,13 +133,12 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     plt.xlim(xlim_fec)
     
 def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
-                          xlim=None): 
+                          xlim=None):
     """
     Creates a plot of
     """
     heatmap_data = data_to_plot.heatmap_data
     data_landscape = landscape_data(data_to_plot.landscape)
-        
     # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
     heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm(),
@@ -174,9 +173,13 @@ def make_detalied_plots(data_to_analyze,areas):
     makes the detailed plots
     """
     kwargs = landscape_kwargs()
-    for i,d in enumerate(data_to_analyze):
-        fig = PlotUtilities.figure((3.25,5))     
-        ax = create_landscape_plot(d,xlim=None,**(kwargs[i]))
+    for i,a in enumerate(areas):
+        fig = PlotUtilities.figure((3.25,5))
+        mdata = data_to_analyze[i]
+        example = mdata.landscape[0]
+        ax = create_landscape_plot(mdata,xlim=None,**kwargs[i])
+        ax_heat = ax[0]
+        PlotUtilities.no_x_label(ax_heat)
         out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
         axis_func = lambda x: [x[0],x[2]]
         PlotUtilities.label_tom(fig,axis_func=axis_func)
@@ -205,7 +208,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
     xlims = [ [None,None],[None,None],[None,15]    ]   
     arrow_x = [0.55,0.5,0.7]
     arrow_y = [0.65,0.60,0.52]
-    for i,(a,data) in enumerate(zip(helical_areas,helical_data)):
+    for i,a in enumerate(helical_areas):
+        data = helical_data[i]
         kw_tmp = helical_kwargs[i]
         data_landscape = landscape_data(data.landscape)
         # # plot the energy landscape...
@@ -381,7 +385,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     ax_correction.set_xlim(xlim_fec)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
-                   plot_derivative=False,label_deltaG=" ")    
+                   plot_derivative=False,label_deltaG=" ")
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=0.2)
@@ -424,11 +428,12 @@ def run():
     cd_max = 48e-9
     a_max = 65e-9
     slice_area = GenerateLandscapes.slice_area
+    kw = dict(min_v_m=adhesion_min)
     areas = [\
-        slice_area([adhesion_min,a_max],"Full (no adhesion)"),
-        slice_area([adhesion_min,ed_max],"Helix ED"),
-        slice_area([ed_max,cd_max],"Helix CB"),
-        slice_area([cd_max,a_max],"Helix A"),
+        slice_area([adhesion_min,a_max],"Full (no adhesion)",**kw),
+        slice_area([adhesion_min,ed_max],"Helix ED",**kw),
+        slice_area([ed_max,cd_max],"Helix CB",**kw),
+        slice_area([cd_max,a_max],"Helix A",**kw),
         ]    
     for a in areas:
         a.set_num_bins_by_bin_in_meters(bin_size_meters)         
@@ -437,11 +442,26 @@ def run():
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",f,
                       force_recalculation,areas,flickering_dir,bin_size_meters)
-    make_pedagogical_plot(data_to_analyze[0],landscape_kwargs()[0])
+    # split into the data we care about
+    helical_data = []
+    for a in areas:
+        tmp = copy.deepcopy(data_to_analyze)
+        l = copy.deepcopy(tmp.landscape[0])
+        l.q -= min(l.q)
+        min_v,max_v = a.ext_bounds_nm_rel*1e-9
+        slice_idx = np.where( (l.q >= min_v) & (l.q <= max_v))[0]
+        assert slice_idx.size > 0
+        sanit = lambda x: x[slice_idx].copy()
+        for l in tmp.landscape:
+            l.q = sanit(l.q)
+            l.energy = sanit(l.energy)
+            l.energy -= min(l.energy)
+        helical_data.append(tmp)
+    make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
-    make_detalied_plots(data_to_analyze,areas)
+    make_detalied_plots(helical_data,areas)
     # make the 'gallery' plots.
-    make_gallery_plot(areas,data_to_analyze)
+    make_gallery_plot(areas,helical_data)
     
 if __name__ == "__main__":
     run()
