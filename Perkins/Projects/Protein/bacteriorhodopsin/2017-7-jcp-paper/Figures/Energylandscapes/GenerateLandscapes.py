@@ -219,7 +219,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=10,
+                                                 limit=None,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -245,7 +245,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 10
+    N_boostraps = 500
     heatmap_data,iwt_tmp = \
         single_area_landscape_bootstrap(areas[0],raw_area_slices,
                                         skip,N_boostraps)   
