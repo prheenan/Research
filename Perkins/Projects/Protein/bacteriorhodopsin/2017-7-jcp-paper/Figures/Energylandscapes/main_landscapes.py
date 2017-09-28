@@ -179,7 +179,7 @@ def filter_landscapes(landscapes,n_bins):
     for l in landscapes:
         l.q -= min(l.q)
     min_v = 0
-    max_v = max([max(l.q) for l in landscapes])
+    max_v = min([max(l.q) for l in landscapes])
     bins = np.linspace(min_v,max_v,n_bins)
     to_ret = [WeierstrassUtil._filter_single_landscape(l,bins) 
               for l in landscapes]
@@ -189,7 +189,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=10,
+                                                 limit=None,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -198,7 +198,8 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     raw_area_slices = [[] for _ in areas]
     area_bounds = [get_area_bounds(raw_data,area) for area in areas]
     # fix all the spring constants. XXX need to account for this...
-    mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant for r in raw_data])
+    mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant 
+                                    for r in raw_data])
     for r in raw_data:
         r.LowResData.meta.SpringConstant = mean_spring_constant
     for i,r in enumerate(raw_data):
@@ -212,7 +213,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     to_ret = []
     skip = 0
-    N_boostraps = 3
+    N_boostraps = 500
     for area,slice_tmp in zip(areas,raw_area_slices):
         # for each area, use the same starting seed 
         # (that the data are consistent)
