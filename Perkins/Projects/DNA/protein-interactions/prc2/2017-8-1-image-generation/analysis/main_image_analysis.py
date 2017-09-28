@@ -99,6 +99,11 @@ def run():
     size_images_pixels = 512
     conversion_meters_per_px = size_images_meters / size_images_pixels  
     objs_all = list(yield_files(image_files,text_files,size_images_meters))
+    name_func = lambda i,d: "{:s}_img_{:d}".format(d.file_name,i)
+    load_func = lambda : yield_files(image_files,text_files,size_images_meters)
+    objs_all = CheckpointUtilities.multi_load(cache_dir=out_dir,
+                                              load_func=load_func,
+                                              force=False,name_func=name_func)
     for o in objs_all:
         im = o.image.height_nm_rel()
         assert (im.shape[0] == im.shape[1])

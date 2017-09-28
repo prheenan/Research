@@ -19,29 +19,37 @@ from scipy.interpolate import LSQUnivariateSpline
 from skimage.segmentation import active_contour
 from skimage.filters import gaussian
 
+
+class spline_info(object):
+    # holds low-level information on the actual fitting used. Everything
+    # is in units of pixels
+    def __init__(self, u, tck, spline, deriv,x0_px,y0_px):
+        self.u = u
+        self.tck = tck
+        self.spline = spline
+        self.deriv = deriv
+        self.x0_px = x0_px
+        self.y0_px = y0_px
+
+class polymer_info(object):
+    # holds low-level information about the polymer itself
+    def __init__(self,L_nm,cos_angle,Lp_nm,L0_nm):
+        self.L_nm = L_nm
+        self.cos_angle = cos_angle
+        self.Lp_nm = Lp_nm
+        self.L0_nm = L0_nm
+
 class spline_fit_obj(object):
     # spline_fit_obj: class for holding all information about a given spline fit
-
-    class spline_info(object):
-        # holds low-level information on the actual fitting used
-        def __init__(self,u,tck,spline,deriv):
-            self.u = u
-            self.tck = tck
-            self.spline = spline
-            self.deriv = deriv
-    def __init__(self,L,cos_angle,Lp_nm,image_cropped,image_threshold,fit_xy,
-                 fit_spline,L0_nm,x0,y0):
-        self.Lp_nm=Lp_nm
-        self.L0_nm=L0_nm
-        self.x0=x0
-        self.y0=y0
-        self.cos_angle=cos_angle
-        self.L=L
+    def __init__(self,image_cropped,image_threshold,polymer_info_obj,
+                 fit_spline):
         self.image_cropped=image_cropped,
         self.image_threshold=image_threshold
-        # fit_xy are the data which we fit to get Lp_nm
-        self.fit_xy = fit_xy
+        self.polymer_info_obj = polymer_info_obj
         self.fit_spline= fit_spline
+    @property
+    def x0_y0(self):
+        return self.fit_spline.x0_px,self.fit_spline.y0_px
     @property
     def x_y_rel(self):
         return self.fit_spline.spline
@@ -51,7 +59,14 @@ class spline_fit_obj(object):
         Returns: the x and y coordinates in the absolute, original image coords
         """
         x_rel,y_rel = self.x_y_rel
-        return x_rel+self.x0,y_rel+self.y0
+        x0,y0 = self.x0_y0
+        return x_rel+x0,y_rel+y0
+    @property
+    def L0_nm(self):
+        return self.polymer_info_obj.L0_nm
+    @property
+    def Lp_nm(self):
+        return self.polymer_info_obj.Lp_nm
 
 class worm_object(object):
     def __init__(self,x,y,text_file,spline_kwargs=dict(k=3)):
@@ -112,6 +127,9 @@ class tagged_image:
         # POST: as least something to look at 
         self.protein_idx = np.where(cond)[0]
         self.dna_only_idx = np.where(~np.array(cond))[0]
+    @property
+    def file_name(self):
+        return self.image_path.rsplit("/",1)[-1]
     def subset(self,idx):
         return [copy.deepcopy(self.worm_objects[i]) for i in idx]
     def traces_dna_protein(self):
@@ -287,11 +305,12 @@ def spline_fit(image_obj,x,y):
     assert L0_nm > 0 , "L0 must be positive"
     assert Lp_nm > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
-    fit_spline_info = spline_fit_obj.spline_info(u,tck,spline,deriv)
-    return  spline_fit_obj(Lp_nm=Lp_nm,L0_nm=L0_nm,cos_angle=cos_angle,L=L_nm,
-                           image_cropped=image_cropped,x0=x0,y0=y0,
+    fit_spline_info = spline_info(u,tck,spline,deriv,x0_px=x0, y0_px=y0)
+    polymer_info_obj =polymer_info(L_nm=L_nm, cos_angle=cos_angle,
+                                   Lp_nm=Lp_nm,L0_nm=L0_nm)
+    return  spline_fit_obj(image_cropped=image_cropped,
                            image_threshold=image_single_region,
-                           fit_xy=[L_nm,log_mean_angle],
+                           polymer_info_obj=polymer_info_obj,
                            fit_spline=fit_spline_info)
 
 
