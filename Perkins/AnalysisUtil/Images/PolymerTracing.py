@@ -383,15 +383,15 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
     L_and_angles = [o._L_and_cos_angle(subset=o.dna_subset) for o in objs_all]
     # concatenate all the angles and L0
     L,angles = sorted_concatenated_x_and_y_lists(L_and_angles)
-    L_binned_m,mean_angle_binned = \
+    L_binned,mean_angle_binned = \
         get_L_and_mean_angle(angles, L, n_bins=n_bins,min_cos_angle=0)
-    good_idx = np.where( (L_binned_m >= min_m) & (L_binned_m <= max_m))
-    L_binned = L_binned_m[good_idx]
+    good_idx = np.where( (L_binned >= min_m) & (L_binned <= max_m))
+    L_binned = L_binned[good_idx]
     mean_angle_binned = mean_angle_binned[good_idx]
     Lp_m, log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_binned, mean_angle_binned)
     polymer_info_obj = polymer_info(L_m=L, cos_angle=angles,
-                                    Lp_m=Lp_m,L0_m=None,L_binned = L_binned_m,
+                                    Lp_m=Lp_m,L0_m=None,L_binned = L_binned,
                                     cos_angle_binned=mean_angle_binned,
                                     coeffs = coeffs)
     return polymer_info_obj

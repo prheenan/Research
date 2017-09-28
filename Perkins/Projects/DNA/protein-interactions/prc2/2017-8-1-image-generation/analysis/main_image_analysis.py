@@ -108,18 +108,13 @@ def run():
         im = o.image.height_nm_rel()
         assert (im.shape[0] == im.shape[1])
         assert (im.shape[0] == size_images_pixels)
-    polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all)
+    kw = dict(min_m = 25e-9,max_m = 70e-9)
+    polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
     L_binned = polymer_info_obj.L_binned
     log_mean_angle = -np.log(polymer_info_obj.cos_angle_binned)
-    plt.plot(L_binned,log_mean_angle)
-    plt.plot(L_binned,np.polyval(polymer_info_obj.coeffs,x=L_binned))
-    plt.show()
     # POST: all the contour lengths are set in 'real' units ]
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
-    Lp_dna = np.concatenate([o._f_dna_only(o._Lp) for o in objs_all])
-    print(np.mean(Lp_dna))
-    print(np.std(Lp_dna))
     print_info(L0_dna,"only DNA")
     print_info(L0_protein,"DNA+PRC2")
     n_protein = (L0_protein).size
