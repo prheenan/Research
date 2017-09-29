@@ -177,6 +177,7 @@ def make_detalied_plots(data_to_analyze,areas):
     makes the detailed plots
     """
     kwargs = landscape_kwargs()
+    y_limits_pN = [None,None,125,100]
     for i,a in enumerate(areas):
         fig = PlotUtilities.figure((3.25,5))
         mdata = data_to_analyze[i]
@@ -184,6 +185,8 @@ def make_detalied_plots(data_to_analyze,areas):
         ax = create_landscape_plot(mdata,xlim=None,zero_q=False,**kwargs[i])
         ax_heat = ax[0]
         PlotUtilities.no_x_label(ax_heat)
+        ax_heat.relim()
+        ax_heat.set_ylim([None,y_limits_pN[i]])
         out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
         axis_func = lambda x: [x[0],x[2]]
         PlotUtilities.label_tom(fig,axis_func=axis_func)
@@ -210,8 +213,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
                     dict(offset_x=0.35,offset_y=offset_y),
                     dict(offset_x=0.35,offset_y=offset_y)]
     xlims = [ [None,None],[None,None],[None,15]    ]   
-    arrow_x = [0.55,0.5,0.7]
-    arrow_y = [0.65,0.60,0.52]
+    arrow_x = [0.60,0.62,0.55]
+    arrow_y = [0.58,0.60,0.45]
     for i,a in enumerate(helical_areas):
         data = helical_data[i]
         kw_tmp = helical_kwargs[i]
@@ -343,7 +346,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
     ax_correction.set_xlim(xlim_fec)            
-    offset_y_pedagogy = 0.35
+    offset_y_pedagogy = 0.42
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=offset_y_pedagogy)
     legend_font_size = 9                         
@@ -392,7 +395,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                    plot_derivative=False,label_deltaG=" ")
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
-                         offset_y=0.2)
+                         offset_y=offset_y_pedagogy)
     # add in the equation notation
     strings,colors = [],[]
     labels = kwargs_labels()
