@@ -36,9 +36,11 @@ def filter_all_landscapes(n_points_array,landscapes):
     bins_array = [np.linspace(0,max_q,num=n) for n in n_points_array]
     filtered_landscapes = [get_filtered_landscapes(bins_array,l)
                            for l in landscapes]
-    # transpose: element i is a list of all landscapes of size n_points_array[i]
+    # transpose: element i is a list of all landscapes of size 
+    # n_points_array[i]
     to_ret = map(list, zip(*filtered_landscapes))
-    return to_ret
+    for b,r in zip(bins_array,to_ret):
+        yield b,r
 
 def run():
     """
@@ -49,31 +51,52 @@ def run():
         multi_load(cache_dir="./data/",load_func=None,force=False)
     for l in landscapes:
         l.offset_to_min()
-
     n = sorted(list(set([int(np.ceil(n)) 
-                         for n in np.logspace(np.log10(4),4,num=100)])))
+                         for n in np.logspace(np.log10(2),4,num=50)])))
     load_func = lambda :  filter_all_landscapes(n,landscapes)
-    list_filtered_n = CheckpointUtilities.multi_load("./cache/",load_func,
-                                                     force=force_re_filter)
+    ret = CheckpointUtilities.multi_load("./cache/",load_func,
+                                         force=force_re_filter)
+    bins = [r[0] for r in ret]
+    list_filtered_n = [r[1] for r in ret]
+    bin_sizes_n = [b.size for b in bins]
+    sort_idx = np.argsort(bin_sizes_n)
+    bins_sizes_n = [bin_sizes_n[i] for i in sort_idx]
+    bins = [bins[i] for i in sort_idx]
+    list_filtered_n = [list_filtered_n[i] for i in sort_idx]
+    np.testing.assert_allclose(sorted(bin_sizes_n),n)
+    # POST: data is OK, filtered as we want. 
     max_q = max([max(l.q) for l in landscapes])
     bin_sizes = np.array([max_q/n_tmp for n_tmp in n])
-    error_value = lambda f : f.G_0 
+    error_value = lambda f : np.gradient(f.G_0)/np.gradient(f.q)
     energy_stdev = [ np.std([error_value(f) for f in list_n],axis=0)
                     for list_n in list_filtered_n]
-    average_stdev_energy = np.array([np.mean(e) for e in energy_stdev])
-    stdev_stdev_energy = np.array([np.std(e) for e in energy_stdev])
+    residuals = [ np.array([l.spline_fit_residual
+                            for l in list_n])
+                  for list_n in list_filtered_n]
+    average_stdev_energy = np.array([np.mean(e)*np.mean(r)
+                                     for e,r in zip(energy_stdev,residuals)])
+    stdev_stdev_energy = np.array([np.std(e)*np.mean(r)
+                                   for e,r in zip(energy_stdev,residuals)])
     key = landscapes[0]
-    average_error_per_bin_plot = average_stdev_energy * key.beta/n
-    stdev_stdev_energy_per_bin_plot = stdev_stdev_energy * key.beta/n
+    beta = key.beta
+    to_plot_y = lambda x: x *  (beta**2) * 1e9
+    average_error_per_bin_plot = to_plot_y(average_stdev_energy)
+    stdev_stdev_energy_per_bin_plot = to_plot_y(stdev_stdev_energy)
     error_plot_95_pct = stdev_stdev_energy_per_bin_plot*2
-    thresh_kT = 0.05
     upper_bound = average_error_per_bin_plot+error_plot_95_pct
-    idx_n = np.where(upper_bound < thresh_kT)[0][0]
+    bin_sizes_nm = bin_sizes * 1e9
+    slice_fit = slice(15,30,1)
+    # fit to near the minimum
+    x_fit = bin_sizes_nm[slice_fit]
+    y_fit = average_error_per_bin_plot[slice_fit]
+    coeffs = np.polyfit(x=x_fit,y=y_fit,deg=2)
+    pred = np.polyval(coeffs,x=x_fit)
+    x_fit_chosen = x_fit[np.argmin(pred)]
+    idx_n = np.argmin(np.abs(bin_sizes_nm-x_fit_chosen))
     key_filtered = list_filtered_n[idx_n][0]
     res_m = bin_sizes[idx_n]
     res_nm = res_m * 1e9
     idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
-    bin_sizes_nm = bin_sizes * 1e9
     to_x = lambda x: x*1e9
     to_y = lambda y : y * key.beta
     kbT_text = "$k_\mathrm{b}T$"
@@ -82,14 +105,14 @@ def run():
     ax_error = plt.subplot(2,1,1)
     ax_error.set_xscale('log')
     ax_error.set_yscale('log')
-    plt.axhline(thresh_kT,linewidth=1,linestyle='--',color='k',
-                label=("{:.2f} ".format(thresh_kT) + kbT_text))
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
                         markersize=1.5)
-    errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,lolims=True,
-                         **marker_props)
+    errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
+                         lolims=True,**marker_props)
     plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_plot,
                  yerr=error_plot_95_pct,**errorbar_dict)
+    plt.plot(x_fit,pred,'r--',label="Quadratic fit to minima",
+             linewidth=0.75,alpha=0.7)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
@@ -98,8 +121,9 @@ def run():
                  y=average_error_per_bin_plot[idx_chosen],
                  yerr=error_plot_95_pct[idx_chosen],
                  **chosen_dict)    
+    error_paren = "(" + kbT_text+"$^2$/nm)"
     PlotUtilities.lazyLabel("Bin size (nm)",
-                            r"Error per bin " + kbT_text_paren,"")
+                            r"Bin error" + error_paren,"")
     Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(res_nm),
                                   xy=(res_nm,0.1),
                                   color='r',
