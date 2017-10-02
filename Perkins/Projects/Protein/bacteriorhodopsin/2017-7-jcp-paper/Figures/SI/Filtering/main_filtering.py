@@ -81,7 +81,8 @@ def run():
                 label=("{:.2f} ".format(thresh) + kbT_text))
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
                         markersize=1.5)
-    errorbar_dict = dict(capsize=0.75,elinewidth=0.4,**marker_props)
+    errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
+                         **marker_props)
     plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_kT,
                  yerr=stdev_stdev_energy_per_bin_kT,**errorbar_dict)
     # plot the called out one 
