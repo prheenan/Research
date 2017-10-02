@@ -60,7 +60,7 @@ def run():
     example = raw_data[0]                                                 
     example_plot = copy.deepcopy(example)
     # fix the manual offset
-    example_plot.Force -= 7.1
+    example_plot.LowResData.force -= 7.1
     plot_examples = [example_plot]
     vel_m_per_s = example_plot.Velocity
     x_func = lambda y: y.Separation
