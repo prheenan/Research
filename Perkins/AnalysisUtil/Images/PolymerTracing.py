@@ -31,6 +31,14 @@ class spline_info(object):
         self.x0_px = x0_px
         self.y0_px = y0_px
 
+class angle_info(object):
+    def __init__(self,theta,L_px):
+        self.theta = theta
+        self.L_px = L_px
+    @property
+    def cos_theta(self):
+        return np.cos(self.theta)
+
 class polymer_info(object):
     # holds low-level information about the polymer itself
     def __init__(self,L_m,cos_angle,Lp_m,L0_m,L_binned,cos_angle_binned,coeffs):
@@ -341,11 +349,13 @@ def spline_fit(image_obj,x,y):
     assert image.shape[0] == image.shape[1] , \
         "Non square image unsupported"
     m_per_px = (image_obj.range_meters/image.shape[0])
-    cos_angle,flat_L0,L0_px = \
+    angle_inf,L0 = \
         angles_and_contour_lengths(spline,deriv,
                                    min_change_px=0,
                                    max_change_px=200e-9/m_per_px)
     # POST: cos_angle and flat_L0 and reasonable
+    cos_angle = angle_info.cos_angle
+    flat_L0 = angle_inf.L_px
     edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
     L_m = flat_L0 * m_per_px
     L_binned_m = edges * m_per_px
@@ -357,8 +367,8 @@ def spline_fit(image_obj,x,y):
     assert Lp_m > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
     fit_spline_info = spline_info(u,tck,spline,deriv,x0_px=x0, y0_px=y0)
-    polymer_info_obj =polymer_info(L_m=L_m, cos_angle=cos_angle,
-                                   Lp_m=Lp_m,L0_m=L0_m,L_binned = L_binned_m,
+    polymer_info_obj =polymer_info(angle_info=angle_info,L_m=L_m,
+                                   Lp_m=Lp_m,L_binned = L_binned_m,
                                    cos_angle_binned = mean_cos_angle,
                                    coeffs=coeffs)
     return  spline_fit_obj(image_cropped=image_cropped,
@@ -407,7 +417,7 @@ def angles_and_contour_lengths(spline,deriv,
         deriv: the continuous derivative of spline, size N
         <min/max>_change_px: the minimum and maximum pixel changes
     Returns:
-        tuple of Cos(Theta(i)) and L(i) 
+        tuple of angle_info object, L0_px
     """
     # get the x and y coordinates of the spline
     x_spline,y_spline = spline
@@ -426,33 +436,37 @@ def angles_and_contour_lengths(spline,deriv,
     L0 = contour_lengths[-1]
     n = x_spline.shape[0]
     contour_length_matrix = _difference_matrix(contour_lengths,contour_lengths)
-    cos_angle_matrix = _dot_matrix(deriv_unit_vector.T,deriv_unit_vector.T)
-    cos_angle_matrix = np.maximum(-1,cos_angle_matrix)
-    cos_angle_matrix = np.minimum(1,cos_angle_matrix)
+    dx_deriv = deriv_unit_vector[0, :]
+    dy_deriv = deriv_unit_vector[1, :]
+    angle2 = np.arctan2(dy_deriv, dx_deriv)
+    angle_diff_matrix = _difference_matrix(angle2.T, angle2.T)
+    # normalize to 0 to 2*pi
+    where_le_0 = np.where(angle_diff_matrix < 0)
+    angle_diff_matrix[where_le_0] += 2 * np.pi
+    # make the angles all between -pi and pi
+    angle_diff_matrix -= np.pi
+    assert ((angle_diff_matrix >= -np.pi) & (angle_diff_matrix <= np.pi)).all()
+    # POST: angles calculated correctly...
     # only look at the upper triangular part
     idx_upper_tri = np.triu_indices(n)
     idx_upper_tri_no_diag =np.triu_indices(n,k=1)
-    # angle should be finite, between -1 and 1, also be finite
-    assert ((cos_angle_matrix >= -1) & \
-            (cos_angle_matrix <= 1) & \
-            (np.isfinite(cos_angle_matrix))).all()
     # upper diagonal should have >0 contour length
     assert (contour_length_matrix[idx_upper_tri_no_diag] > 0).all() , \
         "Contour lengths should be positive"
     # POST: contour lengths and angles make sense; we only want upper triangular
     # (*including* the trivial 0,0 point along the diagonal)
-    contour_length_matrix = contour_length_matrix[idx_upper_tri]
-    cos_angle_matrix = cos_angle_matrix[idx_upper_tri]
+    contour_length_matrix_check_valid = contour_length_matrix[idx_upper_tri]
     # POST: matrix is filled in, determine where the value are valid
-    ok_idx = np.where( (contour_length_matrix > min_change_px) &
-                       (contour_length_matrix < max_change_px))
-    sanit = lambda x: x[ok_idx].flatten()
-    flat_L0 = sanit(contour_length_matrix)
-    sort_idx = np.argsort(flat_L0)
-    # sort everything by L0...
-    flat_L0 = flat_L0[sort_idx]
-    cos_angle = sanit(cos_angle_matrix)[sort_idx]
-    return cos_angle,flat_L0,L0
+    ok_idx = np.where( (contour_length_matrix_check_valid > min_change_px) &
+                       (contour_length_matrix_check_valid < max_change_px))
+    sanit = lambda x: x[idx_upper_tri][ok_idx].flatten()
+    sort_idx = np.argsort(sanit(contour_length_matrix))
+    sanit_and_sort = lambda x: sanit(x)[sort_idx]
+    # return everything sorted as per sort_idx
+    flat_L = sanit_and_sort(contour_length_matrix)
+    flat_angle = sanit_and_sort(angle_diff_matrix)
+    to_ret = angle_info(theta=flat_angle, L=flat_L)
+    return to_ret,L0
 
 def _spline_u_and_tck(x,y,k=3,s=None,num=None):
     """

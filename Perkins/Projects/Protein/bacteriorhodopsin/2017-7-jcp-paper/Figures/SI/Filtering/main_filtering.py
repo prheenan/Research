@@ -16,14 +16,11 @@ from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes,mark_inset
 
-def get_filtered_landscapes(bins_array,landscape):
-    filtered = []
-    for b in bins_array:
-        tmp = WeierstrassUtil.\
-              _filter_single_landscape(landscape_obj=landscape,bins=b)
-        tmp.offset_to_min()
-        filtered.append(tmp)
-    return filtered
+def get_filtered_landscape(b,landscape):
+    tmp = WeierstrassUtil.\
+          _filter_single_landscape(landscape_obj=landscape,bins=b)
+    tmp.offset_to_min()
+    return tmp
 
 def filter_all_landscapes(n_points_array,landscapes):
     # zero all the landscapes
@@ -34,13 +31,8 @@ def filter_all_landscapes(n_points_array,landscapes):
         max_q = max(max_q,max(l.q))
     # get all the filtered landscapes
     bins_array = [np.linspace(0,max_q,num=n) for n in n_points_array]
-    filtered_landscapes = [get_filtered_landscapes(bins_array,l)
-                           for l in landscapes]
-    # transpose: element i is a list of all landscapes of size 
-    # n_points_array[i]
-    to_ret = map(list, zip(*filtered_landscapes))
-    for b,r in zip(bins_array,to_ret):
-        yield b,r
+    for b in bins_array:
+        yield b,[get_filtered_landscape(b,l) for l in landscapes]            
 
 def run():
     """
@@ -48,7 +40,8 @@ def run():
     # load all the landscapes here
     force_re_filter = False
     landscapes = CheckpointUtilities.\
-        multi_load(cache_dir="./data/",load_func=None,force=False)
+        multi_load(cache_dir="../../Energylandscapes/Full_(no_adhesion).pkl/",
+                   load_func=None,force=False,limit=10)
     for l in landscapes:
         l.offset_to_min()
     n = sorted(list(set([int(np.ceil(n)) 
