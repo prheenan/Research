@@ -85,14 +85,10 @@ def run():
     error_plot_95_pct = stdev_stdev_energy_per_bin_plot*2
     upper_bound = average_error_per_bin_plot+error_plot_95_pct
     bin_sizes_nm = bin_sizes * 1e9
-    slice_fit = slice(15,30,1)
-    # fit to near the minimum
-    x_fit = bin_sizes_nm[slice_fit]
-    y_fit = average_error_per_bin_plot[slice_fit]
-    coeffs = np.polyfit(x=x_fit,y=y_fit,deg=2)
-    pred = np.polyval(coeffs,x=x_fit)
-    x_fit_chosen = x_fit[np.argmin(pred)]
-    idx_n = np.argmin(np.abs(bin_sizes_nm-x_fit_chosen))
+    min_e = min(upper_bound)
+    well_max =  1.1*min_e
+    where_close = np.where(upper_bound <= well_max)[0]
+    idx_n = int(np.round(np.mean(where_close)))
     key_filtered = list_filtered_n[idx_n][0]
     res_m = bin_sizes[idx_n]
     res_nm = res_m * 1e9
@@ -111,21 +107,20 @@ def run():
                          lolims=True,**marker_props)
     plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_plot,
                  yerr=error_plot_95_pct,**errorbar_dict)
-    plt.plot(x_fit,pred,'r--',label="Quadratic fit to minima",
-             linewidth=0.75,alpha=0.7)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
     chosen_dict['mfc']='r'
+    chosen_dict['markersize'] *= 2
     plt.errorbar(x=bin_sizes_nm[idx_chosen],
                  y=average_error_per_bin_plot[idx_chosen],
                  yerr=error_plot_95_pct[idx_chosen],
                  **chosen_dict)    
     error_paren = "(" + kbT_text+"$^2$/nm)"
     PlotUtilities.lazyLabel("Bin size (nm)",
-                            r"Bin error" + error_paren,"")
+                            r"Bin error " + error_paren,"")
     Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(res_nm),
-                                  xy=(res_nm,0.1),
+                                  xy=(res_nm,well_max*1.2),
                                   color='r',
                                   xycoords='data')
     plt.subplot(2,1,2)
