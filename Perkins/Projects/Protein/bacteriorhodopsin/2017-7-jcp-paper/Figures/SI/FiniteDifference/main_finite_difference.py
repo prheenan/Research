@@ -91,15 +91,15 @@ def run():
     plt.plot(x_plot,weighted_deriv_plot/1e6,**kw_weighted)
     PlotUtilities.lazyLabel("",
                             "$\dot{A}(q)$ ($\mathrm{\mu}$N)",
-                            "$\Downarrow$ Determine derivative",
+                            "$\Downarrow$ Determine derivative (both methods)",
                             **lazy_common)
     PlotUtilities.no_x_label(ax_deriv_both)
     # # plot A_z_dot, but just the weighted method (ie: not super wacky)
     ax_deriv_weighted = plt.subplot(3,1,3)
     plt.plot(x_plot,weighted_deriv_plot,linewidth=1,**kw_weighted)
+    title_last = "$\Downarrow$ Work-weighted method is reasonable "
     PlotUtilities.lazyLabel("Extension (nm)","$\dot{A}(q)$ (pN)",
-                            "$\Downarrow$ Only work-weighted method",
-                            **lazy_common)
+                            title_last,**lazy_common)
     PlotUtilities.savefig(fig,"./finite_differences.png",
                           subplots_adjust=dict(hspace=0.2))
 
