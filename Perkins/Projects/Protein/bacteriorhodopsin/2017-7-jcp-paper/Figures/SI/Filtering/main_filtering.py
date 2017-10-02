@@ -49,8 +49,7 @@ def run():
         multi_load(cache_dir="./data/",load_func=None,force=False)
     for l in landscapes:
         l.offset_to_min()
-    res_m = 0.2e-9
-    res_nm = res_m * 1e9
+
     n = sorted(list(set([int(np.ceil(n)) 
                          for n in np.logspace(np.log10(4),4,num=100)])))
     load_func = lambda :  filter_all_landscapes(n,landscapes)
@@ -58,44 +57,51 @@ def run():
                                                      force=force_re_filter)
     max_q = max([max(l.q) for l in landscapes])
     bin_sizes = np.array([max_q/n_tmp for n_tmp in n])
-    energy_stdev = [ np.std([f.G_0 for f in list_n],axis=0)
+    error_value = lambda f : f.G_0 
+    energy_stdev = [ np.std([error_value(f) for f in list_n],axis=0)
                     for list_n in list_filtered_n]
     average_stdev_energy = np.array([np.mean(e) for e in energy_stdev])
     stdev_stdev_energy = np.array([np.std(e) for e in energy_stdev])
-    idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
     key = landscapes[0]
-    key_filtered = list_filtered_n[idx_chosen][0]
-    average_error_per_bin_kT = average_stdev_energy * key.beta / n
-    stdev_stdev_energy_per_bin_kT = stdev_stdev_energy * key.beta / n
+    average_error_per_bin_plot = average_stdev_energy * key.beta/n
+    stdev_stdev_energy_per_bin_plot = stdev_stdev_energy * key.beta/n
+    error_plot_95_pct = stdev_stdev_energy_per_bin_plot*2
+    thresh_kT = 0.05
+    upper_bound = average_error_per_bin_plot+error_plot_95_pct
+    idx_n = np.where(upper_bound < thresh_kT)[0][0]
+    key_filtered = list_filtered_n[idx_n][0]
+    res_m = bin_sizes[idx_n]
+    res_nm = res_m * 1e9
+    idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
     bin_sizes_nm = bin_sizes * 1e9
     to_x = lambda x: x*1e9
     to_y = lambda y : y * key.beta
-    thresh = 0.05
     kbT_text = "$k_\mathrm{b}T$"
     kbT_text_paren = "(" + kbT_text + ")"
     fig = PlotUtilities.figure()
     ax_error = plt.subplot(2,1,1)
     ax_error.set_xscale('log')
     ax_error.set_yscale('log')
-    plt.axhline(thresh,linewidth=1,linestyle='--',color='k',
-                label=("{:.2f} ".format(thresh) + kbT_text))
+    plt.axhline(thresh_kT,linewidth=1,linestyle='--',color='k',
+                label=("{:.2f} ".format(thresh_kT) + kbT_text))
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
                         markersize=1.5)
-    errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
+    errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,lolims=True,
                          **marker_props)
-    plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_kT,
-                 yerr=stdev_stdev_energy_per_bin_kT,**errorbar_dict)
+    plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_plot,
+                 yerr=error_plot_95_pct,**errorbar_dict)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
     chosen_dict['mfc']='r'
     plt.errorbar(x=bin_sizes_nm[idx_chosen],
-                 y=average_error_per_bin_kT[idx_chosen],
-                 yerr=stdev_stdev_energy_per_bin_kT[idx_chosen],
+                 y=average_error_per_bin_plot[idx_chosen],
+                 yerr=error_plot_95_pct[idx_chosen],
                  **chosen_dict)    
     PlotUtilities.lazyLabel("Bin size (nm)",
-                            r"<Error per bin> " + kbT_text_paren,"")
-    Annotations.relative_annotate(ax=ax_error,s="0.2nm",xy=(0.1,0.1),
+                            r"Error per bin " + kbT_text_paren,"")
+    Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(res_nm),
+                                  xy=(res_nm,0.1),
                                   color='r',
                                   xycoords='data')
     plt.subplot(2,1,2)
