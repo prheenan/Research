@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
-from GeneralUtil.python.Plot import Scalebar
+from GeneralUtil.python.Plot import Scalebar,Annotations
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes,mark_inset
@@ -47,17 +47,50 @@ def run():
     force_re_filter = False
     landscapes = CheckpointUtilities.\
         multi_load(cache_dir="./data/",load_func=None,force=False)
-    print(landscapes)
-    n = np.logspace(2,4,num=10)
+    for l in landscapes:
+        l.offset_to_min()
+    res_m = 0.2e-9
+    res_nm = res_m * 1e9
+    n = np.logspace(1,4,num=100)
     load_func = lambda :  filter_all_landscapes(n,landscapes)
     list_filtered_n = CheckpointUtilities.multi_load("./cache/",load_func,
                                                      force=force_re_filter)
-    energy_stdev = [ np.std([f.G_0 for f in list_filtered_n],axis=1)
-                    for list_filtered_n in list_filtered_n]
+    max_q = max([max(l.q) for l in landscapes])
+    bin_sizes = np.array([max_q/n_tmp for n_tmp in n])
+    energy_stdev = [ np.std([f.G_0 for f in list_n],axis=0)
+                    for list_n in list_filtered_n]
+    average_stdev_energy = np.array([np.mean(e) for e in energy_stdev])
+    idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
+    key = landscapes[0]
+    key_filtered = list_filtered_n[idx_chosen][0]
+    average_error_per_bin_kT = average_stdev_energy * key.beta / n
+    bin_sizes_nm = bin_sizes * 1e9
+    to_x = lambda x: x*1e9
+    to_y = lambda y : y * key.beta
     fig = PlotUtilities.figure()
-    plt.plot(n,energy_stdev)
-    PlotUtilities.savefig(fig,"./filtering.png",
-                          subplots_adjust=dict(hspace=0.2))
+    ax_error = plt.subplot(2,1,1)
+    thresh = 0.05
+    kbT_text = "$k_\mathrm{b}T$"
+    kbT_text_paren = "(" + kbT_text + ")"
+    plt.axhline(thresh,linewidth=1,linestyle='--',color='k',
+                label=("{:.2f} ".format(thresh) + kbT_text))
+    plt.semilogx(bin_sizes_nm,average_error_per_bin_kT)
+    plt.plot(bin_sizes_nm[idx_chosen],average_error_per_bin_kT[idx_chosen],
+             'ro',markersize=3)
+    PlotUtilities.lazyLabel("Bin size (nm)",
+                            r"<Error per bin> " + kbT_text_paren,"")
+    Annotations.relative_annotate(ax=ax_error,s="0.2nm",xy=(0.2,0.1),color='r',
+                                  xycoords='data')
+    plt.subplot(2,1,2)
+    plt.plot(to_x(key.q),to_y(key.G_0),color='k',alpha=0.3,linewidth=0.5)
+    plt.plot(to_x(key_filtered.q),to_y(key_filtered.G_0),color='k',
+             linewidth=0.7)
+    PlotUtilities.lazyLabel("Extension (nm)",
+                            r"$G_0$ " + kbT_text_paren,
+                            "Example landscape, filtered to {:.1f} nm".\
+                            format(res_nm),
+                            title_kwargs=dict(color='r'))
+    PlotUtilities.savefig(fig,"./filtering.png")
 
 if __name__ == "__main__":
     run()
