@@ -88,6 +88,7 @@ def run():
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
+    chosen_dict['mfc']='r'
     plt.errorbar(x=bin_sizes_nm[idx_chosen],
                  y=average_error_per_bin_kT[idx_chosen],
                  yerr=stdev_stdev_energy_per_bin_kT[idx_chosen],
