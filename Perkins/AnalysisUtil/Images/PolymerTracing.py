@@ -262,6 +262,21 @@ def get_region_of_interest(height_cropped_nm,background_image,threshold_nm=0.0):
     image_single_region = skeleton_zeroed * height_cropped_nm
     return image_single_region
 
+def _binned_stat(x,y,n_bins,**kw):
+    """
+    Args:
+        x,y: the x and y values to fit
+        n_bins: the uniform number of bins to use to bin y onto x
+        **kw: passed to binned_statistic
+    Returns:
+        tuple of <x bins, y statistics>
+    """
+    bins = np.linspace(min(x),max(x),num=n_bins)
+    stat_y,x,_ = binned_statistic(x=x,values=y,bins=bins,**kw)
+    # skip the right bin
+    x = x[:-1]
+    return x,stat_y
+
 def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     """
     Gets L and <cos(theta(L))>
@@ -279,14 +294,12 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     Returns:
        tuple of L_[avg,j],<Cos(Theta_[avg,j])>, where j runs 0 to n_bins-1
     """
-    bins = np.linspace(min(L),max(L),num=n_bins)
-    mean_cos_angle,edges,_ = binned_statistic(x=L,values=cos_angle,
-                                              bins=bins)
+
     # last edge is right bin
-    edges = edges[:-1]
+    edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins)
     # filter to the bins with at least f% of the total size
-    f_min_size = 1/(bins.size)
-    values,_ = np.histogram(a=L,bins=bins)
+    f_min_size = 1/(edges.size)
+    values,_ = np.histogram(a=L,bins=edges)
     bins_with_data = np.where(values > 0)
     mean_cos_angle = mean_cos_angle[bins_with_data]
     edges = edges[bins_with_data]
@@ -341,18 +354,26 @@ def spline_fit(image_obj,x,y):
     assert image.shape[0] == image.shape[1] , \
         "Non square image unsupported"
     m_per_px = (image_obj.range_meters/image.shape[0])
-    cos_angle,flat_L0,L0_px = \
-        angles_and_contour_lengths(spline,deriv,
-                                   min_change_px=0,
-                                   max_change_px=200e-9/m_per_px)
+    cos_angle,flat_L,L0_px = \
+        angles_and_contour_lengths(spline,deriv,min_change_px=0,
+                                   max_change_px=400e-9/m_per_px)
+    n_bins = 50
+    # get the theta moments
+    theta = np.arccos(cos_angle)
+    theta_L_and_moments= [_binned_stat(x=flat_L,y=theta**i,n_bins=n_bins)
+                          for i in range(1,5)]
+    theta_moments_only = [tmp[1] for tmp in theta_L_and_moments]
+    avg_theta,avg_theta_2,avg_theta_3,avg_theta_4 = theta_moments_only
+    theta_L = theta_L_and_moments[0][0]
     # POST: cos_angle and flat_L0 and reasonable
-    edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L0,n_bins=50)
-    L_m = flat_L0 * m_per_px
+    edges,mean_cos_angle =  get_L_and_mean_angle(cos_angle,flat_L,
+                                                 n_bins=n_bins)
+    L_m = flat_L * m_per_px
     L_binned_m = edges * m_per_px
     L0_m = L0_px * m_per_px
     Lp_m,log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_binned_m,mean_cos_angle)
-    # do some data checking.        
+    # do some data checking.
     assert L0_m > 0 , "L0 must be positive"
     assert Lp_m > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
