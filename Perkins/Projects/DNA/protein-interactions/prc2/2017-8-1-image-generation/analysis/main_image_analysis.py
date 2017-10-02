@@ -108,7 +108,7 @@ def run():
         im = o.image.height_nm_rel()
         assert (im.shape[0] == im.shape[1])
         assert (im.shape[0] == size_images_pixels)
-    kw = dict(min_m = 25e-9,max_m = 70e-9)
+    kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
     L_binned = polymer_info_obj.L_binned
     log_mean_angle = -np.log(polymer_info_obj.cos_angle_binned)

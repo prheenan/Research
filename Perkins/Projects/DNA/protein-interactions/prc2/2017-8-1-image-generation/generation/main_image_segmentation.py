@@ -57,7 +57,7 @@ def run():
         fig.add_axes(ax)
         height_nm_rel = i.height_nm_rel()
         height_nm_rel -= np.median(height_nm_rel)
-        vmin,vmax = [0.0,1]
+        vmin,vmax = [0.0,2]
         ax.imshow(height_nm_rel,cmap=plt.cm.Greys_r,vmin=vmin,vmax=vmax,
                   aspect='normal')
         size_microns = i.range_meters * 1e6                
