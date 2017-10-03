@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
-from GeneralUtil.python.Plot import Scalebar
+from GeneralUtil.python.Plot import Scalebar,Inset
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes,mark_inset
@@ -48,15 +48,10 @@ def run():
     x0 = 14.5
     dx = 0.05
     xlim = [x0,x0+dx]
-    # plot the data red where we will zoom in 
-    where_region = np.where( (x_plot >= xlim[0]) & 
-                             (x_plot <= xlim[1]))
-    zoom_x = x_plot[where_region]
-    zoom_y = A_q_kT[where_region]
-    ylim = [min(zoom_y),max(zoom_y)]
-    dy = ylim[1]-ylim[0]
+    zoom_x,zoom_y,ylim = Inset.slice_by_x(x_plot,A_q_kT,xlim)
     # add in some extra space for the scalebar 
     ylim_fudge = 0.7
+    dy = ylim[1] - ylim[0]
     ylim = [ylim[0],ylim[1] + (ylim_fudge * dy)]
     lazy_common = dict(title_kwargs=dict(loc='left'))
     plt.axvspan(*xlim,color='r',alpha=0.3,edgecolor="None")

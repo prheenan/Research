@@ -144,7 +144,7 @@ def run():
                                   xycoords='data')
     ax_energy = plt.subplot(2,1,2)
     x_unfilt,y_unfilt = to_x(key.q),to_y(key.G_0)
-    x_filt,y_filt = x_filt(key_filtered.q),y_filt(key_filtered.G_0)
+    x_filt,y_filt = to_x(key_filtered.q),to_y(key_filtered.G_0)
     plt.plot(x_unfilt,y_unfilt,color='k',alpha=0.3,linewidth=0.5,
              label="Raw")
     plt.plot(x_filt,y_filt,color='k',
