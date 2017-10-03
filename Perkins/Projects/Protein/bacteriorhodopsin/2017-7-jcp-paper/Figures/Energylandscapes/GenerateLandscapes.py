@@ -175,7 +175,7 @@ def heatmap(x,y,bins):
     histogram = histogram.T            
     return histogram, x_edges,y_edges 
     
-def get_heatmap_data(time_sep_force_arr,bins=(100,100)):        
+def get_heatmap_data(time_sep_force_arr,bins=(300,100)):
     sep_nm = [t.Separation*1e9 for t in time_sep_force_arr]
     z_nm = [t.ZSnsr*1e9 for t in time_sep_force_arr]
     force_pN = [t.Force*1e12 for t in time_sep_force_arr]
@@ -221,7 +221,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     raw_data = [r for r in raw_data 
                 if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
     raw_area_slices = []
-    area_bounds = [get_area_bounds(raw_data,area) for area in areas]
+    area_bounds = [get_area_bounds(raw_data,a) for a in areas]
     # fix all the spring constants. XXX need to account for this...
     mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant 
                                     for r in raw_data])
@@ -241,8 +241,9 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     to_ret = []
     skip = 0
     N_boostraps = 500
+    area_of_interst = areas[0]
     heatmap_data,iwt_tmp = \
-        single_area_landscape_bootstrap(areas[0],raw_area_slices,
+        single_area_landscape_bootstrap(area_of_interst,raw_area_slices,
                                         skip,N_boostraps)   
-    filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)                                        
+    filtered_iwt = filter_landscapes(iwt_tmp,area_of_interst.n_bins)
     return cacheable_data(filtered_iwt,*heatmap_data)                           

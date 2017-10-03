@@ -297,20 +297,28 @@ def kwargs_labels():
     return [PlotUtilities.variable_string(r"A"),
             PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2k}"),
             PlotUtilities.variable_string(second_deriv)]
+
+
             
 def plot_with_corrections(data):
     ext_nm = 1e9 * data._extensions_m_original.copy()
     ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
-    energies = [data._grid_property(lambda x: x.A_z * convert),
-                data._grid_property(lambda x: -1 * x.first_deriv_term * convert),
-                data._grid_property(lambda x: x.second_deriv_term* convert)]
+    key = data.landscape_objs[0]
+    # the second derivative is a little special; we average the argument to the log first,
+    # to avoid lots of zeros
+    beta = key.beta
+    f_deriv = data._grid_property(lambda x: x.one_minus_A_z_ddot_over_k)
+    f_mean = lambda x: np.mean(x,axis=0)
+    to_second_deriv = lambda x: InverseWeierstrass.second_deriv_term(x,beta)
+    energies = [f_mean(data._grid_property(lambda x: x.A_z * convert)),
+                f_mean(data._grid_property(lambda x: -1 * x.first_deriv_term * convert)),
+                to_second_deriv(f_mean(f_deriv))*convert]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
-    landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol             
-    for i,e in enumerate(energies):
-        energy_rel = np.mean(e,axis=0)
-        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])  
+    # plot each
+    for i,energy_rel in enumerate(energies):
+        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
@@ -465,7 +473,8 @@ def run():
             l.q = sanit(l.q)
             # zero the energy
             l.energy = sanit(l.energy)
-            l.energy -= min(l.energy)     
+            min_e = min(l.energy)
+            l.energy -=  min_e
             l.A_z = sanit(l.A_z)
             l.A_z_dot = sanit(l.A_z_dot)
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
