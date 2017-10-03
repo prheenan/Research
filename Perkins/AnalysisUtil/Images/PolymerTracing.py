@@ -288,6 +288,25 @@ def _binned_stat(x,y,n_bins,**kw):
     x = x[:-1]
     return x,stat_y
 
+def theta_i(theta,i):
+    return theta**i
+
+def theta_stats(polymer_info_obj,n_bins):
+    theta = np.arccos(polymer_info_obj.cos_angle)
+    plt.subplot(2,1,1)
+    plt.plot(theta,markevery=50)
+    plt.subplot(2,1,2)
+    plt.plot(np.pi - np.arccos(np.cos(polymer_info_obj.theta)),markevery=50)
+    plt.show()
+    x = polymer_info_obj.L_m
+    fs = [ theta_i(theta,i)
+           for i in range(1,5)]
+    kw = dict(x=x,n_bins=n_bins)
+    x_ys = [_binned_stat(y=f,**kw) for f in fs]
+    x = x_ys[0][0]
+    thetas = [tmp[1] for tmp in x_ys]
+    return [x] + thetas
+
 def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     """
     Gets L and <cos(theta(L))>
@@ -309,8 +328,7 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     # last edge is right bin
     edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins)
     # filter to the bins with at least f% of the total size
-    f_min_size = 1/(bins.size)
-    values,_ = np.histogram(a=L,bins=bins)
+    values,_ = np.histogram(a=L,bins=edges)
     bins_with_data = np.where(values > 0)[0]
     assert bins_with_data.size > 0
     mean_cos_angle = mean_cos_angle[bins_with_data]
