@@ -44,7 +44,7 @@ def reload_filtered_landscapes(force_re_filter):
     data_dir = "../../Energylandscapes/Full_(no_adhesion).pkl/"
     # only re-load if we have to 
     if (n_files == 0 or force_re_filter):
-        limit =5
+        limit = None
     else:
         # just get the key / first landscsape 
         limit = 1
@@ -177,18 +177,21 @@ def run():
     # add a scalebar to the inset
     # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
     unit_kw_x = dict(fmt="{:.1f}")
-    common = dict(line_kwargs=dict(linewidth=1.0,color='k'))
+    common = dict(line_kwargs=dict(linewidth=0.6,color='k'))
     # round to ~10s of pm
     dx,dy = abs(np.diff(xlim))[0],abs(np.diff(ylim))[0]
-    x_width = np.around(dx/4,2)
+    x_width = np.around(dx/4,1)
     y_width = np.around(dy/4,0)
+    font_common = dict(fontsize=4)
+    font_x,font_y = Scalebar.font_kwargs_modified(font_common,font_common)
     x_kw = dict(width=x_width,unit="nm",unit_kwargs=unit_kw_x,
-                fudge_text_pct=dict(x=0.2,y=-0.3),**common)
-    y_kw = dict(height=y_width,unit=r"$k_\mathrm{b}T$",
+                font_kwargs=font_x,
+                fudge_text_pct=dict(x=0.,y=-0.5),**common)
+    y_kw = dict(height=y_width,unit=r"$k_\mathrm{b}T$",font_kwargs=font_y,
                 unit_kwargs=dict(fmt="{:.0f}"),**common)
     Scalebar.crossed_x_and_y_relative(ax=ax_ins,
-                                      offset_x=0.45,
-                                      offset_y=0.7,
+                                      offset_x=0.3,
+                                      offset_y=0.6,
                                       x_kwargs=x_kw,
                                       y_kwargs=y_kw)
     PlotUtilities.savefig(fig,"./filtering.png")
