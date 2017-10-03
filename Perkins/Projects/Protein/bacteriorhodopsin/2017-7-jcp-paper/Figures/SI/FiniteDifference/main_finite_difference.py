@@ -14,7 +14,6 @@ from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 from GeneralUtil.python.Plot import Scalebar,Inset
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass
-from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes,mark_inset
 
 def run():
     """
@@ -57,13 +56,9 @@ def run():
     plt.axvspan(*xlim,color='r',alpha=0.3,edgecolor="None")
     plt.plot(zoom_x,zoom_y,color='r')
     # plot a zoomed in axis, to clarify why it probably goes wrong 
-    axins = zoomed_inset_axes(ax_A_q, zoom=250, loc=4,borderpad=1)
-    axins.plot(x_plot, A_q_kT,linewidth=0.1,color='r')
-    axins.set_xlim(*xlim) # apply the x-limits
-    axins.set_ylim(*ylim) # apply the y-limits
-    PlotUtilities.no_x_anything(axins)
-    PlotUtilities.no_y_anything(axins)
-    # add in a scale bar for the inset
+    axins = Inset.zoomed_axis(ax=ax_A_q,zoom=250,xlim=xlim,ylim=ylim)
+    axins.plot(x_plot, A_q_kT,linewidth=0.1,color='r')    
+    # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
     unit_kw_x = dict(fmt="{:.0f}",value_function=lambda x: x*1000)
     common = dict(line_kwargs=dict(linewidth=1.0,color='k'))
     # round to ~10s of pm

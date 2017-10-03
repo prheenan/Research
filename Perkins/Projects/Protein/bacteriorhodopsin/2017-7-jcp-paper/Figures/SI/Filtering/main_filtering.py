@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
-from GeneralUtil.python.Plot import Scalebar,Annotations
+from GeneralUtil.python.Plot import Scalebar,Annotations,Inset
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes,mark_inset
@@ -149,6 +149,11 @@ def run():
              label="Raw")
     plt.plot(x_filt,y_filt,color='k',
              linewidth=0.7,label="Filtered")
+    xlim = [20,25]             
+    unfilt_x,unfilt_y,ylim = Inset.slice_by_x(x_unfilt,y_unfilt,xlim=xlim)
+    filt_x,filt_y,ylim = Inset.slice_by_x(x_filt,y_filt,xlim=xlim)
+    ax_ins = Inset.zoomed_axis(ax=ax_energy,xlim=xlim,ylim=ylim,
+                               zoom=10,borderpad=1)                      
     PlotUtilities.lazyLabel("Extension (nm)",
                             r"$G_0$ " + kbT_text_paren,
                             "Example landscape, filtered to {:.1f} nm".\
