@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import sys
 
 sys.path.append("../../../../../../../../../")
-from GeneralUtil.python import PlotUtilities,CheckpointUtilities
+from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
 from GeneralUtil.python.Plot import Scalebar,Annotations
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
@@ -34,32 +34,49 @@ def filter_all_landscapes(n_points_array,landscapes):
     for b in bins_array:
         yield b,[get_filtered_landscape(b,l) for l in landscapes]            
 
-def run():
+def reload_filtered_landscapes(force_re_filter):
     """
+    Returns: tuple of (output of filter_all_landscapes), bin arrays, landscapes
+    
+    Note: output of filtered landscapes[i] is (bins in filtering i, landscapes in i)
     """
-    # load all the landscapes here
-    force_re_filter = False
+    n_files = len(GenUtilities.getAllFiles("./cache/",ext=".pkl"))
+    data_dir = "../../Energylandscapes/Full_(no_adhesion).pkl/"
+    # only re-load if we have to 
+    if (n_files == 0 or force_re_filter):
+        limit =None
+    else:
+        # just get the key / first landscsape 
+        limit = 1
     landscapes = CheckpointUtilities.\
-        multi_load(cache_dir="../../Energylandscapes/Full_(no_adhesion).pkl/",
-                   load_func=None,force=False,limit=10)
+            multi_load(cache_dir=data_dir,load_func=None,force=False,
+                       limit=limit)        
     for l in landscapes:
-        l.offset_to_min()
+        l.offset_to_min()        
     n = sorted(list(set([int(np.ceil(n)) 
                          for n in np.logspace(np.log10(2),4,num=50)])))
     load_func = lambda :  filter_all_landscapes(n,landscapes)
     ret = CheckpointUtilities.multi_load("./cache/",load_func,
-                                         force=force_re_filter)
+                                         force=force_re_filter)   
     bins = [r[0] for r in ret]
     list_filtered_n = [r[1] for r in ret]
     bin_sizes_n = [b.size for b in bins]
     sort_idx = np.argsort(bin_sizes_n)
     bins_sizes_n = [bin_sizes_n[i] for i in sort_idx]
     bins = [bins[i] for i in sort_idx]
-    list_filtered_n = [list_filtered_n[i] for i in sort_idx]
+    list_filtered_n = [list_filtered_n[i] for i in sort_idx]    
+    return bins,bins_sizes_n,n,list_filtered_n,landscapes
+    
+def run():
+    """
+    """
+    # load all the landscapes here
+    force_re_filter = False
+    bins,bin_sizes_n,n,list_filtered_n,landscapes = \
+        reload_filtered_landscapes(force_re_filter)
     np.testing.assert_allclose(sorted(bin_sizes_n),n)
     # POST: data is OK, filtered as we want. 
-    max_q = max([max(l.q) for l in landscapes])
-    bin_sizes = np.array([max_q/n_tmp for n_tmp in n])
+    bin_sizes = np.array([b[1]-b[0] for b in bins])
     error_value = lambda f : np.gradient(f.G_0)/np.gradient(f.q)
     energy_stdev = [ np.std([error_value(f) for f in list_n],axis=0)
                     for list_n in list_filtered_n]
@@ -86,8 +103,8 @@ def run():
     pred = np.polyval(coeffs,x=x_fit)
     x_fit_chosen = x_fit[np.argmin(pred)]
     idx_n = np.argmin(np.abs(bin_sizes_nm-x_fit_chosen))
-    key_filtered = list_filtered_n[idx_n][0]
     res_m = bin_sizes[idx_n]
+    key_filtered = list_filtered_n[idx_n][0]
     res_nm = res_m * 1e9
     idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
     to_x = lambda x: x*1e9
