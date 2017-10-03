@@ -103,6 +103,11 @@ def run():
     pred = np.polyval(coeffs,x=x_fit)
     x_fit_chosen = x_fit[np.argmin(pred)]
     idx_n = np.argmin(np.abs(bin_sizes_nm-x_fit_chosen))
+    min_e = min(upper_bound)
+    well_max =  1.3*min_e
+    where_close = np.where(upper_bound <= well_max)[0]
+    idx_n = int(np.round(np.mean(where_close)))
+    key_filtered = list_filtered_n[idx_n][0]
     res_m = bin_sizes[idx_n]
     key_filtered = list_filtered_n[idx_n][0]
     res_nm = res_m * 1e9
@@ -121,27 +126,29 @@ def run():
                          lolims=True,**marker_props)
     plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_plot,
                  yerr=error_plot_95_pct,**errorbar_dict)
-    plt.plot(x_fit,pred,'r--',label="Quadratic fit to minima",
-             linewidth=0.75,alpha=0.7)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
     chosen_dict['mfc']='r'
+    chosen_dict['markersize'] *= 2
     plt.errorbar(x=bin_sizes_nm[idx_chosen],
                  y=average_error_per_bin_plot[idx_chosen],
                  yerr=error_plot_95_pct[idx_chosen],
                  **chosen_dict)    
     error_paren = "(" + kbT_text+"$^2$/nm)"
     PlotUtilities.lazyLabel("Bin size (nm)",
-                            r"Bin error" + error_paren,"")
+                            r"Bin error " + error_paren,"")
     Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(res_nm),
-                                  xy=(res_nm,0.1),
+                                  xy=(res_nm,well_max*1.2),
                                   color='r',
                                   xycoords='data')
-    plt.subplot(2,1,2)
-    plt.plot(to_x(key.q),to_y(key.G_0),color='k',alpha=0.3,linewidth=0.5)
-    plt.plot(to_x(key_filtered.q),to_y(key_filtered.G_0),color='k',
-             linewidth=0.7)
+    ax_energy = plt.subplot(2,1,2)
+    x_unfilt,y_unfilt = to_x(key.q),to_y(key.G_0)
+    x_filt,y_filt = x_filt(key_filtered.q),y_filt(key_filtered.G_0)
+    plt.plot(x_unfilt,y_unfilt,color='k',alpha=0.3,linewidth=0.5,
+             label="Raw")
+    plt.plot(x_filt,y_filt,color='k',
+             linewidth=0.7,label="Filtered")
     PlotUtilities.lazyLabel("Extension (nm)",
                             r"$G_0$ " + kbT_text_paren,
                             "Example landscape, filtered to {:.1f} nm".\
