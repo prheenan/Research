@@ -299,7 +299,7 @@ def kwargs_labels():
             PlotUtilities.variable_string(second_deriv)]
             
 def plot_with_corrections(data):
-    ext_nm = data._extension_grid_nm.copy()
+    ext_nm = 1e9 * data._extensions_m_original.copy()
     ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
     energies = [data._grid_property(lambda x: x.A_z * convert),
@@ -331,7 +331,9 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
         font_kwargs_modified(x_kwargs=common_kw,
                              y_kwargs=common_kw)
     heat_kw_common = dict(line_kwargs=dict(color='w',linewidth=1.5))
-    x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,**heat_kw_common)
+    fudge_x = dict(x=0,y=-0.2)
+    x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,
+                     fudge_text_pct=fudge_x,**heat_kw_common)
     y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
     scale_bar_x = 0.83
@@ -461,12 +463,12 @@ def run():
         sanit = lambda x: x[slice_idx].copy()        
         for l in tmp.landscape:
             l.q = sanit(l.q)
+            # zero the energy
             l.energy = sanit(l.energy)
-            l.energy -= min(l.energy)
+            l.energy -= min(l.energy)     
             l.A_z = sanit(l.A_z)
             l.A_z_dot = sanit(l.A_z_dot)
-            l.one_minus_A_z_ddot_over_k = \
-                sanit(l.one_minus_A_z_ddot_over_k)     
+            l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots

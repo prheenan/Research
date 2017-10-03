@@ -64,9 +64,13 @@ class landscape_data(object):
         n = np.max(sizes)        
         expected_sizes = np.ones(sizes.size)*n
         np.testing.assert_allclose(sizes,expected_sizes)
-        self._extensions_m = np.linspace(min_v,max_v,n,endpoint=True)
+        self._extensions_m = np.linspace(min_v,max_v,n*10,endpoint=True)
+        # save the origial (ie: same sized grid)
+        self._extensions_m_original = np.linspace(min_v,max_v,n,endpoint=True)
         self._energies = [l.spline_fit.y(self._extensions_m)
                           for l in landscape_objs]
+        # align all the arbitrary zeros                          
+        self._energies = [e - min(e) for e in self._energies]                           
         # get all the derivatives                          
         dx = self._extensions_m[1] -  self._extensions_m[0]                           
         self._d_energies_d_m = \
