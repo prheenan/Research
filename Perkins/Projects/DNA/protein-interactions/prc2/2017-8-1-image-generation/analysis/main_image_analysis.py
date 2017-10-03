@@ -110,14 +110,6 @@ def run():
         assert (im.shape[0] == size_images_pixels)
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
-    L_binned = polymer_info_obj.L_binned
-    log_mean_angle = -np.log(polymer_info_obj.cos_angle_binned)
-    x,t1,t2,t3,t4 = PolymerTracing.theta_stats(polymer_info_obj,n_bins=50)
-    plt.subplot(2,1,1)
-    plt.plot(np.log(x),np.log(t2))
-    plt.subplot(2,1,2)
-    plt.plot(x,t4/t2**2)
-    plt.show()
     # POST: all the contour lengths are set in 'real' units ]
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])

@@ -292,12 +292,7 @@ def theta_i(theta,i):
     return theta**i
 
 def theta_stats(polymer_info_obj,n_bins):
-    theta = np.arccos(polymer_info_obj.cos_angle)
-    plt.subplot(2,1,1)
-    plt.plot(theta,markevery=50)
-    plt.subplot(2,1,2)
-    plt.plot(np.pi - np.arccos(np.cos(polymer_info_obj.theta)),markevery=50)
-    plt.show()
+    theta = polymer_info_obj.theta
     x = polymer_info_obj.L_m
     fs = [ theta_i(theta,i)
            for i in range(1,5)]
@@ -504,8 +499,8 @@ def angles_and_contour_lengths(spline,deriv,
     sanit_and_sort = lambda x: sanit(x)[sort_idx]
     # return everything sorted as per sort_idx
     flat_L = sanit_and_sort(contour_length_matrix)
-    flat_angle = sanit_and_sort(angle_diff_matrix)
     cos_theta = sanit_and_sort(cos_angle_matrix)
+    flat_angle = np.arccos(cos_theta)
     to_ret = angle_info(theta=flat_angle, L_px=flat_L,
                         cos_theta=cos_theta)
     assert cos_theta[0] > 0
