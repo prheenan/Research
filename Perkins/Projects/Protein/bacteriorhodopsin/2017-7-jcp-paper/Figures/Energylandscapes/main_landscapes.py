@@ -458,11 +458,15 @@ def run():
         min_v,max_v = a.ext_bounds_nm_rel*1e-9
         slice_idx = np.where( (l.q >= min_v) & (l.q <= max_v))[0]
         assert slice_idx.size > 0
-        sanit = lambda x: x[slice_idx].copy()
+        sanit = lambda x: x[slice_idx].copy()        
         for l in tmp.landscape:
             l.q = sanit(l.q)
             l.energy = sanit(l.energy)
             l.energy -= min(l.energy)
+            l.A_z = sanit(l.A_z)
+            l.A_z_dot = sanit(l.A_z_dot)
+            l.one_minus_A_z_ddot_over_k = \
+                sanit(l.one_minus_A_z_ddot_over_k)     
         helical_data.append(tmp)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
