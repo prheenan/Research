@@ -90,6 +90,7 @@ def run():
     title_last = "$\Downarrow$ Work-weighted method is reasonable "
     PlotUtilities.lazyLabel("Extension (nm)","$\dot{A}(q)$ (pN)",
                             title_last,**lazy_common)
+    PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:] )                            
     PlotUtilities.savefig(fig,"./finite_differences.png",
                           subplots_adjust=dict(hspace=0.2))
 

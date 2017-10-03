@@ -430,7 +430,7 @@ def run():
     cache_dir = flickering_dir 
     force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
-    bin_size_meters = 0.2e-9
+    bin_size_meters = 0.4e-9
     # write down the areas we want to look at 
     adhesion_min = 17e-9
     ed_max = 32e-9
