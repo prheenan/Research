@@ -44,7 +44,7 @@ def reload_filtered_landscapes(force_re_filter):
     data_dir = "../../Energylandscapes/Full_(no_adhesion).pkl/"
     # only re-load if we have to 
     if (n_files == 0 or force_re_filter):
-        limit =None
+        limit =5
     else:
         # just get the key / first landscsape 
         limit = 1
@@ -64,7 +64,7 @@ def reload_filtered_landscapes(force_re_filter):
     sort_idx = np.argsort(bin_sizes_n)
     bins_sizes_n = [bin_sizes_n[i] for i in sort_idx]
     bins = [bins[i] for i in sort_idx]
-    list_filtered_n = [list_filtered_n[i] for i in sort_idx]    
+    list_filtered_n = [list_filtered_n[i] for i in sort_idx]
     return bins,bins_sizes_n,n,list_filtered_n,landscapes
     
 def run():
@@ -77,10 +77,16 @@ def run():
     np.testing.assert_allclose(sorted(bin_sizes_n),n)
     # POST: data is OK, filtered as we want. 
     bin_sizes = np.array([b[1]-b[0] for b in bins])
-    error_value = lambda f : np.gradient(f.G_0)/np.gradient(f.q)
+    max_q = np.max([max(b) for b in bins])
+    interp_points = max(n*10)
+    # interpolate everything onto a common grid;
+    # PRE: all landscapes are offset before filtering.
+    x = np.linspace(0,max_q,interp_points)
+    # the error in tje
+    error_value = lambda f : np.gradient(f.spline_fit.y(x)/(x[1]-x[0]))
     energy_stdev = [ np.std([error_value(f) for f in list_n],axis=0)
                     for list_n in list_filtered_n]
-    residuals = [ np.array([l.spline_fit_residual
+    residuals = [ np.array([l.spline_fit.spline.residual
                             for l in list_n])
                   for list_n in list_filtered_n]
     average_stdev_energy = np.array([np.mean(e)*np.mean(r)
@@ -95,14 +101,6 @@ def run():
     error_plot_95_pct = stdev_stdev_energy_per_bin_plot*2
     upper_bound = average_error_per_bin_plot+error_plot_95_pct
     bin_sizes_nm = bin_sizes * 1e9
-    slice_fit = slice(15,30,1)
-    # fit to near the minimum
-    x_fit = bin_sizes_nm[slice_fit]
-    y_fit = average_error_per_bin_plot[slice_fit]
-    coeffs = np.polyfit(x=x_fit,y=y_fit,deg=2)
-    pred = np.polyval(coeffs,x=x_fit)
-    x_fit_chosen = x_fit[np.argmin(pred)]
-    idx_n = np.argmin(np.abs(bin_sizes_nm-x_fit_chosen))
     min_e = min(upper_bound)
     well_max =  1.3*min_e
     where_close = np.where(upper_bound <= well_max)[0]
@@ -143,22 +141,56 @@ def run():
                                   color='r',
                                   xycoords='data')
     ax_energy = plt.subplot(2,1,2)
+    filtered_q = key_filtered.q
     x_unfilt,y_unfilt = to_x(key.q),to_y(key.G_0)
-    x_filt,y_filt = to_x(key_filtered.q),to_y(key_filtered.G_0)
-    plt.plot(x_unfilt,y_unfilt,color='k',alpha=0.3,linewidth=0.5,
-             label="Raw")
-    plt.plot(x_filt,y_filt,color='k',
-             linewidth=0.7,label="Filtered")
-    xlim = [20,25]             
-    unfilt_x,unfilt_y,ylim = Inset.slice_by_x(x_unfilt,y_unfilt,xlim=xlim)
-    filt_x,filt_y,ylim = Inset.slice_by_x(x_filt,y_filt,xlim=xlim)
-    ax_ins = Inset.zoomed_axis(ax=ax_energy,xlim=xlim,ylim=ylim,
-                               zoom=10,borderpad=1)                      
+    x_filt,y_filt = to_x(key.q),\
+                    to_y(key_filtered.spline_fit.y(key.q))
+    kw_unfilt = dict(color='k',alpha=0.3,linewidth=0.5)
+    kw_filt = dict(color='k',linewidth=0.7)
+    plt.plot(x_unfilt,y_unfilt,label="Raw",**kw_unfilt)
+    plt.plot(x_filt,y_filt,label="Filtered",**kw_filt)                
     PlotUtilities.lazyLabel("Extension (nm)",
                             r"$G_0$ " + kbT_text_paren,
                             "Example landscape, filtered to {:.1f} nm".\
                             format(res_nm),
                             title_kwargs=dict(color='r'))
+    # add a zoomed axes, make the lines smaller
+    kw_unfilt['linewidth']=0.05
+    kw_zoom_unfilt = dict(kw_unfilt)
+    kw_zoom_filt = dict(kw_filt)
+    color_zoom = 'g'
+    kw_zoom_unfilt['color'] =color_zoom
+    kw_zoom_filt['color'] = color_zoom
+    x0 = 22
+    dx = 1
+    xlim = [x0,x0+dx]             
+    zoom_unfilt_x,zoom_unfilt_y,ylim = Inset.slice_by_x(x_unfilt,y_unfilt,
+                                                        xlim=xlim)
+    zoom_filt_x,zoom_filt_y,_ = Inset.slice_by_x(x_filt,y_filt,xlim=xlim)
+    ax_ins = Inset.zoomed_axis(ax=ax_energy,xlim=xlim,ylim=ylim,
+                               zoom=14,borderpad=1)
+    for ax in [ax_ins,ax_energy]:
+        ax.plot(zoom_unfilt_x,zoom_unfilt_y,**kw_zoom_unfilt)
+        ax.plot(zoom_filt_x,zoom_filt_y,**kw_zoom_filt)
+    # add a shader to make the zoom more obvious
+    ax_energy.axvspan(*xlim,color=color_zoom,alpha=0.2,linewidth=0)
+    # add a scalebar to the inset
+    # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
+    unit_kw_x = dict(fmt="{:.1f}")
+    common = dict(line_kwargs=dict(linewidth=1.0,color='k'))
+    # round to ~10s of pm
+    dx,dy = abs(np.diff(xlim))[0],abs(np.diff(ylim))[0]
+    x_width = np.around(dx/4,2)
+    y_width = np.around(dy/4,0)
+    x_kw = dict(width=x_width,unit="nm",unit_kwargs=unit_kw_x,
+                fudge_text_pct=dict(x=0.2,y=-0.3),**common)
+    y_kw = dict(height=y_width,unit=r"$k_\mathrm{b}T$",
+                unit_kwargs=dict(fmt="{:.0f}"),**common)
+    Scalebar.crossed_x_and_y_relative(ax=ax_ins,
+                                      offset_x=0.45,
+                                      offset_y=0.7,
+                                      x_kwargs=x_kw,
+                                      y_kwargs=y_kw)
     PlotUtilities.savefig(fig,"./filtering.png")
 
 if __name__ == "__main__":
