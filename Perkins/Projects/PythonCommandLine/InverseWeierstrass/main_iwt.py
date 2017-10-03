@@ -5,6 +5,7 @@ import numpy as np
 import sys
 
 import os, sys,traceback
+import matplotlib.pyplot as plt
 # change to this scripts path
 path = os.path.abspath(os.path.dirname(__file__))
 os.chdir(path)
@@ -12,13 +13,14 @@ sys.path.append('../../../../../')
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass
+    InverseWeierstrass,WeierstrassUtil
 from GeneralUtil.python import GenUtilities
 from IgorUtil.PythonAdapter import PxpLoader
 import argparse
 
 def write_and_close(string):
     raise RuntimeError(string)
+
 
 def parse_and_run():
     parser = argparse.ArgumentParser(description='IWT of a .pxp ')
@@ -34,15 +36,22 @@ def parse_and_run():
     parser.add_argument('-f_one_half', metavar='f_one_half', type=float,
                         help='force at which half the pop is folded/unfolded',
                         **common)
-    help_vel = '[0,1] of the separation vs time to fit for the velocity'
-    parser.add_argument('-fraction_velocity_fit', 
-                        metavar='fraction_velocity_fit', type=float,
-                        help=help_vel,**common)
+    parser.add_argument('-k_T',metavar="k_T",type=float,
+                        help="Boltzmann energy, in joules",
+                        required=False,default=4.1e-21)
+    parser.add_argument('-z_0',metavar="z_0",type=float,
+                        help="Stage position offset from surface, in meters",
+                        required=False,default=0)
     parser.add_argument('-file_input',metavar="file_input",type=str,
                         help="path to the '.pxp' with the force, separation",
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
+    vel_help = "optional manually-specified velocity (m/s). If this is" + \
+               " present, then it is used to determing the velocity instead" +\
+               " of fraction_velocity_fit"
+    parser.add_argument('-velocity',metavar="velocity",type=float,default=0,
+                        help=vel_help,required=True)
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
@@ -61,33 +70,19 @@ def parse_and_run():
         write_and_close("Need exactly one Force/Separation".\
                         format(in_file))
     # POST: have just one. Go ahead and break it up
-    Data= RawData[0]
-    Length = Data.Force.size
-    data_per_curve = int(np.round(Length/number_of_pairs))
-    fraction_for_vel = args.fraction_velocity_fit
-    get_slice = lambda j: slice(j*data_per_curve,(j+1)*data_per_curve,1)
-    pairs = [FEC_Util.MakeTimeSepForceFromSlice(Data,get_slice(i))
-             for i in range(number_of_pairs) ]
-    # POST: pairs has each slice (approach/retract pair) that we want
-    # break up into retract and approach (ie: unfold,refold)
-    unfold,refold = [],[]
-    for p in pairs:
-        unfold_tmp,refold_tmp = \
-            IWT_Util.split_into_iwt_objects(p,fraction_for_vel=fraction_for_vel,
-                                            flip_forces=flip_forces)
-        unfold.append(unfold_tmp)
-        refold.append(refold_tmp)
-    # POST: have the unfolding and refolding objects, get the energy landscape
-    num_bins = args.number_of_bins
-    LandscapeObj =  InverseWeierstrass.\
-        FreeEnergyAtZeroForce(unfold,NumBins=num_bins,RefoldingObjs=refold)
+    iwt_kwargs = dict(number_of_pairs=args.number_of_pairs,
+                      v=args.velocity,
+                      flip_forces=args.flip_forces,
+                      kT=args.k_T,
+                      z_0=args.z_0)
+    LandscapeObj = WeierstrassUtil.iwt_ramping_experiment(RawData[0],
+                                                          **iwt_kwargs)
+    # filter the landscape object 
+    LandscapeObj= WeierstrassUtil._bin_landscape(landscape_obj=LandscapeObj,
+                                                 n_bins=args.number_of_bins)
     # get the distance to the transition state etc
-    all_landscape = [-np.inf,np.inf]
-    Bounds = IWT_Util.BoundsObj(bounds_folded_nm= all_landscape,
-                                bounds_transition_nm= all_landscape,
-                                bounds_unfolded_nm=all_landscape,
-                                force_one_half_N=f_one_half)
-    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,Bounds)
+    all_landscape = [-np.inf,np.inf]    
+    Obj =  IWT_Util.TiltedLandscape(LandscapeObj,f_one_half_N=f_one_half)
     # write out the file we need
     extension_meters = Obj.landscape_ext_nm/1e9
     landscape_joules = Obj.Landscape_kT * Obj.kT
@@ -110,5 +105,6 @@ def run():
         # Log it or whatever here
         str_out =''.join('!! ' + line for line in lines)
         print(str_out)
+        
 if __name__ == "__main__":
     run()

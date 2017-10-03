@@ -133,8 +133,8 @@ def run():
     positives_directory = InputOutput.get_positives_directory()
     dna_categories = InputOutput.get_categories(positives_directory,
                                                 only_lowest=only_lowest)
-    protein_dict = dict(no_event_log10_start=-3,
-                        no_event_log10_end=np.log10(0.5))
+    protein_dict = dict(no_event_log10_start=-5,
+                        no_event_log10_end=-2)
     meta = [["_protein",InputOutput.protein_categories(),protein_dict],
             ["",dna_categories,dict()]]
     for subdir,categories,learner_kw in meta[::-1]:

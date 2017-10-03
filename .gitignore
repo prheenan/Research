@@ -1,6 +1,14 @@
 *.i
+*.gbk
+*.xlsx
 *.hg/*
+*.mat
+*.md*
+*.nb
 *~
+/Personal/EventDetection/OtherMethods/*
+*cache*
+*scratch*
 *.pse
 *.pdb
 *.pqr
@@ -16,7 +24,18 @@
 *.png
 *.rtf
 *.bcf
-
+*.tmp
+*.png
+*.pkl
+*.pdf
+*.ppt*
+*.cls
+*.zip
+*.jpeg
+*.doc
+*.bst
+*.lot
+*.gif
 */instructions/*
 */Finals/*
 *.bib
@@ -153,3 +172,15 @@ ENV/
 # Rope project settings
 .ropeproject
 
+# NAMD Files
+
+*.old
+*.vel
+*.xdc
+*.xst
+*.log
+*.ref
+*.coor
+*.dcd
+*.restart.*
+*.xsc

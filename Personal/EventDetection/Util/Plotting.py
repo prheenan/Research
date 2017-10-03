@@ -22,7 +22,7 @@ def _style_true(color_true=color_true_def):
 def _style_pred(color_pred=color_pred_def):
     return dict(color=color_pred,alpha=0.4)
 
-_fec_event_colors = ['k','r','b']
+_fec_event_colors = ['k','r','b','m','g']
 
 def algorithm_colors():
     return ['b','k','r']
@@ -62,7 +62,7 @@ def plot_autocorrelation_log(x,*args):
     tol = 1e-6
     x_plot = x- min(x)
     # auto_norm goes from 0 to 1
-    style_fit = dict(color='r',linestyle='--',linewidth=2)
+    style_fit = dict(color='r',linestyle='--',linewidth=1.25)
     style_auto = dict(color='k',alpha=0.3,marker='.')
     xlim_zoomed = [0,3*tau]
     highlight_fit_range = lambda y: \
@@ -107,7 +107,7 @@ def plot_autocorrelation(example_split):
     # plot everything
     plot_autocorrelation_log(x, tau,auto_coeffs,auto_correlation)
 
-def highlight_events(idx_events,x,y,label=None,**kwargs):
+def highlight_events(idx_events,x,y,label=None,linewidth=0.75,**kwargs):
     """
     highlights x and y at the indices given by idx_events:
     
@@ -120,7 +120,7 @@ def highlight_events(idx_events,x,y,label=None,**kwargs):
     for i in idx_events:
         # only label the first
         label_tmp = label if i == 0 else None
-        plt.plot(x[i],y[i],label=label_tmp,**kwargs)
+        plt.plot(x[i],y[i],label=label_tmp,linewidth=linewidth,**kwargs)
 
         
 def plot_prediction_info(ex,info,xlabel="Time",
@@ -176,7 +176,7 @@ def plot_prediction_info(ex,info,xlabel="Time",
     plt.subplot(n_rows,n_cols,1)
     plt.plot(x,force_plot,color='k',alpha=0.3,label="data")
     plt.plot(time_interpolated_plot,interpolated_force_plot,color='b',
-             linewidth=2,label="2-spline")
+             linewidth=1.25,label="2-spline")
     plt.axvline(x[surface_index],label="Surface\n(pred)")
     highlight_events(event_slices,x,force_plot,**style_events)
     PlotUtilities.lazyLabel("",ylabel,"",**lazy_kwargs)
@@ -335,17 +335,17 @@ def plot_true_and_predicted_ruptures(true,predicted,title="",
          Nothing
     """
     if (style_predicted is None):
-        style_predicted = dict(label="predicted",linewidth=2,
+        style_predicted = dict(label="predicted",linewidth=1.25,
                                **_style_pred_def('k'))
     if (style_true is None):
         style_true = dict(label="true",**_style_true_def('g'))
     marker_size = 4
     style_true_marker = dict(**style_true)
     style_true_marker['alpha'] = 0.5
-    _plot_rupture_objects(predicted,marker='x',linewidth=3,linestyle='None',
+    _plot_rupture_objects(predicted,marker='x',linewidth=1.25,linestyle='None',
                           markersize=marker_size,color=style_predicted['color'],
                           label=style_predicted['label'])
-    _plot_rupture_objects(true,marker='o',linewidth=4,markersize=marker_size,
+    _plot_rupture_objects(true,marker='o',linewidth=1.25,markersize=marker_size,
                           markerfacecolor="None",markeredgecolor='g',
                           linestyle='None',**style_true_marker)
     PlotUtilities.lazyLabel("Loading Rate (pN/s)","Rupture Force (pN)",
@@ -528,16 +528,16 @@ def distance_distribution_plot(learner,box_kwargs=None,**kwargs):
 def _histogram_true_style(color_true=color_true_def,label="True"):
     style_true = dict(color=color_true,label=label,edgecolor=color_true,
                       histtype='stepfilled',fill=True,hatch= true_hatch(),
-                      facecolor=color_true,alpha=0.4)
+                      facecolor=color_true,alpha=0.2)
     return style_true
 
 def _histogram_predicted_style(color_pred=color_pred_def,label="Predicted"):
     style_pred = dict(color=color_pred,label=label,fill=False,
-                      histtype='step',alpha=1,linewidth=3)
+                      histtype='step',alpha=1,linewidth=1.25)
     return style_pred
 
 def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
-                       xlabel="Relative Error (x$_\mathrm{k}$)",
+                       xlabel="Relative Error (x$_\mathrm{k}$)",label_bool=True,
                        distance_limits=None,clip_limits=False,q=None):
     """
     Args:
@@ -569,13 +569,16 @@ def event_error_kwargs(metric,color_pred='b',color_true='g',n_bins = 50,
     return dict(to_true=to_true,to_pred=to_pred,distance_limits=distance_limits,
                 bins=bins,style_true=style_true,style_pred=style_pred,loc=loc,
                 xlabel=xlabel,max_x_true=max_x_true,max_x_pred=max_x_pred,
-                q=q)
+                q=q,label_bool=label_bool)
 
+def plot_label_for_true(label,color,linewidth=1.25,**kwargs):
+    plt.plot([],[],linewidth=linewidth,label=label,color=color)
 
 def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
                                  style_true,style_pred,max_x_true,max_x_pred,
                                  xlabel="Distance [m]",loc='best',q=None,
-                                 q_label=None,use_q_number=False):
+                                 q_label=None,use_q_number=False,
+                                 label_bool=True):
     """
     plots the distribution of distances from true/predicted to counterparts
 
@@ -591,23 +594,27 @@ def histogram_event_distribution(to_true,to_pred,distance_limits,bins,
     rel_pred = to_pred/max_x_true
     rel_true = to_true/max_x_pred
     if (to_pred.size > 0):
-        plt.hist(rel_pred,
-                 log=True,bins=bins,**style_true)
+        to_ret = plt.hist(rel_pred,log=True,bins=bins,**style_true)
     if (to_true.size > 0):
-        plt.hist(rel_true,log=True,bins=bins,**style_pred)
+        style_pred_no_label = dict(**style_pred)
+        style_pred_no_label['label'] = ''
+        to_ret = plt.hist(rel_true,log=True,bins=bins,**style_pred_no_label)
+        plot_label_for_true(**style_pred)
     if (q is not None):
         cat = np.concatenate([rel_pred,rel_true])
         q_num = np.percentile(cat,q)
         if (q_label is None):
             q_label = (r"P$_{" + "{:d}".format(q) + "}$")
         if (use_q_number):
-            q_label += "={:.3g}".format(q_num)
-        plt.axvline(q_num,label=q_label,linestyle='--',linewidth=4,
-                    color='k')
+            q_label += "={:.2g}".format(q_num)
+    label = q_label if label_bool else ""
+    plt.axvline(q_num,label=label,linestyle='--',linewidth=1.25,
+                color='k')
     plt.xscale('log')
     plt.xlim([min(distance_limits),2])
     plt.ylim(0.5,max(plt.ylim()))
     PlotUtilities.lazyLabel(xlabel,"Count","",frameon=False,loc=loc)
+    return to_ret
 
 def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
@@ -621,7 +628,15 @@ def _gen_rupture_hist(to_bin,alpha=0.3,linewidth=0,**kwargs):
     """
     if len(to_bin) == 0:
         return [],[],[]
-    return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+    if (kwargs['fill']):
+        return plt.hist(to_bin,alpha=alpha,linewidth=linewidth,**kwargs)
+    else:
+        kwargs_no_label = dict(**kwargs)
+        kwargs_no_label['label'] = ""
+        to_ret = plt.hist(to_bin,alpha=alpha,linewidth=linewidth,
+                          **kwargs_no_label)
+        plot_label_for_true(**kwargs)
+        return to_ret 
 
 def rupture_force_histogram(objs,**kwargs):
     """
@@ -947,9 +962,10 @@ def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
         colors_before = colors
         colors_after = colors
         for i in range(len(slices)-1):
+            color_idx = lambda x: x % len(colors)
             before_kwargs = dict(before_slice=slices[i],after_slice=slices[i+1],
-                                 color_before=colors_before[i],
-                                 color_after=colors_after[i+1])
+                                 color_before=colors_before[color_idx(i)],
+                                 color_after=colors_after[color_idx(i+1)])
             before_and_after(x=sep,y=force,style=dict(alpha=0.3),
                              **before_kwargs)
             before_and_after(x=sep_filtered,y=force_filtered,
@@ -961,7 +977,7 @@ def plot_fec(example,colors=_fec_event_colors,n_filter=1000,use_events=True):
     return fec_split
 
 def plot_arrows_above_events(event_idx,plot_x,plot_y,fudge_y,color='g',
-                             marker='v',markersize=15,alpha=1,zorder=10,
+                             marker=u'$\u2193$',markersize=75,alpha=1,zorder=10,
                              label=None,**kwargs):
     """
     plots arrows at the given indices, signifying an event
@@ -988,3 +1004,18 @@ def plot_format(time_sep_force):
     x_plot -= min(x_plot)
     y_plot = time_sep_force.Force.copy() * 1e12
     return x_plot,y_plot
+
+
+def debug_plot_approach_no_event(approach_force_sliced,
+                                 approach_force_interp_sliced,epsilon,sigma,
+                                 stdevs):
+    plt.subplot(2,1,1)
+    plt.plot(approach_force_sliced * 1e12,color='k',alpha=0.3)
+    plt.plot(approach_force_interp_sliced * 1e12)
+    PlotUtilities.lazyLabel("","force [pN]","")
+    plt.subplot(2,1,2)
+    plt.plot(stdevs*1e12,color='k',alpha=0.3)
+    plt.axhline(epsilon*1e12)
+    plt.axhline((epsilon-sigma)*1e12)
+    plt.axhline((epsilon+sigma)*1e12)
+    PlotUtilities.lazyLabel("idx","Residual [pN]","")

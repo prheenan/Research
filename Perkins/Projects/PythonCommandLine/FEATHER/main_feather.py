@@ -9,51 +9,65 @@ import os, sys,traceback
 path = os.path.abspath(os.path.dirname(__file__))
 os.chdir(path)
 sys.path.append('../../../../../')
-from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util
-from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
-from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass
-from GeneralUtil.python import GenUtilities
-from IgorUtil.PythonAdapter import PxpLoader
-import argparse
-from Research.Personal.EventDetection._2SplineEventDetector import Detector
+from Research.Personal.EventDetection._2SplineEventDetector import \
+    _command_line_config
 
-def write_and_close(string):
-    raise RuntimeError(string)
+import argparse
 
 def parse_and_run():
-    description = 'Predict event locations in a .pxp '
+    """
+    uses argparse to get the arguments _command_line_config.run_feather needs
+
+    Args:
+        none, but assumes called from command line properly
+    Returns:
+        event_indices, as predicted by FEATHER
+    """
+    description = 'Predict event locations in a data file'
     parser = argparse.ArgumentParser(description=description)
     common = dict(required=True)
+    # # feathers options
+    parser.add_argument('-tau', metavar='tau', 
+                        type=float,help='tau fraction of curve (0,1)',
+                        required=False,default=1e-2)
     parser.add_argument('-threshold', metavar='threshold', 
-                        type=float,help='probability threshold (between 0 and 1)',
+                        type=float,help='probability threshold (0,1)',
                         **common)
+    # # 'meta' variables
+    parser.add_argument('-spring_constant', metavar='spring_constant', 
+                        type=float,help='spring constant of the probe',
+                        **common)
+    parser.add_argument('-trigger_time', metavar='trigger_time', 
+                        type=float,help='time at which approach ends',
+                        **common)
+    parser.add_argument('-dwell_time', metavar='dwell_time', 
+                        type=float,
+                        help='time between end of approach and retract start',
+                        **common)
+    # path to the file
     parser.add_argument('-file_input',metavar="file_input",type=str,
-                        help="path to the '.pxp' with the force, separation",
+                        help="path to the force-extension curve file",
                         **common)
     parser.add_argument('-file_output',metavar="file_output",type=str,
                         help="path to output the associated data",**common)
+    # parse all the inputs
     args = parser.parse_args()
     out_file = os.path.normpath(args.file_output)
     in_file = os.path.normpath(args.file_input)
-    threshold = args.threshold
-    if (not GenUtilities.isfile(in_file)):
-        write_and_close("File {:s} doesn't exist".format(in_file))
-    # # POST: input file exists
-    # go ahead and read it
-    RawData = FEC_Util.ReadInData(in_file,Limit=1)
-    # POST: file read sucessfully. should just have the one
-    if (not len(RawData) == 1):
-        write_and_close("Need exactly one Force/Separation".\
-                        format(in_file))
-    # POST: have just one. Go ahead and using FEATHER to predict the locations
-    example = RawData[0]
-    event_indices = Detector.predict(example,threshold=threshold,
-                                     add_offsets=True)
+    # get the indices
+    feather_dict = dict(in_file=in_file,
+                        threshold=args.threshold,
+                        tau=args.tau,
+                        spring_constant=args.spring_constant,
+                        dwell_time=args.dwell_time,
+                        trigger_time=args.trigger_time)
+    # call feather
+    event_indices = _command_line_config.run_feather(**feather_dict)
     # done with the log file...
     np.savetxt(fname=out_file,delimiter=",",newline="\n",fmt="%d",
                header="(C) PRH 2017\nEvent Indices",
                X=event_indices)
+    return event_indices
 
 def run():
     try:

@@ -184,11 +184,11 @@ def spline_figures(fec_split,out_base,threshold=1e-2):
     derivative = _no_event._spline_derivative(x,interp)
     deriv_plot = y_plot_f(derivative)
     param_obj.negative_only = True
-    deriv_prob = _no_event._derivative_probability(interp,x,param_obj)
+    deriv_prob = _no_event._derivative_probability(derivative,param_obj)
     deriv_label = r"$\frac{dF}{dt}$ (pN/s)"
     deriv_p_label = r"$\epsilon_{\frac{dF}{dt}} \pm \sigma_{\frac{dF}{dt}}$"
     # get the integral stuff 
-    integral = _no_event.local_noise_integral(f,interp_f,n_points,param_obj)
+    integral = _no_event.local_noise_integral(f,interp_f,n_points)
     integ_plot = y_plot_f(integral)
     integ_prob = _no_event._integral_probability(f,interp_f,n_points,param_obj)
     integ_params = [y_plot_f(param_obj.integral_epsilon),
@@ -377,7 +377,7 @@ def run(base="./"):
     """
     make the plot for the paper
     """
-    fig = PlotUtilities.figure((16,10))
+    fig = PlotUtilities.figure((7,5))
     gs = gridspec.GridSpec(4, 2)
     plt.subplot(gs[0,0])
     plot_fec(time_approach,force_approach,interp_approach,
@@ -410,8 +410,9 @@ def run(base="./"):
     plt.subplot(gs[3,1])
     plot_probability(threshold,x_plot,prob_final,slice_before,slice_after)
     PlotUtilities.label_tom(fig,loc=(-0.1,1.05))
-    PlotUtilities.savefig(fig,out_fig,
-                          subplots_adjust=dict(hspace=0.3,wspace=0.15))
+    PlotUtilities.save_twice(fig,out_fig + ".png",out_fig+".svg",
+                             subplots_adjust=dict(hspace=0.3,wspace=0.15))
+
 
 if __name__ == "__main__":
     run()

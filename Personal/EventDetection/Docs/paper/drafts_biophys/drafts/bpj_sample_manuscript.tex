@@ -1,0 +1,166 @@
+\documentclass{biophys}
+%\documentclass[twocolumn]{biophys}
+\usepackage{amssymb,amsfonts,amsthm,bm}
+\usepackage[round,numbers,sort&compress]{natbib}
+\usepackage[ansinew]{inputenc}
+
+\jno{kxl014}
+\gridframe{N}
+\cropmark{Y}
+\doi{doi: 10.1529/biophysj.106.089789}
+%\volume{00}
+%\issue{0}
+%\Month{Month}
+%\Year{year}
+%\fpage{1}
+%\lpage{4}
+
+
+\begin{document}
+
+
+\title{Fast and Reversible Photoswitching of the Fluorescent Protein Dronpa as Evidenced by Fluorescence Correlation Spectroscopy}
+
+
+\author{Peter Dedecker,$^\ast$ Jun-ichi Hotta,$^\ast$ Ryoko Ando,$^\dagger$\\ Atsushi Miyawaki,$^\dagger$ Yves Engelborghs,$^\ddagger$ and Johan Hofkens$^\ast$}
+
+\address{$^\ast$Laboratory of Photochemistry and Spectroscopy, Department of Chemistry, Katholieke Universiteit Leuven, 3001 Heverlee, Belgium; $^\dagger$Laboratory for Cell Function and Dynamics, Advanced Technology Development Group, Brain Science Institute, RIKEN, 2-1 Hirosawa, Wako-City, Saitama, 351-0198, Japan; and $^\ddagger$Laboratory for Biomolecular Dynamics, Department of Chemistry, Katholieke Universiteit Leuven, 3001 Heverlee, Belgium}
+
+\begin{abstract}
+{Controlling molecular properties through photoirradiation holds great promise for its potential for noninvasive and selective manipulation of matter. Photochromism has been observed for several different molecules, including green fluorescent proteins, and recently the discovery of a novel photoswitchable green fluorescent protein called Dronpa was reported. Dronpa displays reversible and highly efficient on/off photoswitching of its fluorescence emission, and reversible switching of immobilized single molecules of Dronpa with response times faster than 20 ms was demonstrated. In this Letter, we expand these observations to freely diffusing molecules by using fluorescence correlation spectroscopy with simultaneous excitation at 488 and 405 nm. By varying the intensity of irradiation at 405 nm, we demonstrate the reversible photoswitching of Dronpa under these conditions, and from the obtained autocorrelation functions we conclude that this photoswitching can occur within tens of microseconds.}%1
+{Submitted February 22, 2008, and accepted for publication May 15, 2008.}%2
+{*Correspondence: terry@salk.edu.\\
+Address reprint requests to Terrence J. Sejnowski, The Salk Institute
+for Biological Studies, 10010 N. Torrey Pines Road, La Jolla, CA 92037. Tel.:
+858-483-4100, ext. 1280; Fax: 858-587-0417.\\
+Editor:
+Richard W Aldrich.}%3
+\end{abstract}
+
+\maketitle
+
+\markboth{Dedecker et al.}{Fast and Reversible Photoswitching}
+
+
+\section*{INTRODUCTION}
+
+Over the past 16 years, green fluorescent proteins (GFPs) have rapidly become essential tools for the visualization and study of complex problems in biochemistry and biophysics. Keys for this success are the protein's bright fluorescence  and its ability to synthesize its chromophore autocata\-lytically after expression. Because of its widespread appli\-cability, a broad range of fluorescent proteins has become commercially available.
+
+Photochromism or photoswitching refers to the ability to manipulate molecular properties using only irradition with light of an appropriate wavelength. Manipulating matter in this way is highly promising because of its potential for minimally invasive and ``at a distance'' manipulation, and as a result photochromism has been extensively investigated, notably by the group of Irie (1,2) as well as others (3-5).
+
+Recently the discovery of a new GFP called Dronpa was reported (6). In addition to its bright green fluorescence, Dronpa exhibits fast photoswitching between a bright and a dark state, allowing for the reversible on/off switching of the fluorescence emission. This photoswitching has been studied by our group at both the ensemble and single-molecule level, and a complex photophysical picture involving several different states has emerged (7).
+
+The absorption spectra of Dronpa before and after irradi\-ation at 488 nm as well as the emission spectrum before~irra\-diation are shown in Fig. 1. A detailed photophysical scheme can be found in our previous study, but for simplicity one can consider Dronpa to exist in two different interconvertible and stable states, one of which is brightly fluorescent  (absorption band centered at 503 nm, with a molar~absorp\-tivity of\hspace*{-.5pt} $\sim$95,000 L/mol cm\hspace*{-.5pt} and\hspace*{-.5pt} a\hspace*{-.5pt} fluorescence\hspace*{-.5pt} quantum yield  of 0.85), and one of which is essentially nonfluorescent  (absorption band at 390 nm, e = 22,000 L/mol cm and ffl $<$0.02). Note that a pH-induced nonfluorescent form also exists, but this form is not interconvertible with the light-induced dim form, and at pH 7.4 only a small fraction of the total amount of Dronpa is present in this form. Therefore this pH-induced dim form will not be further considered in this Letter. The bright form, which we will denote B, can be converted to the dim form by irradiation in its corresponding absorption band (quantum yield of switching   = $3.2 \times 10^{-4}$), whereas the dim form, which we will denote as A, can likewise be converted to the bright form by irradiation in its absorption band ($=$ 0.37). If left in the dark, a photoconverted sample of Dronpa at pH 7.4 will slowly regain its original brightness over the course of days.
+
+In our previous study, we have demonstrated the ability to reversibly photoswitch single Dronpa molecules. Single-molecule studies offer the advantage of observing dynamics that are ordinarily obscured in the ensemble picture. However, in this study we have been limited by the requirement to immobilize the molecules in a polyvinyl alcohol matrix,
+which may not be representative of the protein's native intracellular environment.
+
+Fluorescence correlation spectroscopy (FCS) relies on analyzing the temporal fluctuations in a measured fluorescence signal, where only fluorescence originating within a restricted part of the sample volume is collected (8). Individual molecules are allowed to freely diffuse into and put of out of this restricted volume, bypassing the need for \nobreak{immobilization}, so that the fluorescence intensity fluctuations are caused by diffusion and on/off ``blinking'' processes
+ of the fluorescent molecules under study. Thus, analysis of these fluctuations can reveal information about both diffusion and blinking processes (9).
+
+\begin{figure}[t!]
+%\centering{\includegraphics[width=20pc]{biophysj00089789F01_LW.eps}}
+\caption{Absorption spectra of Dronpa at pH 7.4 before ({\it solid line}) and after ({\it dotted line}) irradiation at 488 nm. The dashed line denotes the emission spectrum of Dronpa when excited at 488 nm.}
+\end{figure}
+
+If a sample of Dronpa is simultaneously irradiated at the absorption band of the B form and at the absorption band of the A form, then the reversible on/off switching of the fluorescence constitutes a blinking process, with transition rates depending on the excitation intensities. This process can thus be studied using FCS. Indeed, this technique has been applied to study the photophysics of the E222Q GFP mutant (10,11). Like Dronpa, the chromophore of this mutant can be photoconverted to a dim state and subsequently recovered by irradiation at a shorter wavelength. However, the associated dim state is not thermally stable with a lifetime of significantly less than 1 s, limiting the use of E222Q as a photoswitch.
+
+The used experimental setup has been described in detail elsewhere (7). For the FCS measurements, continuous wave 488 nm light was provided by an Ar:Kr laser (Stabilite 2018RM, Spectra-Physics, Irvine, CA) and continuous wave 405 nm light was provided by a diode laser (Compass 405, Coherent, Santa Clara, CA). Samples of Dronpa were diluted to $\sim$?10-8 M using phosphate-buffered saline solution (10mM KH2PO4/10mM K2HPO4/138mM NaCl/2.7mM KCl, pH 7.4). Calculation of the experimental correlation curve was done using a hardware correlator (ALV 5000/EPP, ALV-Laser Vertriebsgesellschaft  mbH).
+
+Fig. 2 shows the observed fluorescence intensity as a function of the irradiation intensity at 405 nm for different intensities of 488 nm excitation. As is clear from the absorption spectra in Fig. 1, the bright B form does not have a significant absorption at 405 nm, and additionally the dim A form is nearly nonfluorescent. Furthermore, appropriate optical filters were selected to separate the fluorescence from both the 405 and 488 nm excitation light. It follows that the observed fluorescence photons originate from Dronpa molecules in the bright B form, and that the fluorescence intensity at constant 488 nm irradiation is an indication of the relative population of the B form of the protein.
+
+\begin{table*}[t!]
+\caption{Equilibration procedure}
+\begin{center}\tabcolsep=7.1pt\begin{tabular}{@{}lllll@{}} \hline
+Step & \multicolumn{1}{c}{Length} & \multicolumn{1}{c}{Type*} & \multicolumn{1}{c}{Frozen groups} & \multicolumn{1}{c@{}}{Restrained groups} \\ \hline
+1 & 1000 steps & SD & Protein, lipids &  -- \\
+2 & 500 ps  & NVT & Protein, lipids & --\\
+3 & 1000 steps & SD & Protein & --\\
+4 & 500 ps & NVT & Protein & -- \\
+5 & 1000 steps & SD & Protein backbone &  --\\
+6 & 500 ps & NVT & Protein backbone & -- \\
+7 & 500 ps & NPT & -- & Protein backbone\\ \hline
+\end{tabular}\end{center}
+{*SD refers to steepest descents energy minimization. NVT refers to simulations in the NVT ensemble at 300 K using Berendsen algorithm and a coupling constant $\tau_{\rm T} = 0.1$ ps. NPT refers to simulations in the NPT ensemble at 300 K, and 1 bar using a coupling constant $\tau_{\rm P} = 2$ ps and a compressibility of $4.5 \times 10^5$ bar$^{-1}$ in all box directions.}%\vspace*{4pt}
+\end{table*}
+
+\begin{figure}[b!]
+%\centerline{\includegraphics[width=20pc]{biophysj00089789F02_LW.eps}}
+\caption{Average fluorescence intensity observed in each correlation measurement as a function of applied irradiation at 405 nm. The total power of irradiation at 488 nm is 120 kW/cm2 ($\bullet$), 135 kW/cm2 ($\blacktriangle$), and 160 kW/cm2 ($\blacklozenge$).}
+\end{figure}
+
+When a fresh sample is exposed to 488 nm irradiation in the absence of 405 nm light, the relatively high initial count rates decrease rapidly to very low values (data not shown). This is consistent with photoswitching of the bright form of Dronpa to the dim form and the very slow spontaneous recovery of the bright form. Then, when comparatively very low intensity 405 nm irradiation is applied, a dramatic increase in fluorescence intensity is observed, leading up to a maximum in emission at a few kW/cm2 of 405 nm irradiation (Fig. 2). Thus even very low intensities of 405 nm light rapidly induce the switching of the dim form to the bright form, causing these molecules to emit additional fluorescence photons. The fact that only very low intensities are required is reasonable in view of the high quantum yield of switching from the dim to the bright form. The maximum in fluorescence intensity likely corresponds to a saturation of the A to B transition: at this intensity the onset of the \nobreak{transition} from the dim to the bright form is near-instantaneous. Interestingly, from this data it is possible to infer the optimal conditions for maximum brightness for imaging experiments using Dronpa.
+
+However, when the intensity of the 405 nm irradiation is further increased, the fluorescence intensity is seen to decrease. This decrease is not solely related to photobleaching of the molecules, as a subsequent decrease in the level of 405 nm irradiation will once more induce an increase in count rate. Thus, at higher irradiation intensities, an increased exposure to 405 nm light causes a decrease in the population of the bright form.
+
+Our current photophysical scheme (6,7) acknowledges the presence of at least one intermediate state in the conversion pathway from the dim to the bright state. It is possible that one or more of these intermediates can absorb 405 nm light, possibly leading to a temporal ``trapping'' of the chromophore in this intermediate state(s) and causing a bottleneck in the reverse photoswitching process, or even inducing some of these intermediate states to switch back to the dim form altogether.
+
+For the analysis of the obtained autocorrelation functions (ACF), we assume that Dronpa can be modeled as a four-level system on the timescale of the diffusion time. We  consider the ground state of the chromophore (state 1), the excited state (state 2), an additional dark state (e.g., triplet formation, state 3), and the photoswitched state (state 4). The transition rate constants between state i and state j are then denoted as kij; e.g., k41 is the light-induced transition from the dark to the bright state.
+
+\begin{figure}[t!]
+%\centering{\includegraphics[width=20pc]{biophysj00089789F03_LW.eps}}
+\caption{Plot of the sum of the fitted contrasts from Eq. 1 at constant 488 nm excitation (190 kW/cm2) and different levels of 405 nm irradiation. The inset is a plot of two of the measured ACF, directly demonstrating the decrease in contrast (note that the ACF are normalized to the diffusional part). An example fit and residual is available as supporting info.}%\vspace*{20pt}
+\end{figure}
+
+It has been shown (11) that the ACF for this system is given by
+\begin{equation}
+ACF=G_{\rm D} \times [1 + C_1\,{\rm exp}(-t/\tau_1) + C_2\,{\exp}(-t/\tau_2)].
+\end{equation}
+This model function was used to fit the measured data. The sum of the amplitudes C1 and C2 can be shown to be equal to
+\begin{equation}
+C_1 + C_2 = \frac{k^{\rm eff}_{23}}{k_{31}} + \frac{k^{\rm eff}}{k_{41}}.\vspace*{5pt}
+\end{equation}
+In this equation, k23 and k24 are modified to include the spontaneous emission rate k21. According to this expression, an increase in the rate constant of reverse switching k41, induced by the 405 nm irradiation, should lead to a marked decrease in sum of the amplitudes of the measured ACF. As is clear from Fig. 3, this can indeed be observed. Furthermore, a very pronounced $\sim$10-fold increase in fluorescent particles as the intensity of the 405 nm irradiation is increased to a few kW/cm2 can be deduced from the correlation analysis (data not shown).
+
+Our data thus demonstrate the \cite{a} possibility of observing the Dronpa photoswitching using FCS in combination with two-color excitation. Furthermore, the very high efficiency of the switching is confirmed: although a detailed analysis of the measured ACF is currently \cite{b} under way and is beyond the scope of this Letter, the rate of switching from the bright to the dark state can be estimated using the expected excitation rate and the quantum yield of switching (7). For the data presented in Fig. 3, an estimated survival time of a few tens of microseconds is obtained for the bright state. Furthermore, Fig. 2 demonstrates the possibility of shifting the equilibrium of the photoswitching completely to the bright state, demonstrating that the transition from the dark to the bright state can be made to occur even faster. Thus the photoswitching cycle of a single molecule must be within tens of microseconds, a finding that is confirmed in the FCS data. This limit is three orders of magnitude faster compared to our previously published results, and compares very favorably to the response times published for other photochromic molecules that possess a thermally stable dark state.\vspace*{-3pt}
+
+\section*{SUPPLEMENTARY MATERIAL}
+
+\ack{An online supplement to this article can be found by visiting BJ Online at http://www.biophysj.org.}\vspace*{-3pt}
+
+\section*{ACKNOWLEDGMENTS}
+
+\ack{Support from the Fonds voor Wetenschappelijk Onderzoek  (grant  G.0366.06), the KULeuven Research Fund (GOA 2006/2, Center of Excellence Institute for Nuclear and Particle Astrophysics and Cosmology) and the Federal Science Policy of Belgium (IAP-V-03) is acknowledged. P.D. thanks the Fonds voor Wetenschappelijk Onderzoek for a fellowship. J.H. thanks the KULeuven Research fund for a fellowship.}\vspace*{6pt}
+
+\begin{thebibliography}{99}
+\bibitem{a}
+Irie, M. 2000. Diarylethenes for memories and switches. Chem. Rev. 100:1685-1716.
+
+\bibitem{b}
+ Irie, M., T. Fukaminato, T. Sasaki, N. Tamai, and T. Kawai. 2002. A digital fluorescent molecular photoswitch. Nature. 420:659-760.
+
+\bibitem{c}
+Dickson, R. M., A. B. Cubitt, R. Y. Tsien, and W. E. Moerner. 1997. On/off blinking and switching behaviour of single molecules of green fluorescent protein. 1997. Nature. 388:355-358.
+
+{\addtolength\itemsep{3.5pt}\bibitem{d}
+Hugel, T., N. B. Holland, A. Cattani, L. Moroder, M. Seitz, and H. E. Gaub. 2002. Single-molecule optomechanical cycle. Science. 296:1103-1106.
+
+\bibitem{e}
+Heilemann, M., E. Margeat, R. Kasper, M. Sauer, and P. Tinnefeld. 2005. Carbocyanine dyes as efficient reversible single-molecule optical switch. J. Am. Chem. Soc. 127:3801-3806.
+
+\bibitem{f}
+Ando, R., H. Mizuno, and A. Miyawaki. 2004. Regulated fast nucleoplasmic shuttling observed by reversible protein highlighting. Science. 306:1370-1373.
+
+\bibitem{g}
+Habuchi, S., R. Ando, P. Dedecker, W. Verheijen, H. Mizuno, A. Miyawaki, and J. Hofkens. 2005. Reversible photoswitching in the GFP-like fluorescent protein Dronpa. Proc. Natl. Acad. Sci. USA. 102:9511-9516.}
+
+\bibitem{h}
+Enderlein, J., I. Gregor, D. Patra, T. Dertinger, and U. B. Kaupp.  2005. Performance of fluorescence correlation spectroscopy  for measuring diffusion and concentration. ChemPhysChem.  6: 2324-2336.
+
+\bibitem{i}
+Hess, S. T., S. Huang, A. A. Heikal, and W. W. Webb. 2002.  Biological and chemical applications of fluorescence correlation  spectroscopy: a review. Biochemistry.   41:697-705.
+
+\bibitem{j}
+Jung, G., S. Mais, A. Zumbusch, and C. Braüchle. 2000. The role of dark  states in the photodynamics of the green fluorescent protein examined with two-color fluorescence excitation spectroscopy. J. Phys. Chem.   A. 104:873-877.
+
+\bibitem{k}
+\looseness-1 Jung, G., C. Bräuchle, and A. Zumbusch. 2001. Two color fluorescence correlation spectroscopy one chromophore: application to the E222Q mutant of the green fluorescent protein. J. Chem. Phys. 114:3149-3156.
+\end{thebibliography}
+
+\end{document}
+
+
+
+
+
+

@@ -14,6 +14,17 @@ from Research.Personal.EventDetection._2SplineEventDetector._no_event import \
 from Research.Personal.EventDetection._2SplineEventDetector import _no_event
 
 def get_slice_by_max_value(interp_sliced,offset,slice_list):
+    """
+    Given a data set, an offset into that data set, and a list of slices
+    relative to that offset, picks the slice giving the largest value
+
+    Args:
+        interp_sliced: the data to choose from
+        offset: the absolute offset for each slice. If 0, then absolute
+        slice_list: list of slice object
+    Returns:
+        s in slice_list giving the maximum value in interp_sliced
+    """
     value_max = [max(interp_sliced[e.start-offset:e.stop-offset])
                  for e in slice_list]
     return np.argmax(value_max)
@@ -107,6 +118,11 @@ def _condition_no_delta_significance(no_event_parameters_object,df_true,
         # considering __all__ signal. XXX need absolute value df?
         baseline = min_signal
     value_cond = (df_true > baseline)
+    """
+    plt.plot(df_true)
+    plt.axhline(baseline)
+    plt.show()
+    """
     return value_cond
     
 def f_average_and_diff(force,n):
@@ -191,6 +207,11 @@ def delta_mask_function(split_fec,slice_to_use,
     ratio_probability = _no_event._delta_probability(**kw_delta)
     tol = 1e-9
     no_event_cond = (1-ratio_probability<tol)
+    """
+    plt.semilogy(ratio_probability)
+    plt.axhline(1-tol)
+    plt.show()
+    """
     # find where the derivative is definitely not an event
     value_cond = \
         _condition_no_delta_significance(no_event_parameters_object,df_true,
@@ -577,7 +598,7 @@ def event_by_loading_rate(x,y,slice_event,interpolator,n_points):
     if (len(idx_above_predicted) == 0):
         return local_max_idx
     return idx_above_predicted[-1]
-
+    
 def make_event_parameters_from_split_fec(split_fec,**kwargs):
     n_points = split_fec.tau_num_points
     min_points_between = _min_points_between(n_points)    
@@ -697,7 +718,7 @@ def _predict_full(example,threshold=1e-2,f_refs=None,tau_fraction=0.02,
     """
     example_split = Analysis.\
         zero_and_split_force_extension_curve(example,
-                                             fraction=tau_fraction)
+                                             fraction=tau_fraction)            
     if (f_refs is None):
         f_refs = [adhesion_mask_function_for_split_fec,delta_mask_function]
     funcs = [ _predict_functor(example_split,f) for f in f_refs]
@@ -713,7 +734,7 @@ def predict(example,threshold=1e-2,add_offsets=False,**kwargs):
     Args:
         example: TimeSepForce
         threshold: maximum probability under the no-event hypothesis
-        add_offsets: if true, offset into the entire array. otherwise, we offset
+        add_offsets: if true, indices are absolute. otherwise, we offset
         into just the retract portion (after splitting into the approach,
         dwell, and retract)
     Returns:

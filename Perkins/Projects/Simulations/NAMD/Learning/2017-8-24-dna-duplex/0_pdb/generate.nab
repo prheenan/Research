@@ -1,0 +1,10 @@
+molecule m;
+
+// Set up the parameters for the duplex
+string sequence,output_file;
+sequence ="gcgcgcgcgctttgcgcgcgcgc";
+output_file = "nab.pdb";
+// Make the b-form DNA duplex, write out the PDB
+m = bdna(sequence);
+putpdb(output_file,m);
+exit(0);
