@@ -12,7 +12,7 @@ import sys
 sys.path.append("../")
 sys.path.append("../../../../../../../../")
 import jcp_fig_util,GenerateLandscapes
-from GenerateLandscapes import slice_area,cacheable_data,landscape_data
+from GenerateLandscapes import slice_area,cacheable_data
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 from GeneralUtil.python.Plot import Scalebar,Annotations 
@@ -140,7 +140,7 @@ def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
     Creates a plot of
     """
     heatmap_data = data_to_plot.heatmap_data
-    data_landscape = landscape_data(data_to_plot.landscape)
+    data_landscape = data_to_plot.generate_landscape_obj()
     # # ploy the heat map 
     ax_heat = plt.subplot(2,1,1)
     heatmap_plot(heatmap_data,data_landscape.amino_acids_per_nm(),
@@ -218,7 +218,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
     for i,a in enumerate(helical_areas):
         data = helical_data[i]
         kw_tmp = helical_kwargs[i]
-        data_landscape = landscape_data(data.landscape)
+        data_landscape = data.generate_landscape_obj()
         # # plot the energy landscape...
         ax_tmp = plt.subplot(1,len(helical_areas),(i+1))
         axs.append(ax_tmp)
@@ -322,7 +322,7 @@ def plot_with_corrections(data):
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
-    data = landscape_data(data_to_plot.landscape)
+    data = data_to_plot.generate_landscape_obj()
     fig = PlotUtilities.figure((3.25,5))
     # # ploy the heat map 
     ax_heat = plt.subplot(3,1,1)
@@ -463,13 +463,15 @@ def run():
     helical_data = []
     for a in areas:
         tmp = copy.deepcopy(data_to_analyze)
-        l = copy.deepcopy(tmp.landscape[0])
+        l = copy.deepcopy(tmp.landscape[0][0])
         l.q -= min(l.q)
         min_v,max_v = a.ext_bounds_nm_rel*1e-9
         slice_idx = np.where( (l.q >= min_v) & (l.q <= max_v))[0]
         assert slice_idx.size > 0
         sanit = lambda x: x[slice_idx].copy()        
-        for l in tmp.landscape:
+        flat_list = [tmp_landscape for list_v in tmp.landscape 
+                     for tmp_landscape in list_v]
+        for l in flat_list:
             l.q = sanit(l.q)
             # zero the energy
             l.energy = sanit(l.energy)

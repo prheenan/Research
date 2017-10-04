@@ -23,11 +23,34 @@ from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 
 class cacheable_data(object):
     def __init__(self,landscape,heatmap_data,heatmap_data_z,k_arr,n_k_arr):
+        """
+        :param landscape: list, size N, element is list of landscapes with
+        spring constant k_arr[i]
+
+        :param heatmap_data</_z>: the heatmap data as a function of extension
+        and z (stage position)
+
+        :param k_arr: the spring constant list, size N
+        :param n_k_arr:  the number of fecs with k=k_arr[i]. 
+        """
         self.landscape = landscape
         self.heatmap_data = heatmap_data
         self.heatmap_data_z = heatmap_data_z
         self.k_arr = k_arr
         self.n_k_arr = n_k_arr
+    def generate_landscape_obj(self):
+        """
+        Returns: a landscape_data, with all the weights it needs
+        """
+        all_data = [d for list_v in self.landscape for d in list_v]
+        weights = []
+        #n_k_arr[i] is the number of fecs used to calculate
+        # each landscape in the list of landscapes self.landscape[i]
+        for i,list_v in enumerate(self.landscape):
+            weights_tmp = [self.n_k_arr[i] for j in range(len(list_v))]
+            weights.extend(weights_tmp)
+        to_ret = landscape_data(all_data,weights=weights)
+        return to_ret
     def __deepcopy__(self, memo={}):
         cls = self.__class__
         result = cls.__new__(cls)
@@ -57,9 +80,10 @@ class slice_area(object):
         
         
 class landscape_data(object):
-    def __init__(self,landscape_objs,kT=4.1e-21):
+    def __init__(self,landscape_objs,weights):
         self.landscape_objs = landscape_objs
-        self.kT = 4.1e-21
+        self.weights = weights
+        self.kT = [1/o.beta for o in landscape_objs][0]
         min_v = min([min(l.q) for l in landscape_objs])
         max_v = min([max(l.q) for l in landscape_objs])
         sizes = np.array([l.q.size for l in landscape_objs])
@@ -101,22 +125,26 @@ class landscape_data(object):
             energy_kcal_per_mol_per_nm/self.amino_acids_per_nm()
         return energy_kcal_per_mol_per_AA
     def mean_std_opt(self):
-        return dict(axis=0)
+        return dict(axis=0,weights=self.weights)
+    def _avg(self,x):
+        return np.average(x,**self.mean_std_opt())
+    def _std(self,x):
+        mean_tmp = self._avg(x)
+        variance = self._avg(x-mean_tmp)
+        return np.sqrt(variance)
     @property        
     def mean_landscape_kcal_per_mol(self):
         # get the landscapes, XXX need to interpolate back onto uniform grid. 
-        return np.mean(self._landscapes_kcal_per_mol,**self.mean_std_opt())
+        return self._avg(self._landscapes_kcal_per_mol)
     @property                
     def std_landscape_kcal_per_mol(self):
-        return np.std(self._landscapes_kcal_per_mol,**self.mean_std_opt())
+        return self._std(self._landscapes_kcal_per_mol)
     @property        
     def mean_delta_landscape_kcal_per_mol_per_AA(self):
-        return np.mean(self._delta_landscapes_kcal_per_mol_per_AA,
-                       **self.mean_std_opt())
+        return self._avg(self._delta_landscapes_kcal_per_mol_per_AA)
     @property                               
     def std_delta_landscape_kcal_per_mol_per_AA(self):
-        return np.std(self._delta_landscapes_kcal_per_mol_per_AA,
-                       **self.mean_std_opt())     
+        return self._std(self._delta_landscapes_kcal_per_mol_per_AA)
 
 def grid_interpolate_arrays(x_arr,y_arr,x_grid):
     to_ret = []
@@ -214,7 +242,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=10,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -237,8 +265,8 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     # get the heatmap on the entire slice
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
-    N_boostraps = 100
-    min_data = 10
+    N_boostraps = 10
+    min_data = 1
     area_of_interest = areas[0]
     k_arr = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr))))
@@ -261,8 +289,9 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d,
                                                   skip,N_boostraps,
                                                   cache_dir=cache_dir)
-        iwt_arr.extend(iwt_tmp)
+        iwt_arr.append(iwt_tmp)
     # POST: all landscapes are combined.
-    filtered_iwt = filter_landscapes(iwt_tmp,area_of_interest.n_bins)
+    filtered_iwt = [filter_landscapes(i,area_of_interest.n_bins)
+                    for i in iwt_arr]
     return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
                           n_k_arr=data_lengths)
