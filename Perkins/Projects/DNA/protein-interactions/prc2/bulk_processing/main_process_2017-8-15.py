@@ -40,8 +40,7 @@ def run():
         full_out_path = "{:s}{:s}-{:s}.png".format(out_dir,src_file,im.Name())        
         fig = PlotUtilities.figure((3.5,4))
         ax = plt.subplot(1,1,1)
-        im = ImageUtil.make_image_plot(im,imshow_kwargs,pct=50)
-        ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig)
+        ImageUtil.image_plot(im=im,ax=ax,fig=fig,imshow_kwargs=imshow_kwargs)
         PlotUtilities.savefig(fig,full_out_path,bbox_inches='tight')        
 
 

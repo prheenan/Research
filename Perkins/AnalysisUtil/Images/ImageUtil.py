@@ -10,6 +10,8 @@ from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
 from GeneralUtil.python import GenUtilities,PlotUtilities
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+def_imshow_kw = dict(cmap=plt.cm.afmhot)
+
 def read_images_in_pxp_dir(dir,**kwargs):
     """
     Returns: all SurfaceImage objects from all pxps in dir
@@ -47,7 +49,7 @@ def smart_colorbar(im,ax=plt.gca(),fig=plt.gcf(),
         cax.axis('off')
 
     
-def make_image_plot(im,imshow_kwargs=dict(cmap=plt.cm.afmhot),pct=50):
+def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50):
     """
     Given an image object, makes a sensible plot 
     
@@ -69,4 +71,14 @@ def make_image_plot(im,imshow_kwargs=dict(cmap=plt.cm.afmhot),pct=50):
     micron_str = PlotUtilities.upright_mu("m")
     PlotUtilities.lazyLabel(micron_str,micron_str,"",
                             tick_kwargs=dict(direction='out'))    
-    return to_ret                                 
+    return to_ret                          
+
+def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),\
+               colorbar=True,colorbar_kwargs=dict()):
+    """
+    Convenience wrapper: see make_image_plot for arguments, except 
+    colorbar_kwargs (which go to smart_colorbar)
+    """    
+    im = make_image_plot(im,imshow_kwargs=imshow_kwargs,pct=50)
+    ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)    
+    return im
