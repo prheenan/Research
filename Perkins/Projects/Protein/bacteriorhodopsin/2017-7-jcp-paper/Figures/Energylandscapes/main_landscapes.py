@@ -303,14 +303,14 @@ def plot_with_corrections(data):
     ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
     energies = [data._grid_property(lambda x: x.A_z * convert),
-                data._grid_property(lambda x: -1 * x.first_deriv_term * convert),
+                data._grid_property(lambda x: -1 * x.first_deriv_term * convert)
                 data._grid_property(lambda x: x.second_deriv_term* convert)]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol             
     for i,e in enumerate(energies):
         energy_rel = np.mean(e,axis=0)
-        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])  
+        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
@@ -407,7 +407,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     x,y = Scalebar.x_and_y_to_abs(x_rel=0.08,y_rel=0.85,ax=ax_energy)        
     Annotations.rainbow_text(x,y,strings=strings,colors=colors,
                              ax=ax_energy,size=legend_font_size)
-    PlotUtilities.legend(handlelength=0.5,loc=(0.03,0.8))                             
+    PlotUtilities.legend(handlelength=0.5,loc=(0.03,0.8))      
     PlotUtilities.no_x_label(ax_energy)                         
     PlotUtilities.save_png_and_svg(fig,out_name)  
     
