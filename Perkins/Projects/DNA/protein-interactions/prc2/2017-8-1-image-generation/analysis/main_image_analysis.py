@@ -78,6 +78,37 @@ def yield_files(image_files,text_files,size_images_meters):
         # POST: dimensions are OK 
         img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_no_number)
         yield img
+        
+def read_images(in_dir,cache_dir):
+    """
+    reads in all images / pkl files / annotation traces from in_dir, saving
+    intermediate results to cache_dir
+    
+    Args:
+        in_dir: directory with pkl files and txt files as input to yield_files
+        cache_dir: where to put the objects
+    Returns:
+        list of tagged_image objects 
+    """
+    ext = ".pkl"
+    ext_text = ".txt"
+    image_files = GenUtilities.getAllFiles(in_dir,ext=ext)
+    text_files = GenUtilities.getAllFiles(in_dir,ext=ext_text)
+    # filter only to those image files which are 2um
+    size_images_meters = 2e-6
+    size_images_pixels = 512
+    conversion_meters_per_px = size_images_meters / size_images_pixels  
+    objs_all = list(yield_files(image_files,text_files,size_images_meters))
+    name_func = lambda i,d: "{:s}_img_{:d}".format(d.file_name,i)
+    load_func = lambda : yield_files(image_files,text_files,size_images_meters)
+    objs_all = CheckpointUtilities.multi_load(cache_dir=cache_dir,
+                                              load_func=load_func,
+                                              force=False,name_func=name_func)
+    for o in objs_all:
+        im = o.image.height_nm_rel()
+        assert (im.shape[0] == im.shape[1])
+        assert (im.shape[0] == size_images_pixels)
+    return objs_all
 
 def run():
     """
@@ -91,25 +122,8 @@ def run():
     """
     in_dir = "in/"
     out_dir = "out/"
-    ext = ".pkl"
-    ext_text = ".txt"
-    GenUtilities.ensureDirExists(out_dir)
-    image_files = GenUtilities.getAllFiles(in_dir,ext=ext)
-    text_files = GenUtilities.getAllFiles(in_dir,ext=ext_text)
-    # filter only to those image files which are 2um
-    size_images_meters = 2e-6
-    size_images_pixels = 512
-    conversion_meters_per_px = size_images_meters / size_images_pixels  
-    objs_all = list(yield_files(image_files,text_files,size_images_meters))
-    name_func = lambda i,d: "{:s}_img_{:d}".format(d.file_name,i)
-    load_func = lambda : yield_files(image_files,text_files,size_images_meters)
-    objs_all = CheckpointUtilities.multi_load(cache_dir=out_dir,
-                                              load_func=load_func,
-                                              force=False,name_func=name_func)
-    for o in objs_all:
-        im = o.image.height_nm_rel()
-        assert (im.shape[0] == im.shape[1])
-        assert (im.shape[0] == size_images_pixels)
+    GenUtilities.ensureDirExists(out_dir)    
+    objs_all = read_images(in_dir,cache_dir=out_dir)
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
     fig = PlotUtilities.figure()
@@ -136,37 +150,67 @@ def run():
     xlim = [0,xmax*1.1]
     kw_dna = dict(color='g',alpha=0.3)
     kw_protein = dict(color='b',hatch='//',alpha=0.7)
-    ax= plt.subplot(2,1,1)
+    ax1 = plt.subplot(2,1,1)
+    plot_histogram(L0_dna_plot,bins,label="DNA Only" + n_str(n_dna),**kw_dna)
+    ax2 = plt.subplot(2,1,2)    
+    plot_histogram(L0_protein_plot,bins,label="DNA+PRC2" + n_str(n_protein),
+                   **kw_protein)                   
+    PlotUtilities.savefig(fig,out_dir + "hist.png",
+                          subplots_adjust=dict(hspace=0.03))
+    plot_all_objects(out_dir,objs_all)
+    
+def plot_histogram(data_plot,bins,**kw_plot):
+    """
+    plots data_to_plot (y) histogrammed to bins. **kw_plot passed to prh_hist
+    """
     micron_str = "$\mathrm{\mu m}$"
     prob_str = "$P$ (1/" + micron_str + ")"
     lazy_kw = dict(loc='center left')
-    prh_hist(L0_dna_plot,normed=True,bins=bins,
-             label="DNA Only" + n_str(n_dna),**kw_dna)
+    prh_hist(data_plot,normed=True,bins=bins,
+             **kw_plot)
     PlotUtilities.lazyLabel("",prob_str,"",**lazy_kw)
-    PlotUtilities.no_x_label(ax)
-    plt.xlim(xlim)
-    plt.subplot(2,1,2)    
-    prh_hist(L0_protein_plot,normed=True,bins=bins,
-             label="DNA+PRC2" + n_str(n_protein),**kw_protein)
     PlotUtilities.lazyLabel("L$_0$ (" + micron_str + ")",prob_str,"",
-                            **lazy_kw)
-    plt.xlim(xlim)
-    PlotUtilities.savefig(fig,out_dir + "hist.png",
-                          subplots_adjust=dict(hspace=0.03))
+                            **lazy_kw)    
+        
+def plot_all_objects(out_dir,objs_all):
+    """
+    plots all the annotations on all the objects.
+    """
     for obj in objs_all:
         # plot each image with all the traces overlayed
         fig = PlotUtilities.figure((3.5,4))
-        ax = plt.subplot(1,1,1)
-        plot_annotated_object(obj,ax=ax,fig=fig)
+        ax1 = plt.subplot(2,1,1)
+        plot_image(obj,ax=ax1,fig=fig,colorbar_kw=dict(add_space_only=True))
+        PlotUtilities.no_x_label(ax1)
+        ax2 = plt.subplot(2,1,2)
+        plot_annotated_object(obj,ax=ax2,fig=fig)
         out_name = os.path.basename(obj.image_path)        
-        PlotUtilities.savefig(fig,out_dir + out_name + ".png")
-        
-def plot_annotated_object(obj,ax,fig):
+        PlotUtilities.savefig(fig,out_dir + out_name + ".png",
+                              subplots_adjust=dict(hspace=0.05))    
+
+def plot_image(obj,ax,fig,colorbar_kw=dict()):
+    """
+    Plots a single image, relative to the median (assumed to be the surface)
+    
+    Args:
+        obj: tagged_image object
+        ax: the axis to plot on
+        fig: the figur to apply upon
+        colorbar_kw: passed to ImageUtil.smart_colorbar
+    Returns:
+        nothing
+    """
     imshow_kw = dict(vmin=0,vmax=1.25)                          
     height_nm_rel_surface = obj.image.height_nm_rel()
     height_nm_rel_surface -= np.median(height_nm_rel_surface)
     im = plt.imshow(height_nm_rel_surface,cmap=plt.cm.Greys_r,**imshow_kw)
-    ImageUtil.smart_colorbar(im,ax=ax,fig=fig)
+    ImageUtil.smart_colorbar(im,ax=ax,fig=fig,**colorbar_kw)
+    
+def plot_annotated_object(obj,ax,fig):
+    """
+    plots an object with its annotations. See: plot_image
+    """
+    plot_image(obj,ax,fig)
     # plot each DNA trace
     for o in obj.worm_objects:
         xy_abs = o.inf.x_y_abs
