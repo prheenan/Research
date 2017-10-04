@@ -397,7 +397,6 @@ def spline_fit(image_obj,x,y):
         Lp_log_mean_angle_and_coeffs(L_binned_m,mean_cos_angle)
     # do some data checking.
     assert L0_m > 0 , "L0 must be positive"
-    assert Lp_m > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
     fit_spline_info = spline_info(u,tck,spline,deriv,x0_px=x0, y0_px=y0)
     polymer_info_obj =polymer_info(theta=angle_inf_obj.theta,L_m=L_m,
@@ -496,7 +495,7 @@ def angles_and_contour_lengths(spline,deriv,
     sanit_and_sort = lambda x: sanit(x)[sort_idx]
     # return everything sorted as per sort_idx
     flat_L = sanit_and_sort(contour_length_matrix)
-    flat_angle = sanit_and_sort(angle_diff_matrix)
+    flat_angle = np.arccos(np.cos(sanit_and_sort(angle_diff_matrix)))
     to_ret = angle_info(theta=flat_angle, L_px=flat_L)
     return to_ret,L0
 

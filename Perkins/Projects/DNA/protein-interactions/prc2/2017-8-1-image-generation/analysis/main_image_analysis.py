@@ -12,7 +12,7 @@ from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
 
 from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
-from Research.Perkins.AnalysisUtil.Images import PolymerTracing
+from Research.Perkins.AnalysisUtil.Images import PolymerTracing,PolymerPlotting
 
 def get_x_and_y_arrays(text_file):
     """
@@ -110,6 +110,9 @@ def run():
         assert (im.shape[0] == size_images_pixels)
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
+    fig = PlotUtilities.figure()
+    PolymerPlotting.plot_angle_information(polymer_info_obj)
+    PlotUtilities.savefig(fig,out_dir + "angles.png")
     # POST: all the contour lengths are set in 'real' units ]
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
@@ -125,7 +128,9 @@ def run():
     xmin = np.min(np.concatenate([L0_dna_plot,L0_protein_plot]))
     xmax = np.max(np.concatenate([L0_dna_plot,L0_protein_plot]))
     n_bins = 12
-    bins = np.linspace(xmin,xmax,endpoint=True,num=n_bins)
+    step = sanit_L0(50e-9)
+    bins = np.arange(start=0,stop=xmax+step,step=step)
+    n_bins = bins.size
     xlim = [0,xmax]
     kw_dna = dict(color='g',alpha=0.3)
     kw_protein = dict(color='b',hatch='//',alpha=0.7)
