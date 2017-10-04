@@ -138,7 +138,7 @@ def run():
     kw_protein = dict(color='b',hatch='//',alpha=0.7)
     ax= plt.subplot(2,1,1)
     micron_str = "$\mathrm{\mu m}$"
-    prob_str = "P (1/" + micron_str + ")"
+    prob_str = "$P$ (1/" + micron_str + ")"
     lazy_kw = dict(loc='center left')
     prh_hist(L0_dna_plot,normed=True,bins=bins,
              label="DNA Only" + n_str(n_dna),**kw_dna)
@@ -157,16 +157,21 @@ def run():
         # plot each image with all the traces overlayed
         fig = PlotUtilities.figure((3.5,4))
         ax = plt.subplot(1,1,1)
-        im = ImageUtil.imshow(obj.image)
-        ImageUtil.smart_colorbar(im,ax=ax,fig=fig)
-        # plot each DNA trace
-        for o in obj.worm_objects:
-            xy_abs = o.inf.x_y_abs
-            color = "g" if o.has_dna_bound_protein else "r"
-            ax.plot(*xy_abs,color=color,linewidth=0.25)
-        out_name = os.path.basename(obj.image_path)
+        plot_annotated_object(obj,ax=ax,fig=fig)
+        out_name = os.path.basename(obj.image_path)        
         PlotUtilities.savefig(fig,out_dir + out_name + ".png")
-        break
+        
+def plot_annotated_object(obj,ax,fig):
+    imshow_kw = dict(vmin=0,vmax=1.25)                          
+    height_nm_rel_surface = obj.image.height_nm_rel()
+    height_nm_rel_surface -= np.median(height_nm_rel_surface)
+    im = plt.imshow(height_nm_rel_surface,cmap=plt.cm.Greys_r,**imshow_kw)
+    ImageUtil.smart_colorbar(im,ax=ax,fig=fig)
+    # plot each DNA trace
+    for o in obj.worm_objects:
+        xy_abs = o.inf.x_y_abs
+        color = "g" if o.has_dna_bound_protein else "r"
+        ax.plot(*xy_abs,color=color,linewidth=0.2)
 
 
 
