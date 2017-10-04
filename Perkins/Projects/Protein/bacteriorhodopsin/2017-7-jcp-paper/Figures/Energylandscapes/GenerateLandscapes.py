@@ -31,7 +31,7 @@ class cacheable_data(object):
         and z (stage position)
 
         :param k_arr: the spring constant list, size N
-        :param n_k_arr:  the number of fecs with k=k_arr[i]. 
+        :param n_k_arr:  the number of fecs with k=k_arr[i].
         """
         self.landscape = landscape
         self.heatmap_data = heatmap_data
@@ -242,7 +242,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=10,
+                                                 limit=None,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -265,8 +265,8 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     # get the heatmap on the entire slice
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
-    N_boostraps = 10
-    min_data = 1
+    N_boostraps = 100
+    min_data = 10
     area_of_interest = areas[0]
     k_arr = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr))))
@@ -282,16 +282,16 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     # POST: all data are sorted by spring constant
     data_lengths = [len(d) for d in data_to_use]
     assert len(data_lengths) > 0 , "Couldn't find any data to fit"
-    iwt_arr = []
+    filtered_iwt = []
     for i,d in enumerate(data_to_use):
         cache_dir = "./{:s}_k_{:.4g}pN_nm/".\
                 format(area_of_interest.save_name,k_set[i]*1000)
         iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d,
                                                   skip,N_boostraps,
                                                   cache_dir=cache_dir)
-        iwt_arr.append(iwt_tmp)
+        # immediately filter; don't use the unfiltered data. avoids memory
+        # problems.
+        filtered_iwt.append(filter_landscapes(iwt_tmp,area_of_interest.n_bins))
     # POST: all landscapes are combined.
-    filtered_iwt = [filter_landscapes(i,area_of_interest.n_bins)
-                    for i in iwt_arr]
     return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
                           n_k_arr=data_lengths)
