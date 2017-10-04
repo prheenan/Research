@@ -470,9 +470,6 @@ def angles_and_contour_lengths(spline,deriv,
     L0 = contour_lengths[-1]
     n = x_spline.shape[0]
     contour_length_matrix = _difference_matrix(contour_lengths,contour_lengths)
-    cos_angle_matrix = _dot_matrix(deriv_unit_vector.T,deriv_unit_vector.T)
-    cos_angle_matrix = np.maximum(-1,cos_angle_matrix)
-    cos_angle_matrix = np.minimum(1,cos_angle_matrix)
     dx_deriv = deriv_unit_vector[0, :]
     dy_deriv = deriv_unit_vector[1, :]
     angle2 = np.arctan2(dy_deriv, dx_deriv)
