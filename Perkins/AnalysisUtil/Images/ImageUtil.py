@@ -49,7 +49,7 @@ def smart_colorbar(im,ax=plt.gca(),fig=plt.gcf(),
         cax.axis('off')
 
     
-def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50):
+def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False):
     """
     Given an image object, makes a sensible plot 
     
@@ -80,5 +80,5 @@ def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),
     colorbar_kwargs (which go to smart_colorbar)
     """    
     im = make_image_plot(im,imshow_kwargs=imshow_kwargs,pct=50)
-    ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)    
+    smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)    
     return im

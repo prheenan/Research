@@ -12,7 +12,8 @@ from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
 
 from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
-from Research.Perkins.AnalysisUtil.Images import PolymerTracing,PolymerPlotting
+from Research.Perkins.AnalysisUtil.Images import PolymerTracing,PolymerPlotting,\
+    ImageUtil
 
 def get_x_and_y_arrays(text_file):
     """
@@ -154,15 +155,18 @@ def run():
                           subplots_adjust=dict(hspace=0.03))
     for obj in objs_all:
         # plot each image with all the traces overlayed
-        fig = PlotUtilities.figure()        
-        plt.imshow(obj.image.height_nm_rel())
+        fig = PlotUtilities.figure((3.5,4))
+        ax = plt.subplot(1,1,1)
+        im = ImageUtil.imshow(obj.image)
+        ImageUtil.smart_colorbar(im,ax=ax,fig=fig)
         # plot each DNA trace
         for o in obj.worm_objects:
             xy_abs = o.inf.x_y_abs
             color = "g" if o.has_dna_bound_protein else "r"
-            plt.plot(*xy_abs,color=color,linewidth=0.25)
+            ax.plot(*xy_abs,color=color,linewidth=0.25)
         out_name = os.path.basename(obj.image_path)
         PlotUtilities.savefig(fig,out_dir + out_name + ".png")
+        break
 
 
 

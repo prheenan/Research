@@ -232,7 +232,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                                     for r in raw_data])
     for r in raw_data:
         r.LowResData.meta.SpringConstant = mean_spring_constant
-    # fix the constant offset added        
+    # fix the constant offset added
     for i,r in enumerate(raw_data):
         r.Force -= offset_N
     # make the slice needed (the 'full' dataset)
