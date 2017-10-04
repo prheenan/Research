@@ -297,19 +297,27 @@ def kwargs_labels():
     return [PlotUtilities.variable_string(r"A"),
             PlotUtilities.variable_string(r"\frac{\dot{A}^2}{2k}"),
             PlotUtilities.variable_string(second_deriv)]
+
+
             
 def plot_with_corrections(data):
-    ext_nm = data._extension_grid_nm.copy()
+    ext_nm = 1e9 * data._extensions_m_original.copy()
     ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
-    energies = [data._grid_property(lambda x: x.A_z * convert),
-                data._grid_property(lambda x: -1 * x.first_deriv_term * convert)
-                data._grid_property(lambda x: x.second_deriv_term* convert)]
+    key = data.landscape_objs[0]
+    # the second derivative is a little special; we average the argument to the log first,
+    # to avoid lots of zeros
+    beta = key.beta
+    f_deriv = data._grid_property(lambda x: x.one_minus_A_z_ddot_over_k)
+    f_mean = lambda x: np.mean(x,axis=0)
+    to_second_deriv = lambda x: InverseWeierstrass.second_deriv_term(x,beta)
+    energies = [f_mean(data._grid_property(lambda x: x.A_z * convert)),
+                f_mean(data._grid_property(lambda x: -1 * x.first_deriv_term * convert)),
+                to_second_deriv(f_mean(f_deriv))*convert]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
-    landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol             
-    for i,e in enumerate(energies):
-        energy_rel = np.mean(e,axis=0)
+    # plot each
+    for i,energy_rel in enumerate(energies):
         plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
@@ -331,7 +339,9 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
         font_kwargs_modified(x_kwargs=common_kw,
                              y_kwargs=common_kw)
     heat_kw_common = dict(line_kwargs=dict(color='w',linewidth=1.5))
-    x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,**heat_kw_common)
+    fudge_x = dict(x=0,y=-0.2)
+    x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,
+                     fudge_text_pct=fudge_x,**heat_kw_common)
     y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
     scale_bar_x = 0.83
@@ -428,7 +438,7 @@ def run():
     cache_dir = flickering_dir 
     force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
-    bin_size_meters = 0.2e-9
+    bin_size_meters = 0.4e-9
     # write down the areas we want to look at 
     adhesion_min = 17e-9
     ed_max = 32e-9
@@ -458,11 +468,16 @@ def run():
         min_v,max_v = a.ext_bounds_nm_rel*1e-9
         slice_idx = np.where( (l.q >= min_v) & (l.q <= max_v))[0]
         assert slice_idx.size > 0
-        sanit = lambda x: x[slice_idx].copy()
+        sanit = lambda x: x[slice_idx].copy()        
         for l in tmp.landscape:
             l.q = sanit(l.q)
+            # zero the energy
             l.energy = sanit(l.energy)
-            l.energy -= min(l.energy)
+            min_e = min(l.energy)
+            l.energy -=  min_e
+            l.A_z = sanit(l.A_z)
+            l.A_z_dot = sanit(l.A_z_dot)
+            l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots

@@ -58,51 +58,46 @@ class landscape_data(object):
     def __init__(self,landscape_objs,kT=4.1e-21):
         self.landscape_objs = landscape_objs
         self.kT = 4.1e-21
-    @property
-    def _extension_grid_nm(self):
-        # get the extensions...
-        ext_nm = self._extensions_nm        
-        # get the absolute min and max
-        min_all = np.max([min(e) for e in ext_nm])
-        max_all = np.min([max(e) for e in ext_nm])
-        # get the grid to interpolate onto
-        grid = np.linspace(min_all,max_all,num=len(ext_nm[0]),endpoint=True)   
-        return grid   
+        min_v = min([min(l.q) for l in landscape_objs])
+        max_v = min([max(l.q) for l in landscape_objs])
+        sizes = np.array([l.q.size for l in landscape_objs])
+        n = np.max(sizes)        
+        expected_sizes = np.ones(sizes.size)*n
+        np.testing.assert_allclose(sizes,expected_sizes)
+        self._extensions_m = np.linspace(min_v,max_v,n*10,endpoint=True)
+        # save the origial (ie: same sized grid)
+        self._extensions_m_original = np.linspace(min_v,max_v,n,endpoint=True)
+        self._energies = [l.spline_fit.y(self._extensions_m)
+                          for l in landscape_objs]
+        # align all the arbitrary zeros                          
+        self._energies = [e - min(e) for e in self._energies]                           
+        # get all the derivatives                          
+        dx = self._extensions_m[1] -  self._extensions_m[0]                           
+        self._d_energies_d_m = \
+            np.array([np.gradient(e)/dx for e in self._energies])
     def from_Joules_to_kcal_per_mol(self):
         return IWT_Util.kT_to_kcal_per_mol() * (1/self.kT)
     def _raw_uninterpolared_landscapes_kcal_per_mol(self,l):
         return l.G_0 * self.from_Joules_to_kcal_per_mol()
-    def _grid_property(self,property_func):
-        grid = self._extension_grid_nm
-        # get the raw data
-        raw_y = [property_func(o) for o in self.landscape_objs]
-        return grid_interpolate_arrays(self._extensions_nm,raw_y,grid)
-    @property                
-    def _landscapes_kcal_per_mol(self):
-        """
-        get the landscapes in kcal per mol 
-        """
-        func = self._raw_uninterpolared_landscapes_kcal_per_mol
-        return self._grid_property(func)
-    @property                        
-    def _extensions_nm(self):
-        return [l.q * 1e9 for l in self.landscape_objs]
     def amino_acids_per_nm(self):
         return 3     
+    def _grid_property(self,f):
+        to_ret =[f(l) for l in self.landscape_objs]
+        return to_ret 
+    @property
+    def _extension_grid_nm(self):
+        return self._extensions_m * 1e9
+    @property
+    def _landscapes_kcal_per_mol(self):
+        return np.array(self._energies) * self.from_Joules_to_kcal_per_mol()
     @property
     def _delta_landscapes_kcal_per_mol_per_AA(self):
-        
-        dy_kcal_mol = [np.gradient(y,**self.mean_std_opt()) 
-                       for y in self._landscapes_kcal_per_mol]
-        ext_nm = self._extensions_nm                   
-        dx_nm = [np.gradient(x) for x in ext_nm]
-        dx_aa = [d * self.amino_acids_per_nm() for d in dx_nm]
-        # get the individual gradients
-        gradients_per_aa = [(dy_i/(dx_i))  
-                            for dy_i,dx_i in zip(dy_kcal_mol,dx_aa)]
-        grid_x = self._extension_grid_nm                            
-        to_ret =  grid_interpolate_arrays(ext_nm,gradients_per_aa,grid_x)
-        return to_ret 
+        energy_kcal_per_mol_per_m = \
+            self._d_energies_d_m * self.from_Joules_to_kcal_per_mol()
+        energy_kcal_per_mol_per_nm = energy_kcal_per_mol_per_m * 1e-9
+        energy_kcal_per_mol_per_AA = \
+            energy_kcal_per_mol_per_nm/self.amino_acids_per_nm()
+        return energy_kcal_per_mol_per_AA
     def mean_std_opt(self):
         return dict(axis=0)
     @property        
@@ -180,7 +175,7 @@ def heatmap(x,y,bins):
     histogram = histogram.T            
     return histogram, x_edges,y_edges 
     
-def get_heatmap_data(time_sep_force_arr,bins=(100,100)):        
+def get_heatmap_data(time_sep_force_arr,bins=(300,100)):
     sep_nm = [t.Separation*1e9 for t in time_sep_force_arr]
     z_nm = [t.ZSnsr*1e9 for t in time_sep_force_arr]
     force_pN = [t.Force*1e12 for t in time_sep_force_arr]
@@ -226,7 +221,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     raw_data = [r for r in raw_data 
                 if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
     raw_area_slices = []
-    area_bounds = [get_area_bounds(raw_data,area) for area in areas]
+    area_bounds = [get_area_bounds(raw_data,a) for a in areas]
     # fix all the spring constants. XXX need to account for this...
     mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant 
                                     for r in raw_data])
@@ -246,8 +241,9 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     to_ret = []
     skip = 0
     N_boostraps = 500
+    area_of_interst = areas[0]
     heatmap_data,iwt_tmp = \
-        single_area_landscape_bootstrap(areas[0],raw_area_slices,
+        single_area_landscape_bootstrap(area_of_interst,raw_area_slices,
                                         skip,N_boostraps)   
-    filtered_iwt = filter_landscapes(iwt_tmp,area.n_bins)                                        
+    filtered_iwt = filter_landscapes(iwt_tmp,area_of_interst.n_bins)
     return cacheable_data(filtered_iwt,*heatmap_data)                           
