@@ -50,8 +50,9 @@ def prh_hist(data,**hist_kw):
     y = max(counts * 1.05)
     ax = plt.gca()
     try:
-        plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,meanline=True,
-                    showmeans=True,flierprops=dict(color='k',markersize=1))
+        plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,
+                    meanline=True,showmeans=True,
+                    flierprops=dict(color='k',markersize=1))
     except IndexError:
         # not enough data 
         pass
@@ -131,19 +132,23 @@ def run():
     step = sanit_L0(50e-9)
     bins = np.arange(start=0,stop=xmax+step,step=step)
     n_bins = bins.size
-    xlim = [0,xmax]
+    xlim = [0,xmax*1.1]
     kw_dna = dict(color='g',alpha=0.3)
     kw_protein = dict(color='b',hatch='//',alpha=0.7)
     ax= plt.subplot(2,1,1)
+    micron_str = "$\mathrm{\mu m}$"
+    prob_str = "P (1/" + micron_str + ")"
+    lazy_kw = dict(loc='center left')
     prh_hist(L0_dna_plot,normed=True,bins=bins,
              label="DNA Only" + n_str(n_dna),**kw_dna)
-    PlotUtilities.lazyLabel("","P (1/microns)","")
+    PlotUtilities.lazyLabel("",prob_str,"",**lazy_kw)
     PlotUtilities.no_x_label(ax)
     plt.xlim(xlim)
     plt.subplot(2,1,2)    
     prh_hist(L0_protein_plot,normed=True,bins=bins,
              label="DNA+PRC2" + n_str(n_protein),**kw_protein)
-    PlotUtilities.lazyLabel("L0 (microns)","P (1/microns)","")
+    PlotUtilities.lazyLabel("L$_0$ (" + micron_str + ")",prob_str,"",
+                            **lazy_kw)
     plt.xlim(xlim)
     PlotUtilities.savefig(fig,out_dir + "hist.png",
                           subplots_adjust=dict(hspace=0.03))
