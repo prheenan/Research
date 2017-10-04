@@ -184,8 +184,7 @@ def get_heatmap_data(time_sep_force_arr,bins=(300,100)):
     return heatmap_force_extension,heatmap_force_z
     
     
-def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps):
-    heatmap_data = get_heatmap_data(slice_tmp)  
+def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps,cache_dir):
     # get the landscapes (we use N, to get an error)
     iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
     # delete the original list to free its memnory
@@ -203,18 +202,17 @@ def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps):
     functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
     name_func = lambda  i,d: \
         area.save_name + "_bootstrap_{:d}".format(i+skip) 
-    cache_dir = "./{:s}/".format(area.save_name)
     GenUtilities.ensureDirExists(cache_dir)
     iwt_tmp = CheckpointUtilities.multi_load(cache_dir,load_func=functor,
                                              force=False,
                                              name_func=name_func)   
-    return heatmap_data,iwt_tmp                                             
+    return iwt_tmp
     
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=10,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -222,28 +220,46 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                 if np.allclose(r.Velocity,v_exp,atol=0,rtol=0.01)]
     raw_area_slices = []
     area_bounds = [get_area_bounds(raw_data,a) for a in areas]
-    # fix all the spring constants. XXX need to account for this...
-    mean_spring_constant = np.mean([r.LowResData.meta.SpringConstant 
-                                    for r in raw_data])
-    for r in raw_data:
-        r.LowResData.meta.SpringConstant = mean_spring_constant
-    # fix the constant offset added        
+    # fix the constant offset added, see SI of Science paper
     for i,r in enumerate(raw_data):
         r.Force -= offset_N
     # make the slice needed (the 'full' dataset)
+    raw_area_slice = []
     for i,r in enumerate(raw_data):
         idx_0,idx_f = area_bounds[0][i]
         s = slice(idx_0,idx_f,1)
         this_area = FEC_Util.MakeTimeSepForceFromSlice(r,s)
-        raw_area_slices.append(this_area)
+        raw_area_slice.append(this_area)
         # r is no longer needed; stop referencing it to make space
         raw_data[i] = None
-    to_ret = []
+    # get the heatmap on the entire slice
+    heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
-    N_boostraps = 500
-    area_of_interst = areas[0]
-    heatmap_data,iwt_tmp = \
-        single_area_landscape_bootstrap(area_of_interst,raw_area_slices,
-                                        skip,N_boostraps)   
-    filtered_iwt = filter_landscapes(iwt_tmp,area_of_interst.n_bins)
+    N_boostraps = 10
+    area_of_interest = areas[0]
+    k_arr = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
+    k_set = np.array(sorted(list(set(k_arr))))
+    k_idx = np.array([np.argmin(np.abs(k_tmp - k_set)) for k_tmp in k_arr])
+    data_to_use = []
+    min_data = 1
+    for i in range(len(k_idx)):
+        tmp_idx = np.where(np.abs(k_idx - i) < 1e-6)[0]
+        m_data = [raw_area_slice[j] for j in tmp_idx]
+        len_data = len(m_data)
+        if (len_data >= min_data):
+            data_to_use.append(m_data)
+    # POST: data_to_use[i] has the data for the spring constant i
+    # POST: all data are sorted by spring constant
+    data_lengths = [len(d) for d in data_to_use]
+    assert len(data_lengths) > 0 , "Couldn't find any data to fit"
+    iwt_arr = []
+    for i,d in enumerate(data_to_use):
+        cache_dir = "./{:s}_k_{:.4g}pN_nm/".\
+                format(area_of_interest.save_name,k_set[i]*1000)
+        iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d,
+                                                  skip,N_boostraps,
+                                                  cache_dir=cache_dir)
+        iwt_arr.extend(iwt_tmp)
+    # POST: all landscapes are combined.
+    filtered_iwt = filter_landscapes(iwt_tmp,area_of_interest.n_bins)
     return cacheable_data(filtered_iwt,*heatmap_data)                           
