@@ -32,10 +32,12 @@ class spline_info(object):
         self.y0_px = y0_px
 
 class angle_info(object):
-    def __init__(self,theta,L_px,cos_theta):
+    def __init__(self,theta,L_px):
         self.theta = theta
         self.L_px = L_px
-        self.cos_theta = cos_theta
+    @property
+    def cos_theta(self):
+        return np.cos(self.theta)
 
 
 class polymer_info(object):
@@ -478,9 +480,7 @@ def angles_and_contour_lengths(spline,deriv,
     # normalize to 0 to 2*pi
     where_le_0 = np.where(angle_diff_matrix < 0)
     angle_diff_matrix[where_le_0] += 2 * np.pi
-    # make the angles all between -pi and pi
-    angle_diff_matrix -= np.pi
-    assert ((angle_diff_matrix >= -np.pi) & (angle_diff_matrix <= np.pi)).all()
+    assert ((angle_diff_matrix >= 0) & (angle_diff_matrix <= 2*np.pi)).all()
     # POST: angles calculated correctly...
     # only look at the upper triangular part
     idx_upper_tri = np.triu_indices(n)
@@ -499,11 +499,8 @@ def angles_and_contour_lengths(spline,deriv,
     sanit_and_sort = lambda x: sanit(x)[sort_idx]
     # return everything sorted as per sort_idx
     flat_L = sanit_and_sort(contour_length_matrix)
-    cos_theta = sanit_and_sort(cos_angle_matrix)
-    flat_angle = np.arccos(cos_theta)
-    to_ret = angle_info(theta=flat_angle, L_px=flat_L,
-                        cos_theta=cos_theta)
-    assert cos_theta[0] > 0
+    flat_angle = sanit_and_sort(angle_diff_matrix)
+    to_ret = angle_info(theta=flat_angle, L_px=flat_L)
     return to_ret,L0
 
 def _spline_u_and_tck(x,y,k=3,s=None,num=None):
