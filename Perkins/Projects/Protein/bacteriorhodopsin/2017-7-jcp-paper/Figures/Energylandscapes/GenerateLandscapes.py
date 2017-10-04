@@ -22,10 +22,12 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 
 class cacheable_data(object):
-    def __init__(self,landscape,heatmap_data,heatmap_data_z):
+    def __init__(self,landscape,heatmap_data,heatmap_data_z,k_arr,n_k_arr):
         self.landscape = landscape
         self.heatmap_data = heatmap_data
         self.heatmap_data_z = heatmap_data_z
+        self.k_arr = k_arr
+        self.n_k_arr = n_k_arr
     def __deepcopy__(self, memo={}):
         cls = self.__class__
         result = cls.__new__(cls)
@@ -212,7 +214,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=10,
+                                                 limit=None,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -235,13 +237,13 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     # get the heatmap on the entire slice
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
-    N_boostraps = 10
+    N_boostraps = 100
+    min_data = 10
     area_of_interest = areas[0]
     k_arr = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr))))
     k_idx = np.array([np.argmin(np.abs(k_tmp - k_set)) for k_tmp in k_arr])
     data_to_use = []
-    min_data = 1
     for i in range(len(k_idx)):
         tmp_idx = np.where(np.abs(k_idx - i) < 1e-6)[0]
         m_data = [raw_area_slice[j] for j in tmp_idx]
@@ -262,4 +264,5 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         iwt_arr.extend(iwt_tmp)
     # POST: all landscapes are combined.
     filtered_iwt = filter_landscapes(iwt_tmp,area_of_interest.n_bins)
-    return cacheable_data(filtered_iwt,*heatmap_data)                           
+    return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
+                          n_k_arr=data_lengths)
