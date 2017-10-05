@@ -46,10 +46,16 @@ class cacheable_data(object):
         weights = []
         #n_k_arr[i] is the number of fecs used to calculate
         # each landscape in the list of landscapes self.landscape[i]
+        data_to_use = []
+        min_n = 20
         for i,list_v in enumerate(self.landscape):
-            weights_tmp = [self.n_k_arr[i] for j in range(len(list_v))]
+            n_tmp = self.n_k_arr[i]
+            if n_tmp < min_n:
+                continue
+            weights_tmp = [n_tmp for j in range(len(list_v))]
             weights.extend(weights_tmp)
-        to_ret = landscape_data(all_data,weights=weights)
+            data_to_use.extend(list_v)
+        to_ret = landscape_data(data_to_use,weights=weights)
         return to_ret
     def __deepcopy__(self, memo={}):
         cls = self.__class__
@@ -265,7 +271,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     # get the heatmap on the entire slice
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
-    N_boostraps = 100
+    N_boostraps = 500
     min_data = 10
     area_of_interest = areas[0]
     k_arr = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
@@ -292,6 +298,10 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # immediately filter; don't use the unfiltered data. avoids memory
         # problems.
         filtered_iwt.append(filter_landscapes(iwt_tmp,area_of_interest.n_bins))
-    # POST: all landscapes are combined.
+        # explicitly set iwt_tmp to None, to have it be garbage collected
+        for l in iwt_tmp:
+            l = None
+        iwt_tmp = None
+    # POST: filtered_iwt[i] has all bootstraps from fecs with spring k_set[i]
     return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
                           n_k_arr=data_lengths)
