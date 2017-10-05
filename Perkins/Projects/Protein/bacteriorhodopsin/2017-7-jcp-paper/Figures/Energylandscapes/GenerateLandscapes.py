@@ -130,7 +130,7 @@ class landscape_data(object):
         return np.average(x,**self.mean_std_opt())
     def _std(self,x):
         mean_tmp = self._avg(x)
-        variance = self._avg(x-mean_tmp)
+        variance = self._avg((x-mean_tmp)**2)
         return np.sqrt(variance)
     @property        
     def mean_landscape_kcal_per_mol(self):
