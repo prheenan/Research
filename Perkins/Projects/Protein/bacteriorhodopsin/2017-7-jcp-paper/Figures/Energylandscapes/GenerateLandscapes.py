@@ -123,12 +123,15 @@ class landscape_data(object):
     def _landscapes_kcal_per_mol(self):
         return np.array(self._energies) * self.from_Joules_to_kcal_per_mol()
     @property
-    def _delta_landscapes_kcal_per_mol_per_AA(self):
+    def _delta_landscapes_kcal_per_mol_per_nm(self):
         energy_kcal_per_mol_per_m = \
             self._d_energies_d_m * self.from_Joules_to_kcal_per_mol()
         energy_kcal_per_mol_per_nm = energy_kcal_per_mol_per_m * 1e-9
+        return energy_kcal_per_mol_per_nm
+    @property
+    def _delta_landscapes_kcal_per_mol_p_AA(self):
         energy_kcal_per_mol_per_AA = \
-            energy_kcal_per_mol_per_nm/self.amino_acids_per_nm()
+            self._delta_landscapes_kcal_per_mol_per_nm/self.amino_acids_per_nm()
         return energy_kcal_per_mol_per_AA
     def mean_std_opt(self):
         return dict(axis=0,weights=self.weights)
@@ -146,11 +149,11 @@ class landscape_data(object):
     def std_landscape_kcal_per_mol(self):
         return self._std(self._landscapes_kcal_per_mol)
     @property        
-    def mean_delta_landscape_kcal_per_mol_per_AA(self):
-        return self._avg(self._delta_landscapes_kcal_per_mol_per_AA)
+    def mean_delta_landscape_kcal_per_mol_per_nm(self):
+        return self._avg(self._delta_landscapes_kcal_per_mol_per_nm)
     @property                               
-    def std_delta_landscape_kcal_per_mol_per_AA(self):
-        return self._std(self._delta_landscapes_kcal_per_mol_per_AA)
+    def std_delta_landscape_kcal_per_mol_per_nm(self):
+        return self._std(self._delta_landscapes_kcal_per_mol_per_nm)
 
 def grid_interpolate_arrays(x_arr,y_arr,x_grid):
     to_ret = []

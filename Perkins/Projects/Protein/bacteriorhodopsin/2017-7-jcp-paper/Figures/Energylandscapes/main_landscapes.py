@@ -50,10 +50,11 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
     delta_landscape_kcal_per_mol_per_amino_acid = grad(landscape_kcal_per_mol)
     landscape_upper = landscape_kcal_per_mol+std_landscape_kcal_per_mol
     landscape_lower =landscape_kcal_per_mol-std_landscape_kcal_per_mol
+    # XXX -- everything is in nm now, by tom's request. should refator
     delta_landscape_kcal_per_mol_per_amino_acid = \
-        data.mean_delta_landscape_kcal_per_mol_per_AA
+        data.mean_delta_landscape_kcal_per_mol_per_nm
     std_delta_landscape_kcal_per_mol_per_AA = \
-        data.std_delta_landscape_kcal_per_mol_per_AA
+        data.std_delta_landscape_kcal_per_mol_per_nm
     upper_delta_landscape = delta_landscape_kcal_per_mol_per_amino_acid+\
                             std_delta_landscape_kcal_per_mol_per_AA
     lower_delta_landscape = delta_landscape_kcal_per_mol_per_amino_acid-\
@@ -63,7 +64,7 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
                     max(delta_landscape_kcal_per_mol_per_amino_acid)]    
     limits_energy = [min(landscape_kcal_per_mol),max(landscape_kcal_per_mol)]
     units_energy_delta = label_deltaG + \
-                         r" per AA (kcal/(mol $\cdot$ AA))"   
+                         r" per nm (kcal/(mol $\cdot$ nm))"   
     units_energy = PlotUtilities.unit_string("\Delta G","kcal/mol")                         
     difference_color = 'rebeccapurple'    
     landscape_color = kw_landscape['color']
@@ -77,7 +78,8 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
     if (plot_derivative):
         ax_delta = plt.gca()
         ax_2 = PlotUtilities.secondAxis(ax_delta,
-                                        label=units_energy,color=landscape_color,
+                                        label=units_energy,
+                                        color=landscape_color,
                                         limits=limits_energy,secondY =True,
                                         tick_color=landscape_color)
         ax_energy = ax_2
@@ -119,8 +121,8 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
         ax_delta.fill_between(x=extension_nm[idx],
                               y1=lower_delta_landscape[idx],
                               y2=upper_delta_landscape[idx],
-                              alpha=0.15,color=difference_color)                                           
-
+                              alpha=0.15,color=difference_color)
+        PlotUtilities.tom_ticks(ax=ax_delta,change_x=False,num_major=4)
     return to_ret
               
 def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
@@ -198,8 +200,8 @@ def normalize_axes(ax_list,manual_min=None,fudge_f=0.0):
     """
     max_ylim = np.max([ax.get_ylim() for ax in ax_list])
     min_ylim = np.min([ax.get_ylim() for ax in ax_list])
-    range = max_ylim-min_ylim
-    fudge = range * fudge_f
+    range_v = max_ylim-min_ylim
+    fudge = range_v * fudge_f
     min_v = min_ylim-fudge
     if (manual_min is not None):
         min_v = manual_min    
@@ -209,12 +211,13 @@ def normalize_axes(ax_list,manual_min=None,fudge_f=0.0):
 def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
     axs,first_axs,second_axs = [],[],[]
     offset_y = 0.2
-    kw_scalebars = [dict(offset_x=0.35,offset_y=offset_y),
-                    dict(offset_x=0.35,offset_y=offset_y),
-                    dict(offset_x=0.35,offset_y=offset_y)]
+    offset_x = 0.30
+    kw_scalebars = [dict(offset_x=offset_x,offset_y=offset_y),
+                    dict(offset_x=offset_x,offset_y=offset_y),
+                    dict(offset_x=offset_x,offset_y=offset_y)]
     xlims = [ [None,None],[None,None],[None,15]    ]   
-    arrow_x = [0.60,0.62,0.55]
-    arrow_y = [0.58,0.60,0.45]
+    arrow_x = [0.65,0.67,0.47]
+    arrow_y = [0.60,0.52,0.42]
     for i,a in enumerate(helical_areas):
         data = helical_data[i]
         kw_tmp = helical_kwargs[i]
@@ -231,7 +234,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         second_axs.append(ax_2)                    
         PlotUtilities.tom_ticks(ax=ax_2,num_major=5,change_x=False)       
         last_idx = len(helical_areas)-1
-        ax_1.annotate("",xytext=(arrow_x[i],arrow_y[i]),textcoords='axes fraction',
+        ax_1.annotate("",xytext=(arrow_x[i],arrow_y[i]),
+                      textcoords='axes fraction',
                       xy=(arrow_x[i]+0.2,arrow_y[i]),xycoords='axes fraction',
                       arrowprops=dict(facecolor=color,alpha=0.7,
                                       edgecolor="None",width=4,headwidth=10,
@@ -252,7 +256,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         PlotUtilities.no_x_label(ax_2)     
             
     
-def normalize_and_set_zeros(first_axs,second_axs,fudge_1=0.05,fudge_2=0.3):
+def normalize_and_set_zeros(first_axs,second_axs,fudge_1=0.05,fudge_2=0.6):
     # make all the axes consistent            
     normalize_axes(first_axs,fudge_f=fudge_1)
     normalize_axes(second_axs,fudge_f=fudge_2)
@@ -271,6 +275,11 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     helical_kwargs = landscape_kwargs()[1:]
     fig = PlotUtilities.figure((7,2.5))
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
+    ax_to_label = [ax for i,ax in enumerate(fig.axes) if (i % 2) != 0]
+    loc_last_two = [-0.1,1.1]
+    loc_first = [-0.2,1.1]
+    PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
+                            loc=[loc_first,loc_last_two,loc_last_two])
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
 def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9):
@@ -281,11 +290,24 @@ def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9):
     y_heat_kw['font_kwargs']['color'] = 'k'
     y_heat_kw['line_kwargs']['color'] = 'k'  
     y_heat_kw['unit'] = 'kcal/mol '
-    y_heat_kw['height'] = 40
+    y_heat_kw['height'] = 50
+    x_heat_kw['fudge_text_pct'] = dict(x=0,y=0.7)
     Scalebar.crossed_x_and_y_relative(scale_bar_x,offset_y,ax=ax,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
-    PlotUtilities.no_y_label(ax)                                              
+    PlotUtilities.no_y_label(ax)            
+    # add in a zero point
+    fudge_x = 1
+    xlim = ax.get_xlim()
+    fontsize = 7
+    ax.annotate(s="0",
+                xytext=(xlim[0] - fudge_x,0),
+                xy=(0,0),
+                size=fontsize,
+                textcoords='data',
+                verticalalignment="center",
+                horizontalalignment="center")
+
 
 def kwargs_correction():     
     return [dict(color='teal',linestyle='-.'),
@@ -305,14 +327,17 @@ def plot_with_corrections(data):
     ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
     key = data.landscape_objs[0]
-    # the second derivative is a little special; we average the argument to the log first,
+    # the second derivative is a little special; we average the argument to
+    # the log first,
     # to avoid lots of zeros
     beta = key.beta
     f_deriv = data._grid_property(lambda x: x.one_minus_A_z_ddot_over_k)
     f_mean = lambda x: np.mean(x,axis=0)
     to_second_deriv = lambda x: InverseWeierstrass.second_deriv_term(x,beta)
+    first_deriv = \
+        data._grid_property(lambda x: -1 * x.first_deriv_term * convert)
     energies = [f_mean(data._grid_property(lambda x: x.A_z * convert)),
-                f_mean(data._grid_property(lambda x: -1 * x.first_deriv_term * convert)),
+                f_mean(first_deriv),
                 to_second_deriv(f_mean(f_deriv))*convert]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
@@ -340,9 +365,11 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                              y_kwargs=common_kw)
     heat_kw_common = dict(line_kwargs=dict(color='w',linewidth=1.5))
     fudge_x = dict(x=0,y=-0.2)
+    fudge_y = dict(x=0,y=0)
     x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,
                      fudge_text_pct=fudge_x,**heat_kw_common)
-    y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
+    y_heat_kw = dict(height=30,unit='pN ',
+                     fudge_text_pct=fudge_y,font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
     scale_bar_x = 0.83
     Scalebar.crossed_x_and_y_relative(scale_bar_x,0.55,ax=ax_heat,
@@ -356,7 +383,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
     ax_correction.set_xlim(xlim_fec)            
-    offset_y_pedagogy = 0.42
+    offset_y_pedagogy = 0.31
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=offset_y_pedagogy)
     legend_font_size = 9                         
@@ -365,11 +392,11 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     for i,text in enumerate(legend.get_texts()):
         plt.setp(text, color = kwargs_correction()[i]['color'])    
     # make the inset plot 
-    axins = zoomed_inset_axes(ax_correction, zoom=3, loc=2,
-                              borderpad=0.8) 
+    axins = zoomed_inset_axes(ax_correction, zoom=2.25, loc=2,
+                              borderpad=1.2) 
     plot_with_corrections(data)
-    xlim_box = [1,5]
-    ylim_box = [-3,28]
+    xlim_box = [-1,6]
+    ylim_box = [-2,29]
     plt.xlim(xlim_box)
     plt.ylim(ylim_box)
     PlotUtilities.no_x_anything(axins)
@@ -382,23 +409,24 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
         font_kwargs_modified(x_kwargs=x_kwargs,
                              y_kwargs=dict(horizontalalignment='right',
                                            **common_font_inset))
-    # set up the font, offset ('fudge') the text from the lines                              
+    # set up the font, offset ('fudge') the text from the lines              
     fudge_x = dict(x=0,y=-0.5)
     fudge_y = dict(x=0,y=0.1)
-    Scalebar.crossed_x_and_y_relative(0.55,0.66,ax=axins,
+    Scalebar.crossed_x_and_y_relative(0.42,0.57,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
                                                     fudge_text_pct=fudge_x,
                                                     **kw_common),
                                       y_kwargs=dict(height=8,unit='kcal/\nmol',
                                                     font_kwargs=y_font,
-                                                    fudge_text_pct=fudge_y,                                                    
+                                                    fudge_text_pct=fudge_y,
                                                     **kw_common))
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
     color_box = 'rebeccapurple'           
     PlotUtilities.color_frame('rebeccapurple',ax=axins) 
-    Annotations.add_rectangle(ax_correction,xlim_box,ylim_box,edgecolor=color_box)
+    Annotations.add_rectangle(ax_correction,xlim_box,ylim_box,
+                              edgecolor=color_box)
     ax_correction.set_xlim(xlim_fec)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
@@ -418,10 +446,42 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     Annotations.rainbow_text(x,y,strings=strings,colors=colors,
                              ax=ax_energy,size=legend_font_size)
     PlotUtilities.legend(handlelength=0.5,loc=(0.03,0.8))      
-    PlotUtilities.no_x_label(ax_energy)                         
+    PlotUtilities.no_x_label(ax_energy)           
+    ax_to_label = [ax for i,ax in enumerate(fig.axes) if i != 2]
+    PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
+                            loc=(-0.05,1.02))
     PlotUtilities.save_png_and_svg(fig,out_name)  
     
-    
+
+def print_info(helical_data):
+    # print out the full DeltaG 
+    full = helical_data[0].generate_landscape_obj()
+    full_mean = full.mean_landscape_kcal_per_mol
+    full_std = full.std_landscape_kcal_per_mol
+    n_aa = 160
+    print("DeltaG for the entire landscape is {:.3g} +/- {:.2g} kcal/mol".\
+          format(full_mean[-1],full_std[-1]))
+    print("DeltaG/aa for the entire landscape is {:.3g} +/- {:.2g} kcal/mol".\
+          format(full_mean[-1]/n_aa,full_std[-1]/n_aa))
+    # Get the ED helical part we care about
+    ed = helical_data[1].generate_landscape_obj()
+    ext_nm = ed._extension_grid_nm
+    aa_per_nm = 3
+    ed_mean_delta_per_aa = ed.mean_delta_landscape_kcal_per_mol_per_nm/aa_per_nm
+    ed_std_delta_per_aa = ed.std_delta_landscape_kcal_per_mol_per_nm/aa_per_nm
+    # get the nm we care about
+    x_of_interest = 6.5
+    idx_of_interest = np.argmin(abs(ext_nm - x_of_interest))
+    ed_std_delta_per_nm_of_interest = ed_mean_delta_per_aa[idx_of_interest]
+    ed_mean_delta_per_nm_of_interest = ed_std_delta_per_aa[idx_of_interest]
+    mean_ed = ed_std_delta_per_nm_of_interest
+    # use SEM / STD?
+    n_bootstraps = 500
+    error_ed = ed_mean_delta_per_nm_of_interest/np.sqrt(n_bootstraps)
+    print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
+          format(mean_ed,error_ed))
+
+
 def run():
     """
     <Description>
@@ -481,6 +541,7 @@ def run():
             l.A_z_dot = sanit(l.A_z_dot)
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
+    print_info(helical_data)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)

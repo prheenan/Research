@@ -54,7 +54,7 @@ def run():
     GenUtilities.ensureDirExists(flickering_dir)
     force_read_data = False
     raw_data = IoUtilHao.read_and_cache_data_hao(flickering_dir,
-                                                force=force_read_data,
+                                                 force=force_read_data,
                                                  cache_directory=flickering_dir,
                                                  limit=3)
     example = raw_data[0]                                                 
@@ -103,7 +103,8 @@ def run():
     FEC_Plot._fec_base_plot(x_full_plot,y_func(example_plot),
                             **dict_plot)
     PlotUtilities.tom_ticks(ax=ax_example,num_major=5,change_x=False)    
-    PlotUtilities.tom_ticks(ax=ax_example,num_major=4,change_y=False)                              
+    PlotUtilities.tom_ticks(ax=ax_example,num_major=4,change_y=False)
+    ax_example.axhline(0,label="F=0",linestyle='--',color='k--')
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
         # put a box around the region 
         x,y = x_func(r),y_func(r)
@@ -203,7 +204,7 @@ def run():
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_fec_ensemble)    
-    PlotUtilities.no_x_label(ax=ax_fec_ensemble)                                      
+    PlotUtilities.no_x_label(ax=ax_fec_ensemble)                              
     PlotUtilities.no_y_label(ax=ax_fec_ensemble)  
     # # Figure 4B from the science paper
     color_equil = 'rebeccapurple'
