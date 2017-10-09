@@ -78,7 +78,8 @@ class plot_info:
         self.average_stdev_energy=average_stdev_energy
         self.stdev_stdev_energy=stdev_stdev_energy
         beta = self.key.beta
-        to_plot_y = lambda x: x *  (beta**2) * 1e9
+        kT_to_kcal_per_mol = 0.592
+        to_plot_y = lambda x: x *  (beta**2) * 1e9 * (kT_to_kcal_per_mol)**2
         self.average_error_per_bin_plot = to_plot_y(self.average_stdev_energy)
         self.stdev_stdev_energy_per_bin_plot = \
             to_plot_y(self.stdev_stdev_energy)
@@ -144,7 +145,7 @@ def run():
     errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
                          **marker_props)
     plt.errorbar(x=inf.bin_sizes_nm,y=y_plot,
-                 yerr=inf.stdev_stdev_energy_per_bin_plot,**errorbar_dict)
+                 yerr=0,**errorbar_dict)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
@@ -153,15 +154,27 @@ def run():
     idx_chosen = inf.idx_chosen
     plt.errorbar(x=inf.bin_sizes_nm[idx_chosen],
                  y=inf.average_error_per_bin_plot[idx_chosen],
-                 yerr=inf.stdev_stdev_energy_per_bin_plot[idx_chosen],
                  **chosen_dict)    
-    error_paren = "(" + kbT_text+"$^2$/nm)"
+    # give one of them a proper error bar
+    idx_error = idx_chosen - 16
+    plt.errorbar(x=inf.bin_sizes_nm[idx_error],y=y_plot[idx_error],
+                 yerr=inf.stdev_stdev_energy_per_bin_plot[idx_error],
+                 **errorbar_dict)
+    xlim = [1e-2,None]
+    error_paren = "((kcal/mol)$^3$/nm)"
     PlotUtilities.lazyLabel("Bin size (nm)",
-                            r"Bin error " + error_paren,"")
-    Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(inf.res_nm),
+                            r"Error " + error_paren,"")
+    Annotations.relative_annotate(ax=ax_error,s="{:.1f} nm".format(inf.res_nm),
                                   xy=(inf.res_nm,min(y_plot)*1.2),
-                                  color='r',
+                                  color='r',size=6,
                                   xycoords='data')
+    plt.xlim(xlim)
+    eq_str = (r"Error = " + \
+              r"($<\sum_{q}(G_q-G_{q,\mathrm{fit}})^2>_N) \cdot" + \
+              r"(<\sigma_\frac{dG}{dq}>_N$)")
+    Annotations.relative_annotate(ax=ax_error,s=eq_str,
+                                  xy=(0.38,0.8),size=7.5,color='b')
+
     PlotUtilities.savefig(fig,"./filtering.png")
 
 if __name__ == "__main__":
