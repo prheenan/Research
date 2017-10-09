@@ -135,7 +135,7 @@ def run():
     kbT_text = "$k_\mathrm{b}T$"
     kbT_text_paren = "(" + kbT_text + ")"
     fig = PlotUtilities.figure()
-    ax_error = plt.subplot(2,1,1)
+    ax_error = plt.subplot(1,1,1)
     ax_error.set_xscale('log')
     ax_error.set_yscale('log')
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
@@ -161,67 +161,6 @@ def run():
                                   xy=(inf.res_nm,min(plt.ylim())*1.2),
                                   color='r',
                                   xycoords='data')
-    ax_energy = plt.subplot(2,1,2)
-    key_filtered = inf.key_filtered
-    filtered_q = key_filtered.q
-    x_unfilt,y_unfilt = to_x(key.q),to_y(key.G_0)
-    x_filt,y_filt = to_x(key.q),\
-                    to_y(key_filtered.spline_fit.y(key.q))
-    kw_unfilt = dict(color='k',alpha=0.3,linewidth=0.5)
-    kw_filt = dict(color='k',linewidth=0.7)
-    plt.plot(x_unfilt,y_unfilt,label="Raw",**kw_unfilt)
-    plt.plot(x_filt,y_filt,label="Filtered",**kw_filt)                
-    PlotUtilities.lazyLabel("Extension (nm)",
-                            r"$G_0$ " + kbT_text_paren,
-                            "Example landscape, filtered to {:.1f} nm".\
-                            format(inf.res_nm),
-                            title_kwargs=dict(color='r'))
-    # add a zoomed axes, make the lines smaller
-    kw_unfilt['linewidth']=0.05
-    kw_zoom_unfilt = dict(kw_unfilt)
-    kw_zoom_filt = dict(kw_filt)
-    color_zoom = 'g'
-    kw_zoom_unfilt['color'] =color_zoom
-    kw_zoom_filt['color'] = color_zoom
-    x0 = 22
-    dx = 1
-    xlim = [x0,x0+dx]             
-    zoom_unfilt_x,zoom_unfilt_y,ylim = Inset.slice_by_x(x_unfilt,y_unfilt,
-                                                        xlim=xlim)
-    zoom_filt_x,zoom_filt_y,_ = Inset.slice_by_x(x_filt,y_filt,xlim=xlim)
-    dy = (ylim[1]-ylim[0])
-    ylim = [ylim[0],ylim[1] + 0.4 * dy]
-    ax_ins = Inset.zoomed_axis(ax=ax_energy,xlim=xlim,ylim=ylim,
-                               zoom=10,borderpad=1)
-    for ax in [ax_ins,ax_energy]:
-        ax.plot(zoom_unfilt_x,zoom_unfilt_y,**kw_zoom_unfilt)
-        ax.plot(zoom_filt_x,zoom_filt_y,**kw_zoom_filt)
-    # add a shader to make the zoom more obvious
-    ax_energy.axvspan(*xlim,color=color_zoom,alpha=0.2,linewidth=0)
-    # add a scalebar to the inset
-    # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
-    unit_kw_x = dict(fmt="{:.1f}")
-    common = dict(line_kwargs=dict(linewidth=1.2,color='k'))
-    # round to ~10s of pm
-    dx,dy = abs(np.diff(xlim))[0],abs(np.diff(ylim))[0]
-    x_width = np.around(dx/2.5,1)
-    y_width = np.around(dy/4,0)
-    font_common = dict(fontsize=6)
-    font_x,font_y = Scalebar.font_kwargs_modified(font_common,font_common)
-    x_kw = dict(width=x_width,unit="nm",unit_kwargs=unit_kw_x,
-                font_kwargs=font_x,
-                fudge_text_pct=dict(x=0,y=-1),**common)
-    y_kw = dict(height=y_width,unit=r"$k_\mathrm{b}T$",font_kwargs=font_y,
-                unit_kwargs=dict(fmt="{:.0f}"),**common)
-    Scalebar.crossed_x_and_y_relative(ax=ax_ins,
-                                      offset_x=0.5,
-                                      offset_y=0.7,
-                                      x_kwargs=x_kw,
-                                      y_kwargs=y_kw)
-    loc = [ [-0.15,1.02],
-            [-0.15,1.15]]
-    PlotUtilities.label_tom(fig,axis_func = lambda axes: axes[:-1],
-                            loc=loc)                                      
     PlotUtilities.savefig(fig,"./filtering.png")
 
 if __name__ == "__main__":
