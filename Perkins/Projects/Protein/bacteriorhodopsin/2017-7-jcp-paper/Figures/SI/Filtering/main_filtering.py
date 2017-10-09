@@ -38,7 +38,8 @@ def reload_filtered_landscapes(force_re_filter):
     """
     Returns: tuple of (output of filter_all_landscapes), bin arrays, landscapes
     
-    Note: output of filtered landscapes[i] is (bins in filtering i, landscapes in i)
+    Note: output of filtered landscapes[i] is (bins in filtering i, landscapes 
+    in i)
     """
     cache_dir = "./cache/"
     GenUtilities.ensureDirExists(cache_dir)
@@ -69,10 +70,32 @@ def reload_filtered_landscapes(force_re_filter):
     list_filtered_n = [list_filtered_n[i] for i in sort_idx]
     return bins,bins_sizes_n,n,list_filtered_n,landscapes
     
-def run():
-    """
-    """
-    # load all the landscapes here
+class plot_info:
+    def __init__(self,key,bin_sizes,average_stdev_energy,stdev_stdev_energy,
+                 list_filtered_n):
+        self.bin_sizes = bin_sizes
+        self.key=key
+        self.average_stdev_energy=average_stdev_energy
+        self.stdev_stdev_energy=stdev_stdev_energy
+        beta = self.key.beta
+        to_plot_y = lambda x: x *  (beta**2) * 1e9
+        self.average_error_per_bin_plot = to_plot_y(self.average_stdev_energy)
+        self.stdev_stdev_energy_per_bin_plot = \
+            to_plot_y(self.stdev_stdev_energy)
+        self.upper_bound = self.average_error_per_bin_plot+\
+                           self.stdev_stdev_energy_per_bin_plot
+        self.bin_sizes_nm = bin_sizes * 1e9
+        self.min_e = min(self.upper_bound)
+        well_max =  1.3*self.min_e
+        where_close = np.where(self.upper_bound <= well_max)[0]
+        self.idx_n = int(np.round(np.mean(where_close)))
+        self.key_filtered = list_filtered_n[self.idx_n][0]
+        res_m = bin_sizes[self.idx_n]
+        self.res_nm = res_m * 1e9
+        self.idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
+
+
+def get_plotting_info():
     force_re_filter = False
     bins,bin_sizes_n,n,list_filtered_n,landscapes = \
         reload_filtered_landscapes(force_re_filter)
@@ -96,22 +119,17 @@ def run():
     stdev_stdev_energy = np.array([np.std(e)*np.mean(r)
                                    for e,r in zip(energy_stdev,residuals)])
     key = landscapes[0]
-    beta = key.beta
-    to_plot_y = lambda x: x *  (beta**2) * 1e9
-    average_error_per_bin_plot = to_plot_y(average_stdev_energy)
-    stdev_stdev_energy_per_bin_plot = to_plot_y(stdev_stdev_energy)
-    error_plot_95_pct = stdev_stdev_energy_per_bin_plot*2
-    upper_bound = average_error_per_bin_plot+error_plot_95_pct
-    bin_sizes_nm = bin_sizes * 1e9
-    min_e = min(upper_bound)
-    well_max =  1.3*min_e
-    where_close = np.where(upper_bound <= well_max)[0]
-    idx_n = int(np.round(np.mean(where_close)))
-    key_filtered = list_filtered_n[idx_n][0]
-    res_m = bin_sizes[idx_n]
-    key_filtered = list_filtered_n[idx_n][0]
-    res_nm = res_m * 1e9
-    idx_chosen = np.argmin(np.abs(bin_sizes - res_m))
+    return plot_info(key=key,average_stdev_energy=average_stdev_energy,
+                     stdev_stdev_energy=stdev_stdev_energy,bin_sizes=bin_sizes,
+                     list_filtered_n=list_filtered_n)
+
+def run():
+    """
+    """
+    # load all the landscapes here
+    inf = CheckpointUtilities.getCheckpoint("./data.pkl",
+                                            get_plotting_info,False)
+    key = inf.key
     to_x = lambda x: x*1e9
     to_y = lambda y : y * key.beta
     kbT_text = "$k_\mathrm{b}T$"
@@ -124,25 +142,27 @@ def run():
                         markersize=1.5)
     errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
                          lolims=True,**marker_props)
-    plt.errorbar(x=bin_sizes_nm,y=average_error_per_bin_plot,
-                 yerr=error_plot_95_pct,**errorbar_dict)
+    plt.errorbar(x=inf.bin_sizes_nm,y=inf.average_error_per_bin_plot,
+                 yerr=inf.stdev_stdev_energy_per_bin_plot,**errorbar_dict)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
     chosen_dict['mfc']='r'
     chosen_dict['markersize'] *= 2
-    plt.errorbar(x=bin_sizes_nm[idx_chosen],
-                 y=average_error_per_bin_plot[idx_chosen],
-                 yerr=error_plot_95_pct[idx_chosen],
+    idx_chosen = inf.idx_chosen
+    plt.errorbar(x=inf.bin_sizes_nm[idx_chosen],
+                 y=inf.average_error_per_bin_plot[idx_chosen],
+                 yerr=inf.stdev_stdev_energy_per_bin_plot[idx_chosen],
                  **chosen_dict)    
     error_paren = "(" + kbT_text+"$^2$/nm)"
     PlotUtilities.lazyLabel("Bin size (nm)",
                             r"Bin error " + error_paren,"")
-    Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(res_nm),
-                                  xy=(res_nm,well_max*1.2),
+    Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(inf.res_nm),
+                                  xy=(inf.res_nm,min(plt.ylim())*1.2),
                                   color='r',
                                   xycoords='data')
     ax_energy = plt.subplot(2,1,2)
+    key_filtered = inf.key_filtered
     filtered_q = key_filtered.q
     x_unfilt,y_unfilt = to_x(key.q),to_y(key.G_0)
     x_filt,y_filt = to_x(key.q),\
@@ -154,7 +174,7 @@ def run():
     PlotUtilities.lazyLabel("Extension (nm)",
                             r"$G_0$ " + kbT_text_paren,
                             "Example landscape, filtered to {:.1f} nm".\
-                            format(res_nm),
+                            format(inf.res_nm),
                             title_kwargs=dict(color='r'))
     # add a zoomed axes, make the lines smaller
     kw_unfilt['linewidth']=0.05
