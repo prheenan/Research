@@ -466,20 +466,36 @@ def print_info(helical_data):
     # Get the ED helical part we care about
     ed = helical_data[1].generate_landscape_obj()
     ext_nm = ed._extension_grid_nm
-    aa_per_nm = 3
-    ed_mean_delta_per_aa = ed.mean_delta_landscape_kcal_per_mol_per_nm/aa_per_nm
-    ed_std_delta_per_aa = ed.std_delta_landscape_kcal_per_mol_per_nm/aa_per_nm
+    ed_mean_delta_per_nm = ed.mean_delta_landscape_kcal_per_mol_per_nm
+    ed_std_delta_per_nm = ed.std_delta_landscape_kcal_per_mol_per_nm
     # get the nm we care about
     x_of_interest = 6.5
     idx_of_interest = np.argmin(abs(ext_nm - x_of_interest))
-    ed_std_delta_per_nm_of_interest = ed_mean_delta_per_aa[idx_of_interest]
-    ed_mean_delta_per_nm_of_interest = ed_std_delta_per_aa[idx_of_interest]
+    ed_std_delta_per_nm_of_interest = ed_mean_delta_per_nm[idx_of_interest]
+    ed_mean_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
     mean_ed = ed_std_delta_per_nm_of_interest
     # use SEM / STD?
     n_bootstraps = 500
+    aa_per_nm = 3
     error_ed = ed_mean_delta_per_nm_of_interest/np.sqrt(n_bootstraps)
     print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
-          format(mean_ed,error_ed))
+          format(mean_ed/aa_per_nm,error_ed/aa_per_nm))
+    # get the maximim stiffness, in pN/nm
+    stiffness_kcal_per_mol_nm_sq = \
+        np.gradient(ed_mean_delta_per_nm)/np.gradient(ext_nm)
+    # 1kT = 0.593 kcal/mol. 
+    k_kT_per_nm_sq = stiffness_kcal_per_mol_nm_sq/0.593
+    # 1kT = 4.1 pN * nm
+    k_pN_per_nm_sq = k_kT_per_nm_sq * 4.1
+    max_stiffness_pN_per_nm = max(k_pN_per_nm_sq)
+    print("Max stiffness is {:.1f} kcal/mol".\
+          format(max(stiffness_kcal_per_mol_nm_sq)))
+    print("Max stiffness is {:.1f} pN/nm".format(max_stiffness_pN_per_nm))
+    print("The max ED energy per nm is {:.2f} kcal/mol".\
+          format(max(ed_mean_delta_per_nm)))
+    cb = helical_data[2].generate_landscape_obj()
+    print("The min ED energy per nm is {:.2f}/mol".\
+          format(min(ed_mean_delta_per_nm)))
 
 
 def run():
@@ -542,6 +558,7 @@ def run():
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
     print_info(helical_data)
+    exit(1)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)
