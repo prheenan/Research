@@ -13,7 +13,8 @@ sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 from GeneralUtil.python.Plot import Scalebar,Inset
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
-    InverseWeierstrass
+    InverseWeierstrass,WeierstrassUtil
+from GeneralUtil.python.IgorUtil import SavitskyFilter
 
 def run():
     """
@@ -24,14 +25,21 @@ def run():
     landscape.offset_extension(min(landscape.q))
     # get the landscape, A_z in kT. Note that we convert z->q, so it is
     # really A(q=z-A'/k)
-    A_q = landscape.A_z
-    A_q_kT = (A_q * landscape.beta)
+    A_q_orig = landscape.A_z
+    kT_to_kcal_mol = 0.593
+    A_q_kT_orig = (A_q_orig * landscape.beta * kT_to_kcal_mol)
+    n_points = 2000
+    A_q = SavitskyFilter(A_q_orig,n_points)
+    A_q_kT = SavitskyFilter(A_q_kT_orig,n_points)
+    q = SavitskyFilter(landscape.q,n_points)
+    # filter the landscapes 
     # numerically differentiate
     to_y = lambda x: x * 1e12
-    landscape_deriv_plot = to_y(np.gradient(A_q)/np.gradient(landscape.q))
+    landscape_deriv_plot = to_y(np.gradient(A_q)/np.gradient(q))
     # compare with the A' term. XXX should just save it...
     weighted_deriv_plot = to_y(landscape.A_z_dot)
-    x_plot = landscape.q * 1e9
+    x_plot = q * 1e9
+    energy_units = "kcal/mol"
     label_A_q_dot = r"$\dot{A}$"
     label_finite = label_A_q_dot + r" from finite difference"
     label_work = r"{:s}$ =<<F>>$".format(label_A_q_dot)
@@ -39,8 +47,9 @@ def run():
     fig = PlotUtilities.figure((3.5,5))
     # # plot just A(q)
     ax_A_q = plt.subplot(3,1,1)
-    plt.plot(x_plot,A_q_kT,color='c',label="$A$")
-    PlotUtilities.lazyLabel("","Helmholtz A ($k_\mathrm{b}T$)","",
+    color_energy = 'c'
+    plt.plot(x_plot,A_q_kT,color=color_energy,label="$A$")
+    PlotUtilities.lazyLabel("","Helmholtz A ("+ energy_units + ")","",
                             loc=(0.5,0.8),frameon=True)
     PlotUtilities.set_legend_kwargs(ax=ax_A_q,background_color='w',linewidth=0)
     PlotUtilities.no_x_label(ax_A_q)
@@ -53,10 +62,11 @@ def run():
     dy = ylim[1] - ylim[0]
     ylim = [ylim[0],ylim[1] + (ylim_fudge * dy)]
     lazy_common = dict(title_kwargs=dict(loc='left'))
-    plt.axvspan(*xlim,color='r',alpha=0.3,edgecolor="None")
+    plt.axvspan(*xlim,color=color_energy,alpha=0.3,edgecolor="None")
     plt.plot(zoom_x,zoom_y,color='r')
     # plot a zoomed in axis, to clarify why it probably goes wrong 
-    axins = Inset.zoomed_axis(ax=ax_A_q,zoom=250,xlim=xlim,ylim=ylim)
+    axins = Inset.zoomed_axis(ax=ax_A_q,zoom=500,xlim=xlim,ylim=ylim,
+                              remove_ticks=False)
     axins.plot(x_plot, A_q_kT,linewidth=0.1,color='r')    
     # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
     unit_kw_x = dict(fmt="{:.0f}",value_function=lambda x: x*1000)
@@ -66,21 +76,22 @@ def run():
     y_width = np.around(dy/3,1)
     x_kw = dict(width=x_width,unit="pm",unit_kwargs=unit_kw_x,
                 fudge_text_pct=dict(x=0.2,y=-0.2),**common)
-    y_kw = dict(height=y_width,unit=r"$k_\mathrm{b}T$",
+    y_kw = dict(height=y_width,unit=energy_units,
                 unit_kwargs=dict(fmt="{:.1f}"),**common)
-    Scalebar.crossed_x_and_y_relative(ax=axins,
-                                      offset_x=0.45,
-                                      offset_y=0.7,
-                                      x_kwargs=x_kw,
-                                      y_kwargs=y_kw)
+    ylim = axins.get_ylim()
+    y_diff = ylim[1] - ylim[0]
+    Scalebar._scale_bar_rectangle(ax=axins,x=0.5,
+                                  s="{:.0f} pm".format(x_width*1000),
+                                  y=1.3,width=x_width,
+                                  height=y_diff * 0.4)
     # # plot A_z_dot 
     ax_deriv_both = plt.subplot(3,1,2)
     # divide by 1000 to get uN
-    plt.plot(x_plot,landscape_deriv_plot/1e6,color='k',
+    plt.plot(x_plot,landscape_deriv_plot/1e3,color='k',
              label=label_finite)
-    plt.plot(x_plot,weighted_deriv_plot/1e6,**kw_weighted)
+    plt.plot(x_plot,weighted_deriv_plot/1e3,**kw_weighted)
     PlotUtilities.lazyLabel("",
-                            "$\dot{A}(q)$ ($\mathrm{\mu}$N)",
+                            "$\dot{A}(q)$ (nN)",
                             "$\Downarrow$ Determine derivative (both methods)",
                             **lazy_common)
     PlotUtilities.no_x_label(ax_deriv_both)
@@ -90,7 +101,7 @@ def run():
     title_last = "$\Downarrow$ Work-weighted method is reasonable "
     PlotUtilities.lazyLabel("Extension (nm)","$\dot{A}(q)$ (pN)",
                             title_last,**lazy_common)
-    PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:] )                            
+    PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:] )        
     PlotUtilities.savefig(fig,"./finite_differences.png",
                           subplots_adjust=dict(hspace=0.2))
 
