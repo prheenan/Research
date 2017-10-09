@@ -275,18 +275,21 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
     N_boostraps = 500
-    min_data = 10
+    min_data = 20
     area_of_interest = areas[0]
-    k_arr = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
+    k_arr_raw = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr))))
     k_idx = np.array([np.argmin(np.abs(k_tmp - k_set)) for k_tmp in k_arr])
     data_to_use = []
+    k_arr = []
     for i in range(len(k_idx)):
         tmp_idx = np.where(np.abs(k_idx - i) < 1e-6)[0]
         m_data = [raw_area_slice[j] for j in tmp_idx]
         len_data = len(m_data)
+        # record the actual spring constants and data to use. 
         if (len_data >= min_data):
             data_to_use.append(m_data)
+            k_arr.append(k_set[i])
     # POST: data_to_use[i] has the data for the spring constant i
     # POST: all data are sorted by spring constant
     data_lengths = [len(d) for d in data_to_use]
