@@ -57,7 +57,7 @@ def run():
                                                  force=force_read_data,
                                                  cache_directory=flickering_dir,
                                                  limit=3)
-    example = raw_data[0]                                                 
+    example = raw_data[0]                
     example_plot = copy.deepcopy(example)
     # fix the manual offset
     example_plot.LowResData.force -= 7.1
@@ -65,7 +65,7 @@ def run():
     vel_m_per_s = example_plot.Velocity
     x_func = lambda y: y.Separation
     y_func = lambda y: y.Force 
-    ylim_pN = [-20,155]
+    ylim_pN = [-25,155]
     xlim_nm = [5,75]
     zoom_regions_nm = [ [61.5,63.6]]
     adhesion_max_nm = 19
@@ -104,25 +104,27 @@ def run():
                             **dict_plot)
     PlotUtilities.tom_ticks(ax=ax_example,num_major=5,change_x=False)    
     PlotUtilities.tom_ticks(ax=ax_example,num_major=4,change_y=False)
-    ax_example.axhline(0,label="F=0",linestyle='--',color='k--')
+    ax_example.axhline(0,linestyle='--',color='k')
     for i,(r,color) in enumerate(zip(regions,colors_regions)):
         # put a box around the region 
         x,y = x_func(r),y_func(r)
         Annotations.add_rectangle(ax_example,[min(x),max(x)],[min(y),max(y)])
     plt.ylim(ylim_pN)
     plt.xlim(xlim_nm)
-    jcp_fig_util.add_helical_boxes(ax=ax_example)
+    jcp_fig_util.add_helical_boxes(ax=ax_example,ymax_box=0.1)
     # plot the adhesion regions
     plt.axvspan(min(x_full_plot),adhesion_max_nm,color='0.85',
                 linewidth=0)
-    PlotUtilities.lazyLabel("Extension","Force","")   
+    PlotUtilities.lazyLabel("Extension","Force","",loc=[0.5,0.7],
+                            legend_kwargs=dict(handlelength=2))   
     PlotUtilities.x_label_on_top(ax_example)
     PlotUtilities.no_x_label(ax_example)
     PlotUtilities.no_y_label(ax_example)
-    x_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),width=15,unit="nm")
+    x_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),width=15,unit="nm",
+                    fudge_text_pct=dict(x=0,y=0.7))
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),
                     height=40,unit="pN")
-    Scalebar.crossed_x_and_y_relative(offset_x=0.55,offset_y=0.58,
+    Scalebar.crossed_x_and_y_relative(offset_x=0.55,offset_y=0.59,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_example)    
@@ -166,7 +168,7 @@ def run():
         max_y = max(ylim)
         y_loc = max_y*0.9
         x_kwargs =dict(unit="ms",width=widths_s[i],
-                       fudge_text_pct=dict(x=0.2,y=0),
+                       fudge_text_pct=dict(x=0.0,y=0.7),
                        unit_kwargs=dict(value_function=lambda x: x * 1e3))
         y_kwargs = dict(unit="pN ",
                         height=heights_pN[i])
@@ -196,7 +198,7 @@ def run():
     ax_fec_ensemble.set_ylim(ylim)
     ax_fec_ensemble.set_xlim(xlim)    
     PlotUtilities.lazyLabel("Extension","Force","")        
-    x_kwargs = dict(width=3,unit="nm")
+    x_kwargs = dict(width=3,unit="nm",fudge_text_pct=dict(x=0,y=-0.3))
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(height=25,unit="pN",font_kwargs=y_font)
@@ -224,7 +226,8 @@ def run():
     ax_time.set_ylim(None,None)
     unit_kwargs = dict(value_function =lambda x: x*1e6,fmt="{:.0f}")
     unit_micro_s = PlotUtilities.upright_mu() + "m"
-    x_kwargs = dict(unit_kwargs=unit_kwargs,width=500e-6,unit=unit_micro_s)
+    x_kwargs = dict(unit_kwargs=unit_kwargs,width=500e-6,unit=unit_micro_s,
+                    fudge_text_pct=dict(x=0,y=-0.4))
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(height=10,unit="pN",font_kwargs=y_font)
@@ -247,7 +250,8 @@ def run():
                  mfc='w',zorder=0,markerfacecolor="None",capsize=2,elinewidth=1,
                  linewidth=1)                 
     PlotUtilities.lazyLabel("Extension (nm)","Energy","")     
-    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
+    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm",
+                    fudge_text_pct=dict(x=0,y=-0.3))
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),
