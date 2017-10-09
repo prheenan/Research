@@ -139,11 +139,11 @@ def run():
     ax_error.set_xscale('log')
     ax_error.set_yscale('log')
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
-                        markersize=1.5)
+                        markersize=3)
     errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
                          lolims=True,**marker_props)
-    plt.errorbar(x=inf.bin_sizes_nm,y=inf.average_error_per_bin_plot,
-                 yerr=inf.stdev_stdev_energy_per_bin_plot,**errorbar_dict)
+    plt.plot(x=inf.bin_sizes_nm,y=inf.average_error_per_bin_plot,
+             **markerpops)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
