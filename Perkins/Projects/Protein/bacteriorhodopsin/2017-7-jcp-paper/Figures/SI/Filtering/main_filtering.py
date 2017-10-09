@@ -138,17 +138,18 @@ def run():
     ax_error = plt.subplot(1,1,1)
     ax_error.set_xscale('log')
     ax_error.set_yscale('log')
+    y_plot = inf.average_error_per_bin_plot
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
-                        markersize=3)
+                        markersize=2)
     errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
-                         lolims=True,**marker_props)
-    plt.plot(x=inf.bin_sizes_nm,y=inf.average_error_per_bin_plot,
-             **markerpops)
+                         **marker_props)
+    plt.errorbar(x=inf.bin_sizes_nm,y=y_plot,
+                 yerr=inf.stdev_stdev_energy_per_bin_plot,**errorbar_dict)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
     chosen_dict['color']='r'
     chosen_dict['mfc']='r'
-    chosen_dict['markersize'] *= 2
+    chosen_dict['markersize'] *= 1.5
     idx_chosen = inf.idx_chosen
     plt.errorbar(x=inf.bin_sizes_nm[idx_chosen],
                  y=inf.average_error_per_bin_plot[idx_chosen],
@@ -158,7 +159,7 @@ def run():
     PlotUtilities.lazyLabel("Bin size (nm)",
                             r"Bin error " + error_paren,"")
     Annotations.relative_annotate(ax=ax_error,s="{:.1f}nm".format(inf.res_nm),
-                                  xy=(inf.res_nm,min(plt.ylim())*1.2),
+                                  xy=(inf.res_nm,min(y_plot)*1.2),
                                   color='r',
                                   xycoords='data')
     PlotUtilities.savefig(fig,"./filtering.png")
