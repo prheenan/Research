@@ -134,17 +134,19 @@ def run():
     to_x = lambda x: x*1e9
     to_y = lambda y : y * key.beta
     kbT_text = "$k_\mathrm{b}T$"
+    eq_str = (r"($<\sum_{q}(G_q-G_{q,\mathrm{fit}})^2>_N) \cdot" + \
+              r"(<\sigma_\frac{dG}{dq}>_N$)")
     kbT_text_paren = "(" + kbT_text + ")"
-    fig = PlotUtilities.figure()
+    fig = PlotUtilities.figure(figsize=(3.25,3))
     ax_error = plt.subplot(1,1,1)
     ax_error.set_xscale('log')
     ax_error.set_yscale('log')
     y_plot = inf.average_error_per_bin_plot
     marker_props = dict(markeredgewidth=0.2,color='b',marker='o',mfc="w",
-                        markersize=2)
+                        markersize=2,alpha=0.7)
     errorbar_dict = dict(linewidth=0.3,capsize=0.75,elinewidth=0.4,
                          **marker_props)
-    plt.errorbar(x=inf.bin_sizes_nm,y=y_plot,
+    plt.errorbar(x=inf.bin_sizes_nm,y=y_plot,label=eq_str,
                  yerr=0,**errorbar_dict)
     # plot the called out one 
     chosen_dict = dict(**errorbar_dict)
@@ -163,18 +165,13 @@ def run():
     xlim = [1e-2,None]
     error_paren = "((kcal/mol)$^3$/nm)"
     PlotUtilities.lazyLabel("Bin size (nm)",
-                            r"Error " + error_paren,"")
+                            r"Error " + error_paren,"",
+                            legend_kwargs=dict(color='b',fontsize=7))
     Annotations.relative_annotate(ax=ax_error,s="{:.1f} nm".format(inf.res_nm),
                                   xy=(inf.res_nm,min(y_plot)*1.2),
                                   color='r',size=6,
                                   xycoords='data')
     plt.xlim(xlim)
-    eq_str = (r"Error = " + \
-              r"($<\sum_{q}(G_q-G_{q,\mathrm{fit}})^2>_N) \cdot" + \
-              r"(<\sigma_\frac{dG}{dq}>_N$)")
-    Annotations.relative_annotate(ax=ax_error,s=eq_str,
-                                  xy=(0.38,0.8),size=7.5,color='b')
-
     PlotUtilities.savefig(fig,"./filtering.png")
 
 if __name__ == "__main__":
