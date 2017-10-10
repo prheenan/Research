@@ -247,7 +247,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
             ax_2.set_ylabel("")
             PlotUtilities.no_x_label(ax_1)
             PlotUtilities.no_x_label(ax_2)            
-        PlotUtilities.title(a.plot_title,color=color)
+        PlotUtilities.title(a.plot_title,color=color,y=0.97)
     normalize_and_set_zeros(first_axs,second_axs)
     # after normalization, add in the scale bars 
     for i,(ax_1,ax_2) in enumerate(zip(first_axs,second_axs)):
@@ -276,8 +276,8 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     fig = PlotUtilities.figure((7,2.5))
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     ax_to_label = [ax for i,ax in enumerate(fig.axes) if (i % 2) != 0]
-    loc_last_two = [-0.1,1.1]
-    loc_first = [-0.2,1.1]
+    loc_last_two = [-0.1,1.05]
+    loc_first = [-0.2,1.05]
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
                             loc=[loc_first,loc_last_two,loc_last_two])
     PlotUtilities.save_png_and_svg(fig,out_name)                    
@@ -558,12 +558,12 @@ def run():
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
     print_info(helical_data)
-    exit(1)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
+
     
 if __name__ == "__main__":
     run()
