@@ -247,7 +247,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
             ax_2.set_ylabel("")
             PlotUtilities.no_x_label(ax_1)
             PlotUtilities.no_x_label(ax_2)            
-        PlotUtilities.title(a.plot_title,color=color)
+        PlotUtilities.title(a.plot_title,color=color,y=0.97)
     normalize_and_set_zeros(first_axs,second_axs)
     # after normalization, add in the scale bars 
     for i,(ax_1,ax_2) in enumerate(zip(first_axs,second_axs)):
@@ -276,8 +276,8 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     fig = PlotUtilities.figure((7,2.5))
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     ax_to_label = [ax for i,ax in enumerate(fig.axes) if (i % 2) != 0]
-    loc_last_two = [-0.1,1.1]
-    loc_first = [-0.2,1.1]
+    loc_last_two = [-0.1,1.05]
+    loc_first = [-0.2,1.05]
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
                             loc=[loc_first,loc_last_two,loc_last_two])
     PlotUtilities.save_png_and_svg(fig,out_name)                    
@@ -466,20 +466,36 @@ def print_info(helical_data):
     # Get the ED helical part we care about
     ed = helical_data[1].generate_landscape_obj()
     ext_nm = ed._extension_grid_nm
-    aa_per_nm = 3
-    ed_mean_delta_per_aa = ed.mean_delta_landscape_kcal_per_mol_per_nm/aa_per_nm
-    ed_std_delta_per_aa = ed.std_delta_landscape_kcal_per_mol_per_nm/aa_per_nm
+    ed_mean_delta_per_nm = ed.mean_delta_landscape_kcal_per_mol_per_nm
+    ed_std_delta_per_nm = ed.std_delta_landscape_kcal_per_mol_per_nm
     # get the nm we care about
     x_of_interest = 6.5
     idx_of_interest = np.argmin(abs(ext_nm - x_of_interest))
-    ed_std_delta_per_nm_of_interest = ed_mean_delta_per_aa[idx_of_interest]
-    ed_mean_delta_per_nm_of_interest = ed_std_delta_per_aa[idx_of_interest]
+    ed_std_delta_per_nm_of_interest = ed_mean_delta_per_nm[idx_of_interest]
+    ed_mean_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
     mean_ed = ed_std_delta_per_nm_of_interest
     # use SEM / STD?
     n_bootstraps = 500
+    aa_per_nm = 3
     error_ed = ed_mean_delta_per_nm_of_interest/np.sqrt(n_bootstraps)
     print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
-          format(mean_ed,error_ed))
+          format(mean_ed/aa_per_nm,error_ed/aa_per_nm))
+    # get the maximim stiffness, in pN/nm
+    stiffness_kcal_per_mol_nm_sq = \
+        np.gradient(ed_mean_delta_per_nm)/np.gradient(ext_nm)
+    # 1kT = 0.593 kcal/mol. 
+    k_kT_per_nm_sq = stiffness_kcal_per_mol_nm_sq/0.593
+    # 1kT = 4.1 pN * nm
+    k_pN_per_nm_sq = k_kT_per_nm_sq * 4.1
+    max_stiffness_pN_per_nm = max(k_pN_per_nm_sq)
+    print("Max stiffness is {:.1f} kcal/mol".\
+          format(max(stiffness_kcal_per_mol_nm_sq)))
+    print("Max stiffness is {:.1f} pN/nm".format(max_stiffness_pN_per_nm))
+    print("The max ED energy per nm is {:.2f} kcal/mol".\
+          format(max(ed_mean_delta_per_nm)))
+    cb = helical_data[2].generate_landscape_obj()
+    print("The min ED energy per nm is {:.2f}/mol".\
+          format(min(ed_mean_delta_per_nm)))
 
 
 def run():
@@ -547,6 +563,7 @@ def run():
     make_detalied_plots(helical_data,areas)
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
+
     
 if __name__ == "__main__":
     run()

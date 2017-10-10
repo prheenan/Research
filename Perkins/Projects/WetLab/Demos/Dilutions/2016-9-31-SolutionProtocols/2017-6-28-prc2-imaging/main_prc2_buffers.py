@@ -14,6 +14,31 @@ sys.path.append("../../../../")
 from Util import DilutionUtil 
 
 def run():
+    print("4x buffer creation")
+    # see: richard, 2017-6-27. This is the 1x buffer, multiply by 4 below
+    """
+    Here is the 1X [4x] binding buffer that you should use:
+    50    [200] mM Tris-HCl pH 7.5 at 25C
+    25    [100] mM KCl
+    0.1   [0.4] mM ZnCl2
+    2     [8]   mM 2-mercaptoethanol
+    0.05% [0.2%]v/v NP-40
+    5%    [20%] v/v glycerol
+    """
+    Stats = [ ["HEPES","mM",975,50,0],
+              ["KCl","mM",2500,25,0],
+              ["ZnCl2","mM",15,0.1,0],
+              ["2-mercaptoethanol","mM",201,2,0],
+              ["NP-40","%v",10,0.05,0],
+              ["Glycerol","%v",100,5,0],
+    ]
+    # I convert it into the 4x buffer
+    conc_mult = 4
+    for s in Stats:
+        s[3] *= conc_mult
+    DilutionUtil.PrintSolutionSteps(Stats,10,"mL",
+                                    BufferName="DI H20")
+
     print("No Divalent buffer creation, 2x, HEPES")
     KCl = 50
     Stats = [ ["HEPES","mM",500,20,0],
