@@ -15,6 +15,7 @@ from GeneralUtil.python.Plot import Scalebar,Inset
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
 from GeneralUtil.python.IgorUtil import SavitskyFilter
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 def run():
     """
@@ -66,22 +67,27 @@ def run():
     # plot a zoomed in axis, to clarify why it probably goes wrong 
     axins = Inset.zoomed_axis(ax=ax_A_q,zoom=2000,xlim=xlim,ylim=ylim,
                               remove_ticks=True)
+    mark_inset(parent_axes=ax_A_q,inset_axes=axins,loc1=2, loc2=3,
+               ec="r")
     axins.plot(x_plot, A_q_kT,linewidth=1,color=color_energy)    
     # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
     unit_kw_x = dict(fmt="{:.0f}",value_function=lambda x: x*1000)
     common = dict(line_kwargs=dict(linewidth=1.0,color='k'))
-    # round to ~10s of pm
+    # round to 1 sig fig
     x_width = Scalebar.round_to_n_sig_figs(dx/2,1)
-    y_width = Scalebar.round_to_n_sig_figs(dy,1)
-    y_width_cal_per_mol = np.around(y_width * 1000,-2)
+    y_width = Scalebar.round_to_n_sig_figs(dy * 0.68,1)
     unit_kw_x=dict(value_function=(lambda x: x*1000))
     Scalebar.scale_bar_rectangle_x(ax=axins,x_rel=0.5,y_rel=1.2,unit="pm",
                                    width=x_width,height_rel=0.3,
                                    unit_kwargs=unit_kw_x)
-    Scalebar.scale_bar_rectangle_y(ax=axins,x_rel=-0.15,y_rel=0.5,
+    Scalebar.scale_bar_rectangle_y(ax=axins,x_rel=-0.13,y_rel=0.53,
                                    unit="\ncal/mol",
                                    height=y_width,width_rel=0.2,font_color='w',
                                    unit_kwargs=unit_kw_x)
+    # draw a bbox of the region of the inset axes in the parent axes and
+    # connecting lines between the bbox and the inset axes area
+
+
     # # plot A_z_dot 
     ax_deriv_both = plt.subplot(3,1,2)
     # divide by 1000 to get uN
