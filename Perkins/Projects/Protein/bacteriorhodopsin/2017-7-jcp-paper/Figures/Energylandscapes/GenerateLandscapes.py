@@ -107,6 +107,8 @@ class landscape_data(object):
         dx = self._extensions_m[1] -  self._extensions_m[0]                           
         self._d_energies_d_m = \
             np.array([np.gradient(e)/dx for e in self._energies])
+        self._d2_energies_dm2 = [np.gradient(e)/dx for e in 
+                                 self._d_energies_d_m]
     def from_Joules_to_kcal_per_mol(self):
         return IWT_Util.kT_to_kcal_per_mol() * (1/self.kT)
     def _raw_uninterpolared_landscapes_kcal_per_mol(self,l):
@@ -278,8 +280,8 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     min_data = 20
     area_of_interest = areas[0]
     k_arr_raw = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
-    k_set = np.array(sorted(list(set(k_arr))))
-    k_idx = np.array([np.argmin(np.abs(k_tmp - k_set)) for k_tmp in k_arr])
+    k_set = np.array(sorted(list(set(k_arr_raw))))
+    k_idx = np.array([np.argmin(np.abs(k_tmp - k_set)) for k_tmp in k_arr_raw])
     data_to_use = []
     k_arr = []
     for i in range(len(k_idx)):

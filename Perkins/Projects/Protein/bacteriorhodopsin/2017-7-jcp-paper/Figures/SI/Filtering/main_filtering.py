@@ -44,7 +44,7 @@ def reload_filtered_landscapes(force_re_filter):
     cache_dir = "./cache/"
     GenUtilities.ensureDirExists(cache_dir)
     n_files = len(GenUtilities.getAllFiles(cache_dir,ext=".pkl"))
-    data_dir = "../../Energylandscapes/Full_(no_adhesion).pkl/"
+    data_dir = "../../EnergyLandscapes/Full_(no_adhesion).pkl_k_31.57pN_nm/"
     # only re-load if we have to 
     if (n_files == 0 or force_re_filter):
         limit = None

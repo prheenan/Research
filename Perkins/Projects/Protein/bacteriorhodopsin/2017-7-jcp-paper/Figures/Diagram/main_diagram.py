@@ -121,7 +121,7 @@ def run():
     PlotUtilities.no_x_label(ax_example)
     PlotUtilities.no_y_label(ax_example)
     x_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),width=15,unit="nm",
-                    fudge_text_pct=dict(x=0,y=0.7))
+                    fudge_text_pct=dict(x=0,y=0.3))
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),
                     height=40,unit="pN")
     Scalebar.crossed_x_and_y_relative(offset_x=0.55,offset_y=0.59,
@@ -168,7 +168,7 @@ def run():
         max_y = max(ylim)
         y_loc = max_y*0.9
         x_kwargs =dict(unit="ms",width=widths_s[i],
-                       fudge_text_pct=dict(x=0.0,y=0.7),
+                       fudge_text_pct=dict(x=0.0,y=0.5),
                        unit_kwargs=dict(value_function=lambda x: x * 1e3))
         y_kwargs = dict(unit="pN ",
                         height=heights_pN[i])
@@ -198,7 +198,7 @@ def run():
     ax_fec_ensemble.set_ylim(ylim)
     ax_fec_ensemble.set_xlim(xlim)    
     PlotUtilities.lazyLabel("Extension","Force","")        
-    x_kwargs = dict(width=3,unit="nm",fudge_text_pct=dict(x=0,y=-0.3))
+    x_kwargs = dict(width=2,unit="nm",fudge_text_pct=dict(x=0,y=-0.2))
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(height=25,unit="pN",font_kwargs=y_font)
@@ -226,12 +226,12 @@ def run():
     ax_time.set_ylim(None,None)
     unit_kwargs = dict(value_function =lambda x: x*1e6,fmt="{:.0f}")
     unit_micro_s = PlotUtilities.upright_mu() + "m"
-    x_kwargs = dict(unit_kwargs=unit_kwargs,width=500e-6,unit=unit_micro_s,
-                    fudge_text_pct=dict(x=0,y=-0.4))
+    x_kwargs = dict(unit_kwargs=unit_kwargs,width=400e-6,unit=unit_micro_s,
+                    fudge_text_pct=dict(x=0,y=-0.1))
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(height=10,unit="pN",font_kwargs=y_font)
-    Scalebar.crossed_x_and_y_relative(offset_x=0.5,offset_y=0.08,
+    Scalebar.crossed_x_and_y_relative(offset_x=0.45,offset_y=0.1,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
                                       ax=ax_time)  
@@ -251,7 +251,7 @@ def run():
                  linewidth=1)                 
     PlotUtilities.lazyLabel("Extension (nm)","Energy","")     
     x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm",
-                    fudge_text_pct=dict(x=0,y=-0.3))
+                    fudge_text_pct=dict(x=0,y=-0.1))
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),
