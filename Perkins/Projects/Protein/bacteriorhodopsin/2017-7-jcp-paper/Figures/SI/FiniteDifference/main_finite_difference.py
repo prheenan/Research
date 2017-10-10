@@ -50,7 +50,7 @@ def run():
     ax_A_q = plt.subplot(3,1,1)
     color_energy = 'c'
     plt.plot(x_plot,A_q_kT,color=color_energy,label="$A$")
-    PlotUtilities.lazyLabel("","Helmholtz A ("+ energy_units + ")","",
+    PlotUtilities.lazyLabel("","$A$($q$) ("+ energy_units + ")","",
                             loc=(0.5,0.8),frameon=True)
     PlotUtilities.set_legend_kwargs(ax=ax_A_q,background_color='w',linewidth=0)
     PlotUtilities.no_x_label(ax_A_q)
@@ -90,12 +90,12 @@ def run():
 
     # # plot A_z_dot 
     ax_deriv_both = plt.subplot(3,1,2)
-    # divide by 1000 to get uN
-    plt.plot(x_plot,landscape_deriv_plot/1e3,color='k',
+    # divide to get uN
+    plt.plot(x_plot,landscape_deriv_plot/1e6,color='k',
              label=label_finite)
-    plt.plot(x_plot,weighted_deriv_plot/1e3,**kw_weighted)
+    plt.plot(x_plot,weighted_deriv_plot/1e6,**kw_weighted)
     PlotUtilities.lazyLabel("",
-                            "$\dot{A}(q)$ (nN)",
+                            "$\dot{A}(q)$ ($\mathrm{\mu}$N)",
                             "$\Downarrow$ Calculate derivative",
                             **lazy_common)
     PlotUtilities.no_x_label(ax_deriv_both)
@@ -105,7 +105,8 @@ def run():
     title_last = "$\Downarrow$ Work-weighted method is reasonable "
     PlotUtilities.lazyLabel("Extension (nm)","$\dot{A}(q)$ (pN)",
                             title_last,**lazy_common)
-    PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:] )        
+    PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:],
+                            loc=(-0.1,1.05))     
     PlotUtilities.savefig(fig,"./finite_differences.png",
                           subplots_adjust=dict(hspace=0.2))
 
