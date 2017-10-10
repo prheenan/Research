@@ -28,7 +28,7 @@ def run():
     A_q_orig = landscape.A_z
     kT_to_kcal_mol = 0.593
     A_q_kT_orig = (A_q_orig * landscape.beta * kT_to_kcal_mol)
-    n_points = 2000
+    n_points = 500
     A_q = SavitskyFilter(A_q_orig,n_points)
     A_q_kT = SavitskyFilter(A_q_kT_orig,n_points)
     q = SavitskyFilter(landscape.q,n_points)
@@ -54,36 +54,34 @@ def run():
     PlotUtilities.set_legend_kwargs(ax=ax_A_q,background_color='w',linewidth=0)
     PlotUtilities.no_x_label(ax_A_q)
     x0 = 14.5
-    dx = 0.05
+    dx = 0.010
     xlim = [x0,x0+dx]
     zoom_x,zoom_y,ylim = Inset.slice_by_x(x_plot,A_q_kT,xlim)
     # add in some extra space for the scalebar 
-    ylim_fudge = 0.7
+    ylim_fudge = 0.1
     dy = ylim[1] - ylim[0]
     ylim = [ylim[0],ylim[1] + (ylim_fudge * dy)]
     lazy_common = dict(title_kwargs=dict(loc='left'))
-    plt.axvspan(*xlim,color=color_energy,alpha=0.3,edgecolor="None")
-    plt.plot(zoom_x,zoom_y,color='r')
+    plt.plot(zoom_x,zoom_y,color=color_energy)
     # plot a zoomed in axis, to clarify why it probably goes wrong 
-    axins = Inset.zoomed_axis(ax=ax_A_q,zoom=500,xlim=xlim,ylim=ylim,
-                              remove_ticks=False)
-    axins.plot(x_plot, A_q_kT,linewidth=0.1,color='r')    
+    axins = Inset.zoomed_axis(ax=ax_A_q,zoom=2000,xlim=xlim,ylim=ylim,
+                              remove_ticks=True)
+    axins.plot(x_plot, A_q_kT,linewidth=1,color=color_energy)    
     # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
     unit_kw_x = dict(fmt="{:.0f}",value_function=lambda x: x*1000)
     common = dict(line_kwargs=dict(linewidth=1.0,color='k'))
     # round to ~10s of pm
-    x_width = np.around(dx/3,2)
-    y_width = np.around(dy/3,1)
-    x_kw = dict(width=x_width,unit="pm",unit_kwargs=unit_kw_x,
-                fudge_text_pct=dict(x=0.2,y=-0.2),**common)
-    y_kw = dict(height=y_width,unit=energy_units,
-                unit_kwargs=dict(fmt="{:.1f}"),**common)
-    ylim = axins.get_ylim()
-    y_diff = ylim[1] - ylim[0]
-    Scalebar._scale_bar_rectangle(ax=axins,x=0.5,
-                                  s="{:.0f} pm".format(x_width*1000),
-                                  y=1.3,width=x_width,
-                                  height=y_diff * 0.4)
+    x_width = Scalebar.round_to_n_sig_figs(dx/2,1)
+    y_width = Scalebar.round_to_n_sig_figs(dy,1)
+    y_width_cal_per_mol = np.around(y_width * 1000,-2)
+    unit_kw_x=dict(value_function=(lambda x: x*1000))
+    Scalebar.scale_bar_rectangle_x(ax=axins,x_rel=0.5,y_rel=1.2,unit="pm",
+                                   width=x_width,height_rel=0.3,
+                                   unit_kwargs=unit_kw_x)
+    Scalebar.scale_bar_rectangle_y(ax=axins,x_rel=-0.15,y_rel=0.5,
+                                   unit="\ncal/mol",
+                                   height=y_width,width_rel=0.2,font_color='w',
+                                   unit_kwargs=unit_kw_x)
     # # plot A_z_dot 
     ax_deriv_both = plt.subplot(3,1,2)
     # divide by 1000 to get uN
@@ -92,7 +90,7 @@ def run():
     plt.plot(x_plot,weighted_deriv_plot/1e3,**kw_weighted)
     PlotUtilities.lazyLabel("",
                             "$\dot{A}(q)$ (nN)",
-                            "$\Downarrow$ Determine derivative (both methods)",
+                            "$\Downarrow$ Calculate derivative",
                             **lazy_common)
     PlotUtilities.no_x_label(ax_deriv_both)
     # # plot A_z_dot, but just the weighted method (ie: not super wacky)
