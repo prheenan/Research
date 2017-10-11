@@ -49,6 +49,8 @@ class cacheable_data(object):
         #n_k_arr[i] is the number of fecs used to calculate
         # each landscape in the list of landscapes self.landscape[i]
         data_to_use = []
+        original_data_to_use = []
+        original_weights = []
         min_n = 20
         for i,list_v in enumerate(self.landscape):
             n_tmp = self.n_k_arr[i]
@@ -57,7 +59,15 @@ class cacheable_data(object):
             weights_tmp = [n_tmp for j in range(len(list_v))]
             weights.extend(weights_tmp)
             data_to_use.extend(list_v)
-        to_ret = landscape_data(data_to_use,weights=weights)
+            original_data_to_use.append(self.originals[i])
+            original_weights.append(n_tmp)
+        # push all the landscapes onto the same grid
+        num_bins = [l.q.size for l in data_to_use]
+        assert len(set(num_bins)) == 1
+        # POST: only one size of landscape
+        to_ret = landscape_data(data_to_use,weights=weights,
+                                original_data=original_data_to_use,
+                                original_weights=original_weights)
         return to_ret
     def __deepcopy__(self, memo={}):
         cls = self.__class__
@@ -88,11 +98,21 @@ class slice_area(object):
         
         
 class landscape_data(object):
-    def __init__(self,landscape_objs,weights):
+    @property
+    def dx(self):
+        dx = self._extensions_m[1] -  self._extensions_m[0]
+        return dx
+    def _d_energies_d_m(self,energies):
+        return np.array([np.gradient(e) / self.dx for e in energies])
+    def _d2_energies_dm2(self,energies):
+        return [np.gradient(e)/self.dx for e in (self._d_energy_dm(energies))]
+    def __init__(self,landscape_objs,weights,original_data,original_weights):
+        assert len(landscape_objs) > 0 
         self.landscape_objs = landscape_objs
         self.weights = weights
+        self.original_weights = original_weights
         self.kT = [1/o.beta for o in landscape_objs][0]
-        min_v = min([min(l.q) for l in landscape_objs])
+        min_v = max([min(l.q) for l in landscape_objs])
         max_v = min([max(l.q) for l in landscape_objs])
         sizes = np.array([l.q.size for l in landscape_objs])
         n = np.max(sizes)        
@@ -103,14 +123,14 @@ class landscape_data(object):
         self._extensions_m_original = np.linspace(min_v,max_v,n,endpoint=True)
         self._energies = [l.spline_fit.y(self._extensions_m)
                           for l in landscape_objs]
-        # align all the arbitrary zeros                          
-        self._energies = [e - min(e) for e in self._energies]                           
-        # get all the derivatives                          
-        dx = self._extensions_m[1] -  self._extensions_m[0]                           
-        self._d_energies_d_m = \
-            np.array([np.gradient(e)/dx for e in self._energies])
-        self._d2_energies_dm2 = [np.gradient(e)/dx for e in 
-                                 self._d_energies_d_m]
+        self._energies_orig = [l.spline_fit.y(self._extensions_m) for l in
+                               original_data]
+        # align all the arbitrary zeros
+        self._energies = [e - min(e) for e in self._energies]
+        self._energies_orig = [e - min(e) for e in self._energies_orig]
+        # align the minimums
+        self._extensions_m -= min_v
+        self._extensions_m_original -= min_v
     def from_Joules_to_kcal_per_mol(self):
         return IWT_Util.kT_to_kcal_per_mol() * (1/self.kT)
     def _raw_uninterpolared_landscapes_kcal_per_mol(self,l):
@@ -123,41 +143,46 @@ class landscape_data(object):
     @property
     def _extension_grid_nm(self):
         return self._extensions_m * 1e9
-    @property
-    def _landscapes_kcal_per_mol(self):
-        return np.array(self._energies) * self.from_Joules_to_kcal_per_mol()
-    @property
-    def _delta_landscapes_kcal_per_mol_per_nm(self):
+    def _get_energy(self,bootstrap):
+        return self._energies if bootstrap else self._energies_orig
+    def _landscapes_kcal_per_mol(self,bootstrap=True):
+        x = self._get_energy(bootstrap)
+        return np.array(x) * self.from_Joules_to_kcal_per_mol()
+    def _delta_landscapes_kcal_per_mol_per_nm(self,bootstrap=True):
+        x = self._get_energy(bootstrap)
         energy_kcal_per_mol_per_m = \
-            self._d_energies_d_m * self.from_Joules_to_kcal_per_mol()
+            self._d_energies_d_m(x) * self.from_Joules_to_kcal_per_mol()
         energy_kcal_per_mol_per_nm = energy_kcal_per_mol_per_m * 1e-9
         return energy_kcal_per_mol_per_nm
-    @property
-    def _delta_landscapes_kcal_per_mol_p_AA(self):
+    def _delta_landscapes_kcal_per_mol_p_AA(self,**kw):
         energy_kcal_per_mol_per_AA = \
-            self._delta_landscapes_kcal_per_mol_per_nm/self.amino_acids_per_nm()
+            self._delta_landscapes_kcal_per_mol_per_nm(**kw)/self.amino_acids_per_nm()
         return energy_kcal_per_mol_per_AA
-    def mean_std_opt(self):
-        return dict(axis=0,weights=self.weights)
-    def _avg(self,x):
-        return np.average(x,**self.mean_std_opt())
-    def _std(self,x):
-        mean_tmp = self._avg(x)
-        variance = self._avg((x-mean_tmp)**2)
+    def mean_std_opt(self,weights):
+        return dict(axis=0,weights=weights)
+    def _avg(self,x,**kw):
+        return np.average(x,**self.mean_std_opt(**kw))
+    def _std(self,x,weights):
+        mean_tmp = self._avg(x,weights=weights)
+        variance = self._avg((x-mean_tmp)**2,weights=weights)
         return np.sqrt(variance)
     @property        
     def mean_landscape_kcal_per_mol(self):
-        # get the landscapes, XXX need to interpolate back onto uniform grid. 
-        return self._avg(self._landscapes_kcal_per_mol)
+        # get the landscapes, XXX need to interpolate back onto uniform grid.
+        to_avg = self._landscapes_kcal_per_mol(bootstrap=False)
+        return self._avg(to_avg,weights=self.original_weights)
     @property                
     def std_landscape_kcal_per_mol(self):
-        return self._std(self._landscapes_kcal_per_mol)
+        return self._std(self._landscapes_kcal_per_mol(bootstrap=True),
+                         weights=self.weights)
     @property        
     def mean_delta_landscape_kcal_per_mol_per_nm(self):
-        return self._avg(self._delta_landscapes_kcal_per_mol_per_nm)
+        to_avg = self._delta_landscapes_kcal_per_mol_per_nm(bootstrap=False)
+        return self._avg(to_avg,weights=self.original_weights)
     @property                               
     def std_delta_landscape_kcal_per_mol_per_nm(self):
-        return self._std(self._delta_landscapes_kcal_per_mol_per_nm)
+        to_std = self._delta_landscapes_kcal_per_mol_per_nm(bootstrap=True)
+        return self._std(to_std,weights=self.weights)
 
 def grid_interpolate_arrays(x_arr,y_arr,x_grid):
     to_ret = []
@@ -196,14 +221,13 @@ def get_area_bounds(objs,area):
     return to_ret
     
     
-def filter_landscapes(landscapes,n_bins):
+def filter_landscapes(landscapes,n_bins,bins=None,**kw):
     # zero everything; don't care about absolute offsets.
-    for l in landscapes:
-        l.q -= min(l.q)
-    min_v = 0
+    min_v = max([min(l.q) for l in landscapes])
     max_v = min([max(l.q) for l in landscapes])
-    bins = np.linspace(min_v,max_v,n_bins)
-    to_ret = [WeierstrassUtil._filter_single_landscape(l,bins) 
+    if (bins is None):
+        bins = np.linspace(min_v,max_v,n_bins)
+    to_ret = [WeierstrassUtil._filter_single_landscape(l,bins,**kw)
               for l in landscapes]
     return to_ret
 
@@ -230,8 +254,6 @@ def get_heatmap_data(time_sep_force_arr,bins=(300,100)):
 def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps,cache_dir):
     # get the landscapes (we use N, to get an error)
     iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
-    # delete the original list to free its memnory
-    slice_tmp[:] = []
     n_objs = len(iwt_objs)
     ids = np.arange(n_objs,dtype=np.int64)
     # randomly choose the ids with replacement for bootstrapping\
@@ -250,6 +272,11 @@ def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps,cache_dir):
                                              force=False,
                                              name_func=name_func)   
     return iwt_tmp
+    
+def free_list(l):
+    for l_tmp in l:
+        l_tmp = None
+    del l
     
 def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
@@ -279,7 +306,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
     N_boostraps = 500
-    min_data = 2
+    min_data = 20
     area_of_interest = areas[0]
     k_arr_raw = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr_raw))))
@@ -301,6 +328,11 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     filtered_iwt = []
     originals = []
     for i,d in enumerate(data_to_use):
+        iwt_tmp_orig =  WeierstrassUtil.convert_list_to_iwt(d)
+        original = \
+            InverseWeierstrass.free_energy_inverse_weierstrass(iwt_tmp_orig)     
+        # free the original data
+        free_list(iwt_tmp_orig)
         cache_dir = "./{:s}_k_{:.4g}pN_nm/".\
                 format(area_of_interest.save_name,k_set[i]*1000)
         iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d,
@@ -309,16 +341,15 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         # immediately filter; don't use the unfiltered data. avoids memory
         # problems.
         filtered_iwt.append(filter_landscapes(iwt_tmp,area_of_interest.n_bins))
-        # explicitly set iwt_tmp to None, to have it be garbage collected
-        for l in iwt_tmp:
-            l = None
-        iwt_tmp = None
-        # get the landscape using all the original data
-        original = InverseWeierstrass.free_energy_inverse_weierstrass(d)
-        # get the filtered version...
         original_filtered = \
-            filter_landscapes(original, area_of_interest.n_bins)
-        originals.append(original_filtered)
+            filter_landscapes([original], area_of_interest.n_bins)        
+        # explicitly set iwt_tmp to None, to have it be garbage collected
+        # get the landscape using all the original data
+        # get the filtered version...
+        free_list(iwt_tmp)
+        # append the first (only) element
+        assert len(original_filtered) == 1
+        originals.append(original_filtered[0])
     # POST: filtered_iwt[i] has all bootstraps from fecs with spring k_set[i]
     return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
                           n_k_arr=data_lengths,originals=originals)

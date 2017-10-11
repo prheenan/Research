@@ -348,8 +348,8 @@ def plot_with_corrections(data):
     
 def _second_deriv_plot(ax_heat,data):
     units_y = lambda x: x  * (1e12/1e9)
-    mean_second_deriv_pN_nm = units_y(data._avg(data._d2_energies_dm2))
-    stdev_second_deriv_pN_nm = units_y(data._std(data._d2_energies_dm2))
+    mean_second_deriv_pN_nm = units_y(data._avg(data._d2_energies_dm2(False)))
+    stdev_second_deriv_pN_nm = units_y(data._std(data._d2_energies_dm2(True)))
     q_nm = data._extension_grid_nm    
     upper_mean = mean_second_deriv_pN_nm + stdev_second_deriv_pN_nm
     lower_mean = mean_second_deriv_pN_nm - stdev_second_deriv_pN_nm
