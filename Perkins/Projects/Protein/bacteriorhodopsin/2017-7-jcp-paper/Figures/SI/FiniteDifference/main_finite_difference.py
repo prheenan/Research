@@ -36,15 +36,17 @@ def run():
     # filter the landscapes 
     # numerically differentiate
     to_y = lambda x: x * 1e12
-    landscape_deriv_plot = to_y(np.gradient(A_q)/np.gradient(q))
+    landscape_deriv_plot = to_y(np.gradient(A_q))
     # compare with the A' term. XXX should just save it...
     weighted_deriv_plot = to_y(landscape.A_z_dot)
+    weighted_dA = to_y(landscape.A_z_dot * np.gradient(q))
     x_plot = q * 1e9
     energy_units = "kcal/mol"
     label_A_q_dot = r"$\dot{A}$"
-    label_finite = label_A_q_dot + r" from finite difference"
-    label_work = r"{:s}$ =<<F>>$".format(label_A_q_dot)
-    kw_weighted = dict(color='m',label=label_work)
+    label_finite = "$dA$ from finite difference"
+    label_work = r"$dA$ =<<$F$>> $dq$"
+    label_dot = r"$\dot{A}$ =<<$F$>>"
+    kw_weighted = dict(color='m')
     fig = PlotUtilities.figure((3.5,5))
     # # plot just A(q)
     ax_A_q = plt.subplot(3,1,1)
@@ -86,23 +88,22 @@ def run():
                                    unit_kwargs=unit_kw_x)
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
-
-
     # # plot A_z_dot 
     ax_deriv_both = plt.subplot(3,1,2)
     # divide to get uN
-    plt.plot(x_plot,landscape_deriv_plot/1e6,color='k',
+    plt.plot(x_plot, landscape_deriv_plot * 1e9,color='k',
              label=label_finite)
-    plt.plot(x_plot,weighted_deriv_plot/1e6,**kw_weighted)
+    plt.plot(x_plot, weighted_dA * 1e9,label=label_work,**kw_weighted)
     PlotUtilities.lazyLabel("",
-                            "$\dot{A}(q)$ ($\mathrm{\mu}$N)",
+                            "$dA(q)$ ($\mathrm{\mu}$cal/mol)",
                             "$\Downarrow$ Calculate derivative",
                             **lazy_common)
     PlotUtilities.no_x_label(ax_deriv_both)
     # # plot A_z_dot, but just the weighted method (ie: not super wacky)
     ax_deriv_weighted = plt.subplot(3,1,3)
-    plt.plot(x_plot,weighted_deriv_plot,linewidth=1,**kw_weighted)
-    title_last = "$\Downarrow$ Work-weighted method is reasonable "
+    plt.plot(x_plot,weighted_deriv_plot,linewidth=1,label=label_dot,
+             **kw_weighted)
+    title_last = "$\Downarrow$ Work-weighted method"
     PlotUtilities.lazyLabel("Extension (nm)","$\dot{A}(q)$ (pN)",
                             title_last,**lazy_common)
     PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:],
