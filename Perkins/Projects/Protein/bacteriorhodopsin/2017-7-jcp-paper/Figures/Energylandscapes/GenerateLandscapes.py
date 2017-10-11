@@ -22,7 +22,8 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 
 class cacheable_data(object):
-    def __init__(self,landscape,heatmap_data,heatmap_data_z,k_arr,n_k_arr):
+    def __init__(self,landscape,heatmap_data,heatmap_data_z,k_arr,n_k_arr,
+                 originals):
         """
         :param landscape: list, size N, element is list of landscapes with
         spring constant k_arr[i]
@@ -38,6 +39,7 @@ class cacheable_data(object):
         self.heatmap_data_z = heatmap_data_z
         self.k_arr = k_arr
         self.n_k_arr = n_k_arr
+        self.originals= originals
     def generate_landscape_obj(self):
         """
         Returns: a landscape_data, with all the weights it needs
@@ -168,7 +170,7 @@ def grid_interpolate_arrays(x_arr,y_arr,x_grid):
     return to_ret   
     
     
-def _get_landscapes(iwt_obj_subsets,n_bins):    
+def _get_landscapes(iwt_obj_subsets,n_bins):
     for objs in iwt_obj_subsets:
         yield InverseWeierstrass.free_energy_inverse_weierstrass(objs)
             
@@ -253,7 +255,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
                        offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=None,
+                                                 limit=10,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -277,7 +279,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     heatmap_data = get_heatmap_data(raw_area_slice)
     skip = 0
     N_boostraps = 500
-    min_data = 20
+    min_data = 2
     area_of_interest = areas[0]
     k_arr_raw = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr_raw))))
@@ -297,6 +299,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
     data_lengths = [len(d) for d in data_to_use]
     assert len(data_lengths) > 0 , "Couldn't find any data to fit"
     filtered_iwt = []
+    originals = []
     for i,d in enumerate(data_to_use):
         cache_dir = "./{:s}_k_{:.4g}pN_nm/".\
                 format(area_of_interest.save_name,k_set[i]*1000)
@@ -310,6 +313,12 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         for l in iwt_tmp:
             l = None
         iwt_tmp = None
+        # get the landscape using all the original data
+        original = InverseWeierstrass.free_energy_inverse_weierstrass(d)
+        # get the filtered version...
+        original_filtered = \
+            filter_landscapes(original, area_of_interest.n_bins)
+        originals.append(original_filtered)
     # POST: filtered_iwt[i] has all bootstraps from fecs with spring k_set[i]
     return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
-                          n_k_arr=data_lengths)
+                          n_k_arr=data_lengths,originals=originals)

@@ -464,7 +464,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                                     **kw_common),
                                       y_kwargs=dict(height=8,unit='kcal/\nmol',
                                                     font_kwargs=y_font,
-                                                    **kw_common))
+                                                    **kw_common),
+                                      sanitize_kwargs=dict(factor_x_y=-4))
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
     color_box = 'rebeccapurple'           
