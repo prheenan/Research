@@ -413,12 +413,9 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
         font_kwargs_modified(x_kwargs=common_kw,
                              y_kwargs=common_kw)
     heat_kw_common = dict(line_kwargs=dict(color='w',linewidth=1.5))
-    fudge_x = dict(x=0,y=0.25)
-    fudge_y = dict(x=0,y=0)
     x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,
-                     fudge_text_pct=fudge_x,**heat_kw_common)
-    y_heat_kw = dict(height=30,unit='pN ',
-                     fudge_text_pct=fudge_y,font_kwargs=y_font,**heat_kw_common)
+                     **heat_kw_common)
+    y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
     scale_bar_x = 0.83
     Scalebar.crossed_x_and_y_relative(scale_bar_x,0.55,ax=ax_heat,
@@ -436,7 +433,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     setup_pedagogy_ticks(ax_correction,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=offset_y_pedagogy)
     legend_font_size = 9                         
-    legend = PlotUtilities.legend(handlelength=1.5,loc=(0.15,0.07),ncol=3,
+    legend = PlotUtilities.legend(handlelength=1.5,loc=(0.15,0.05),ncol=3,
                                   fontsize=legend_font_size,handletextpad=0.4)
     for i,text in enumerate(legend.get_texts()):
         plt.setp(text, color = kwargs_correction()[i]['color'])    
@@ -459,16 +456,12 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                              y_kwargs=dict(horizontalalignment='right',
                                            **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines              
-    fudge_x = dict(x=0,y=-0.05)
-    fudge_y = dict(x=0,y=0.01)
     Scalebar.crossed_x_and_y_relative(0.42,0.57,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
-                                                    fudge_text_pct=fudge_x,
                                                     **kw_common),
                                       y_kwargs=dict(height=8,unit='kcal/\nmol',
                                                     font_kwargs=y_font,
-                                                    fudge_text_pct=fudge_y,
                                                     **kw_common))
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
@@ -606,6 +599,8 @@ def run():
             l.A_z_dot = sanit(l.A_z_dot)
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
+    # make the 'gallery' plots.
+    make_gallery_plot(areas,helical_data)
     # make the SI / second derivative plot
     make_second_deriv_plot(helical_data[0],landscape_kwargs()[0]) 
     # print the information we need
@@ -614,8 +609,6 @@ def run():
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)
-    # make the 'gallery' plots.
-    make_gallery_plot(areas,helical_data)
 
 
     
