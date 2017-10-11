@@ -174,7 +174,7 @@ def run():
                                   color='r',size=6,
                                   xycoords='data')
     plt.xlim(xlim)
-    PlotUtilities.savefig(fig,"./filtering.png")
+    PlotUtilities.savefig(fig,"./filtering.png",pad_inches=0.02)
 
 if __name__ == "__main__":
     run()

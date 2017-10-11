@@ -191,7 +191,8 @@ def make_detalied_plots(data_to_analyze,areas):
         ax_heat.set_ylim([None,y_limits_pN[i]])
         out_name = "landscape{:d}_{:s}".format(i,areas[i].plot_title)
         axis_func = lambda x: [x[0],x[2]]
-        PlotUtilities.label_tom(fig,axis_func=axis_func)
+        PlotUtilities.label_tom(fig,axis_func=axis_func,
+                                labels=PlotUtilities._lowercase)
         PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))    
     
 def normalize_axes(ax_list,manual_min=None,fudge_f=0.0):
@@ -279,7 +280,8 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     loc_last_two = [-0.1,1.05]
     loc_first = [-0.2,1.05]
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
-                            loc=[loc_first,loc_last_two,loc_last_two])
+                            loc=[loc_first,loc_last_two,loc_last_two],
+                            labels=PlotUtilities._lowercase)
     PlotUtilities.save_png_and_svg(fig,out_name)                    
     
 def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9):
@@ -491,7 +493,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     PlotUtilities.no_x_label(ax_energy)           
     ax_to_label = [ax for i,ax in enumerate(fig.axes) if i != 2]
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
-                            loc=(-0.05,1.02))
+                            loc=(-0.05,1.02),labels=PlotUtilities._lowercase)
     PlotUtilities.save_png_and_svg(fig,out_name)  
     
 

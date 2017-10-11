@@ -274,7 +274,7 @@ def run():
     loc_lower = [-0.05,1.0]
     loc = [loc_upper,loc_upper,loc_upper,   
            loc_lower,loc_lower,loc_lower]
-    PlotUtilities.label_tom(fig,loc=loc)
+    PlotUtilities.label_tom(fig,loc=loc,labels=PlotUtilities._lowercase)
     # image apparently messed up (usually fine) bbox_inches
     subplots_adjust = dict(hspace=0.07,wspace=0.15,left=0.03,top=0.95)
     PlotUtilities.save_png_and_svg(fig,"diagram",bbox_inches=None,tight=True,
