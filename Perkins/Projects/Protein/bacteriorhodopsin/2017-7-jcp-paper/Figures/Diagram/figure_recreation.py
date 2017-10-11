@@ -29,9 +29,10 @@ class fig4c:
         self.energy = energy
         self.energy_error = energy_error 
         
-def read_data(input_file,col_func,skip_header=1,delimiter=","):
+def read_data(input_file,col_func,skip_header=1,delimiter=",",**kw):
     cols = np.genfromtxt(input_file,skip_header=skip_header,
-                         delimiter=delimiter)    
+                         delimiter=delimiter,**kw)   
+    print(cols)
     obj = col_func(cols)
     return obj    
         
@@ -72,9 +73,10 @@ def run():
                       col_func = convert_fig1d)
     # # load in figure 4A,base
     # only load the third and fourth columns (2/3 index)
-    func_4 = lambda cols: fig4ab( *([col for col in cols.T][2:4]))
+    func_4 = lambda cols: fig4ab( *([col for col in cols.T]))
     obj = save_output(base=base,input_file="Fig4AB.csv",
-                      col_func = func_4)
+                      col_func = func_4,skip_header=1,
+                      delimiter=None)
     # # load in figure 4C
     obj = save_output(base=base,input_file="Fig4C.csv",
                       col_func = lambda cols: fig4c(*[c for c in cols.T]))

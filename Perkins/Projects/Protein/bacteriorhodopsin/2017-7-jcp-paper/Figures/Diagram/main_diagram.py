@@ -120,14 +120,13 @@ def run():
     PlotUtilities.x_label_on_top(ax_example)
     PlotUtilities.no_x_label(ax_example)
     PlotUtilities.no_y_label(ax_example)
-    x_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),width=15,unit="nm",
-                    fudge_text_pct=dict(x=0,y=0.3))
+    x_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),width=15,unit="nm")
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.0f}"),
                     height=40,unit="pN")
     Scalebar.crossed_x_and_y_relative(offset_x=0.55,offset_y=0.59,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
-                                      ax=ax_example)    
+                                      ax=ax_example,x_on_top=True)    
     # add in the velocity annotation (in nm/s, from m/s)
     velocity_annotate(ax=ax_example,v=vel_m_per_s*1e9)
     # # plot all the zoomed regions 
@@ -168,7 +167,6 @@ def run():
         max_y = max(ylim)
         y_loc = max_y*0.9
         x_kwargs =dict(unit="ms",width=widths_s[i],
-                       fudge_text_pct=dict(x=0.0,y=0.5),
                        unit_kwargs=dict(value_function=lambda x: x * 1e3))
         y_kwargs = dict(unit="pN ",
                         height=heights_pN[i])
@@ -178,7 +176,8 @@ def run():
                                  offset_y=offset_y,
                                  ax=ax_tmp,
                                  x_kwargs=x_kwargs,
-                                 y_kwargs=y_kwargs)
+                                 y_kwargs=y_kwargs,x_on_top=True,
+                                 sanitize_kwargs=dict(factor_x_x=1))
         PlotUtilities.no_y_label(ax_tmp)
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.x_label_on_top(ax_tmp)        
@@ -212,9 +211,8 @@ def run():
     color_equil = 'rebeccapurple'
     fig4ab = figure_recreation.save_output(base_re,"Fig4AB.csv")  
     ax_time = plt.subplot(top_spec[1,1])
-    min_x,max_x = min(fig4ab.time),max(fig4ab.time)
-    min_x_new = 1.5194
-    max_x_new = 1.5211
+    min_x_new = 1.6233
+    max_x_new = 1.6268
     idx = np.where( (fig4ab.time <= max_x_new) & (fig4ab.time >= min_x_new))
     time = fig4ab.time[idx]
     force = fig4ab.force[idx]
@@ -225,15 +223,14 @@ def run():
     ax_time.set_ylim(None,None)
     unit_kwargs = dict(value_function =lambda x: x*1e6,fmt="{:.0f}")
     unit_micro_s = PlotUtilities.upright_mu() + "s"
-    x_kwargs = dict(unit_kwargs=unit_kwargs,width=400e-6,unit=unit_micro_s,
-                    fudge_text_pct=dict(x=0,y=-0.1))
+    x_kwargs = dict(unit_kwargs=unit_kwargs,width=600e-6,unit=unit_micro_s)
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
-    y_kwargs = dict(height=10,unit="pN",font_kwargs=y_font)
-    Scalebar.crossed_x_and_y_relative(offset_x=0.52,offset_y=0.1,
+    y_kwargs = dict(height=20,unit="pN",font_kwargs=y_font)
+    Scalebar.crossed_x_and_y_relative(offset_x=0.3,offset_y=0.1,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
-                                      ax=ax_time)  
+                                      ax=ax_time)
     PlotUtilities.no_x_label(ax=ax_time)                                      
     PlotUtilities.no_y_label(ax=ax_time)  
     PlotUtilities.lazyLabel("Time","Force","")
@@ -249,8 +246,7 @@ def run():
                  mfc='w',zorder=0,markerfacecolor="None",capsize=2,elinewidth=1,
                  linewidth=1)                 
     PlotUtilities.lazyLabel("Extension (nm)","Energy","")     
-    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm",
-                    fudge_text_pct=dict(x=0,y=-0.1))
+    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
     y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
     y_font['rotation'] = 90
     y_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),
@@ -258,7 +254,8 @@ def run():
     Scalebar.crossed_x_and_y_relative(offset_x=0.22,offset_y=0.60,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
-                                      ax=ax_equil)
+                                      ax=ax_equil,
+                                      x_on_top=True)
     # add in bell...
     bell_mean = 0.64
     bell_std = 0.09
@@ -278,8 +275,9 @@ def run():
     loc = [loc_upper,loc_upper,loc_upper,   
            loc_lower,loc_lower,loc_lower]
     PlotUtilities.label_tom(fig,loc=loc)
-    subplots_adjust = dict(hspace=0.07,wspace=0.15)
-    PlotUtilities.save_png_and_svg(fig,"diagram",
+    # image apparently messed up (usually fine) bbox_inches
+    subplots_adjust = dict(hspace=0.07,wspace=0.15,left=0.03,top=0.95)
+    PlotUtilities.save_png_and_svg(fig,"diagram",bbox_inches=None,tight=True,
                                    subplots_adjust=subplots_adjust)
     
     
