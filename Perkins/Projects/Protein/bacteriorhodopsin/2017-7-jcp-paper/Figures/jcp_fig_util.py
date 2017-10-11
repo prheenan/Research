@@ -29,10 +29,10 @@ def regions_and_colors(subtract_min=False):
                    
                
                                   
-def add_helical_boxes(ax,alpha=0.3,ymax_box=0.15,font_color=None,
+def add_helical_boxes(ax,alpha=0.3,ymax_box=0.15,box_height=0.1,font_color=None,
                       offset_bool=False,max_x=None):
     labels_helical_region = ["ED","CB","A"]
-    ymin_box = ymax_box-0.1
+    ymin_box = ymax_box-box_height
     regions_colors = regions_and_colors()
     x_arr = [r[0] for r in regions_colors]
     for i,(x,color) in enumerate(regions_colors):
@@ -52,4 +52,4 @@ def add_helical_boxes(ax,alpha=0.3,ymax_box=0.15,font_color=None,
         Annotations._annotate(ax=ax,s=s,xy=(x_text,y),
                               horizontalalignment='center',
                               verticalalignment='center',color=font_color_tmp,
-                              bbox=dict(alpha=0,pad=0))       
+                              bbox=dict(alpha=0,pad=0))

@@ -362,8 +362,10 @@ def _second_deriv_plot(ax_heat,data):
     cantilever_stiffness_pN_per_nm = 25
     label_cantlever = (r"$k_{\mathrm{cantilever}}\approx$" + \
                         "{:d} pN/nm".format(cantilever_stiffness_pN_per_nm))
-    plt.axhline(cantilever_stiffness_pN_per_nm,color='m',linestyle='--',
-                label=label_cantlever,linewidth=1.5)
+    kw_stiff = dict(color='m',linestyle='--',linewidth=1.5)
+    plt.axhline(cantilever_stiffness_pN_per_nm,
+                label=label_cantlever,**kw_stiff)
+    plt.axhline(-cantilever_stiffness_pN_per_nm,zorder=0,**kw_stiff)              
     regions_and_colors = jcp_fig_util.regions_and_colors(subtract_min=True)
     for r,c in regions_and_colors:
         idx_tmp = np.where( (q_nm >= r[0]) & (q_nm <= r[1]))
@@ -373,10 +375,12 @@ def _second_deriv_plot(ax_heat,data):
                              y1=lower_mean[idx_tmp],
                              y2=upper_mean[idx_tmp],
                              alpha=0.3,color=c,linewidth=0)  
-    jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.1,alpha=1.0,
+    jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.9,alpha=0.3,
                                    font_color='w',offset_bool=True,
-                                   max_x=max_nm) 
-    PlotUtilities.lazyLabel("Extension (nm)","Stiffness (pN/nm)","",
+                                   max_x=max_nm,box_height=0.1)
+    plt.ylim([-75,75])                                    
+    PlotUtilities.lazyLabel("Extension (nm)",
+                            r"Stiffness $\frac{d^2G}{dq^2}$ (pN/nm)","",
                             legend_kwargs=dict(handlelength=2),loc='upper left')   
     
 def make_second_deriv_plot(data_to_plot,kw):
