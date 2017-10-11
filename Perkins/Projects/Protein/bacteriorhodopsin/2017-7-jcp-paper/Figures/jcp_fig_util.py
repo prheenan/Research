@@ -35,6 +35,7 @@ def add_helical_boxes(ax,alpha=0.3,ymax_box=0.15,box_height=0.1,font_color=None,
     ymin_box = ymax_box-box_height
     regions_colors = regions_and_colors()
     x_arr = [r[0] for r in regions_colors]
+    ymin,ymax = plt.ylim()
     for i,(x,color) in enumerate(regions_colors):
         if (offset_bool):
             x = np.array(x) - np.min(x_arr)
@@ -42,14 +43,15 @@ def add_helical_boxes(ax,alpha=0.3,ymax_box=0.15,box_height=0.1,font_color=None,
         if (max_x is not None):
             x = np.minimum(max_x,x)
         ax.axvspan(*x,ymin=ymin_box,ymax=ymax_box,color=color,alpha=alpha,
-                    linewidth=0)
-        ymin,ymax = plt.ylim()
-        y_f = (ymin_box+ymax_box)/2 
-        y = y_f * (ymax-ymin) + ymin
+                    linewidth=0,clip_on=False)
+        f_abs = lambda tmp: tmp * (ymax-ymin) + ymin
+        yi,yf = f_abs(ymin_box),f_abs(ymax_box)
+        y = np.mean([yi,yf])
         x_text = np.mean(x)
         s = labels_helical_region[i]
         font_color_tmp = font_color if font_color is not None else color
         Annotations._annotate(ax=ax,s=s,xy=(x_text,y),
                               horizontalalignment='center',
                               verticalalignment='center',color=font_color_tmp,
-                              bbox=dict(alpha=0,pad=0))
+                              bbox=dict(alpha=0,pad=0),clip_on=False,
+                              annotation_clip=False)

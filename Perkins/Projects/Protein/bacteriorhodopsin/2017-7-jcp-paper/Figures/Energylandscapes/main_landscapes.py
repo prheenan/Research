@@ -365,7 +365,7 @@ def _second_deriv_plot(ax_heat,data):
     kw_stiff = dict(color='m',linestyle='--',linewidth=1.5)
     plt.axhline(cantilever_stiffness_pN_per_nm,
                 label=label_cantlever,**kw_stiff)
-    plt.axhline(-cantilever_stiffness_pN_per_nm,zorder=0,**kw_stiff)              
+    plt.axhline(-cantilever_stiffness_pN_per_nm,zorder=0,**kw_stiff)        
     regions_and_colors = jcp_fig_util.regions_and_colors(subtract_min=True)
     for r,c in regions_and_colors:
         idx_tmp = np.where( (q_nm >= r[0]) & (q_nm <= r[1]))
@@ -375,14 +375,15 @@ def _second_deriv_plot(ax_heat,data):
                              y1=lower_mean[idx_tmp],
                              y2=upper_mean[idx_tmp],
                              alpha=0.3,color=c,linewidth=0)  
-    jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.9,alpha=0.3,
-                                   font_color='w',offset_bool=True,
-                                   max_x=max_nm,box_height=0.1)
     plt.ylim([-75,75])                                    
+    jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=1.05,alpha=0.5,
+                                   font_color='w',offset_bool=True,
+                                   max_x=max_nm,box_height=0.05)
     PlotUtilities.lazyLabel("Extension (nm)",
                             r"Stiffness $\frac{d^2G}{dq^2}$ (pN/nm)","",
-                            legend_kwargs=dict(handlelength=2),loc='upper left')   
-    
+                            legend_kwargs=dict(handlelength=2),
+                            loc='lower center')   
+
 def make_second_deriv_plot(data_to_plot,kw):
     data = data_to_plot.generate_landscape_obj()
     # get the average and stdev of the second derivative
@@ -605,10 +606,12 @@ def run():
             l.A_z_dot = sanit(l.A_z_dot)
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
-    print_info(helical_data)
-    make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the SI / second derivative plot
     make_second_deriv_plot(helical_data[0],landscape_kwargs()[0]) 
+    # print the information we need
+    print_info(helical_data)
+    # make the pdagogy plot
+    make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)
     # make the 'gallery' plots.
