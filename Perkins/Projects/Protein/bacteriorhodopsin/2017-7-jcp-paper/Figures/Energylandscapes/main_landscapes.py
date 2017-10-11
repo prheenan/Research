@@ -472,6 +472,17 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     Annotations.add_rectangle(ax_correction,xlim_box,ylim_box,
                               edgecolor=color_box)
     ax_correction.set_xlim(xlim_fec)
+    # add a zero marker
+    xlim = axins.get_xlim()
+    fudge = 0.06 * (xlim[1] - xlim[0])
+    x = xlim[0] - fudge
+    y = 0
+    Annotations.relative_annotate(ax=axins,s="0",xy=(x,y),xycoords='data',
+                                  verticalalignment="center",
+                                  fontweight='normal',
+                                  clip_on=False,annotation_clip=False)
+    # plot a single tick
+    axins.plot([xlim[0],xlim[0]+fudge],[0,0],color='k',linewidth=0.8)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
                    plot_derivative=False,label_deltaG=" ")
@@ -601,14 +612,14 @@ def run():
             l.A_z_dot = sanit(l.A_z_dot)
             l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
         helical_data.append(tmp)
+    # make the pedagogy plot
+    make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
     # make the SI / second derivative plot
     make_second_deriv_plot(helical_data[0],landscape_kwargs()[0]) 
     # print the information we need
     print_info(helical_data)
-    # make the pdagogy plot
-    make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)
 
