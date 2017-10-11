@@ -291,7 +291,6 @@ def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9):
     y_heat_kw['line_kwargs']['color'] = 'k'  
     y_heat_kw['unit'] = 'kcal/mol '
     y_heat_kw['height'] = 50
-    x_heat_kw['fudge_text_pct'] = dict(x=0,y=0.7)
     Scalebar.crossed_x_and_y_relative(scale_bar_x,offset_y,ax=ax,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
@@ -345,6 +344,55 @@ def plot_with_corrections(data):
     for i,energy_rel in enumerate(energies):
         plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])
     
+def _second_deriv_plot(ax_heat,data):
+    units_y = lambda x: x  * (1e12/1e9)
+    mean_second_deriv_pN_nm = units_y(data._avg(data._d2_energies_dm2))
+    stdev_second_deriv_pN_nm = units_y(data._std(data._d2_energies_dm2))
+    q_nm = data._extension_grid_nm    
+    upper_mean = mean_second_deriv_pN_nm + stdev_second_deriv_pN_nm
+    lower_mean = mean_second_deriv_pN_nm - stdev_second_deriv_pN_nm
+    # only plot the first xn; the A helix does something weird after detachment
+    max_nm = 45
+    where_to_plot = np.where(q_nm <= max_nm)                                   
+    q_nm = q_nm[where_to_plot]
+    upper_mean = upper_mean[where_to_plot]
+    lower_mean = lower_mean[where_to_plot]
+    mean_second_deriv_pN_nm = mean_second_deriv_pN_nm[where_to_plot]
+    stdev_second_deriv_pN_nm = stdev_second_deriv_pN_nm[where_to_plot]
+    cantilever_stiffness_pN_per_nm = 25
+    label_cantlever = (r"$k_{\mathrm{cantilever}}\approx$" + \
+                        "{:d} pN/nm".format(cantilever_stiffness_pN_per_nm))
+    kw_stiff = dict(color='m',linestyle='--',linewidth=1.5)
+    plt.axhline(cantilever_stiffness_pN_per_nm,
+                label=label_cantlever,**kw_stiff)
+    plt.axhline(-cantilever_stiffness_pN_per_nm,zorder=0,**kw_stiff)              
+    regions_and_colors = jcp_fig_util.regions_and_colors(subtract_min=True)
+    for r,c in regions_and_colors:
+        idx_tmp = np.where( (q_nm >= r[0]) & (q_nm <= r[1]))
+        plt.plot(q_nm[idx_tmp],mean_second_deriv_pN_nm[idx_tmp],color=c,
+                 linewidth=0.75)
+        ax_heat.fill_between(x=q_nm[idx_tmp],
+                             y1=lower_mean[idx_tmp],
+                             y2=upper_mean[idx_tmp],
+                             alpha=0.3,color=c,linewidth=0)  
+    jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.9,alpha=0.3,
+                                   font_color='w',offset_bool=True,
+                                   max_x=max_nm,box_height=0.1)
+    plt.ylim([-75,75])                                    
+    PlotUtilities.lazyLabel("Extension (nm)",
+                            r"Stiffness $\frac{d^2G}{dq^2}$ (pN/nm)","",
+                            legend_kwargs=dict(handlelength=2),loc='upper left')   
+    
+def make_second_deriv_plot(data_to_plot,kw):
+    data = data_to_plot.generate_landscape_obj()
+    # get the average and stdev of the second derivative
+    # y is in units of N/m, convert to pN/nm (multiply by 1e3)
+
+    fig = PlotUtilities.figure()
+    ax_heat = plt.subplot(1,1,1)
+    _second_deriv_plot(ax_heat,data)
+    PlotUtilities.savefig(fig,"./out_stiff.png")
+    
 def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
     data = data_to_plot.generate_landscape_obj()
@@ -364,7 +412,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
         font_kwargs_modified(x_kwargs=common_kw,
                              y_kwargs=common_kw)
     heat_kw_common = dict(line_kwargs=dict(color='w',linewidth=1.5))
-    fudge_x = dict(x=0,y=-0.2)
+    fudge_x = dict(x=0,y=0.25)
     fudge_y = dict(x=0,y=0)
     x_heat_kw = dict(width=15,unit="nm",font_kwargs=x_font,
                      fudge_text_pct=fudge_x,**heat_kw_common)
@@ -410,8 +458,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                              y_kwargs=dict(horizontalalignment='right',
                                            **common_font_inset))
     # set up the font, offset ('fudge') the text from the lines              
-    fudge_x = dict(x=0,y=-0.5)
-    fudge_y = dict(x=0,y=0.1)
+    fudge_x = dict(x=0,y=-0.05)
+    fudge_y = dict(x=0,y=0.01)
     Scalebar.crossed_x_and_y_relative(0.42,0.57,ax=axins,
                                       x_kwargs=dict(width=2,unit="nm",
                                                     font_kwargs=x_font,
@@ -559,10 +607,13 @@ def run():
         helical_data.append(tmp)
     print_info(helical_data)
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
+    # make the SI / second derivative plot
+    make_second_deriv_plot(helical_data[0],landscape_kwargs()[0]) 
     # make the heatmaps/energy landscape plots
     make_detalied_plots(helical_data,areas)
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
+
 
     
 if __name__ == "__main__":
