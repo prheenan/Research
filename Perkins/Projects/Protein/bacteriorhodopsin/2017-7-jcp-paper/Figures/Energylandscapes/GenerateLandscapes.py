@@ -286,7 +286,7 @@ def get_raw_data(flickering_dir,areas,heat_bins=(100,100),
                   offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=100,
+                                                 limit=None,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -363,7 +363,7 @@ def get_cacheable_data(areas,flickering_dir,cache_dir="./cache"):
     data_lengths = []
     filtered_iwt = []
     originals = []
-    N_boostraps = 10
+    N_boostraps = 80
     skip = 0    
     for i,d in enumerate(data):
         data_lengths.append(len(d.data))
