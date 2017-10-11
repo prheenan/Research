@@ -196,9 +196,21 @@ def grid_interpolate_arrays(x_arr,y_arr,x_grid):
     return to_ret   
     
     
-def _get_landscapes(iwt_obj_subsets,n_bins):
-    for objs in iwt_obj_subsets:
-        yield InverseWeierstrass.free_energy_inverse_weierstrass(objs)
+def _get_landscapes(objects,n_bootstraps,n_bins,cache_dir):
+    n = objects[0].Force.size
+    n_objs = len(objects)
+    n_min = int(np.ceil(0.8 * n))
+    for i in range(n_bootstraps):
+        # keep looping if > X% of the data is corrupted
+        while (True):
+            obj_tmp = np.random.choice(objects,size=n_objs,replace=True)
+            landscape = \
+                InverseWeierstrass.free_energy_inverse_weierstrass(obj_tmp)
+            if (landscape.q.size >= n_min):
+                # then this landscape looks pretty good
+                break
+        # POST: found a decent-looking landscape. Return it
+        yield landscape
             
 def get_area_bounds(objs,area):
     z_0,z_1 = area.ext_bounds
@@ -255,17 +267,8 @@ def get_heatmap_data(time_sep_force_arr,bins=(300,100)):
 def single_area_landscape_bootstrap(area,slice_tmp,skip,N_boostraps,cache_dir):
     # get the landscapes (we use N, to get an error)
     iwt_objs = WeierstrassUtil.convert_list_to_iwt(slice_tmp)
-    n_objs = len(iwt_objs)
-    ids = np.arange(n_objs,dtype=np.int64)
-    # randomly choose the ids with replacement for bootstrapping\
-    choose_ids = lambda : np.random.choice(ids,size=n_objs,replace=True)
-    # skip the first N (if we already chose those, assuming a consistent 
-    # seed)
-    skipped = [choose_ids() for i in range(skip)]
-    # get the actual ids we want 
-    id_choices = [choose_ids() for i in range(N_boostraps)]
-    iwt_obj_subsets = [ [iwt_objs[i] for i in a] for a in id_choices]
-    functor = lambda : _get_landscapes(iwt_obj_subsets,area.n_bins)
+    functor = lambda :  _get_landscapes(iwt_objs,N_boostraps,area.n_bins,
+                                        cache_dir)
     name_func = lambda  i,d: \
         area.save_name + "_bootstrap_{:d}".format(i+skip) 
     GenUtilities.ensureDirExists(cache_dir)
@@ -371,7 +374,7 @@ def get_cacheable_data(areas,flickering_dir,cache_dir="./cache"):
                                               False,
                                               d.data,area_of_interest.n_bins)
         cache_dir = "./{:s}_k_{:.4g}pN_nm/".\
-                format(area_of_interest.save_name,d.k_set[i]*1000)
+                format(area_of_interest.save_name,d.k_tmp*1000)
         iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d.data,
                                                   skip,N_boostraps,
                                                   cache_dir=cache_dir)
