@@ -348,8 +348,12 @@ def plot_with_corrections(data):
     
 def _second_deriv_plot(ax_heat,data):
     units_y = lambda x: x  * (1e12/1e9)
-    mean_second_deriv_pN_nm = units_y(data._avg(data._d2_energies_dm2(False)))
-    stdev_second_deriv_pN_nm = units_y(data._std(data._d2_energies_dm2(True)))
+    energy_mean = data._get_energy(False)
+    energy_std = data._get_energy(True)
+    mean_second_deriv_pN_nm = \
+        units_y(data._avg(data._d2_energies_dm2(energy_mean),weights=data.original_weights))
+    stdev_second_deriv_pN_nm = \
+        units_y(data._std(data._d2_energies_dm2(energy_std),weights=data.weights))
     q_nm = data._extension_grid_nm    
     upper_mean = mean_second_deriv_pN_nm + stdev_second_deriv_pN_nm
     lower_mean = mean_second_deriv_pN_nm - stdev_second_deriv_pN_nm
@@ -590,7 +594,7 @@ def run():
     f = GenerateLandscapes.get_cacheable_data
     data_to_analyze = CheckpointUtilities.\
         getCheckpoint("./cached_landscapes.pkl",f,
-                      force_recalculation,areas,flickering_dir,bin_size_meters)
+                      force_recalculation,areas,flickering_dir)
     # split into the data we care about
     helical_data = []
     for a in areas:

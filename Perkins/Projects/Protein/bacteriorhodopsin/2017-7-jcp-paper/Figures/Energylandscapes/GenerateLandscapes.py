@@ -51,7 +51,7 @@ class cacheable_data(object):
         data_to_use = []
         original_data_to_use = []
         original_weights = []
-        min_n = 20
+        min_n = 2
         for i,list_v in enumerate(self.landscape):
             n_tmp = self.n_k_arr[i]
             if n_tmp < min_n:
@@ -105,7 +105,8 @@ class landscape_data(object):
     def _d_energies_d_m(self,energies):
         return np.array([np.gradient(e) / self.dx for e in energies])
     def _d2_energies_dm2(self,energies):
-        return [np.gradient(e)/self.dx for e in (self._d_energy_dm(energies))]
+        return [np.gradient(e)/self.dx 
+                for e in (self._d_energies_d_m(energies))]
     def __init__(self,landscape_objs,weights,original_data,original_weights):
         assert len(landscape_objs) > 0 
         self.landscape_objs = landscape_objs
@@ -278,11 +279,11 @@ def free_list(l):
         l_tmp = None
     del l
     
-def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
-                       offset_N=7.1e-12):
+def get_raw_data(flickering_dir,areas,heat_bins=(100,100),
+                  offset_N=7.1e-12):
     raw_data = IoUtilHao.read_and_cache_data_hao(None,force=False,
                                                  cache_directory=flickering_dir,
-                                                 limit=10,
+                                                 limit=20,
                                                  renormalize=False)
     # only look at data with ~300nm/s
     v_exp = 300e-9
@@ -304,9 +305,7 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         raw_data[i] = None
     # get the heatmap on the entire slice
     heatmap_data = get_heatmap_data(raw_area_slice)
-    skip = 0
-    N_boostraps = 500
-    min_data = 20
+    min_data = 2
     area_of_interest = areas[0]
     k_arr_raw = [r.LowResData.meta.SpringConstant for r in raw_area_slice]
     k_set = np.array(sorted(list(set(k_arr_raw))))
@@ -321,35 +320,71 @@ def get_cacheable_data(areas,flickering_dir,heat_bins=(100,100),
         if (len_data >= min_data):
             data_to_use.append(m_data)
             k_arr.append(k_set[i])
+    for d,k_tmp in zip(data_to_use,k_arr):
+        yield RawData(d,k_tmp,k_set,heatmap_data,k_arr)
+        
+class RawData:
+    def __init__(self,data,k_tmp,k_set,heatmap,k_arr):
+        self.data=data
+        self.k_tmp = k_tmp
+        self.k_set = k_set
+        self.heatmap = heatmap
+        self.k_arr = k_arr
+    
+def get_filtered_original_landscape(fecs,n_bins):
+    iwt_tmp_orig =  WeierstrassUtil.convert_list_to_iwt(fecs)
+    # get the landscape and filter it.
+    original = \
+        InverseWeierstrass.free_energy_inverse_weierstrass(iwt_tmp_orig)     
+    original_filtered = \
+        filter_landscapes([original],n_bins)
+    # free the original data
+    free_list(iwt_tmp_orig)        
+    # append the first (only) element
+    assert len(original_filtered) == 1        
+    return original_filtered[0]     
+    
+def get_cacheable_data(areas,flickering_dir,cache_dir="./cache"):
+    # save out the raw data we need 
+    area_of_interest = areas[0]    
+    functor = lambda : get_raw_data(flickering_dir,areas)
+    name_func = lambda  i_tmp,d: \
+        area_of_interest.save_name + "_raw_{:d}".format(i_tmp) 
+    GenUtilities.ensureDirExists(cache_dir)
+    data = CheckpointUtilities.multi_load(cache_dir="./raw_data/",
+                                          load_func=functor,
+                                          force=False,
+                                          name_func=name_func)      
     # POST: data_to_use[i] has the data for the spring constant i
     # POST: all data are sorted by spring constant
-    data_lengths = [len(d) for d in data_to_use]
+    data_lengths = [len(d.data) for d in data]
     assert len(data_lengths) > 0 , "Couldn't find any data to fit"
     filtered_iwt = []
     originals = []
-    for i,d in enumerate(data_to_use):
-        iwt_tmp_orig =  WeierstrassUtil.convert_list_to_iwt(d)
-        original = \
-            InverseWeierstrass.free_energy_inverse_weierstrass(iwt_tmp_orig)     
-        # free the original data
-        free_list(iwt_tmp_orig)
+    N_boostraps = 10
+    skip = 0    
+    for i,d in enumerate(data):
+        original_name = "./original_{:.3g}pN_nm.pkl".format(1000*d.k_tmp)
+        original_filtered = \
+            CheckpointUtilities.getCheckpoint(original_name,
+                                              get_filtered_original_landscape,
+                                              False,
+                                              d.data,area_of_interest.n_bins)
         cache_dir = "./{:s}_k_{:.4g}pN_nm/".\
-                format(area_of_interest.save_name,k_set[i]*1000)
-        iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d,
+                format(area_of_interest.save_name,d.k_set[i]*1000)
+        iwt_tmp = single_area_landscape_bootstrap(area_of_interest,d.data,
                                                   skip,N_boostraps,
                                                   cache_dir=cache_dir)
         # immediately filter; don't use the unfiltered data. avoids memory
         # problems.
         filtered_iwt.append(filter_landscapes(iwt_tmp,area_of_interest.n_bins))
-        original_filtered = \
-            filter_landscapes([original], area_of_interest.n_bins)        
+      
         # explicitly set iwt_tmp to None, to have it be garbage collected
         # get the landscape using all the original data
         # get the filtered version...
         free_list(iwt_tmp)
-        # append the first (only) element
-        assert len(original_filtered) == 1
-        originals.append(original_filtered[0])
+        originals.append(original_filtered)
     # POST: filtered_iwt[i] has all bootstraps from fecs with spring k_set[i]
-    return cacheable_data(filtered_iwt,*heatmap_data,k_arr=k_arr,
+    key_d = data[0]
+    return cacheable_data(filtered_iwt,*key_d.heatmap,k_arr=key_d.k_arr,
                           n_k_arr=data_lengths,originals=originals)
