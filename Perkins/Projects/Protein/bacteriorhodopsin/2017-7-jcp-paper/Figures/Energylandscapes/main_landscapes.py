@@ -389,8 +389,9 @@ def _second_deriv_plot(ax_heat,data):
     jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=1.05,alpha=0.5,
                                    font_color='w',offset_bool=True,
                                    max_x=max_nm,box_height=0.05)
-    stiffness = r"$\frac{\huge{\partial}^2{G}}{\huge{\partial}q^2}$" +\
-                r"\textbf{ (pN/nm)}"                         
+    numer = r"{\mathbf{\partial^2 G}}"
+    denom = r"{\mathbf{\partial q^2}}"
+    stiffness = r"$\frac" + numer + denom + r"$\textbf{ (pN/nm)}"                         
     PlotUtilities.lazyLabel(r"\textbf{Extension (nm)}",
                             stiffness,"",
                             legend_kwargs=dict(handlelength=2,
@@ -407,7 +408,7 @@ def make_second_deriv_plot(data_to_plot,kw):
     fig = PlotUtilities.figure()
     ax_heat = plt.subplot(1,1,1)
     _second_deriv_plot(ax_heat,data)
-    PlotUtilities.savefig(fig,"./FigS3_stiffness.jpeg")
+    PlotUtilities.save_tom(fig,"./FigS3_stiffness")
     mpl.rc('text', usetex=False)                            
     
     
