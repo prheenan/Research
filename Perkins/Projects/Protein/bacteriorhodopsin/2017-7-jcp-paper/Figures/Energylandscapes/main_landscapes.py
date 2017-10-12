@@ -383,13 +383,16 @@ def _second_deriv_plot(ax_heat,data):
                              y2=upper_mean[idx_tmp],
                              alpha=0.3,color=c,linewidth=0)  
     plt.ylim([-75,75])                                    
+    PlotUtilities.tom_ticks(num_major=6,change_x=False)
     jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=1.05,alpha=0.5,
                                    font_color='w',offset_bool=True,
                                    max_x=max_nm,box_height=0.05)
     PlotUtilities.lazyLabel("Extension (nm)",
-                            r"Stiffness $\frac{d^2G}{dq^2}$ (pN/nm)","",
-                            legend_kwargs=dict(handlelength=2),
-                            loc='lower center')   
+                            r"$\frac{\partial^2{G}}{\partial q^2}$ (pN/nm)","",
+                            legend_kwargs=dict(handlelength=2,
+                                               handletextpad=0.1),
+                            axis_kwargs=dict(fontsize=11),                                                
+                            loc='upper left')   
 
 def make_second_deriv_plot(data_to_plot,kw):
     data = data_to_plot.generate_landscape_obj()
@@ -634,12 +637,13 @@ def run():
         helical_data.append(tmp)
     # print the information we need
     print_info(helical_data)
+    # make the SI / second derivative plot
+    make_second_deriv_plot(helical_data[0],landscape_kwargs()[0])
     # make the pedagogy plot
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
-    # make the SI / second derivative plot
-    make_second_deriv_plot(helical_data[0],landscape_kwargs()[0]) 
+
     # make the heatmaps/energy landscape plots
     # (note: this is just for debugging)
     if (debugging):
