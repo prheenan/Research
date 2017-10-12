@@ -544,8 +544,8 @@ def print_info(helical_data):
     ed_std_delta_per_nm = ed.std_delta_landscape_kcal_per_mol_per_nm
     # get the nm we care about; IED 1 has a DeltaL0 of 0.7nm in L0 from maximum 
     # (top of helix), so that is a good guess (Yu, 2017, SI, Table S1)
-    # based on FigS2, the extension change is about 0.5...
-    delta_from_max = 0.5
+    # based on FigS4, IED1 is ~ at the top of the helix.
+    delta_from_max = 0.0
     # we care about the 1nm extension change
     delta_nm_transition = 1
     x_of_interest = ext_nm[np.argmax(ed_mean_delta_per_nm)] + delta_from_max
@@ -557,7 +557,6 @@ def print_info(helical_data):
     ed_std_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
     mean_ed = ed_mean_delta_per_nm_of_interest
     # use SEM / STD?
-    n_bootstraps = 250
     aa_per_nm = 3
     error_ed = ed_std_delta_per_nm_of_interest
     print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
@@ -642,20 +641,18 @@ def run():
             set_landscape_to_slice(l, a)
         for o in tmp.originals:
             set_landscape_to_slice(o, a)
-        helical_data.append(tmp)
-    # make the SI / second derivative plot
-    make_second_deriv_plot(helical_data[0],landscape_kwargs()[0])
-    exit(1)
-   
+        helical_data.append(tmp) 
+    print_info(helical_data)        
     # make the pedagogy plot
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
-
     # make the heatmaps/energy landscape plots
     # (note: this is just for debugging)
     if (debugging):
         make_detalied_plots(helical_data,areas)
+    # make the SI / second derivative plot
+    make_second_deriv_plot(helical_data[0],landscape_kwargs()[0])          
 
 
     
