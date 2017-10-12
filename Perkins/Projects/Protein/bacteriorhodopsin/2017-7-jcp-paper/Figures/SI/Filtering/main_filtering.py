@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities,GenUtilities
-from GeneralUtil.python.Plot import Scalebar,Annotations,Inset
+from GeneralUtil.python.Plot import Scalebar,Annotations,Inset,Record
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes,mark_inset
@@ -173,7 +173,15 @@ def run():
                                   xy=(inf.res_nm,min(y_plot)*1.2),
                                   color='r',size=6,
                                   xycoords='data')
-    save_name = "./FigS2_filtering"                                  
+    save_name = "./FigS2_filtering"
+    x_save = [inf.bin_sizes_nm]
+    y_save = [inf.average_error_per_bin_plot,
+              inf.stdev_stdev_energy_per_bin_plot]
+    record_kw = dict(x=x_save,y=y_save,save_name=save_name,
+                     x_name="Extension",x_units="nm",
+                     y_name=["Error","Error of the error"],
+                     y_units="(kcal/mol)**3/nm")
+    Record.save_csv(record_kw)
     plt.xlim(xlim)
     PlotUtilities.save_tom(fig,save_name,pad_inches=0.02)
 
