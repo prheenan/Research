@@ -29,6 +29,14 @@ function re_read()
     done
 }
 
+function cp_files()
+{
+    input_dir=$1
+    file_type=$2
+    out_dir=$3
+    find "$input_dir" -name "$file_type" -exec cp {} "$out_dir" \;
+}
+
 # Description:
 # Re-calculates all the figures
 
@@ -40,7 +48,8 @@ if [[ $force_re_run == 1 ]]; then
     re_read "$figure_base_dir"
 fi
 # copy all the (newly made) figures 
-find "$figure_base_dir" -name "*.png" -exec cp {} "$out_dir" \;
+cp_files "$figure_base_dir" "*.svg" "$out_dir"
+cp_files "$figure_base_dir" "*.jpeg" "$out_dir"
 # re-make the docx file. 
 
 

@@ -108,7 +108,7 @@ def run():
                             title_last,**lazy_common)
     PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:],
                             loc=(-0.1,1.05),labels=PlotUtilities._lowercase)
-    PlotUtilities.savefig(fig,"./finite_differences.png",
+    PlotUtilities.save_tom(fig,"./FigS1_finite_differences",
                           subplots_adjust=dict(hspace=0.2))
 
 if __name__ == "__main__":

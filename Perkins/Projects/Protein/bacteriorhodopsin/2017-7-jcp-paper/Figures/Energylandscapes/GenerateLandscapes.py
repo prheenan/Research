@@ -362,7 +362,7 @@ def get_cacheable_data(areas,flickering_dir,cache_dir="./cache"):
     data_lengths = []
     filtered_iwt = []
     originals = []
-    N_boostraps = 10
+    N_boostraps = 250
     skip = 0    
     for i,d in enumerate(data):
         data_lengths.append(len(d.data))

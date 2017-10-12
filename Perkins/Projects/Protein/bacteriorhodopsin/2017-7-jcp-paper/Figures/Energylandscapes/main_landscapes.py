@@ -193,7 +193,7 @@ def make_detalied_plots(data_to_analyze,areas):
         axis_func = lambda x: [x[0],x[2]]
         PlotUtilities.label_tom(fig,axis_func=axis_func,
                                 labels=PlotUtilities._lowercase)
-        PlotUtilities.save_png_and_svg(fig,out_name.replace(" ","_"))    
+        PlotUtilities.save_tom(fig,out_name.replace(" ","_"))    
     
 def normalize_axes(ax_list,manual_min=None,fudge_f=0.0):
     """
@@ -217,8 +217,8 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
                     dict(offset_x=offset_x,offset_y=offset_y),
                     dict(offset_x=offset_x,offset_y=offset_y)]
     xlims = [ [None,None],[None,None],[None,15]    ]   
-    arrow_x = [0.65,0.67,0.47]
-    arrow_y = [0.60,0.52,0.42]
+    arrow_x = [0.65,0.67,0.35]
+    arrow_y = [0.60,0.55,0.33]
     for i,a in enumerate(helical_areas):
         data = helical_data[i]
         kw_tmp = helical_kwargs[i]
@@ -269,7 +269,7 @@ def normalize_and_set_zeros(first_axs,second_axs,fudge_1=0.05,fudge_2=0.6):
     needed_min = normalized_zero * max_y_second / (normalized_zero-1)
     normalize_axes(second_axs,manual_min=needed_min)       
     
-def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
+def make_gallery_plot(areas,data_to_analyze,out_name="./Fig3_gallery"):
     # skip the first one (the entire landscape )
     helical_areas = areas[1:]
     helical_data = data_to_analyze[1:]
@@ -282,20 +282,20 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./gallery"):
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
                             loc=[loc_first,loc_last_two,loc_last_two],
                             labels=PlotUtilities._lowercase)
-    PlotUtilities.save_png_and_svg(fig,out_name)                    
+    PlotUtilities.save_tom(fig,out_name)                    
     
-def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9):
+def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9,**kw):
     font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
     # fix the keywords relative to the heatmap
     x_heat_kw['font_kwargs']['color'] = 'k'
     x_heat_kw['line_kwargs']['color'] = 'k'
     y_heat_kw['font_kwargs']['color'] = 'k'
     y_heat_kw['line_kwargs']['color'] = 'k'  
-    y_heat_kw['unit'] = 'kcal/mol '
+    y_heat_kw['unit'] = 'kcal/mol'
     y_heat_kw['height'] = 50
     Scalebar.crossed_x_and_y_relative(scale_bar_x,offset_y,ax=ax,
                                       x_kwargs=x_heat_kw,
-                                      y_kwargs=y_heat_kw)
+                                      y_kwargs=y_heat_kw,**kw)
     PlotUtilities.no_y_label(ax)            
     # add in a zero point
     fudge_x = 1
@@ -399,9 +399,9 @@ def make_second_deriv_plot(data_to_plot,kw):
     fig = PlotUtilities.figure()
     ax_heat = plt.subplot(1,1,1)
     _second_deriv_plot(ax_heat,data)
-    PlotUtilities.savefig(fig,"./out_stiff.png")
+    PlotUtilities.savefig(fig,"./FigS3_stiffness.jpeg")
     
-def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
+def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
     data = data_to_plot.generate_landscape_obj()
     fig = PlotUtilities.figure((3.25,5))
@@ -409,7 +409,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     ax_heat = plt.subplot(3,1,1)
     heatmap_plot(heatmap_data,data.amino_acids_per_nm(),
                  kw_heatmap=kw['kw_heatmap'])
-    xlim_fec = plt.xlim()
+    xlim_fec = [0,55]
     PlotUtilities.no_x_label(ax_heat)    
     ax_heat.set_ylim([0,150])
     PlotUtilities.no_x_label(ax_heat)
@@ -425,6 +425,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     y_heat_kw = dict(height=30,unit='pN ',font_kwargs=y_font,**heat_kw_common)
     # add a scale bar for the heatmap...
     scale_bar_x = 0.83
+    ax_heat.set_xlim(xlim_fec)                                       
     Scalebar.crossed_x_and_y_relative(scale_bar_x,0.55,ax=ax_heat,
                                       x_kwargs=x_heat_kw,
                                       y_kwargs=y_heat_kw)
@@ -470,7 +471,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                                       y_kwargs=dict(height=8,unit='kcal/\nmol',
                                                     font_kwargs=y_font,
                                                     **kw_common),
-                                      sanitize_kwargs=dict(factor_x_y=-4))
+                                      sanitize_kwargs=dict(factor_y_y=-1))
     # draw a bbox of the region of the inset axes in the parent axes and
     # connecting lines between the bbox and the inset axes area
     color_box = 'rebeccapurple'           
@@ -494,7 +495,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
                    plot_derivative=False,label_deltaG=" ")
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
-                         offset_y=offset_y_pedagogy)
+                         offset_y=offset_y_pedagogy,
+                         sanitize_kwargs=dict(factor_y_y=-3))
     # add in the equation notation
     strings,colors = [],[]
     labels = kwargs_labels()
@@ -511,7 +513,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./iwt_diagram"):
     ax_to_label = [ax for i,ax in enumerate(fig.axes) if i != 2]
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
                             loc=(-0.05,1.02),labels=PlotUtilities._lowercase)
-    PlotUtilities.save_png_and_svg(fig,out_name)  
+    PlotUtilities.save_tom(fig,out_name)  
     
 
 def print_info(helical_data):
@@ -529,16 +531,19 @@ def print_info(helical_data):
     ext_nm = ed._extension_grid_nm
     ed_mean_delta_per_nm = ed.mean_delta_landscape_kcal_per_mol_per_nm
     ed_std_delta_per_nm = ed.std_delta_landscape_kcal_per_mol_per_nm
-    # get the nm we care about
-    x_of_interest = 6.5
+    # get the nm we care about; IED 1 has a DeltaL0 of 0.7nm in L0 from maximum 
+    # (top of helix), so that is a good guess (Yu, 2017, SI, Table S1)
+    # based on FigS2, the extension change is about 0.5...
+    delta_from_max = 0.5
+    x_of_interest = ext_nm[np.argmax(ed_mean_delta_per_nm)] + delta_from_max
     idx_of_interest = np.argmin(abs(ext_nm - x_of_interest))
     ed_std_delta_per_nm_of_interest = ed_mean_delta_per_nm[idx_of_interest]
     ed_mean_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
     mean_ed = ed_std_delta_per_nm_of_interest
     # use SEM / STD?
-    n_bootstraps = 10
+    n_bootstraps = 250
     aa_per_nm = 3
-    error_ed = ed_mean_delta_per_nm_of_interest/np.sqrt(n_bootstraps)
+    error_ed = ed_mean_delta_per_nm_of_interest
     print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
           format(mean_ed/aa_per_nm,error_ed/aa_per_nm))
     # get the maximim stiffness, in pN/nm
@@ -594,6 +599,7 @@ def run():
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     force_recalculation = False
+    debugging = False
     GenUtilities.ensureDirExists(flickering_dir)
     bin_size_meters = 0.4e-9
     slice_area = GenerateLandscapes.slice_area
@@ -621,16 +627,18 @@ def run():
         for o in tmp.originals:
             set_landscape_to_slice(o, a)
         helical_data.append(tmp)
+    # print the information we need
+    print_info(helical_data)
     # make the pedagogy plot
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the 'gallery' plots.
     make_gallery_plot(areas,helical_data)
     # make the SI / second derivative plot
     make_second_deriv_plot(helical_data[0],landscape_kwargs()[0]) 
-    # print the information we need
-    print_info(helical_data)
     # make the heatmaps/energy landscape plots
-    make_detalied_plots(helical_data,areas)
+    # (note: this is just for debugging)
+    if (debugging):
+        make_detalied_plots(helical_data,areas)
 
 
     

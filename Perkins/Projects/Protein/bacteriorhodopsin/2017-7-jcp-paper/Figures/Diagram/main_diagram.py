@@ -277,8 +277,8 @@ def run():
     PlotUtilities.label_tom(fig,loc=loc,labels=PlotUtilities._lowercase)
     # image apparently messed up (usually fine) bbox_inches
     subplots_adjust = dict(hspace=0.07,wspace=0.15,left=0.03,top=0.95)
-    PlotUtilities.save_png_and_svg(fig,"diagram",bbox_inches=None,tight=True,
-                                   subplots_adjust=subplots_adjust)
+    PlotUtilities.save_tom(fig,"Fig1_diagram",bbox_inches=None,tight=True,
+                            subplots_adjust=subplots_adjust)
     
     
 if __name__ == "__main__":
