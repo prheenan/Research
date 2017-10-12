@@ -173,8 +173,9 @@ def run():
                                   xy=(inf.res_nm,min(y_plot)*1.2),
                                   color='r',size=6,
                                   xycoords='data')
+    save_name = "./FigS2_filtering"                                  
     plt.xlim(xlim)
-    PlotUtilities.save_tom(fig,"./FigS2_filtering",pad_inches=0.02)
+    PlotUtilities.save_tom(fig,save_name,pad_inches=0.02)
 
 if __name__ == "__main__":
     run()

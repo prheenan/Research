@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import matplotlib as mpl
 
 sys.path.append("../")
 sys.path.append("../../../../../../../../")
@@ -367,8 +368,9 @@ def _second_deriv_plot(ax_heat,data):
     mean_second_deriv_pN_nm = mean_second_deriv_pN_nm[where_to_plot]
     stdev_second_deriv_pN_nm = stdev_second_deriv_pN_nm[where_to_plot]
     cantilever_stiffness_pN_per_nm = 25
-    label_cantlever = (r"$k_{\mathrm{cantilever}}\approx$" + \
-                        "{:d} pN/nm".format(cantilever_stiffness_pN_per_nm))
+    label_cantlever = (r"$\mathbf{k_{\mathrm{cantilever}}\approx}$\textbf{" + \
+                        "{:d}".format(cantilever_stiffness_pN_per_nm) + \
+                        r" pN/nm}")
     kw_stiff = dict(color='m',linestyle='--',linewidth=1.5)
     plt.axhline(cantilever_stiffness_pN_per_nm,
                 label=label_cantlever,**kw_stiff)
@@ -387,22 +389,27 @@ def _second_deriv_plot(ax_heat,data):
     jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=1.05,alpha=0.5,
                                    font_color='w',offset_bool=True,
                                    max_x=max_nm,box_height=0.05)
-    PlotUtilities.lazyLabel("Extension (nm)",
-                            r"$\frac{\partial^2{G}}{\partial q^2}$ (pN/nm)","",
+    stiffness = r"$\frac{\huge{\partial}^2{G}}{\huge{\partial}q^2}$" +\
+                r"\textbf{ (pN/nm)}"                         
+    PlotUtilities.lazyLabel(r"\textbf{Extension (nm)}",
+                            stiffness,"",
                             legend_kwargs=dict(handlelength=2,
                                                handletextpad=0.1),
                             axis_kwargs=dict(fontsize=11),                                                
                             loc='upper left')   
 
+
 def make_second_deriv_plot(data_to_plot,kw):
     data = data_to_plot.generate_landscape_obj()
     # get the average and stdev of the second derivative
     # y is in units of N/m, convert to pN/nm (multiply by 1e3)
-
+    PlotUtilities.tom_text_rendering()
     fig = PlotUtilities.figure()
     ax_heat = plt.subplot(1,1,1)
     _second_deriv_plot(ax_heat,data)
     PlotUtilities.savefig(fig,"./FigS3_stiffness.jpeg")
+    mpl.rc('text', usetex=False)                            
+    
     
 def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     heatmap_data = data_to_plot.heatmap_data
@@ -635,10 +642,10 @@ def run():
         for o in tmp.originals:
             set_landscape_to_slice(o, a)
         helical_data.append(tmp)
-    # print the information we need
-    print_info(helical_data)
     # make the SI / second derivative plot
     make_second_deriv_plot(helical_data[0],landscape_kwargs()[0])
+    exit(1)
+   
     # make the pedagogy plot
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the 'gallery' plots.
