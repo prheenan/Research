@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../")
 from GeneralUtil.python import PlotUtilities,CheckpointUtilities
-from GeneralUtil.python.Plot import Scalebar,Inset
+from GeneralUtil.python.Plot import Scalebar,Inset,Record
 from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
     InverseWeierstrass,WeierstrassUtil
 from GeneralUtil.python.IgorUtil import SavitskyFilter
@@ -28,10 +28,10 @@ def run():
     # really A(q=z-A'/k)
     A_q_orig = landscape.A_z
     kT_to_kcal_mol = 0.593
-    A_q_kT_orig = (A_q_orig * landscape.beta * kT_to_kcal_mol)
+    A_q_kcal_orig = (A_q_orig * landscape.beta * kT_to_kcal_mol)
     n_points = 500
     A_q = SavitskyFilter(A_q_orig,n_points)
-    A_q_kT = SavitskyFilter(A_q_kT_orig,n_points)
+    A_q_kcal_per_mol = SavitskyFilter(A_q_kcal_orig,n_points)
     q = SavitskyFilter(landscape.q,n_points)
     # filter the landscapes 
     # numerically differentiate
@@ -51,7 +51,7 @@ def run():
     # # plot just A(q)
     ax_A_q = plt.subplot(3,1,1)
     color_energy = 'c'
-    plt.plot(x_plot,A_q_kT,color=color_energy,label="$A$")
+    plt.plot(x_plot,A_q_kcal_per_mol,color=color_energy,label="$A$")
     PlotUtilities.lazyLabel("","$A$($q$) ("+ energy_units + ")","",
                             loc=(0.5,0.8),frameon=True)
     PlotUtilities.set_legend_kwargs(ax=ax_A_q,background_color='w',linewidth=0)
@@ -59,7 +59,7 @@ def run():
     x0 = 14.5
     dx = 0.010
     xlim = [x0,x0+dx]
-    zoom_x,zoom_y,ylim = Inset.slice_by_x(x_plot,A_q_kT,xlim)
+    zoom_x,zoom_y,ylim = Inset.slice_by_x(x_plot,A_q_kcal_per_mol,xlim)
     # add in some extra space for the scalebar 
     ylim_fudge = 0.1
     dy = ylim[1] - ylim[0]
@@ -71,7 +71,7 @@ def run():
                               remove_ticks=True)
     mark_inset(parent_axes=ax_A_q,inset_axes=axins,loc1=2, loc2=3,
                ec="r")
-    axins.plot(x_plot, A_q_kT,linewidth=1,color=color_energy)    
+    axins.plot(x_plot, A_q_kcal_per_mol,linewidth=1,color=color_energy)    
     # add in a scale bar for the inset. x goes from nm to pm (factor of 1000)
     unit_kw_x = dict(fmt="{:.0f}",value_function=lambda x: x*1000)
     common = dict(line_kwargs=dict(linewidth=1.0,color='k'))
@@ -91,9 +91,11 @@ def run():
     # # plot A_z_dot 
     ax_deriv_both = plt.subplot(3,1,2)
     # divide to get uN
-    plt.plot(x_plot, landscape_deriv_plot * 1e9,color='k',
+    deriv_mucal = landscape_deriv_plot * 1e9
+    weighted_mucal = weighted_dA * 1e9
+    plt.plot(x_plot,deriv_mucal,color='k',
              label=label_finite)
-    plt.plot(x_plot, weighted_dA * 1e9,label=label_work,**kw_weighted)
+    plt.plot(x_plot,weighted_mucal,label=label_work,**kw_weighted)
     PlotUtilities.lazyLabel("",
                             "$dA(q)$ ($\mathrm{\mu}$cal/mol)",
                             "$\Downarrow$ Calculate derivative",
@@ -108,8 +110,21 @@ def run():
                             title_last,**lazy_common)
     PlotUtilities.label_tom(fig,axis_func=lambda ax: [ax[0]] + ax[2:],
                             loc=(-0.1,1.05),labels=PlotUtilities._lowercase)
-    PlotUtilities.save_tom(fig,"./FigS1_finite_differences",
+    save_name = "./FigS1_do_not_use_finite_differences"                         
+    PlotUtilities.save_tom(fig,save_name,
                           subplots_adjust=dict(hspace=0.2))
+    x_save = [x_plot]
+    y_save = [A_q_kcal_orig,A_q_kcal_per_mol,deriv_mucal,weighted_mucal,
+              weighted_deriv_plot]
+    e_units = "(kcal/mol)"       
+    record_kw = dict(x=x_save,y=y_save,save_name=save_name,
+                     x_name="Extension",x_units="nm",
+                     y_name=["A(q)","Filtered A(q)","dA (finite diff)",
+                             "dA (weighted method)","dA/dq"],
+                     y_units=[e_units,e_units,"micro-cal/mol","micro-cal/mol",
+                              "pN"])
+    Record.save_csv(record_kw)                          
+    # save out the data                           
 
 if __name__ == "__main__":
     run()

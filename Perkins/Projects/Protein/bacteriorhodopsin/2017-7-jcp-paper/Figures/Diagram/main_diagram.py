@@ -14,7 +14,7 @@ sys.path.append("../../../../../../../../")
 sys.path.append("../")
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
-from GeneralUtil.python.Plot import Scalebar,Annotations
+from GeneralUtil.python.Plot import Scalebar,Annotations,Record
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
@@ -99,9 +99,10 @@ def run():
     dict_plot = dict(n_filter_points=2000,
                      style_data=dict(color=color_data,alpha=alpha_data,
                                      linewidth=0.5,linestyle='-'))
-    x_full_plot = x_func(example_plot)                                     
-    FEC_Plot._fec_base_plot(x_full_plot,y_func(example_plot),
-                            **dict_plot)
+    x_full_plot = x_func(example_plot)                           
+    force_full_plot = y_func(example_plot)
+    x_fec_filt,force_fec_filt = \
+        FEC_Plot._fec_base_plot(x_full_plot,force_full_plot,**dict_plot)
     PlotUtilities.tom_ticks(ax=ax_example,num_major=5,change_x=False)    
     PlotUtilities.tom_ticks(ax=ax_example,num_major=4,change_y=False)
     ax_example.axhline(0,linestyle='--',color='k')
@@ -129,6 +130,14 @@ def run():
                                       ax=ax_example,x_on_top=True)    
     # add in the velocity annotation (in nm/s, from m/s)
     velocity_annotate(ax=ax_example,v=vel_m_per_s*1e9)
+    # save out the fec
+    x_save = [x_full_plot,x_fec_filt]
+    y_save = [force_full_plot,force_fec_filt]
+    record_kw = dict(x=x_save,y=y_save,save_name="./Fig1b_diagram",
+                     x_name=["Extension","Extension (filtered)"],x_units="nm",
+                     y_name=["Force","Force (filtered)"],
+                     y_units="pN")
+    Record.save_csv(record_kw)    
     # # plot all the zoomed regions 
     offsets_x = [0.8]
     offsets_y = [0.67]
@@ -140,7 +149,7 @@ def run():
         dict_tmp['style_data']['color'] = color[-1]
         time = r.Time
         force = y_func(r)
-        FEC_Plot._fec_base_plot(time,force,**dict_tmp)
+        _,force_filtered = FEC_Plot._fec_base_plot(time,force,**dict_tmp)
         # add eyeballed lines to the data
         slope_1 = 10/3e-3
         slope_2 = 10/3.6e-3
@@ -183,11 +192,19 @@ def run():
         PlotUtilities.x_label_on_top(ax_tmp)        
         PlotUtilities.lazyLabel("","","")        
         PlotUtilities.xlabel("Time")
+        # save out the data for this plot 
+        x_save = [time]
+        y_save = [force,force_filtered]
+        record_kw = dict(x=x_save,y=y_save,save_name="./Fig1c_diagram",
+                         x_name="Times",x_units="s",
+                         y_name=["Force","Force (filtered)"],
+                         y_units="pN")
+        Record.save_csv(record_kw)
     # read in the data ...
     base_re = "./recreation_figure_data/"
     # # Figure 1D from the science paper 
     ax_fec_ensemble = plt.subplot(top_spec[1,0])
-    fig4d = figure_recreation.save_output(base_re,"Fig1D.csv")      
+    fig4d = figure_recreation.save_output(base_re,"Fig1C.csv")      
     ylim = [0,160]
     xlim = [18,32]
     for wlc_x,wlc_y in zip(fig4d.wlc_x,fig4d.wlc_y):
@@ -209,7 +226,7 @@ def run():
     PlotUtilities.no_y_label(ax=ax_fec_ensemble)  
     # # Figure 4B from the science paper
     color_equil = 'rebeccapurple'
-    fig4ab = figure_recreation.save_output(base_re,"Fig4AB.csv")  
+    fig4ab = figure_recreation.save_output(base_re,"Fig1D.csv")  
     ax_time = plt.subplot(top_spec[1,1])
     min_x_new = 1.6233
     max_x_new = 1.6268
@@ -236,7 +253,7 @@ def run():
     PlotUtilities.lazyLabel("Time","Force","")
     velocity_annotate(ax=ax_time,v=0,color=color_equil)
     # # figure 4C from the science paper -- the pfold energy landscape 
-    fig4c = figure_recreation.save_output(base_re,"Fig4C.csv")
+    fig4c = figure_recreation.save_output(base_re,"Fig1E.csv")
     ax_equil = plt.subplot(top_spec[1,2])
     # data is in kJ/mol, communication with hao, 2017-9-14
     fig4c.energy /= 4.2

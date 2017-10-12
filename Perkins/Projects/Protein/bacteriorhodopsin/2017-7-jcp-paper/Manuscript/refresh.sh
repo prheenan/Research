@@ -50,6 +50,7 @@ fi
 # copy all the (newly made) figures 
 cp_files "$figure_base_dir" "*.svg" "$out_dir"
 cp_files "$figure_base_dir" "*.jpeg" "$out_dir"
+cp_files "$figure_base_dir" "*.csv" "$out_dir"
 # re-make the docx file. 
 
 

@@ -173,7 +173,7 @@ def run():
                                   xy=(inf.res_nm,min(y_plot)*1.2),
                                   color='r',size=6,
                                   xycoords='data')
-    save_name = "./FigS2_filtering"
+    save_name = "./FigS2_motivating_filtering_choice"
     x_save = [inf.bin_sizes_nm]
     y_save = [inf.average_error_per_bin_plot,
               inf.stdev_stdev_energy_per_bin_plot]

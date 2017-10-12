@@ -69,16 +69,16 @@ def run():
     """
     base = "./recreation_figure_data/"
     # # load in 1D ...
-    obj = save_output(base=base,input_file="Fig1D.csv",
+    obj = save_output(base=base,input_file="Fig1C.csv",
                       col_func = convert_fig1d)
     # # load in figure 4A,base
     # only load the third and fourth columns (2/3 index)
     func_4 = lambda cols: fig4ab( *([col for col in cols.T]))
-    obj = save_output(base=base,input_file="Fig4AB.csv",
+    obj = save_output(base=base,input_file="Fig1D.csv",
                       col_func = func_4,skip_header=1,
                       delimiter=None)
     # # load in figure 4C
-    obj = save_output(base=base,input_file="Fig4C.csv",
+    obj = save_output(base=base,input_file="Fig1E.csv",
                       col_func = lambda cols: fig4c(*[c for c in cols.T]))
 
 if __name__ == "__main__":
