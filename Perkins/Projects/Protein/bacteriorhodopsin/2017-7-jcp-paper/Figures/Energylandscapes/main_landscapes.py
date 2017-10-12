@@ -389,8 +389,8 @@ def _second_deriv_plot(ax_heat,data):
     jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=1.05,alpha=0.5,
                                    font_color='w',offset_bool=True,
                                    max_x=max_nm,box_height=0.05)
-    numer = r"{\mathbf{\boldsymbol{\large \partial^2} \boldsymbol{\mathbf{G}}}}"
-    denom = r"{\mathbf{\boldsymbol{\large \partial}\boldsymbol{\mathbf{q}^2}}}"
+    numer = r"{\mathbf{\boldsymbol{\mathlarger{\partial}^2} \boldsymbol{\mathbf{G}}}}"
+    denom = r"{\mathbf{\boldsymbol{\mathlarger{\partial}}\boldsymbol{\mathbf{q}^2}}}"
     stiffness = r"$\frac" + numer + denom + r"$\textbf{ (pN/nm)}"                         
     PlotUtilities.lazyLabel(r"\textbf{Extension (nm)}",
                             stiffness,"",
