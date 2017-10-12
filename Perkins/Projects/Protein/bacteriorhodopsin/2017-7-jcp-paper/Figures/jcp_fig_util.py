@@ -12,10 +12,13 @@ import sys
 sys.path.append("../../../../../../../")
 from GeneralUtil.python.Plot import Annotations
          
-def regions_and_colors(subtract_min=False):
+def regions_and_colors(subtract_min=False,first_element_is_all=False):
+    """
+    returns: regions (in nm) and colords as a list of <region,color> tuples
+    """
     adhesion_min = 17
     ed_max = 32
-    cd_max = 48
+    cd_max = 50
     a_max = 65
     if (subtract_min):
         offset = adhesion_min
@@ -24,6 +27,8 @@ def regions_and_colors(subtract_min=False):
     regions_colors = [ [[adhesion_min-offset,ed_max-offset],'royalblue'],
                        [[ed_max-offset,cd_max-offset],'orangered'],
                        [[cd_max-offset,a_max-offset],'g']]
+    if (first_element_is_all):
+        regions_colors = [[[adhesion_min-offset,a_max-offset],'k']] + regions_colors
     return regions_colors                       
                    
                    

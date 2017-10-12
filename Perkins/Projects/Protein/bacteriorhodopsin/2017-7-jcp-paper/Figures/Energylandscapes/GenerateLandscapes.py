@@ -122,10 +122,10 @@ class landscape_data(object):
         self._extensions_m = np.linspace(min_v,max_v,n*10,endpoint=True)
         # save the origial (ie: same sized grid)
         self._extensions_m_original = np.linspace(min_v,max_v,n,endpoint=True)
-        self._energies = [l.spline_fit.y(self._extensions_m)
+        self._energies = [l.spline_fit.y(self._extensions_m + l.offset)
                           for l in landscape_objs]
-        self._energies_orig = [l.spline_fit.y(self._extensions_m) for l in
-                               original_data]
+        self._energies_orig = [l.spline_fit.y(self._extensions_m + l.offset)
+                               for l in original_data]
         # align all the arbitrary zeros
         self._energies = [e - min(e) for e in self._energies]
         self._energies_orig = [e - min(e) for e in self._energies_orig]
@@ -199,7 +199,7 @@ def grid_interpolate_arrays(x_arr,y_arr,x_grid):
 def _get_landscapes(objects,n_bootstraps,n_bins,cache_dir):
     n = objects[0].Force.size
     n_objs = len(objects)
-    n_min = int(np.ceil(0.8 * n))
+    n_min = n
     for i in range(n_bootstraps):
         # keep looping if > X% of the data is corrupted
         while (True):
@@ -234,14 +234,13 @@ def get_area_bounds(objs,area):
     return to_ret
     
     
-def filter_landscapes(landscapes,n_bins,bins=None,**kw):
+def filter_landscapes(landscapes,n_bins,**kw):
     # zero everything; don't care about absolute offsets.
-    min_v = max([min(l.q) for l in landscapes])
-    max_v = min([max(l.q) for l in landscapes])
-    if (bins is None):
-        bins = np.linspace(min_v,max_v,n_bins)
-    to_ret = [WeierstrassUtil._filter_single_landscape(l,bins,**kw)
-              for l in landscapes]
+    to_ret = []
+    for l in landscapes:
+        bins = np.linspace(min(l.q), max(l.q), n_bins)
+        tmp = WeierstrassUtil._filter_single_landscape(l,bins,**kw)
+        to_ret.append(tmp)
     return to_ret
 
 def heatmap(x,y,bins):                       
@@ -356,14 +355,14 @@ def get_cacheable_data(areas,flickering_dir,cache_dir="./cache"):
     # get a generator (!) for all the raw data...
     data = CheckpointUtilities.multi_load(cache_dir="./raw_data/",
                                           load_func=functor,
-                                          force=False,
+                                          force=False,limit=1,
                                           name_func=name_func)      
     # POST: data_to_use[i] has the data for the spring constant i
     # POST: all data are sorted by spring constant
     data_lengths = []
     filtered_iwt = []
     originals = []
-    N_boostraps = 80
+    N_boostraps = 100
     skip = 0    
     for i,d in enumerate(data):
         data_lengths.append(len(d.data))

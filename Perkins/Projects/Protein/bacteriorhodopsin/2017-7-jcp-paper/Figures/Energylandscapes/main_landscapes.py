@@ -342,9 +342,10 @@ def plot_with_corrections(data):
                 to_second_deriv(f_mean(f_deriv))*convert]
     labels = kwargs_labels()
     kwargs = kwargs_correction()
-    # plot each
+    # plot each, zero out A(z)
+    energies[0] -= np.min(energies[0])
     for i,energy_rel in enumerate(energies):
-        plt.plot(ext_nm,energy_rel-min(energy_rel),label=labels[i],**kwargs[i])
+        plt.plot(ext_nm,energy_rel,label=labels[i],**kwargs[i])
     
 def _second_deriv_plot(ax_heat,data):
     units_y = lambda x: x  * (1e12/1e9)
@@ -535,7 +536,7 @@ def print_info(helical_data):
     ed_mean_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
     mean_ed = ed_std_delta_per_nm_of_interest
     # use SEM / STD?
-    n_bootstraps = 500
+    n_bootstraps = 10
     aa_per_nm = 3
     error_ed = ed_mean_delta_per_nm_of_interest/np.sqrt(n_bootstraps)
     print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
@@ -557,6 +558,25 @@ def print_info(helical_data):
     print("The min ED energy per nm is {:.2f}/mol".\
           format(min(ed_mean_delta_per_nm)))
 
+def set_landscape_to_slice(landscape,area):
+    offset = min(landscape.q)
+    landscape.q -= offset
+    landscape.offset = offset
+    # determine which indices we want
+    min_v, max_v = area.ext_bounds_nm_rel * 1e-9
+    slice_idx = np.where((landscape.q >= min_v) & \
+                         (landscape.q <= max_v))[0]
+    assert slice_idx.size > 0
+    sanit = lambda x: x[slice_idx].copy()
+    # zero the energy
+    landscape.energy = sanit(landscape.energy)
+    min_e = min(landscape.energy)
+    landscape.energy -= min_e
+    landscape.A_z = sanit(landscape.A_z)
+    landscape.A_z_dot = sanit(landscape.A_z_dot)
+    landscape.one_minus_A_z_ddot_over_k = \
+        sanit(landscape.one_minus_A_z_ddot_over_k)
+    landscape.q = sanit(landscape.q)
 
 def run():
     """
@@ -575,19 +595,13 @@ def run():
     force_recalculation = False
     GenUtilities.ensureDirExists(flickering_dir)
     bin_size_meters = 0.4e-9
-    # write down the areas we want to look at 
-    adhesion_min = 17e-9
-    ed_max = 32e-9
-    cd_max = 48e-9
-    a_max = 70e-9
     slice_area = GenerateLandscapes.slice_area
-    kw = dict(min_v_m=adhesion_min)
-    areas = [\
-        slice_area([adhesion_min,a_max],"Full (no adhesion)",**kw),
-        slice_area([adhesion_min,ed_max],"Helix ED",**kw),
-        slice_area([ed_max,cd_max],"Helix CB",**kw),
-        slice_area([cd_max,a_max],"Helix A",**kw),
-        ]    
+    # convert the regions to nm
+    reg_and_c = jcp_fig_util.regions_and_colors(first_element_is_all=True)
+    regions = [np.array(r[0])*1e-9 for r in reg_and_c]
+    kw = dict(min_v_m=np.min(regions))
+    labels = ["Full (no adhesion)","Helix ED","Helix CB","Helix A"]
+    areas = [slice_area(r,l,**kw) for r,l in zip(regions,labels)]
     for a in areas:
         a.set_num_bins_by_bin_in_meters(bin_size_meters)         
     # read in the data 
@@ -599,23 +613,12 @@ def run():
     helical_data = []
     for a in areas:
         tmp = copy.deepcopy(data_to_analyze)
-        l = copy.deepcopy(tmp.landscape[0][0])
-        l.q -= min(l.q)
-        min_v,max_v = a.ext_bounds_nm_rel*1e-9
-        slice_idx = np.where( (l.q >= min_v) & (l.q <= max_v))[0]
-        assert slice_idx.size > 0
-        sanit = lambda x: x[slice_idx].copy()        
         flat_list = [tmp_landscape for list_v in tmp.landscape 
                      for tmp_landscape in list_v]
         for l in flat_list:
-            l.q = sanit(l.q)
-            # zero the energy
-            l.energy = sanit(l.energy)
-            min_e = min(l.energy)
-            l.energy -=  min_e
-            l.A_z = sanit(l.A_z)
-            l.A_z_dot = sanit(l.A_z_dot)
-            l.one_minus_A_z_ddot_over_k = sanit(l.one_minus_A_z_ddot_over_k)   
+            set_landscape_to_slice(l, a)
+        for o in tmp.originals:
+            set_landscape_to_slice(o, a)
         helical_data.append(tmp)
     # make the pedagogy plot
     make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
