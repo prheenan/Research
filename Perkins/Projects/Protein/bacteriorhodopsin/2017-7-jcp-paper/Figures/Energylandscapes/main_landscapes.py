@@ -16,7 +16,7 @@ import jcp_fig_util,GenerateLandscapes
 from GenerateLandscapes import slice_area,cacheable_data
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
-from GeneralUtil.python.Plot import Scalebar,Annotations 
+from GeneralUtil.python.Plot import Scalebar,Annotations,Record
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import \
     FEC_Util,FEC_Plot
 from Research.Perkins.AnalysisUtil.EnergyLandscapes import IWT_Util,IWT_Plot
@@ -36,8 +36,10 @@ def make_heatmap(histogram, x_edges,y_edges,kw_heatmap):
     X,Y = np.meshgrid(x_edges,y_edges)
     X -= np.min(X)
     plt.gca().pcolormesh(X,Y,histogram,**kw_heatmap)
+    # last bin in x and y is the right e
+    return X[:-1,:-1],Y[:-1,:-1],histogram
         
-def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
+def plot_landscape(data,xlim,save_name,kw_landscape=dict(),plot_derivative=True,
                    zero_q=True,
                    label_deltaG = PlotUtilities.variable_string("\Delta G")):
     landscape_kcal_per_mol = data.mean_landscape_kcal_per_mol
@@ -94,12 +96,15 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
         idx= np.where( (extension_nm > xlim[0]) & (extension_nm < xlim[1]))
     else:
         idx =np.arange(extension_nm.size)
+    ext_plot = extension_nm[idx]
+    landscape_plot = landscape_kcal_per_mol[idx]
+    landscape_lower,landscape_upper = landscape_lower[idx],landscape_upper[idx]
     # plot the landscape and its standard deviation
-    ax_energy.plot(extension_nm[idx],landscape_kcal_per_mol[idx],
+    ax_energy.plot(ext_plot,landscape_plot,
                    label=label_deltaG,zorder=10,**kw_landscape)
-    ax_energy.fill_between(x=extension_nm[idx],
-                           y1=landscape_lower[idx],
-                           y2=landscape_upper[idx],
+    ax_energy.fill_between(x=ext_plot,
+                           y1=landscape_lower,
+                           y2=landscape_upper,
                            alpha=0.15,zorder=10,**kw_landscape)      
     # the energy y label should be rotated if it is on the right                            
     rotation = -90    
@@ -114,21 +119,39 @@ def plot_landscape(data,xlim,kw_landscape=dict(),plot_derivative=True,
     if (plot_derivative):                           
         # plot the energy delta and its bounds, based on the bounds on the
         #        landscape    
-        ax_delta.plot(extension_nm[idx],
-                      delta_landscape_kcal_per_mol_per_amino_acid[idx],
+        delta_plot = delta_landscape_kcal_per_mol_per_amino_acid[idx]
+        delta_lower,delta_upper = \
+            lower_delta_landscape[idx],upper_delta_landscape[idx]
+        ax_delta.plot(ext_plot,
+                      delta_plot,
                       color=difference_color,linestyle='-',linewidth=1.5)
         PlotUtilities.color_axis_ticks(color=landscape_color,ax=ax_energy,
                                        spine_name='right')   
-        ax_delta.fill_between(x=extension_nm[idx],
-                              y1=lower_delta_landscape[idx],
-                              y2=upper_delta_landscape[idx],
+        ax_delta.fill_between(x=ext_plot,
+                              y1=delta_lower,
+                              y2=delta_upper,
                               alpha=0.15,color=difference_color)
         PlotUtilities.tom_ticks(ax=ax_delta,change_x=False,num_major=4)
+    x_save = [ext_plot]
+    y_save = [landscape_plot,landscape_lower,landscape_upper]
+    y_name = ["G(q)","G(q) (upper bound)","G(q) (lower bound)"]
+    y_units = ["kcal/mol" for _ in y_name]
+    if (plot_derivative):
+        y_deriv = [delta_plot,delta_lower,delta_upper]
+        # add/append everything 
+        y_save = y_save + y_deriv
+        y_units = y_units + ["kcal/(mol*nm)" for _ in y_deriv]
+        y_name = y_name + ["dG/dq","dG/dq (lower)","dG/dq (upper)"]
+    record_kw = dict(x=x_save,y=y_save,save_name=save_name,
+                     x_name="Extension",x_units="nm",
+                     y_name=y_name,
+                     y_units=y_units)
+    Record.save_csv(record_kw)        
     return to_ret
               
 def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     ax_heat = plt.gca()
-    make_heatmap(*heatmap_data,kw_heatmap=kw_heatmap)
+    x,y,hist = make_heatmap(*heatmap_data,kw_heatmap=kw_heatmap)
     PlotUtilities.lazyLabel("","Force (pN)","")
     # make a second x axis for the number of ammino acids 
     xlim_fec = plt.xlim()
@@ -136,9 +159,10 @@ def heatmap_plot(heatmap_data,amino_acids_per_nm,kw_heatmap=dict()):
     tick_kwargs = dict(axis='both',color='w',which='both')                                 
     ax_heat.tick_params(**tick_kwargs)                                         
     plt.xlim(xlim_fec)
+    return x,y,hist
     
-def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
-                          xlim=None,zero_q=True):
+def create_landscape_plot(data_to_plot,save_name,kw_heatmap=dict(),
+                          kw_landscape=dict(),xlim=None,zero_q=True):
     """
     Creates a plot of
     """
@@ -151,7 +175,7 @@ def create_landscape_plot(data_to_plot,kw_heatmap=dict(),kw_landscape=dict(),
     # # plot the energy landscape...
     ax_energy = plt.subplot(2,1,2)    
     ax1,ax2 = plot_landscape(data_landscape,xlim,kw_landscape=kw_landscape,
-                             zero_q=zero_q)
+                             zero_q=zero_q,save_name=save_name)
     if (xlim is None):
         xlim = ax1.get_xlim()
         xlim = np.maximum(0,xlim)
@@ -185,7 +209,9 @@ def make_detalied_plots(data_to_analyze,areas):
         fig = PlotUtilities.figure((3.25,5))
         mdata = data_to_analyze[i]
         example = mdata.landscape[0]
-        ax = create_landscape_plot(mdata,xlim=None,zero_q=False,**kwargs[i])
+        ax = create_landscape_plot(mdata,xlim=None,zero_q=False,
+                                   save_name="detiailed_{:d}".format(i),
+                                   **kwargs[i])
         ax_heat = ax[0]
         PlotUtilities.no_x_label(ax_heat)
         ax_heat.relim()
@@ -220,6 +246,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
     xlims = [ [None,None],[None,None],[None,15]    ]   
     arrow_x = [0.65,0.67,0.35]
     arrow_y = [0.60,0.55,0.33]
+    save_fmt = ["./Fig3_iwt_diagram_" + e for e in ["ED","CB","A"]]
     for i,a in enumerate(helical_areas):
         data = helical_data[i]
         kw_tmp = helical_kwargs[i]
@@ -231,6 +258,7 @@ def helical_gallery_plot(helical_areas,helical_data,helical_kwargs):
         color = kw_landscape['color']      
         ax_1, ax_2 = plot_landscape(data_landscape,xlim=xlims[i],
                                     kw_landscape=kw_landscape,
+                                    save_name=save_fmt[i],
                                     plot_derivative=True)
         first_axs.append(ax_1)                                 
         second_axs.append(ax_2)                    
@@ -324,7 +352,7 @@ def kwargs_labels():
 
 
             
-def plot_with_corrections(data):
+def plot_with_corrections(data,save_name):
     ext_nm = 1e9 * data._extensions_m_original.copy()
     ext_nm -= min(ext_nm)
     convert = data.from_Joules_to_kcal_per_mol()
@@ -347,6 +375,14 @@ def plot_with_corrections(data):
     energies[0] -= np.min(energies[0])
     for i,energy_rel in enumerate(energies):
         plt.plot(ext_nm,energy_rel,label=labels[i],**kwargs[i])
+    if (save_name is None):
+        return
+    # POST: want to save
+    record_kw = dict(x=ext_nm,y=energies,save_name=save_name,
+                     x_name="Extension",x_units="nm",
+                     y_name=["A(z)","First deriv term","Second deriv term"],
+                     y_units="kcal/mol")
+    Record.save_csv(record_kw)              
     
 def _second_deriv_plot(ax_heat,data):
     units_y = lambda x: x  * (1e12/1e9)
@@ -397,7 +433,14 @@ def _second_deriv_plot(ax_heat,data):
                             legend_kwargs=dict(handlelength=2,
                                                handletextpad=0.1),
                             axis_kwargs=dict(fontsize=11),                                                
-                            loc='upper left')   
+                            loc='upper left')
+    record_kw = dict(x=q_nm,
+                     y=[mean_second_deriv_pN_nm,stdev_second_deriv_pN_nm],
+                     save_name="./FigS3_stiffness",
+                     x_name="Extension",x_units="nm",
+                     y_name=["Mean stifness","Stiffness stdev"],
+                     y_units="pN/nm")
+    Record.save_csv(record_kw)
 
 
 def make_second_deriv_plot(data_to_plot,kw):
@@ -418,8 +461,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     fig = PlotUtilities.figure((3.25,5))
     # # ploy the heat map 
     ax_heat = plt.subplot(3,1,1)
-    heatmap_plot(heatmap_data,data.amino_acids_per_nm(),
-                 kw_heatmap=kw['kw_heatmap'])
+    x,y,heat = heatmap_plot(heatmap_data,data.amino_acids_per_nm(),
+                            kw_heatmap=kw['kw_heatmap'])
     xlim_fec = [0,55]
     PlotUtilities.no_x_label(ax_heat)    
     ax_heat.set_ylim([0,150])
@@ -442,9 +485,15 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
                                       y_kwargs=y_heat_kw)
     jcp_fig_util.add_helical_boxes(ax=ax_heat,ymax_box=0.9,alpha=1.0,
                                    font_color='w',offset_bool=True)
+    record_kw = dict(x=[x.flatten(),y.flatten()],y=heat.flatten(),
+                     save_name="./Fig2a_iwt_diagram",
+                     x_name="Extension",x_units=["nm","pN"],
+                     y_name=["Count"],
+                     y_units=["N"])
+    Record.save_csv(record_kw)
     # # plot the energy landscape...
     ax_correction = plt.subplot(3,1,2)    
-    plot_with_corrections(data)
+    plot_with_corrections(data,save_name="./Fig2b_iwt_diagram")
     PlotUtilities.no_x_label(ax_correction)
     PlotUtilities.lazyLabel("","Energy (kcal/mol)","")
     ax_correction.set_xlim(xlim_fec)            
@@ -459,7 +508,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     # make the inset plot 
     axins = zoomed_inset_axes(ax_correction, zoom=2.25, loc=2,
                               borderpad=1.2) 
-    plot_with_corrections(data)
+    plot_with_corrections(data,save_name=None)
     xlim_box = [-1,6]
     ylim_box = [-2,29]
     plt.xlim(xlim_box)
@@ -503,7 +552,8 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     axins.plot([xlim[0],xlim[0]+fudge],[0,0],color='k',linewidth=0.8)
     ax_energy = plt.subplot(3,1,3)    
     plot_landscape(data,xlim_fec,kw_landscape=kw['kw_landscape'],
-                   plot_derivative=False,label_deltaG=" ")
+                   plot_derivative=False,label_deltaG=" ",
+                   save_name="./Fig2c_iwt_diagram")
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=offset_y_pedagogy,
