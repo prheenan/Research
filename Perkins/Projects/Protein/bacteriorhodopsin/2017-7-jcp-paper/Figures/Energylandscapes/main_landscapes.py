@@ -564,10 +564,11 @@ def set_landscape_to_slice(landscape,area):
     landscape.offset = offset
     # determine which indices we want
     min_v, max_v = area.ext_bounds_nm_rel * 1e-9
-    slice_idx = np.where((landscape.q >= min_v) & \
-                         (landscape.q <= max_v))[0]
+    n_points = area.n_bins
+    slice_idx = np.where((landscape.q >= min_v))[0]
     assert slice_idx.size > 0
-    sanit = lambda x: x[slice_idx].copy()
+    slice_i = slice_idx[0]
+    sanit = lambda x: x[slice_i:slice_i+n_points].copy()
     # zero the energy
     landscape.energy = sanit(landscape.energy)
     min_e = min(landscape.energy)

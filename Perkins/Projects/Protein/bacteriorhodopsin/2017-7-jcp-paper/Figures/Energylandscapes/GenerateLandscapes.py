@@ -355,14 +355,14 @@ def get_cacheable_data(areas,flickering_dir,cache_dir="./cache"):
     # get a generator (!) for all the raw data...
     data = CheckpointUtilities.multi_load(cache_dir="./raw_data/",
                                           load_func=functor,
-                                          force=False,limit=1,
+                                          force=False,
                                           name_func=name_func)      
     # POST: data_to_use[i] has the data for the spring constant i
     # POST: all data are sorted by spring constant
     data_lengths = []
     filtered_iwt = []
     originals = []
-    N_boostraps = 100
+    N_boostraps = 10
     skip = 0    
     for i,d in enumerate(data):
         data_lengths.append(len(d.data))
