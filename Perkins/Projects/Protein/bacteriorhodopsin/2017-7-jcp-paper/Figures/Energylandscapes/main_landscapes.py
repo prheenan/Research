@@ -535,15 +535,20 @@ def print_info(helical_data):
     # (top of helix), so that is a good guess (Yu, 2017, SI, Table S1)
     # based on FigS2, the extension change is about 0.5...
     delta_from_max = 0.5
+    # we care about the 1nm extension change
+    delta_nm_transition = 1
     x_of_interest = ext_nm[np.argmax(ed_mean_delta_per_nm)] + delta_from_max
+    xf_of_interest = x_of_interest + delta_nm_transition
     idx_of_interest = np.argmin(abs(ext_nm - x_of_interest))
-    ed_std_delta_per_nm_of_interest = ed_mean_delta_per_nm[idx_of_interest]
-    ed_mean_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
-    mean_ed = ed_std_delta_per_nm_of_interest
+    idx_f_of_interest = np.argmin(abs(ext_nm - xf_of_interest))
+    ed_mean_delta_per_nm_of_interest = \
+        np.mean(ed_mean_delta_per_nm[idx_of_interest:idx_f_of_interest])
+    ed_std_delta_per_nm_of_interest = ed_std_delta_per_nm[idx_of_interest]
+    mean_ed = ed_mean_delta_per_nm_of_interest
     # use SEM / STD?
     n_bootstraps = 250
     aa_per_nm = 3
-    error_ed = ed_mean_delta_per_nm_of_interest
+    error_ed = ed_std_delta_per_nm_of_interest
     print("The top of the ED helix has energy {:.2f} +/- {:.2g} kcal/mol/aa".\
           format(mean_ed/aa_per_nm,error_ed/aa_per_nm))
     # get the maximim stiffness, in pN/nm
