@@ -10,9 +10,11 @@ import matplotlib.pyplot as plt
 import sys,cProfile,os,copy
 
 sys.path.append("../../../../../../../../../")
+sys.path.append("../../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,\
     FEC_Plot
 from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
+import Util
 
 def _check_data(*data):
     key = data[0]
@@ -29,9 +31,8 @@ def run():
     """
     Filters the input data to something manageable. 
     """
-    data_dir = "../../../Data/"
-    dir_raw = data_dir + "cache_raw/"
-    dir_filtered = data_dir + "cache_filtered/"
+    dir_raw = Util.cache_raw("../../../")
+    dir_filtered = Util.cache_filtered("../../../")
     out_dir = "./out/"
     NFilterPoints = 500
     GenUtilities.ensureDirExists(out_dir)
@@ -57,7 +58,6 @@ def run():
         PlotUtilities.lazyLabel("Time (s)","Force (N)","")
         out_name = out_dir + FEC_Util.fec_name_func(0,ex_filt) + ".jpeg"
         PlotUtilities.savefig(fig,out_name)
-        exit(1)
     
  
         

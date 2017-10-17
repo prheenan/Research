@@ -505,18 +505,10 @@ def GetFilteredForce(Obj,NFilterPoints=None,FilterFunc=SavitskyFilter):
     if (NFilterPoints is None):
         NFilterPoints = int(np.ceil(default_filter_pct*Obj.Force.size))
     ToRet = Obj._slice(slice(0,None,1))
-    ToRet.LowResData.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
-    try:
-        ToRet.LowResData.force = \
-            FilterFunc(ToRet.LowResData.force,nSmooth=NFilterPoints)
-    except AttributeError:
-        ToRet.LowResData.sep = FilterFunc(ToRet.LowResData.sep,\
-                                          nSmooth=NFilterPoints)
-    try:
-        ToRet.LowResData.set_z_sensor(FilterFunc(Obj.ZSnsr,
-                                                 nSmooth=NFilterPoints))
-    except AttributeError:
-        pass
+    ToRet.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
+    ToRet.Separation = FilterFunc(Obj.LowResData.sep,\
+                                  nSmooth=NFilterPoints)
+    ToRet.set_z_sensor(FilterFunc(Obj.ZSnsr,nSmooth=NFilterPoints))
     return ToRet
 
 def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,

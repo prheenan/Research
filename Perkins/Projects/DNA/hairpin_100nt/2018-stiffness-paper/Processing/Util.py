@@ -9,17 +9,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-def _cache_base():
-    return "../../Data/"
+def _cache_base(base_dots="../../"):
+    return "{:s}Data/".format(base_dots)
 
-def _data_dir():
-    return _cache_base() + "/Raw/"
+def _data_dir(*args,**kw):
+    return _cache_base(*args,**kw) + "/Raw/"
     
-def cache_raw():
-    return _cache_base() + "0_cache_raw/"
+def cache_raw(*args,**kw):
+    return _cache_base(*args,**kw) + "0_cache_raw/"
   
-def cache_filtered():
-    return _cache_base() + "1_cache_filtered/"
+def cache_filtered(*args,**kw):
+    return _cache_base(*args,**kw) + "1_cache_filtered/"
    
-def cache_retract(): 
-    return _cache_base() + "2_cache_retract/"
+def cache_retract(*args,**kw): 
+    return _cache_base(**kw) + "2_cache_retract/"

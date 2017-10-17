@@ -14,6 +14,9 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 # Arguments:
 #### Arg 1: Description
 files=`find ../ -name "*.py"`
+# remove all the old cache files...
+cache_files="../../Data/*cache*"
+rm -rf "$cache_files"
 for f in $files
     do
     file_name=`basename $f`
