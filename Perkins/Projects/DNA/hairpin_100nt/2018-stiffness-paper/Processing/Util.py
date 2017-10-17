@@ -22,4 +22,8 @@ def cache_filtered(*args,**kw):
     return _cache_base(*args,**kw) + "1_cache_filtered/"
    
 def cache_retract(*args,**kw): 
-    return _cache_base(**kw) + "2_cache_retract/"
+    return _cache_base(*args,**kw) + "2_cache_retract/"
+    
+def cache_sanitized(*args,**kw):
+    return _cache_base(*args,**kw) + "3_cache_sanitized/"
+    

@@ -27,20 +27,28 @@ def _check_data(*data):
             # POST: names match
     # POST: all sets match 
 
+def _m_sort(x):
+    """
+    sorts x by the name (assuming each element of x can be passed to
+    fec_name_func
+    """
+    return sorted(x,key=lambda e: FEC_Util.fec_name_func(0,e))
+    
+def sorted_load(directory,**kw):
+    return _m_sort(CheckpointUtilities.lazy_multi_load(directory,**kw))
+    
 def run():
     """
     Filters the input data to something manageable. 
     """
     dir_raw = Util.cache_raw("../../../")
-    dir_filtered = Util.cache_filtered("../../../")
+    dir_filtered = Util.cache_sanitized("../../../")
     out_dir = "./out/"
     NFilterPoints = 500
     GenUtilities.ensureDirExists(out_dir)
     # sort by the names...
-    m_sort = lambda x : sorted(x,key=lambda e: FEC_Util.fec_name_func(0,e))
-    examples_unfiltered = m_sort(CheckpointUtilities.lazy_multi_load(dir_raw))
-    examples_filtered = \
-        m_sort(CheckpointUtilities.lazy_multi_load(dir_filtered))
+    examples_unfiltered = sorted_load(dir_raw)
+    examples_filtered = sorted_load(dir_filtered)
     _check_data(examples_unfiltered,examples_filtered)
     for ex_raw,ex_filt in zip(examples_unfiltered,examples_filtered):
         fig = PlotUtilities.figure()
@@ -49,8 +57,7 @@ def run():
         plt.plot(ex_filt.Time,ex_filt.Force,color='r',label="filtered")
         PlotUtilities.lazyLabel("Time (s)","Force (N)","")
         plt.subplot(3,1,2)
-        FEC_Plot.FEC(ex_filt,PreProcess=True,NFilterPoints=1,
-                     PlotLabelOpts=dict(linewidth=0.5))   
+        plt.plot(ex_filt.Separation,ex_filt.Force)
         PlotUtilities.lazyLabel("","Force (pN)","")
         plt.subplot(3,1,3)                        
         FEC_Plot.FEC(ex_raw,PreProcess=True,NFilterPoints=NFilterPoints,
