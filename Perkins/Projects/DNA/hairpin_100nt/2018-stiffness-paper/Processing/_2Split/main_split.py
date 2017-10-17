@@ -15,7 +15,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import GenUtilities,CheckpointUtilities
 import Util
 
-def read_filter_and_decimate(input_dir,n_filter_points,n_decimate):
+def split(input_dir):
     """
     reads in the data, filters it, and decimates it 
     
@@ -30,23 +30,19 @@ def read_filter_and_decimate(input_dir,n_filter_points,n_decimate):
     examples = CheckpointUtilities.lazy_multi_load(input_dir)
     # filter (and decimate) the data as desired 
     for e in examples:
-        filtered = FEC_Util.GetFilteredForce(e,NFilterPoints=n_filter_points)
-        decimated_and_filtered = filtered._slice(slice(0,None,n_decimate))
-        yield decimated_and_filtered
+        approach,retract = FEC_Util.GetApproachRetract(e)
+        yield retract 
 
 def run():
     """
     Filters the input data to something manageable. 
     """
-    n_filter_points = 500
-    n_decimate = 50
-    input_dir = Util.cache_raw()
-    cache_dir = Util.cache_filtered()
+    input_dir = Util.cache_filtered()
+    cache_dir = Util.cache_retract()
     GenUtilities.ensureDirExists(cache_dir)
-    load_f = lambda: read_filter_and_decimate(input_dir,n_filter_points,
-                                              n_decimate)
+    load_f = lambda: split(input_dir)
     CheckpointUtilities.multi_load(cache_dir=cache_dir,load_func=load_f,
-                                   force=False,
+                                   force=True,
                                    name_func=FEC_Util.fec_name_func)
     
  

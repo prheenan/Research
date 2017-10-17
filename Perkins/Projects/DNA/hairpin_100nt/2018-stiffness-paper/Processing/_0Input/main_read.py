@@ -10,8 +10,10 @@ import matplotlib.pyplot as plt
 import sys,cProfile,os,copy
 
 sys.path.append("../../../../../../../../")
+sys.path.append("../")
 from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
 from GeneralUtil.python import GenUtilities
+import Util
 
 def run():
     """
@@ -23,9 +25,8 @@ def run():
     Returns:
         This is a description of what is returned.
     """
-    data_dir = "../../Data/"
-    abs_dir = data_dir + "Raw/"
-    cache_dir = data_dir + "cache_raw/"
+    abs_dir = Util._data_dir()
+    cache_dir = Util.cache_raw()
     GenUtilities.ensureDirExists(cache_dir)
     examples = FEC_Util.\
         cache_individual_waves_in_directory(pxp_dir=abs_dir,force=False,
