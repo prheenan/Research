@@ -12,7 +12,7 @@ from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
 
 from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
-from Research.Perkins.AnalysisUtil.Images import PolymerTracing
+from Research.Perkins.AnalysisUtil.Images import PolymerTracing,PolymerPlotting
 
 def get_x_and_y_arrays(text_file):
     """
@@ -50,8 +50,9 @@ def prh_hist(data,**hist_kw):
     y = max(counts * 1.05)
     ax = plt.gca()
     try:
-        plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,meanline=True,
-                    showmeans=True,flierprops=dict(color='k',markersize=1))
+        plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,
+                    meanline=True,showmeans=True,
+                    flierprops=dict(color='k',markersize=1))
     except IndexError:
         # not enough data 
         pass
@@ -110,8 +111,9 @@ def run():
         assert (im.shape[0] == size_images_pixels)
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
-    L_binned = polymer_info_obj.L_binned
-    log_mean_angle = -np.log(polymer_info_obj.cos_angle_binned)
+    fig = PlotUtilities.figure()
+    PolymerPlotting.plot_angle_information(polymer_info_obj)
+    PlotUtilities.savefig(fig,out_dir + "angles.png")
     # POST: all the contour lengths are set in 'real' units ]
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
@@ -127,20 +129,26 @@ def run():
     xmin = np.min(np.concatenate([L0_dna_plot,L0_protein_plot]))
     xmax = np.max(np.concatenate([L0_dna_plot,L0_protein_plot]))
     n_bins = 12
-    bins = np.linspace(xmin,xmax,endpoint=True,num=n_bins)
-    xlim = [0,xmax]
+    step = sanit_L0(50e-9)
+    bins = np.arange(start=0,stop=xmax+step,step=step)
+    n_bins = bins.size
+    xlim = [0,xmax*1.1]
     kw_dna = dict(color='g',alpha=0.3)
     kw_protein = dict(color='b',hatch='//',alpha=0.7)
     ax= plt.subplot(2,1,1)
+    micron_str = "$\mathrm{\mu m}$"
+    prob_str = "P (1/" + micron_str + ")"
+    lazy_kw = dict(loc='center left')
     prh_hist(L0_dna_plot,normed=True,bins=bins,
              label="DNA Only" + n_str(n_dna),**kw_dna)
-    PlotUtilities.lazyLabel("","P (1/microns)","")
+    PlotUtilities.lazyLabel("",prob_str,"",**lazy_kw)
     PlotUtilities.no_x_label(ax)
     plt.xlim(xlim)
     plt.subplot(2,1,2)    
     prh_hist(L0_protein_plot,normed=True,bins=bins,
              label="DNA+PRC2" + n_str(n_protein),**kw_protein)
-    PlotUtilities.lazyLabel("L0 (microns)","P (1/microns)","")
+    PlotUtilities.lazyLabel("L$_0$ (" + micron_str + ")",prob_str,"",
+                            **lazy_kw)
     plt.xlim(xlim)
     PlotUtilities.savefig(fig,out_dir + "hist.png",
                           subplots_adjust=dict(hspace=0.03))

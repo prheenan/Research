@@ -32,10 +32,12 @@ class spline_info(object):
         self.y0_px = y0_px
 
 class angle_info(object):
-    def __init__(self,theta,L_px,cos_theta):
+    def __init__(self,theta,L_px):
         self.theta = theta
         self.L_px = L_px
-        self.cos_theta = cos_theta
+    @property
+    def cos_theta(self):
+        return np.cos(self.theta)
 
 
 class polymer_info(object):
@@ -288,6 +290,20 @@ def _binned_stat(x,y,n_bins,**kw):
     x = x[:-1]
     return x,stat_y
 
+def theta_i(theta,i):
+    return theta**i
+
+def theta_stats(polymer_info_obj,n_bins):
+    theta = polymer_info_obj.theta
+    x = polymer_info_obj.L_m
+    fs = [ theta_i(theta,i)
+           for i in range(1,5)]
+    kw = dict(x=x,n_bins=n_bins)
+    x_ys = [_binned_stat(y=f,**kw) for f in fs]
+    x = x_ys[0][0]
+    thetas = [tmp[1] for tmp in x_ys]
+    return [x] + thetas
+
 def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     """
     Gets L and <cos(theta(L))>
@@ -309,8 +325,7 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     # last edge is right bin
     edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins)
     # filter to the bins with at least f% of the total size
-    f_min_size = 1/(bins.size)
-    values,_ = np.histogram(a=L,bins=bins)
+    values,_ = np.histogram(a=L,bins=edges)
     bins_with_data = np.where(values > 0)[0]
     assert bins_with_data.size > 0
     mean_cos_angle = mean_cos_angle[bins_with_data]
@@ -382,7 +397,6 @@ def spline_fit(image_obj,x,y):
         Lp_log_mean_angle_and_coeffs(L_binned_m,mean_cos_angle)
     # do some data checking.
     assert L0_m > 0 , "L0 must be positive"
-    assert Lp_m > 0 , "Lp must be positive"
     # POST: most basic polymer stuff is OK.
     fit_spline_info = spline_info(u,tck,spline,deriv,x0_px=x0, y0_px=y0)
     polymer_info_obj =polymer_info(theta=angle_inf_obj.theta,L_m=L_m,
@@ -455,9 +469,6 @@ def angles_and_contour_lengths(spline,deriv,
     L0 = contour_lengths[-1]
     n = x_spline.shape[0]
     contour_length_matrix = _difference_matrix(contour_lengths,contour_lengths)
-    cos_angle_matrix = _dot_matrix(deriv_unit_vector.T,deriv_unit_vector.T)
-    cos_angle_matrix = np.maximum(-1,cos_angle_matrix)
-    cos_angle_matrix = np.minimum(1,cos_angle_matrix)
     dx_deriv = deriv_unit_vector[0, :]
     dy_deriv = deriv_unit_vector[1, :]
     angle2 = np.arctan2(dy_deriv, dx_deriv)
@@ -465,9 +476,7 @@ def angles_and_contour_lengths(spline,deriv,
     # normalize to 0 to 2*pi
     where_le_0 = np.where(angle_diff_matrix < 0)
     angle_diff_matrix[where_le_0] += 2 * np.pi
-    # make the angles all between -pi and pi
-    angle_diff_matrix -= np.pi
-    assert ((angle_diff_matrix >= -np.pi) & (angle_diff_matrix <= np.pi)).all()
+    assert ((angle_diff_matrix >= 0) & (angle_diff_matrix <= 2*np.pi)).all()
     # POST: angles calculated correctly...
     # only look at the upper triangular part
     idx_upper_tri = np.triu_indices(n)
@@ -486,11 +495,8 @@ def angles_and_contour_lengths(spline,deriv,
     sanit_and_sort = lambda x: sanit(x)[sort_idx]
     # return everything sorted as per sort_idx
     flat_L = sanit_and_sort(contour_length_matrix)
-    flat_angle = sanit_and_sort(angle_diff_matrix)
-    cos_theta = sanit_and_sort(cos_angle_matrix)
-    to_ret = angle_info(theta=flat_angle, L_px=flat_L,
-                        cos_theta=cos_theta)
-    assert cos_theta[0] > 0
+    flat_angle = np.arccos(np.cos(sanit_and_sort(angle_diff_matrix)))
+    to_ret = angle_info(theta=flat_angle, L_px=flat_L)
     return to_ret,L0
 
 def _spline_u_and_tck(x,y,k=3,s=None,num=None):
