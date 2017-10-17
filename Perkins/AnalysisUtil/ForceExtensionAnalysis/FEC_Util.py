@@ -178,8 +178,8 @@ def fec_name_func(i,e):
     """
     # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
     file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
-    name = "{:s}_{:s}_{:d}".format(file_name_src,
-                                  e.Meta.Name,i)
+    name = "{:s}_{:s}".format(file_name_src,
+                              e.Meta.Name)
     return name                                  
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
