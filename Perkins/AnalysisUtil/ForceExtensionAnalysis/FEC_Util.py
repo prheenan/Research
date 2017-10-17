@@ -166,7 +166,7 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
-def name_func(i,e):
+def fec_name_func(i,e):
     """
     Args:
         i: an arbitrary id integer  
@@ -215,7 +215,7 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
     return CheckpointUtilities.multi_load(cache_dir=cache_dir,
                                           load_func=load_functor,
                                           force=force,limit=limit,
-                                          name_func=name_func)
+                                          name_func=fec_name_func)
 
 def _slice_by_property(obj,min_prop,max_prop,property_func):
     """
