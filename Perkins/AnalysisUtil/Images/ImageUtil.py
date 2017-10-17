@@ -10,6 +10,22 @@ from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
 from GeneralUtil.python import GenUtilities,PlotUtilities
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+
+def subtract_background(image,deg=2,**kwargs):
+    """
+    subtracts a line of <deg> from each row in <images>
+    """
+    image = image.height
+    to_ret = image.copy()
+    shape = image.shape
+    coords = np.arange(shape[1])
+    print(coords.shape,image.shape)    
+    coeffs = np.array(np.polyfit(x=coords,y=image.T,deg=deg,**kwargs))
+    n_rows = shape[0]
+    for i in range(n_rows):
+        to_ret[i,:] -= np.polyval(coeffs[:,i],x=coords)
+    return to_ret.T
+
 def read_images_in_pxp_dir(dir,**kwargs):
     """
     Returns: all SurfaceImage objects from all pxps in dir

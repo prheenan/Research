@@ -38,7 +38,7 @@ function get_line_id(line_array_x,line_array_y)
 	x0_y0=  x_y_str(line_array_x[0],line_array_y[0]);
 	n = lengthOf(line_array_x);
 	xn_yn = x_y_str(line_array_x[n-1],line_array_y[n-1]);
-	return  "_" + x0_y0 + "_to_" + xn_yn; 
+	return  "";
 }
 
 function save_and_draw_current_selection(suffix)
@@ -56,12 +56,12 @@ function save_and_draw_current_selection(suffix)
 
 macro "Save line segment as a dna-protein complex [C]"
 {
-	save_and_draw_current_selection("_Protein_DNA_complex_" + to_int_str(global_iter_num)); 
+	save_and_draw_current_selection("_Protein_DNA" + to_int_str(global_iter_num)); 
 	global_iter_num += 1;
 }
 macro "Save line segment as a dna molecule [D]"
 {
-	save_and_draw_current_selection("_only___DNA_complex"+ to_int_str(global_iter_num));
+	save_and_draw_current_selection("_DNA"+ to_int_str(global_iter_num));
 	global_iter_num += 1;
 }
 

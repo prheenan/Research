@@ -32,8 +32,8 @@ def label_text(label_or_ref,kind,label,known_labels):
         default_fmt += "."
         sec_label += ":"
     num = known_labels[kind][label]
-    kind_to_label = dict(fig=default_fmt.format("Figure",num),
-                         eq=default_fmt.format("Equation",num),
+    kind_to_label = dict(fig=default_fmt.format("Fig.",num),
+                         eq=default_fmt.format("Eq.",num),
                          tbl=default_fmt.format("Table",num),
                          sec=sec_label.format("Section",num))
     str_ele = [Str(kind_to_label[kind])]
