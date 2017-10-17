@@ -32,7 +32,7 @@ def run():
                                                  cache_dir=cache_dir)
     # note: vmin/vmax are in nm (as is height)                                                  
     vmin_nm = 0
-    vmax_nm = vmin_nm + 1.5
+    vmax_nm = vmin_nm + 0.6
     imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.Greys_r)    
     for im in images:
         src_file = im.SourceFilename()
@@ -40,6 +40,7 @@ def run():
         full_out_path = "{:s}{:s}-{:s}.png".format(out_dir,src_file,im.Name())        
         fig = PlotUtilities.figure((3.5,4))
         ax = plt.subplot(1,1,1)
+        im.height = ImageUtil.subtract_background(im,deg=3)
         im = ImageUtil.make_image_plot(im,imshow_kwargs,pct=50)
         ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig)
         PlotUtilities.savefig(fig,full_out_path,bbox_inches='tight')        
