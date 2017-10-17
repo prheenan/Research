@@ -34,7 +34,7 @@ python2 main_iwt.py \
     -flip_forces 0\
     -number_of_bins 150\
     -f_one_half 14e-12\
-    -fraction_velocity_fit 0.1\
+    -velocity 20e-8\
     -file_input "${input_file}"\
     -file_output "${output_file}" || { echo "===IWT run failed===" ; exit; }
 echo "===Run Test Passed ==="    
