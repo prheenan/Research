@@ -37,7 +37,7 @@ def run():
     Filters the input data to something manageable. 
     """
     n_filter_points = 500
-    n_decimate = 100
+    n_decimate = 50
     data_dir = "../../Data/"
     input_dir = data_dir + "cache_raw/"
     cache_dir = data_dir + "cache_filtered/"

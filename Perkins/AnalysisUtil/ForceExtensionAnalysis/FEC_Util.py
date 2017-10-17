@@ -504,14 +504,17 @@ def GetFilteredForce(Obj,NFilterPoints=None,FilterFunc=SavitskyFilter):
     """
     if (NFilterPoints is None):
         NFilterPoints = int(np.ceil(default_filter_pct*Obj.Force.size))
-    ToRet = copy.deepcopy(Obj)
-    ToRet.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
+    ToRet = Obj._slice(slice(0,None,1))
+    ToRet.LowResData.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
     try:
-        ToRet.Separation = FilterFunc(Obj.Separation,nSmooth=NFilterPoints)
+        ToRet.LowResData.force = \
+            FilterFunc(ToRet.LowResData.force,nSmooth=NFilterPoints)
     except AttributeError:
-        ToRet.Extension = FilterFunc(Obj.Extension,nSmooth=NFilterPoints)
+        ToRet.LowResData.sep = FilterFunc(ToRet.LowResData.sep,\
+                                          nSmooth=NFilterPoints)
     try:
-        ToRet.set_z_sensor(FilterFunc(Obj.ZSnsr,nSmooth=NFilterPoints))
+        ToRet.LowResData.set_z_sensor(FilterFunc(Obj.ZSnsr,
+                                                 nSmooth=NFilterPoints))
     except AttributeError:
         pass
     return ToRet
