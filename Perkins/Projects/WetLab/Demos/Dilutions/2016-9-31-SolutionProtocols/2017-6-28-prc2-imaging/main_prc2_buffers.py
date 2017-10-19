@@ -16,10 +16,9 @@ from Util import DilutionUtil
 def run():
     print("No Divalent buffer creation, 2x, HEPES")
     KCl = 50
-    Stats = [ ["HEPES","mM",100,20,0],
-              ["KCl","mM",2500,KCl,0],
-              ["ZnCl2","mM",2.5,0.2,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
+    Stats = [ ["HEPES","mM",500,100,0],
+              ["KCl","mM",2500,KCl,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,250,"mL",
                                         BufferName="DI H20")
     print("...")
     print("No Divalent buffer creation, 2x")
