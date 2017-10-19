@@ -27,3 +27,5 @@ def cache_retract(*args,**kw):
 def cache_sanitized(*args,**kw):
     return _cache_base(*args,**kw) + "3_cache_sanitized/"
     
+def cache_aligned(*args,**kw):
+    return _cache_base(*args,**kw) + "4_cache_aligned/"
