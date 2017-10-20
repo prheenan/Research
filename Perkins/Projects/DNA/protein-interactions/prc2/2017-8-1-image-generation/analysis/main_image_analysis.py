@@ -48,7 +48,7 @@ def get_x_y_and_contour_lengths(text_files):
 
 def prh_hist(data,**hist_kw):
     counts,_,_ = plt.hist(data,**hist_kw)
-    y = max(counts * 1.05)
+    y = max(counts * 1.1)
     ax = plt.gca()
     try:
         plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,
@@ -60,9 +60,10 @@ def prh_hist(data,**hist_kw):
    
 def print_info(dist,name):
     print("For {:s}:".format(name))
-    print("\t Median: {:.1f} nm".format(np.median(dist)*1e9))
-    print("\t Mean  : {:.1f} nm".format(np.mean(dist)*1e9))
-    print("\t Std   : {:.1f} nm".format(np.std(dist)*1e9))
+    sanit = lambda x: int(np.round(x*1e9,-1))
+    print("\t Median: {:.0f} nm".format(sanit(np.median(dist))))
+    print("\t Mean  : {:.0f} nm".format(sanit(np.mean(dist))))
+    print("\t Std   : {:.0f} nm".format(sanit(np.std(dist))))
 
 def yield_files(image_files,text_files,size_images_meters):
     for file_name in image_files:
@@ -123,54 +124,73 @@ def run():
     in_dir = "in/"
     out_dir = "out/"
     GenUtilities.ensureDirExists(out_dir)    
-    objs_all = read_images(in_dir,cache_dir=out_dir)
+    objs_0x = read_images("./in-0x/",cache_dir="./cache_0x/")    
+    objs_all = read_images(in_dir,cache_dir="./cache_1x/")
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
     fig = PlotUtilities.figure()
     PolymerPlotting.plot_angle_information(polymer_info_obj)
     PlotUtilities.savefig(fig,out_dir + "angles.png")
     # POST: all the contour lengths are set in 'real' units ]
+    fig = PlotUtilities.figure()
+    make_contour_length_plot(objs_all,objs_0x)
+    PlotUtilities.savefig(fig,out_dir + "2017-10-4-histograms.png",
+                          subplots_adjust=dict(hspace=0.07))
+    #plot_all_objects(out_dir,objs_all)
+
+def make_contour_length_plot(objs_all,objs_0x,ymax=6.6,step_size_m=50e-9):
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
-    print_info(L0_dna,"only DNA")
-    print_info(L0_protein,"DNA+PRC2")
-    n_protein = (L0_protein).size
-    n_dna = L0_dna.size
-    fig = PlotUtilities.figure()            
-    n_str = lambda n: "\n(N={:d})".format(n)
-    sanit_L0 = lambda x: x*1e6    
+    L0_dna_0x = np.concatenate([o.L0_dna_only() for o in objs_0x])
+    print_info(L0_dna,"DNA, not incubcated ")
+    print_info(L0_protein,"DNA")
+    print_info(L0_dna_0x,"DNA+PRC2")
+    n_str = lambda n: "\n(N={:d})".format(n.size)
+    sanit_L0 = lambda x: x*1e6
     L0_dna_plot = sanit_L0(L0_dna)
     L0_protein_plot = sanit_L0(L0_protein)
-    xmin = np.min(np.concatenate([L0_dna_plot,L0_protein_plot]))
+    L0_dna_0x = sanit_L0(L0_dna_0x)
     xmax = np.max(np.concatenate([L0_dna_plot,L0_protein_plot]))
-    n_bins = 12
-    step = sanit_L0(50e-9)
+    step = sanit_L0(step_size_m)
     bins = np.arange(start=0,stop=xmax+step,step=step)
-    n_bins = bins.size
     xlim = [0,xmax*1.1]
-    kw_dna = dict(color='g',alpha=0.3)
-    kw_protein = dict(color='b',hatch='//',alpha=0.7)
-    ax1 = plt.subplot(2,1,1)
-    plot_histogram(L0_dna_plot,bins,label="DNA Only" + n_str(n_dna),**kw_dna)
-    ax2 = plt.subplot(2,1,2)    
-    plot_histogram(L0_protein_plot,bins,label="DNA+PRC2" + n_str(n_protein),
-                   **kw_protein)                   
-    PlotUtilities.savefig(fig,out_dir + "hist.png",
-                          subplots_adjust=dict(hspace=0.03))
-    plot_all_objects(out_dir,objs_all)
+    legend_color = 'rebeccapurple'
+    lazy_kwargs = dict(legend_kwargs=dict(color=legend_color),frameon=False,loc=(0.05,0.15))
+    kw_dna = dict(color='g',alpha=0.3,lazy_kwargs=lazy_kwargs)
+    kw_protein = dict(color='b',hatch='//',alpha=0.7,lazy_kwargs=lazy_kwargs)
+    kw_dna_only = dict(color='r',alpha=0.3,hatch='x',lazy_kwargs=lazy_kwargs)
+    ylim = [0,ymax]
+    ax0 = plt.subplot(3,1,1)
+    color = 'rebeccapurple'
+    plot_histogram(L0_dna_0x,bins,label="-/-" + n_str(L0_dna_0x),
+                   **kw_dna_only)
+    PlotUtilities.no_x_label(ax0)
+    PlotUtilities.xlabel("")
+    PlotUtilities.title("+/+ : DNA incubated with PRC2 / DNA bound to PRC2",color=legend_color)
+    ax1 = plt.subplot(3,1,2)
+    plot_histogram(L0_dna_plot,bins,label="+/-" + n_str(L0_dna_plot),**kw_dna)
+
+    ax2 = plt.subplot(3,1,3)
+    plot_histogram(L0_protein_plot,bins,label="+/+" + n_str(L0_protein_plot),
+                   **kw_protein)
+    axs = [ax0,ax1,ax2]
+    for ax_tmp in axs:
+        ax_tmp.set_ylim(ylim)
+        PlotUtilities.tom_ticks(ax=ax_tmp,num_major=1,change_x=False)
+    for ax_tmp in axs[:-1]:
+        PlotUtilities.no_x_label(ax_tmp)
+        PlotUtilities.xlabel("",ax=ax_tmp)
     
-def plot_histogram(data_plot,bins,**kw_plot):
+def plot_histogram(data_plot,bins,lazy_kwargs=dict(),**kw_plot):
     """
     plots data_to_plot (y) histogrammed to bins. **kw_plot passed to prh_hist
     """
     micron_str = "$\mathrm{\mu m}$"
     prob_str = "$P$ (1/" + micron_str + ")"
-    lazy_kw = dict(loc='center left')
     prh_hist(data_plot,normed=True,bins=bins,
              **kw_plot)
-    PlotUtilities.lazyLabel("",prob_str,"",**lazy_kw)
-    PlotUtilities.lazyLabel("L$_0$ (" + micron_str + ")",prob_str,"",
-                            **lazy_kw)    
+    PlotUtilities.lazyLabel("Contour length L$_0$ (" + micron_str + ")",prob_str,"",
+                            **lazy_kwargs)
         
 def plot_all_objects(out_dir,objs_all):
     """
