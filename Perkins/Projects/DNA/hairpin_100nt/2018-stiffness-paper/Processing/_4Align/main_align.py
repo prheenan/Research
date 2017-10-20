@@ -33,6 +33,7 @@ def align(input_dir,m_to_fit_before_max):
         # get a copy of the data
         tmp = e._slice(slice(0,None,1))
         # determine where the max force is
+        yield tmp
     
         
 def run():
