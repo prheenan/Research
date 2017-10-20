@@ -17,22 +17,20 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 dir="//perknas2.colorado.edu/group/4Patrick/CuratedData/DNA/prc2-dna-binding/"
 dir+="prc2-binding/10mM-MgCl2/analysis/in_10mM"
 
-dir="/c/Users/pahe3165/Desktop/tmp/"
 N=20
 cd $dir
-ls
-for x in `find $dir -name "*.txt"`; do
+for x in `find $dir \( -iname "*.txt" -o -iname "*.pkl" -o -iname "*.tiff" \)`; do
     file_name=`basename $x`
     len=${#file_name}
     echo $file_name    
     offset_from_end=`expr $len - $N`
     name_start=`echo $file_name | cut -c -$N`
-    name_id=`echo $file_name | grep -oP 'Image\d+'`
-    name_protein=`echo $file_name | grep -oP '(DNA|Protein_DNA)?\d*.{1,3}(txt|pkl)'`
-    new_name="$name_start-$name_id$name_protein"
+    name_id=`echo $file_name | grep -oP '(Image\d+)'`
+    name_protein=`echo $file_name | grep -oP '(DNA|Protein_DNA)?.{0,4}?(txt|pkl|tiff)'`
+    new_name="$name_start-$name_id-$name_protein"
     echo $new_name
     echo "___"
-    #mv $file_name $new_name
+    mv -f $file_name $new_name || echo "Same"
 done
 cd - 
 # Returns:
