@@ -65,6 +65,7 @@ def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
         x0,model_x,model_y = fit_polymer_model(obj_to_fit)
         L0 = x0
         tmp.Separation -= (L0+arbitrary_offset_m)
+        tmp.ZSnsr -= (L0+arbitrary_offset_m)
         yield tmp
     
         
