@@ -111,33 +111,7 @@ def read_images(in_dir,cache_dir):
         assert (im.shape[0] == size_images_pixels)
     return objs_all
 
-def run():
-    """
-    <Description>
-
-    Args:
-        param1: This is the first param.
     
-    Returns:
-        This is a description of what is returned.
-    """
-    in_dir = "in/"
-    out_dir = "out/"
-    GenUtilities.ensureDirExists(out_dir)    
-    objs_0x = read_images("./in-0x/",cache_dir="./cache_0x/")    
-    objs_all = read_images(in_dir,cache_dir="./cache_1x/")
-    kw = dict(min_m = 0,max_m = 125e-9)
-    polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
-    fig = PlotUtilities.figure()
-    PolymerPlotting.plot_angle_information(polymer_info_obj)
-    PlotUtilities.savefig(fig,out_dir + "angles.png")
-    # POST: all the contour lengths are set in 'real' units ]
-    fig = PlotUtilities.figure()
-    make_contour_length_plot(objs_all,objs_0x)
-    PlotUtilities.savefig(fig,out_dir + "2017-10-4-histograms.png",
-                          subplots_adjust=dict(hspace=0.07))
-    #plot_all_objects(out_dir,objs_all)
-
 def make_contour_length_plot(objs_all,objs_0x,ymax=6.6,step_size_m=50e-9):
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
@@ -166,7 +140,8 @@ def make_contour_length_plot(objs_all,objs_0x,ymax=6.6,step_size_m=50e-9):
                    **kw_dna_only)
     PlotUtilities.no_x_label(ax0)
     PlotUtilities.xlabel("")
-    PlotUtilities.title("+/+ : DNA incubated with PRC2 / DNA bound to PRC2",color=legend_color)
+    PlotUtilities.title("+/+ : DNA incubated with PRC2 / DNA bound to PRC2",
+                        color=legend_color)
     ax1 = plt.subplot(3,1,2)
     plot_histogram(L0_dna_plot,bins,label="+/-" + n_str(L0_dna_plot),**kw_dna)
 
@@ -237,6 +212,34 @@ def plot_annotated_object(obj,ax,fig):
         color = "g" if o.has_dna_bound_protein else "r"
         ax.plot(*xy_abs,color=color,linewidth=0.2)
 
+        
+
+def run():
+    """
+    <Description>
+
+    Args:
+        param1: This is the first param.
+    
+    Returns:
+        This is a description of what is returned.
+    """
+    in_dir = "in/"
+    out_dir = "out/"
+    GenUtilities.ensureDirExists(out_dir)    
+    objs_0x = read_images("./in-0x/",cache_dir="./cache_0x/")    
+    objs_all = read_images(in_dir,cache_dir="./cache_1x/")
+    kw = dict(min_m = 0,max_m = 125e-9)
+    polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
+    fig = PlotUtilities.figure()
+    PolymerPlotting.plot_angle_information(polymer_info_obj)
+    PlotUtilities.savefig(fig,out_dir + "angles.png")
+    # POST: all the contour lengths are set in 'real' units ]
+    fig = PlotUtilities.figure()
+    make_contour_length_plot(objs_all,objs_0x)
+    PlotUtilities.savefig(fig,out_dir + "2017-10-4-histograms.png",
+                          subplots_adjust=dict(hspace=0.07))
+    #plot_all_objects(out_dir,objs_all)        
 
 
 if __name__ == "__main__":
