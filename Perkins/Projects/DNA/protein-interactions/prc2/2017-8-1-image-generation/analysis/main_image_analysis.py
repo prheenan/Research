@@ -47,14 +47,20 @@ def get_x_y_and_contour_lengths(text_files):
         to_ret.append(PolymerTracing.worm_object(x,y,t))
     return to_ret     
 
-def prh_hist(data,**hist_kw):
+def prh_hist(data,y=None,**hist_kw):
     counts,_,_ = plt.hist(data,**hist_kw)
-    y = max(counts * 1.05)
+    if (y is None):
+        y = max(counts * 1.2)
     ax = plt.gca()
     try:
         plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,
-                    meanline=True,showmeans=True,
-                    flierprops=dict(color='k',markersize=1))
+                    meanline=True,showmeans=True,widths=y*0.07,
+                    whis=[5,95],
+                    boxprops=dict(linewidth=0.5),
+                    meanprops=dict(linestyle='--'),
+                    whiskerprops=dict(linewidth=0.5),
+                    flierprops=dict(color='k',markersize=0.5,
+                                    linewidth=0.25))
     except IndexError:
         # not enough data 
         pass
@@ -84,18 +90,17 @@ def get_id(str_v):
 def yield_files(image_files,text_files,size_images_meters):
     text_image_ids = [get_id(t) for t in text_files ]
     for file_name in image_files:
-        file_no_ext = file_name.replace(".pkl","")
-        file_no_number = file_name.rsplit("_",1)[0]
-        # get the text files that match 
+        # get the text files that match
+        m_id = get_id(file_name)
         these_text_files= [text_files[i] for i,t in enumerate(text_image_ids)
-                            if get_id(file_no_number) == str(t)]
+                            if m_id == str(t)]
         image_obj = CheckpointUtilities.lazy_load(file_name)
         # only look at images of size size_images_meters
         if ( abs(image_obj.range_meters -size_images_meters) > 1e-6):
             continue
         objs_tmp = get_x_y_and_contour_lengths(these_text_files)
         # POST: dimensions are OK 
-        img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_no_number)
+        img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_name)
         yield img
         
 def read_images(in_dir,cache_dir):
@@ -116,8 +121,6 @@ def read_images(in_dir,cache_dir):
     # filter only to those image files which are 2um
     size_images_meters = 2e-6
     size_images_pixels = 512
-    conversion_meters_per_px = size_images_meters / size_images_pixels  
-    objs_all = list(yield_files(image_files,text_files,size_images_meters))
     name_func = lambda i,d: "{:s}".format(d.file_name,i)
     load_func = lambda : yield_files(image_files,text_files,size_images_meters)
     objs_all = CheckpointUtilities.multi_load(cache_dir=cache_dir,
@@ -130,7 +133,8 @@ def read_images(in_dir,cache_dir):
     return objs_all
 
     
-def make_contour_length_plot(objs_all,objs_0x,step_size_m=50e-9,ylim_max=None):
+def make_contour_length_plot(objs_all,objs_0x,step_size_m=50e-9,ylim_max=None,
+                             y_box=10,xmax_um=1):
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
     # only use the negative control if it exists
@@ -149,15 +153,22 @@ def make_contour_length_plot(objs_all,objs_0x,step_size_m=50e-9,ylim_max=None):
     L0_dna_plot = sanit_L0(L0_dna)
     L0_protein_plot = sanit_L0(L0_protein)
     L0_dna_0x = sanit_L0(L0_dna_0x)
-    xmax = np.max(np.concatenate([L0_dna_plot,L0_protein_plot]))
+    if (xmax_um is None):
+        xmax = np.max(np.concatenate([L0_dna_plot,L0_protein_plot]))
+    else:
+        xmax = xmax_um
     step = sanit_L0(step_size_m)
     bins = np.arange(start=0,stop=xmax+step,step=step)
     xlim = [0,xmax*1.1]
     legend_color = 'rebeccapurple'
-    lazy_kwargs = dict(legend_kwargs=dict(color=legend_color),frameon=False,loc=(0.05,0.15))
-    kw_dna = dict(color='g',alpha=0.3,lazy_kwargs=lazy_kwargs)
-    kw_protein = dict(color='b',hatch='//',alpha=0.7,lazy_kwargs=lazy_kwargs)
-    kw_dna_only = dict(color='r',alpha=0.3,hatch='x',lazy_kwargs=lazy_kwargs)
+    lazy_kwargs = dict(legend_kwargs=dict(color=legend_color),frameon=False,
+                       loc=(0.05,0.15))
+    common= dict(y=y_box)
+    kw_dna = dict(color='g',alpha=0.3,lazy_kwargs=lazy_kwargs,**common)
+    kw_protein = dict(color='b',hatch='//',alpha=0.7,lazy_kwargs=lazy_kwargs,
+                      **common)
+    kw_dna_only = dict(color='r',alpha=0.3,hatch='x',lazy_kwargs=lazy_kwargs,
+                       **common)
     ax0 = plt.subplot(3,1,1)
     color = 'rebeccapurple'
     plot_histogram(L0_dna_0x,bins,label="-/-" + n_str(L0_dna_0x),
@@ -168,7 +179,6 @@ def make_contour_length_plot(objs_all,objs_0x,step_size_m=50e-9,ylim_max=None):
                         color=legend_color)
     ax1 = plt.subplot(3,1,2)
     plot_histogram(L0_dna_plot,bins,label="+/-" + n_str(L0_dna_plot),**kw_dna)
-
     ax2 = plt.subplot(3,1,3)
     plot_histogram(L0_protein_plot,bins,label="+/+" + n_str(L0_protein_plot),
                    **kw_protein)
@@ -180,6 +190,7 @@ def make_contour_length_plot(objs_all,objs_0x,step_size_m=50e-9,ylim_max=None):
     for ax_tmp in axs:
         ax_tmp.set_ylim(ylim)
         PlotUtilities.tom_ticks(ax=ax_tmp,num_major=1,change_x=False)
+        ax_tmp.set_xlim(xlim)
     for ax_tmp in axs[:-1]:
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.xlabel("",ax=ax_tmp)
@@ -240,11 +251,10 @@ def plot_annotated_object(obj,ax,fig):
         color = "g" if o.has_dna_bound_protein else "r"
         ax.plot(*xy_abs,color=color,linewidth=0.2)
 
-def detailed_plot(in_dir,in_dir_0x,out_dir,cache_base):
+def detailed_plot(in_dir,in_dir_0x,out_dir,cache_base,**kw_L0):
     GenUtilities.ensureDirExists(out_dir)    
     objs_0x = read_images(in_dir_0x,cache_dir=cache_base + "0x/")    
-    objs_all = read_images(in_dir,cache_dir=cache_base + "1x/")
-    print(objs_all)
+    objs_all = read_images(in_dir,cache_dir=cache_base + "prc2/")
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
     fig = PlotUtilities.figure()
@@ -252,7 +262,7 @@ def detailed_plot(in_dir,in_dir_0x,out_dir,cache_base):
     PlotUtilities.savefig(fig,out_dir + "angles.png")
     # POST: all the contour lengths are set in 'real' units ]
     fig = PlotUtilities.figure()
-    make_contour_length_plot(objs_all,objs_0x)
+    make_contour_length_plot(objs_all,objs_0x,**kw_L0)
     PlotUtilities.savefig(fig,out_dir + "2017-10-4-histograms.png",
                           subplots_adjust=dict(hspace=0.07))    
 
@@ -271,9 +281,11 @@ def run():
     args_mM = lambda mM : \
         dict(in_dir="./in/in_{:s}/".format(mM_fmt(mM)),
              out_dir="./out/out_{:s}/".format(mM_fmt(mM)),
-             cache_base="./cache/cache_{:s}".format(mM_fmt(mM)))
-    #detailed_plot(in_dir_0x="./in/in_empty/",**args_mM(120))  
-    detailed_plot(in_dir_0x="./in/in_0x_10mM/",**args_mM(10))
+             cache_base="./cache/cache_{:s}".format(mM_fmt(mM)),
+             y_box=10)
+    detailed_plot(in_dir_0x="./in/in_empty/",ylim_max=11,
+                  **args_mM(120))  
+    detailed_plot(in_dir_0x="./in/in_0x_10mM/",ylim_max=11,**args_mM(10))
     #plot_all_objects(out_dir,objs_all)        
 
 
