@@ -23,25 +23,14 @@ from scipy.interpolate import splprep, splev, interp1d,UnivariateSpline
 from sklearn.neighbors import NearestNeighbors
 from route.postman import single_chinese_postman_path
 
+from ImageUtil import subtract_background
+
 class transform:
     def __init__(self,name,function,imshow_kw=dict(cmap=plt.cm.afmhot)):
         self.name = name
         self.function = function
         self.imshow_kw = imshow_kw
 
-def subtract_background(image,deg=2,**kwargs):
-    """
-    subtracts a line of <deg> from each row in <images>
-    """
-    image = image.height
-    to_ret = image.copy().T
-    shape = image.shape
-    coords = np.arange(shape[1])
-    coeffs = np.array(np.polyfit(x=coords,y=image,deg=deg,**kwargs))
-    n_rows = shape[0]
-    for i in range(n_rows):
-        to_ret[i,:] -= np.polyval(coeffs[:,i],x=coords)
-    return to_ret.T
 
 def realistic_min_max(image,q_low=90,q_high=99.9):
     data = image.height_nm()
