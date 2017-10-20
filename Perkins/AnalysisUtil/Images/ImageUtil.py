@@ -20,7 +20,7 @@ def read_images_in_pxp_dir(dir,**kwargs):
     return [image
             for pxp_file in pxps_in_dir 
             for image in PxpLoader.ReadImages(pxp_file,**kwargs)]
-    
+   
 
 def cache_images_in_directory(pxp_dir,cache_dir,**kwargs):
     """

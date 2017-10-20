@@ -272,8 +272,8 @@ def run():
         dict(in_dir="./in/in_{:s}/".format(mM_fmt(mM)),
              out_dir="./out/out_{:s}/".format(mM_fmt(mM)),
              cache_base="./cache/cache_{:s}".format(mM_fmt(mM)))
-    detailed_plot(in_dir_0x="./in/in_empty/",**args_mM(120))  
-    detailed_plot(in_dir_0x="./in/in_empty/",**args_mM(10))
+    #detailed_plot(in_dir_0x="./in/in_empty/",**args_mM(120))  
+    detailed_plot(in_dir_0x="./in/in_0x_10mM/",**args_mM(10))
     #plot_all_objects(out_dir,objs_all)        
 
 

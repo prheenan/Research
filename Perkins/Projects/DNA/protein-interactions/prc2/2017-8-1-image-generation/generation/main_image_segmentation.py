@@ -12,6 +12,8 @@ import sys,matplotlib
 sys.path.append("../../../../../../../../")
 
 from Research.Perkins.AnalysisUtil.Images import ImageUtil
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
+
 from IgorUtil.PythonAdapter import PxpLoader
 from GeneralUtil.python import GenUtilities,PlotUtilities
 ## sci-kit image tools for image segmentation. See:
@@ -62,8 +64,7 @@ def run():
                   aspect='normal')
         size_microns = i.range_meters * 1e6                
         size_str = "_{:.2g}microns".format(size_microns)
-        save_name =out_dir + i.SourceFilename() + ".pxp_"+ i.Name() + \
-                    size_str + ".tiff"
+        save_name =out_dir + FEC_Util.name_func(0,i) + size_str + ".tiff"
         fig.savefig(save_name,dpi=dpi)
 
 

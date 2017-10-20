@@ -178,11 +178,17 @@ def name_func(i,e):
     """
     # save like <cache_dir>/<file_name>_<WaveName><arbitrary_id>
     file_name_src =  GenUtilities.file_name_from_path(e.Meta.SourceFile)
+    len_file = len(file_name_src)
+    max_len = 40
+    half = int(np.floor(max_len/2))
+    if (len_file > max_len):
+        file_name_src = file_name_src[:half] + "_" + file_name_src[-half:]
     name = "{:s}_{:s}_{:d}".format(file_name_src,
-                                  e.Meta.Name,i)
+                                   e.Meta.Name,i)
     return name                                  
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
+                                        name_func=name_func,
                                         force=False,load_func=None,**kwargs):
     """
     reads in all pxp files in a directory, caching their waves 
