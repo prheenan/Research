@@ -28,16 +28,16 @@ def fit_polymer_model(example):
     Returns:
         x0, the parameters of the fit 
     """
-    wlc_params = dict(K0=2000e-12,kbT=4.1e-21)
-    ranges = [(10e-9,90e-9),(0.1e-9,1e-9)]
-    fit_dict = dict(brute_dict=dict(Ns=10,ranges=ranges),
+    wlc_params = dict(K0=2000e-12,kbT=4.1e-21,Lp=0.3e-9)
+    ranges = [(10e-9,100e-9)]
+    fit_dict = dict(brute_dict=dict(Ns=50,ranges=ranges),
                     **wlc_params)
     x_raw,y_raw = example.Separation,example.Force
     x0,model_x,model_y = FJC.fit_fjc_contour(x_raw,y_raw,**fit_dict)        
     return x0,model_x,model_y
 
 
-def align(input_dir):
+def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
     """
     reads in the data, filters it, and decimates it 
     
@@ -50,7 +50,6 @@ def align(input_dir):
     """
     # read in the data we want 
     examples = CheckpointUtilities.lazy_multi_load(input_dir)
-    print(examples)
     # filter (and decimate) the data as desired 
     for e in examples:
         # get a copy of the data
@@ -63,7 +62,8 @@ def align(input_dir):
         idx_fit = idx_where_le[-1]
         obj_to_fit = tmp._slice(slice(idx_fit,max_idx))
         x0,model_x,model_y = fit_polymer_model(obj_to_fit)
-        L0,Lp = x0
+        L0 = x0
+        tmp.Separation -= (L0+arbitrary_offset_m)
         yield tmp
     
         
@@ -71,7 +71,7 @@ def run():
     """
     Filters the input data to something manageable. 
     """
-    m_to_fit_before_max = 25e-9
+    m_to_fit_before_max = 20e-9
     input_dir = Util.cache_sanitized()
     cache_dir = Util.cache_aligned()
     GenUtilities.ensureDirExists(cache_dir)
@@ -80,7 +80,8 @@ def run():
                                           force=False,
                                           name_func=FEC_Util.fec_name_func)
     fig = PlotUtilities.figure()
-    FEC_Plot.heat_map_fec(data,separation_max=100,num_bins=(100,500))
+    plt.subplot(1,1,1)
+    FEC_Plot.heat_map_fec(data,num_bins=(100,500),separation_max=100)
     plt.ylim([-10,None])
     PlotUtilities.savefig(fig,"./out.png")
  
