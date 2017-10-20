@@ -216,7 +216,7 @@ def sorted_concatenated_x_and_y_lists(x_y):
     Returns: 
         tuple of concatenated x, concatenated y
     """
-    cat = lambda i: np.concatenate([x[i] for x in x_y])
+    cat = lambda i: np.concatenate([x[i] for x in x_y if len(x[i]) > 0 ])
     x = cat(0)
     y_list = [cat(i) for i in range(1,len(x_y[0]))]
     # sort by contour length
@@ -423,7 +423,7 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
         objs_all
     """
     L_and_angles = [o._L_angles_and_cos_angle(subset=o.dna_subset)
-                    for o in objs_all]
+                    for o in objs_all if len(o.dna_subset) > 0]
     # concatenate all the angles and L0
     L,angles,cos_angle = sorted_concatenated_x_and_y_lists(L_and_angles)
     L_binned,mean_angle_binned = \

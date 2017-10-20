@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import sys,matplotlib,os,copy,scipy
 from scipy.interpolate import griddata
 sys.path.append("../../../../../../../../")
+import re
 
 from GeneralUtil.python import GenUtilities,PlotUtilities,CheckpointUtilities
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing,PolymerPlotting,\
@@ -48,7 +49,7 @@ def get_x_y_and_contour_lengths(text_files):
 
 def prh_hist(data,**hist_kw):
     counts,_,_ = plt.hist(data,**hist_kw)
-    y = max(counts * 1.1)
+    y = max(counts * 1.05)
     ax = plt.gca()
     try:
         plt.boxplot(data,positions=[y],vert=False,manage_xticks=False,
@@ -60,17 +61,34 @@ def prh_hist(data,**hist_kw):
    
 def print_info(dist,name):
     print("For {:s}:".format(name))
+    # print in nm 
+    # round to the tens place (pretty sure are errors are ~100nm)
     sanit = lambda x: int(np.round(x*1e9,-1))
     print("\t Median: {:.0f} nm".format(sanit(np.median(dist))))
     print("\t Mean  : {:.0f} nm".format(sanit(np.mean(dist))))
     print("\t Std   : {:.0f} nm".format(sanit(np.std(dist))))
 
+def get_id(str_v):
+    pat = r"""
+           .+?    # anything (non greedy)
+           Image  # the literal 'image'
+           (\d{4})# 4 digits
+           .?     # anything
+           """
+    match = re.match(pat,str_v,re.VERBOSE)
+    assert match is not None
+    id_v = match.group(1)
+    return id_v
+       
+    
 def yield_files(image_files,text_files,size_images_meters):
+    text_image_ids = [get_id(t) for t in text_files ]
     for file_name in image_files:
         file_no_ext = file_name.replace(".pkl","")
         file_no_number = file_name.rsplit("_",1)[0]
-        these_text_files= [ t for t in text_files 
-                            if str(file_no_number) in str(t)]
+        # get the text files that match 
+        these_text_files= [text_files[i] for i,t in enumerate(text_image_ids)
+                            if get_id(file_no_number) == str(t)]
         image_obj = CheckpointUtilities.lazy_load(file_name)
         # only look at images of size size_images_meters
         if ( abs(image_obj.range_meters -size_images_meters) > 1e-6):
@@ -100,7 +118,7 @@ def read_images(in_dir,cache_dir):
     size_images_pixels = 512
     conversion_meters_per_px = size_images_meters / size_images_pixels  
     objs_all = list(yield_files(image_files,text_files,size_images_meters))
-    name_func = lambda i,d: "{:s}_img_{:d}".format(d.file_name,i)
+    name_func = lambda i,d: "{:s}".format(d.file_name,i)
     load_func = lambda : yield_files(image_files,text_files,size_images_meters)
     objs_all = CheckpointUtilities.multi_load(cache_dir=cache_dir,
                                               load_func=load_func,
@@ -112,13 +130,20 @@ def read_images(in_dir,cache_dir):
     return objs_all
 
     
-def make_contour_length_plot(objs_all,objs_0x,ymax=6.6,step_size_m=50e-9):
+def make_contour_length_plot(objs_all,objs_0x,step_size_m=50e-9,ylim_max=None):
     L0_protein = np.concatenate([o.L0_protein_dna() for o in objs_all])
     L0_dna = np.concatenate([o.L0_dna_only() for o in objs_all])
-    L0_dna_0x = np.concatenate([o.L0_dna_only() for o in objs_0x])
-    print_info(L0_dna,"DNA, not incubcated ")
+    # only use the negative control if it exists
+    # (note: we still plot it if so)
+    has_negative_control = len(objs_0x) > 0
+    if (has_negative_control):
+        L0_dna_0x = np.concatenate([o.L0_dna_only() for o in objs_0x])
+        # print off the stats. of we have them
+        print_info(L0_dna_0x,"DNA+PRC2")        
+    else:
+        L0_dna_0x = np.array([])
+    print_info(L0_dna,"DNA, not incubcated ")               
     print_info(L0_protein,"DNA")
-    print_info(L0_dna_0x,"DNA+PRC2")
     n_str = lambda n: "\n(N={:d})".format(n.size)
     sanit_L0 = lambda x: x*1e6
     L0_dna_plot = sanit_L0(L0_dna)
@@ -133,7 +158,6 @@ def make_contour_length_plot(objs_all,objs_0x,ymax=6.6,step_size_m=50e-9):
     kw_dna = dict(color='g',alpha=0.3,lazy_kwargs=lazy_kwargs)
     kw_protein = dict(color='b',hatch='//',alpha=0.7,lazy_kwargs=lazy_kwargs)
     kw_dna_only = dict(color='r',alpha=0.3,hatch='x',lazy_kwargs=lazy_kwargs)
-    ylim = [0,ymax]
     ax0 = plt.subplot(3,1,1)
     color = 'rebeccapurple'
     plot_histogram(L0_dna_0x,bins,label="-/-" + n_str(L0_dna_0x),
@@ -149,6 +173,10 @@ def make_contour_length_plot(objs_all,objs_0x,ymax=6.6,step_size_m=50e-9):
     plot_histogram(L0_protein_plot,bins,label="+/+" + n_str(L0_protein_plot),
                    **kw_protein)
     axs = [ax0,ax1,ax2]
+    if (ylim_max is None):
+        ylim_max_arr = [a.get_ylim()[1] for a in axs]
+        ylim_max = max(ylim_max_arr) * 1.1
+    ylim = [0,ylim_max]
     for ax_tmp in axs:
         ax_tmp.set_ylim(ylim)
         PlotUtilities.tom_ticks(ax=ax_tmp,num_major=1,change_x=False)
@@ -164,7 +192,7 @@ def plot_histogram(data_plot,bins,lazy_kwargs=dict(),**kw_plot):
     prob_str = "$P$ (1/" + micron_str + ")"
     prh_hist(data_plot,normed=True,bins=bins,
              **kw_plot)
-    PlotUtilities.lazyLabel("Contour length L$_0$ (" + micron_str + ")",prob_str,"",
+    PlotUtilities.lazyLabel("Contour length $L_0$ (" + micron_str + ")",prob_str,"",
                             **lazy_kwargs)
         
 def plot_all_objects(out_dir,objs_all):
@@ -212,7 +240,21 @@ def plot_annotated_object(obj,ax,fig):
         color = "g" if o.has_dna_bound_protein else "r"
         ax.plot(*xy_abs,color=color,linewidth=0.2)
 
-        
+def detailed_plot(in_dir,in_dir_0x,out_dir,cache_base):
+    GenUtilities.ensureDirExists(out_dir)    
+    objs_0x = read_images(in_dir_0x,cache_dir=cache_base + "0x/")    
+    objs_all = read_images(in_dir,cache_dir=cache_base + "1x/")
+    print(objs_all)
+    kw = dict(min_m = 0,max_m = 125e-9)
+    polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
+    fig = PlotUtilities.figure()
+    PolymerPlotting.plot_angle_information(polymer_info_obj)
+    PlotUtilities.savefig(fig,out_dir + "angles.png")
+    # POST: all the contour lengths are set in 'real' units ]
+    fig = PlotUtilities.figure()
+    make_contour_length_plot(objs_all,objs_0x)
+    PlotUtilities.savefig(fig,out_dir + "2017-10-4-histograms.png",
+                          subplots_adjust=dict(hspace=0.07))    
 
 def run():
     """
@@ -225,20 +267,13 @@ def run():
         This is a description of what is returned.
     """
     in_dir = "in/"
-    out_dir = "out/"
-    GenUtilities.ensureDirExists(out_dir)    
-    objs_0x = read_images("./in-0x/",cache_dir="./cache_0x/")    
-    objs_all = read_images(in_dir,cache_dir="./cache_1x/")
-    kw = dict(min_m = 0,max_m = 125e-9)
-    polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
-    fig = PlotUtilities.figure()
-    PolymerPlotting.plot_angle_information(polymer_info_obj)
-    PlotUtilities.savefig(fig,out_dir + "angles.png")
-    # POST: all the contour lengths are set in 'real' units ]
-    fig = PlotUtilities.figure()
-    make_contour_length_plot(objs_all,objs_0x)
-    PlotUtilities.savefig(fig,out_dir + "2017-10-4-histograms.png",
-                          subplots_adjust=dict(hspace=0.07))
+    mM_fmt = lambda mM : "{:d}mM".format(mM)
+    args_mM = lambda mM : \
+        dict(in_dir="./in/in_{:s}/".format(mM_fmt(mM)),
+             out_dir="./out/out_{:s}/".format(mM_fmt(mM)),
+             cache_base="./cache/cache_{:s}".format(mM_fmt(mM)))
+    detailed_plot(in_dir_0x="./in/in_empty/",**args_mM(120))  
+    detailed_plot(in_dir_0x="./in/in_empty/",**args_mM(10))
     #plot_all_objects(out_dir,objs_all)        
 
 
