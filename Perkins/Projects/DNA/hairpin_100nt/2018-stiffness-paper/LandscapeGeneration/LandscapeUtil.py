@@ -17,9 +17,25 @@ class RefoldingInfo:
     """
     def __init__(self,data,idx_start,idx_end,spline):
         self.data = data
-        self.idx_start = idx_start
-        self.idx_end = idx_end
+        self._idx_start_abs= idx_start
+        self._idx_end_abs = idx_end
+        self.offset = min(idx_start)
+        self.idx_start = idx_start - self.offset
+        self.idx_end = idx_end - self.offset
         self.spline = spline
+    @property        
+    def _idx_pairs(self):
+        """
+        Returns: slice indices marking the start and end of the unfolding
+        and refolding events. first is first unfolding pair, second is second
+        (refolding) pair, etc
+        """
+        n_end = len(self.idx_end)
+        idx_flat = sorted(list(self.idx_start) + list(self.idx_end))
+        slices = [ slice(i,f,1) for i,f in zip(idx_flat[:-1],idx_flat[1:])]
+        assert len(slices) == 2*n_end
+        assert [s.start for s in slices] + [slices[-1].stop] == idx_flat
+        return slices
     @property
     def Meta(self):
         return self.data.Meta
@@ -35,5 +51,10 @@ def cache_aligned(*args,**kw):
     return _cache_base(*args,**kw) + "4_cache_aligned/"
     
 def cache_landscape_regions(*args,**kw):
-    return _landscape_base(*args,**kw) + "regions/"
+    return _landscape_base(*args,**kw) + "_0regions/"
+    
+def cache_landscape_aligned_regions(*args,**kw):
+    return _landscape_base(*args,**kw) + "_1regions_aligned/"
+
+    
 

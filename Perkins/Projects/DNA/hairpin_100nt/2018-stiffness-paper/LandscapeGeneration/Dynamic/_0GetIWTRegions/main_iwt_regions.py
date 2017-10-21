@@ -70,16 +70,20 @@ def _get_region_demarcations(spline,time,first_N_peaks):
     # but we are missing the first and the last points, '.' below: 
     # ./ \  / \  / \.
     # get the differences between the indices
-    diffs_fwd = [abs(j - i) for i, j in
+    diff = lambda _i,_j : spline_t[_j] - spline_t[_i]
+    diffs_fwd = [diff(i,j) for i, j in
                  zip(idx_refold_top[:-1], idx_refold_bottom)]
-    diffs_rev = [abs(j - i) for i, j in
+    diffs_rev = [diff(i,j) for i, j in
                  zip(idx_refold_top[1:], idx_refold_bottom)]
-    all_diffs = np.concatenate([diffs_fwd, diffs_rev])
-    max_diffs = min(all_diffs)
+    all_diffs = np.concatenate([np.abs(diffs_fwd), np.abs(diffs_rev)])
+    target_diff = min(all_diffs)
     # tack on the start and end of the experiment (both 'bottom' indices)
     # ie, the '.' above 
-    start = idx_refold_top[0] - max_diffs
-    end = idx_refold_top[-1] + max_diffs
+    offset_z = spline_t[idx_refold_top[0]]
+    last_top = idx_refold_top[-1]
+    start = np.where(spline_t[:last_top] >= offset_z - target_diff)[0][0]
+    end = last_top + \
+        np.where(spline_t[last_top:] <= offset_z - target_diff)[0][0]
     # add the two bottom indices
     idx_refold_bottom = [start] + idx_refold_bottom + [end]
     return idx_refold_bottom,idx_refold_top
@@ -90,13 +94,15 @@ def get_iwt_regions(input_dir,n_desired_resolution_m = 3e-9,N_peaks = 5):
     of input_dir. 
     """
     examples = CheckpointUtilities.lazy_multi_load(input_dir)
-    for e in examples:
+    for tmp in examples:
+        e = tmp._slice(slice(0,None,1))
         z_raw = e.ZSnsr
         time = e.Time
         n_bins = int(np.ceil((max(z_raw)-min(z_raw))/n_desired_resolution_m))
         bins = np.linspace(min(time),max(time),endpoint=True,num=n_bins)
         spline = LSQUnivariateSpline(x=time,y=z_raw,t=bins[1:-1],k=3)
         spline_t = spline(time)
+
         # determine where all the events start and end 
         idx_refold_bottom,idx_refold_top = \
             _get_region_demarcations(spline,time,first_N_peaks=N_peaks)
@@ -104,11 +110,13 @@ def get_iwt_regions(input_dir,n_desired_resolution_m = 3e-9,N_peaks = 5):
                                         idx_refold_bottom[-1],None)
         # get the points *after* each turning point where we are
         # slice into the original data
-        to_ret = e._slice(slice_experiment_region)
-        yield LandscapeUtil.RefoldingInfo(to_ret,
-                                          idx_start=idx_refold_bottom,
-                                          idx_end=idx_refold_top,
-                                          spline=spline)
+        data = tmp._slice(slice_experiment_region)
+        # determine the regions we care about
+        to_ret = LandscapeUtil.RefoldingInfo(data,
+                                             idx_start=idx_refold_bottom,
+                                             idx_end=idx_refold_top,
+                                             spline=spline)                                         
+        yield to_ret                                            
 
 def run():
     input_dir = Util.cache_aligned("../../../")

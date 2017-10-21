@@ -54,6 +54,7 @@ def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
     for e in examples:
         # get a copy of the data
         tmp = e._slice(slice(0,None,1))
+        """        
         # determine where the max force is
         max_idx = np.argmax(tmp.Force)
         sep_max = tmp.Separation[max_idx]
@@ -64,8 +65,9 @@ def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
         obj_to_fit = tmp._slice(slice(idx_fit,max_idx))
         x0,model_x,model_y = fit_polymer_model(obj_to_fit)
         L0 = x0
-        tmp.Separation -= (L0+arbitrary_offset_m)
-        tmp.ZSnsr -= (L0+arbitrary_offset_m)
+        """        
+        tmp.Separation -= min(tmp.Separation)
+        tmp.ZSnsr -= min(tmp.ZSnsr)
         yield tmp
     
         
@@ -79,8 +81,11 @@ def run():
     GenUtilities.ensureDirExists(cache_dir)
     load_f = lambda: align(input_dir,m_to_fit_before_max)
     data = CheckpointUtilities.multi_load(cache_dir=cache_dir,load_func=load_f,
-                                          force=False,
+                                          force=True,
                                           name_func=FEC_Util.fec_name_func)
+    for d in data:
+        plt.plot(d.Time,d.ZSnsr)
+    plt.show()
     fig = PlotUtilities.figure()
     plt.subplot(1,1,1)
     FEC_Plot.heat_map_fec(data,num_bins=(100,500),separation_max=100)

@@ -19,7 +19,6 @@ def subtract_background(image,deg=2,**kwargs):
     to_ret = image.copy()
     shape = image.shape
     coords = np.arange(shape[1])
-    print(coords.shape,image.shape)    
     coeffs = np.array(np.polyfit(x=coords,y=image.T,deg=deg,**kwargs))
     n_rows = shape[0]
     for i in range(n_rows):
