@@ -54,7 +54,6 @@ def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
     for e in examples:
         # get a copy of the data
         tmp = e._slice(slice(0,None,1))
-        """        
         # determine where the max force is
         max_idx = np.argmax(tmp.Force)
         sep_max = tmp.Separation[max_idx]
@@ -65,9 +64,11 @@ def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
         obj_to_fit = tmp._slice(slice(idx_fit,max_idx))
         x0,model_x,model_y = fit_polymer_model(obj_to_fit)
         L0 = x0
-        """        
-        tmp.Separation -= min(tmp.Separation)
-        tmp.ZSnsr -= min(tmp.ZSnsr)
+        min_sep,min_z = min(tmp.Separation),min(tmp.ZSnsr)
+        offset_sep = 0
+        offset_z = 0
+        tmp.Separation -= offset_sep
+        tmp.ZSnsr -= offset_z
         yield tmp
     
         
@@ -75,7 +76,7 @@ def run():
     """
     Filters the input data to something manageable. 
     """
-    m_to_fit_before_max = 20e-9
+    m_to_fit_before_max = 60e-9
     input_dir = Util.cache_sanitized()
     cache_dir = Util.cache_aligned()
     GenUtilities.ensureDirExists(cache_dir)
@@ -84,6 +85,9 @@ def run():
                                           force=True,
                                           name_func=FEC_Util.fec_name_func)
     for d in data:
+        plt.subplot(2,1,1)
+        plt.plot(d.ZSnsr,d.Force)
+        plt.subplot(2,1,2)
         plt.plot(d.Time,d.ZSnsr)
     plt.show()
     fig = PlotUtilities.figure()

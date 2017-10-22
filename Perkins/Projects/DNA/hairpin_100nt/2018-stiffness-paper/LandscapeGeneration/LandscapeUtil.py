@@ -10,6 +10,15 @@ import matplotlib.pyplot as plt
 import sys
 
 
+class UnfoldingRefolding:
+    def __init__(self,unfolding,refolding,info):
+        self.unfolding = unfolding
+        self.refolding = refolding
+        self.info = info
+    @property 
+    def Meta(self):
+        return self.info.Meta
+
 class RefoldingInfo:
     """
     This class encapsulates a refolding experiment, for the purposes of 
@@ -36,10 +45,28 @@ class RefoldingInfo:
         assert len(slices) == 2*n_end
         assert [s.start for s in slices] + [slices[-1].stop] == idx_flat
         return slices
+    def _z_region_property(self,f):
+        """
+        returns: f, applied to each region of the spline
+        """
+        slices = self._idx_pairs
+        spline_t = self.spline(self.data.Time)
+        return [f(spline_t[s]) for s in slices]
+    @property 
+    def _z_region_max_min(self):
+        """
+        returns: the maximum over all region minima
+        """
+        return max(self._z_region_property(min))
+    @property 
+    def _z_region_min_max(self):
+        """
+        returns: the minima over all region maxima
+        """
+        return min(self._z_region_property(max))
     @property
     def Meta(self):
         return self.data.Meta
-    
 
 def _cache_base(base_dots="../../"):
     return "{:s}Data/".format(base_dots)

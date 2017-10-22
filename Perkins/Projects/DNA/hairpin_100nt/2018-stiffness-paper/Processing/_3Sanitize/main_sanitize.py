@@ -40,10 +40,6 @@ def sanitize(input_dir,seconds_for_zero):
         last_zero_idx = idx_zero[-1]
         e.Force -= np.median(e.Force[last_zero_idx])
         e.Force *= -1 
-        # determine the zero crossing 
-        zero_idx_sep = np.where(e.Force > 0)[0]
-        assert zero_idx_sep.size > 0
-        e.Separation -= e.Separation[zero_idx_sep[0]]
         yield e
         
 def run():

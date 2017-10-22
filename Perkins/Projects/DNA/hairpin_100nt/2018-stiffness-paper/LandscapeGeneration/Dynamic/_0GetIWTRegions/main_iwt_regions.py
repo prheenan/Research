@@ -115,7 +115,7 @@ def get_iwt_regions(input_dir,n_desired_resolution_m = 3e-9,N_peaks = 5):
         to_ret = LandscapeUtil.RefoldingInfo(data,
                                              idx_start=idx_refold_bottom,
                                              idx_end=idx_refold_top,
-                                             spline=spline)                                         
+                                             spline=spline)                    
         yield to_ret                                            
 
 def run():
