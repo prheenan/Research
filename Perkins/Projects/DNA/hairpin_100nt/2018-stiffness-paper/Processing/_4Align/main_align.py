@@ -17,6 +17,7 @@ from GeneralUtil.python import GenUtilities,CheckpointUtilities,PlotUtilities
 from IgorUtil.PythonAdapter import TimeSepForceObj
 import Util
 from FitUtil.FreelyJointedChain.Python.Code import FJC
+from scipy.interpolate import LSQUnivariateSpline
 
     
 def fit_polymer_model(example):
@@ -37,7 +38,7 @@ def fit_polymer_model(example):
     return x0,model_x,model_y
 
 
-def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
+def align(input_dir,m_to_fit=20e-9):
     """
     reads in the data, filters it, and decimates it 
     
@@ -57,38 +58,58 @@ def align(input_dir,m_to_fit_before_max=20e-9,arbitrary_offset_m=-90e-9):
         # determine where the max force is
         max_idx = np.argmax(tmp.Force)
         sep_max = tmp.Separation[max_idx]
-        idx_where_le = \
-            np.where(tmp.Separation < sep_max - m_to_fit_before_max)[0]
+        t = tmp.Time
+        force = tmp.Force
+        n_bins = int(np.ceil(force.size/100))
+        knots = np.linspace(min(t),max(t),endpoint=True,num=n_bins)
+        spline_force = LSQUnivariateSpline(x=t,y=tmp.Force,t=knots[1:-1],
+                                           k=3)
+        spline_sep = LSQUnivariateSpline(x=t,y=tmp.Separation,t=knots[1:-1],
+                                         k=3)
+        spline_force_t = spline_force(t)
+        spline_sep_t = spline_sep(t)
+        where_ge_0 = np.where(spline_force_t > 0)[0]
+        assert where_ge_0.size > 0 , "Data not zeroed."
+        zero_idx = where_ge_0[0]
+        max_force_idx = np.argmax(spline_force_t)
+        sep_until_max_force = spline_sep_t[:max_force_idx]
+        idx_where_le = np.where(sep_until_max_force <= \
+                                max(sep_until_max_force) - m_to_fit)[0]
         assert idx_where_le.size > 0 
-        idx_fit = idx_where_le[-1]
-        obj_to_fit = tmp._slice(slice(idx_fit,max_idx))
+        idx_fit_i = idx_where_le[-1]
+        idx_fit_f = max_force_idx
+        slice_fit = slice(idx_fit_i,idx_fit_f)
+        obj_to_fit = tmp._slice(slice_fit)
+        zero_sep = spline_sep_t[zero_idx]
+        obj_to_fit.Separation -= zero_sep
         x0,model_x,model_y = fit_polymer_model(obj_to_fit)
         L0 = x0
         min_sep,min_z = min(tmp.Separation),min(tmp.ZSnsr)
         offset_sep = 0
         offset_z = 0
-        tmp.Separation -= offset_sep
-        tmp.ZSnsr -= offset_z
-        yield tmp
+        to_ret = e._slice(slice(zero_idx,None,1))
+        to_ret.Separation -= offset_sep
+        to_ret.ZSnsr -= offset_z
+        yield to_ret
     
         
 def run():
     """
     Filters the input data to something manageable. 
     """
-    m_to_fit_before_max = 60e-9
+    m_to_fit = 30e-9
     input_dir = Util.cache_sanitized()
     cache_dir = Util.cache_aligned()
     GenUtilities.ensureDirExists(cache_dir)
-    load_f = lambda: align(input_dir,m_to_fit_before_max)
+    load_f = lambda: align(input_dir,m_to_fit)
     data = CheckpointUtilities.multi_load(cache_dir=cache_dir,load_func=load_f,
                                           force=True,
                                           name_func=FEC_Util.fec_name_func)
     for d in data:
         plt.subplot(2,1,1)
-        plt.plot(d.ZSnsr,d.Force)
+        plt.plot(d.Separation,d.Force)
         plt.subplot(2,1,2)
-        plt.plot(d.Time,d.ZSnsr)
+        plt.plot(d.Time,d.Force)
     plt.show()
     fig = PlotUtilities.figure()
     plt.subplot(1,1,1)

@@ -83,5 +83,7 @@ def cache_landscape_regions(*args,**kw):
 def cache_landscape_aligned_regions(*args,**kw):
     return _landscape_base(*args,**kw) + "_1regions_aligned/"
 
+def cache_landscapes(*args,**kw):
+    return _landscape_base(*args,**kw) + "_3landscapes/"
     
 

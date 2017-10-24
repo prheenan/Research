@@ -19,7 +19,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,\
 from scipy.interpolate import LSQUnivariateSpline
 
 
-def get_aligned_regions(input_dir):
+def get_aligned_regions(input_dir,v=40e-9):
     """
     Returns the 'aligned' iwt regions 
     """
@@ -30,39 +30,52 @@ def get_aligned_regions(input_dir):
     # XXX why is this not min(max( ? 
     min_of_max = min([e._z_region_min_max for e in examples])
     len_expected = None
+    key = examples[0]
+    n_expected_pairs = len(key._idx_pairs)
+    key_t = key.data.Time
+    dt = key_t[1]-key_t[0]
+    dz = abs(max_of_min-min_of_max)
+    dn = int(np.ceil(dz/(v*dt)))
     for i,example_info in enumerate(examples):
         original = example_info.data._slice(slice(0,None,1))
         z = spline_t[i]
-        condition_between = ((z >= max_of_min) & \
-                             (z <= min_of_max))
+        t = example_info.data.Time
         slice_idx = example_info._idx_pairs
-        idx_array = np.arange(0,z.size)
-        regions = [np.where(condition_between & \
-                            (idx_array >= r.start) & 
-                            (idx_array <= r.stop))
-                   for r in slice_idx]
-        len_v = [len(r) for r in regions]
-        # make sure there is at least one region
-        assert (len_v > 0)
-        # make sure all regions have the same length
-        key_length = len_v[0]
-        assert (len_v == [key_length for _ in len_v])
-        # make sure these regions match all previous regions
+        z_schedule = np.zeros(t.size)
+        unfolding = [original._slice(slice(r.start,r.start+dn,1))
+                     for r in slice_idx[::2]]
+        refolding = [original._slice(slice(r.start-dn,r.start,1))
+                     for r in (slice_idx[2::2] + [slice(-1,0,1)])]
+        # make sure we have the same number of slices
+        n_total_pairs = len(unfolding) + len(refolding)
+        assert len(unfolding) == len(refolding)
+        assert n_total_pairs == len(slice_idx)
+        # make sure the number of pairs matches the expected number of pairs.
+        assert n_total_pairs == n_expected_pairs
+        # make sure we have the same sizes for all sizes
+        _check_sizes_consistent(unfolding)
+        _check_sizes_consistent(refolding)
+        # check that the two lists are consistent
+        key_length = unfolding[0].Force.size
+        assert key_length == refolding[0].Force.size
+        # make sure the sizes match all previous
         if (len_expected is None):
             len_expected = key_length
         else:
             assert len_expected == key_length
         to_ret = copy.deepcopy(example_info)
-        # make a 
-        data = [original._slice(r) for r in regions]
-        unfolding = data[::2]
-        refolding = data[1::2]
-        assert len(unfolding) == len(refolding)
-        assert (len(unfolding) + len(refolding)) == len(slice_idx)
         to_ret = LandscapeUtil.UnfoldingRefolding(unfolding,
                                                   refolding,
                                                   info=to_ret)
         yield to_ret
+
+def _check_sizes_consistent(list_v):
+    key = list_v[0].Force.size
+    sizes = [u.Force.size for u in list_v]
+    err_string = "Actual sizes ({:s}) don't match the key ({:d})".\
+                 format(sizes,key)
+    assert sizes == [key for _ in list_v] , err_string
+
 
 def run():
     input_dir =  LandscapeUtil.cache_landscape_regions("../../../")
@@ -75,6 +88,12 @@ def run():
                                        name_func=FEC_Util.fec_name_func)
     fecs_unfold = [d for tmp in e for d in tmp.unfolding]
     fecs_refold = [d for tmp in e for d in tmp.refolding]
+    for u,r in zip(fecs_unfold,fecs_refold):
+        unfold_size = u.Force.size
+        refold_size = r.Force.size
+        error_str = "Sizes ({:d}/{:d}) don't match".format(unfold_size,
+                                                           refold_size)
+        assert unfold_size == refold_size , error_str
     all_sep = np.concatenate([d.Separation 
                               for d in (fecs_unfold + fecs_refold)])
     min_x = np.min(all_sep)
