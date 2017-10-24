@@ -19,7 +19,7 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,\
 from scipy.interpolate import LSQUnivariateSpline
 
 
-def get_aligned_regions(input_dir,v=40e-9):
+def get_aligned_regions(input_dir,v=50e-9):
     """
     Returns the 'aligned' iwt regions 
     """
@@ -46,6 +46,9 @@ def get_aligned_regions(input_dir,v=40e-9):
                      for r in slice_idx[::2]]
         refolding = [original._slice(slice(r.start-dn,r.start,1))
                      for r in (slice_idx[2::2] + [slice(-1,0,1)])]
+        for u,r in zip(unfolding,refolding):
+            u.Velocity = v
+            r.Velocity = -v
         # make sure we have the same number of slices
         n_total_pairs = len(unfolding) + len(refolding)
         assert len(unfolding) == len(refolding)
