@@ -19,53 +19,55 @@ from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util,\
 from scipy.interpolate import LSQUnivariateSpline
 
 
+def get_unfolding_and_refolding(example_info,n_expected_pairs,dn,v):
+    t = example_info.data.Time
+    z = example_info.spline(t)
+    original = example_info.data._slice(slice(0,None,1))
+    slice_idx = example_info._idx_pairs
+    z_schedule = np.zeros(t.size)
+    unfolding = [original._slice(slice(r.start,r.start+dn,1))
+                 for r in slice_idx[::2]]
+    refolding = [original._slice(slice(r.start-dn,r.start,1))
+                 for r in (slice_idx[2::2] + [slice(-1,0,1)])]
+    for u,r in zip(unfolding,refolding):
+        u.Velocity = v
+        r.Velocity = -v
+    # make sure we have the same number of slices
+    n_total_pairs = len(unfolding) + len(refolding)
+    assert len(unfolding) == len(refolding)
+    assert n_total_pairs == len(slice_idx)
+    # make sure the number of pairs matches the expected number of pairs.
+    assert n_total_pairs == n_expected_pairs
+    # make sure we have the same sizes for all sizes
+    _check_sizes_consistent(unfolding)
+    _check_sizes_consistent(refolding)
+    # check that the two lists are consistent
+    key_length = unfolding[0].Force.size
+    assert key_length == refolding[0].Force.size
+    return unfolding,refolding
+
+def get_n_points(key,v):
+    n_expected_pairs = len(key._idx_pairs)
+    key_t = key.data.Time
+    dt = key_t[1]-key_t[0]
+    max_of_min = key._z_region_max_min
+    min_of_max = key._z_region_min_max
+    dz = abs(max_of_min-min_of_max)
+    dn = int(np.ceil(dz/(v*dt)))
+    return dn
+
+
 def get_aligned_regions(input_dir,v=50e-9):
     """
     Returns the 'aligned' iwt regions 
     """
     examples = CheckpointUtilities.lazy_multi_load(input_dir)
-    spline_t = [e.spline(e.data.Time) for e in examples]
-    # get the bounds for the region
-    max_of_min = max([e._z_region_max_min for e in examples])
-    # XXX why is this not min(max( ? 
-    min_of_max = min([e._z_region_min_max for e in examples])
-    len_expected = None
-    key = examples[0]
-    n_expected_pairs = len(key._idx_pairs)
-    key_t = key.data.Time
-    dt = key_t[1]-key_t[0]
-    dz = abs(max_of_min-min_of_max)
-    dn = int(np.ceil(dz/(v*dt)))
+    n_expected_pairs = 10
     for i,example_info in enumerate(examples):
-        original = example_info.data._slice(slice(0,None,1))
-        z = spline_t[i]
-        t = example_info.data.Time
-        slice_idx = example_info._idx_pairs
-        z_schedule = np.zeros(t.size)
-        unfolding = [original._slice(slice(r.start,r.start+dn,1))
-                     for r in slice_idx[::2]]
-        refolding = [original._slice(slice(r.start-dn,r.start,1))
-                     for r in (slice_idx[2::2] + [slice(-1,0,1)])]
-        for u,r in zip(unfolding,refolding):
-            u.Velocity = v
-            r.Velocity = -v
-        # make sure we have the same number of slices
-        n_total_pairs = len(unfolding) + len(refolding)
-        assert len(unfolding) == len(refolding)
-        assert n_total_pairs == len(slice_idx)
-        # make sure the number of pairs matches the expected number of pairs.
-        assert n_total_pairs == n_expected_pairs
-        # make sure we have the same sizes for all sizes
-        _check_sizes_consistent(unfolding)
-        _check_sizes_consistent(refolding)
-        # check that the two lists are consistent
-        key_length = unfolding[0].Force.size
-        assert key_length == refolding[0].Force.size
+        dn = get_n_points(example_info,v)
+        unfolding,refolding = \
+            get_unfolding_and_refolding(example_info,n_expected_pairs,dn,v)
         # make sure the sizes match all previous
-        if (len_expected is None):
-            len_expected = key_length
-        else:
-            assert len_expected == key_length
         to_ret = copy.deepcopy(example_info)
         to_ret = LandscapeUtil.UnfoldingRefolding(unfolding,
                                                   refolding,
