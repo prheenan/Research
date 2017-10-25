@@ -9,6 +9,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+class TraceInfo:
+    def __init__(self,raw_image,trace_properties):
+        self.raw_image = raw_image
+        self.trace_properties = trace_properties
+    @property
+    def label_image(self):
+        to_ret = np.zeros_like(self.raw_image.height)
+        for i,p in enumerate(self.trace_properties):
+            for x,y in p.coords:
+                to_ret[x,y] = (i+1)
+        return to_ret        
+    @property
+    def Meta(self):
+        return self.raw_image.Meta
+
 def _base_dir(base="../../"):
     return base + "Data/"
 

@@ -166,6 +166,9 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
+def _fec_name_func(e):
+    return fec_name_func(0,e)
+    
 def fec_name_func(i,e):
     """
     Args:
