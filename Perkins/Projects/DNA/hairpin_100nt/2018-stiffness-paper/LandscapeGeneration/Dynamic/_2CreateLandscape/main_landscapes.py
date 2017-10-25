@@ -21,38 +21,42 @@ from FitUtil.EnergyLandscapes.InverseWeierstrass.Python.Code import \
 from scipy.interpolate import LSQUnivariateSpline
 
 
-def get_aligned_regions(input_dir):
-    """
-    Returns the 'aligned' iwt regions 
-    """
+def convert_to_iwt(tmp):
+    unfold = [WeierstrassUtil.ToIWTObject(d,Offset=d.ZSnsr[0])
+              for d in tmp.unfolding]
+    refold = [WeierstrassUtil.ToIWTObject(d,Offset=d.ZSnsr[0])
+              for d in tmp.refolding]
+    key = tmp.unfolding[0]
+    z0 = key.ZSnsr[0]
+    v = key.Velocity
+    for u,r in zip(unfold,refold):
+        t = u.Time
+        zf = z0 + v * (t[-1]-t[0])
+        u.SetOffsetAndVelocity(z0,+v)
+        r.SetOffsetAndVelocity(zf,-v)
+        u.Time -= min(u.Time)
+        r.Time -= min(r.Time)
+    return unfold,refold 
+
+def get_landscapes(unfold,refold):
+    l = InverseWeierstrass.free_energy_inverse_weierstrass(unfold,refold)
+    return l
+
 
 def run():
     input_dir =  LandscapeUtil.cache_landscape_aligned_regions("../../../")
     cache_dir = LandscapeUtil.cache_landscapes("../../../")
     e = CheckpointUtilities.lazy_multi_load(input_dir)
+    data = [convert_to_iwt(tmp) for tmp in e]
+    landscapes = [get_landscapes(*d) for d in data]
+    kw = dict(linewidth=0.5)
+    for i,l in enumerate(landscapes):
+        plt.plot(l.q,l.G_0)
+    plt.show()
     fecs_unfold = [WeierstrassUtil.ToIWTObject(d) for tmp in e 
                    for d in tmp.unfolding]
     fecs_refold = [WeierstrassUtil.ToIWTObject(d) for tmp in e 
                    for d in tmp.refolding]
-    z0 = 20e-9
-    key = fecs_unfold[0]
-    t = key.Time
-    zf = z0 + (t[-1]-t[0]) * key.Velocity
-    for un,re in zip(fecs_unfold,fecs_refold):
-        un.SetOffsetAndVelocity(Offset=z0,Velocity=un.Velocity)
-        re.SetOffsetAndVelocity(Offset=zf,Velocity=re.Velocity)
-    l = InverseWeierstrass.\
-        free_energy_inverse_weierstrass(fecs_unfold,fecs_refold)
-    g_rel_z_offset_m = min(l.q)
-    stiffness_rel = 2e-12/3e-9
-    g_relative = (stiffness_rel/2) * (l.q - g_rel_z_offset_m)**2 
-    G0 = l.G_0 - min(l.G_0)
-    plt.subplot(2,1,1)
-    plt.plot(l.q,G0)
-    plt.plot(l.q,g_relative)
-    plt.subplot(2,1,2)
-    plt.plot(l.q,G0-g_relative)
-    plt.show()
     all_sep = np.concatenate([d.Separation 
                               for d in (fecs_unfold + fecs_refold)])
     min_x = np.min(all_sep)

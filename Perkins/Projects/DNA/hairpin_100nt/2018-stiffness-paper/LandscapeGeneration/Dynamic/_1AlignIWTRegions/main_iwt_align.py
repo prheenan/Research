@@ -21,17 +21,25 @@ from scipy.interpolate import LSQUnivariateSpline
 
 def get_unfolding_and_refolding(example_info,n_expected_pairs,dn,v):
     t = example_info.data.Time
-    z = example_info.spline(t)
+    z_spline = example_info.spline
+    z = z_spline(t)
     original = example_info.data._slice(slice(0,None,1))
     slice_idx = example_info._idx_pairs
     z_schedule = np.zeros(t.size)
-    unfolding = [original._slice(slice(r.start,r.start+dn,1))
-                 for r in slice_idx[::2]]
-    refolding = [original._slice(slice(r.start-dn,r.start,1))
-                 for r in (slice_idx[2::2] + [slice(-1,0,1)])]
+    max_of_min = example_info._z_region_max_min
+    z0 = max_of_min
+    idx_starts = [r.start + np.where(z[r] >= z0)[0][0] for r in slice_idx]
+    unfolding = [original._slice(slice(r,r+dn,1))
+                 for r in idx_starts[::2]]
+    refolding = [original._slice(slice(r-dn,r,1))
+                 for r in (idx_starts[2::2] + [-1])]
     for u,r in zip(unfolding,refolding):
+        u_t_tmp = u.Time
+        z = (u_t_tmp - u_t_tmp[0]) * v + z0
         u.Velocity = v
+        u.ZSnsr = z.copy()
         r.Velocity = -v
+        r.ZSnsr = z[::-1].copy()
     # make sure we have the same number of slices
     n_total_pairs = len(unfolding) + len(refolding)
     assert len(unfolding) == len(refolding)
@@ -105,6 +113,7 @@ def run():
     max_x = np.max(all_sep)
     xlim = [min_x * 1e9, max_x * 1e9]
     fig = PlotUtilities.figure((4,8))
+    # plot the heatmaps...
     ax = plt.subplot(2,1,1)
     FEC_Plot.heat_map_fec(fecs_unfold)
     PlotUtilities.no_x_label(ax)
@@ -115,6 +124,12 @@ def run():
     PlotUtilities.title("")
     plt.xlim(xlim)
     PlotUtilities.savefig(fig,"./out")
+    fig = PlotUtilities.figure()
+    for u,r in zip(fecs_unfold,fecs_refold):
+        plt.plot(u.ZSnsr*1e9,u.Force*1e12)
+        plt.plot(r.ZSnsr*1e9,r.Force*1e12)
+    PlotUtilities.lazyLabel("Z (nm)","Force (pN)","")
+    PlotUtilities.savefig(fig,"./F_vs_z")
 
 
 if __name__ == "__main__":
