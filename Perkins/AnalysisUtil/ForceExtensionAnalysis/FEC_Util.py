@@ -183,8 +183,7 @@ def name_func(i,e):
     half = int(np.floor(max_len/2))
     if (len_file > max_len):
         file_name_src = file_name_src[:half] + "_" + file_name_src[-half:]
-    name = "{:s}_{:s}_{:d}".format(file_name_src,
-                                   e.Meta.Name,i)
+    name = "{:s}_{:s}".format(file_name_src,e.Meta.Name)
     return name                                  
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
