@@ -45,10 +45,10 @@ def run():
     GenUtilities.ensureDirExists(cache_dir)
     load_f = lambda: read_filter_and_decimate(input_dir,n_filter_points,
                                               n_decimate)
-    CheckpointUtilities.multi_load(cache_dir=cache_dir,load_func=load_f,
-                                   force=False,
-                                   name_func=FEC_Util.fec_name_func)
-    
+    e = CheckpointUtilities.multi_load(cache_dir=cache_dir,load_func=load_f,
+                                       force=False,
+                                       name_func=FEC_Util.fec_name_func)
+     
  
         
 if __name__ == "__main__":

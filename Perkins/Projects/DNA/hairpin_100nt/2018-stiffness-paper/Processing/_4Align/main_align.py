@@ -20,7 +20,7 @@ from FitUtil.FreelyJointedChain.Python.Code import FJC
 from scipy.interpolate import LSQUnivariateSpline
 
     
-def fit_polymer_model(example):
+def fit_polymer_model(example,brute_dict=dict(Ns=30)):
     """
     Fits the polymer model de jour to example
     
@@ -29,9 +29,9 @@ def fit_polymer_model(example):
     Returns:
         x0, the parameters of the fit 
     """
-    wlc_params = dict(K0=2000e-12,kbT=4.1e-21,Lp=0.3e-9)
-    ranges = [(10e-9,100e-9)]
-    fit_dict = dict(brute_dict=dict(Ns=50,ranges=ranges),
+    wlc_params = dict(K0=500e-12,kbT=4.1e-21,Lp=0.4e-9)
+    ranges = [(30e-9,60e-9)]
+    fit_dict = dict(brute_dict=dict(ranges=ranges,**brute_dict),
                     **wlc_params)
     x_raw,y_raw = example.Separation,example.Force
     x0,model_x,model_y = FJC.fit_fjc_contour(x_raw,y_raw,**fit_dict)        
@@ -51,6 +51,7 @@ def align(input_dir,m_to_fit=20e-9):
     """
     # read in the data we want 
     examples = CheckpointUtilities.lazy_multi_load(input_dir)
+    constant_offset_m = -0.9e-7
     # filter (and decimate) the data as desired 
     for e in examples:
         # get a copy of the data
@@ -73,10 +74,16 @@ def align(input_dir,m_to_fit=20e-9):
         zero_idx = where_ge_0[0]
         max_force_idx = np.argmax(spline_force_t)
         sep_until_max_force = spline_sep_t[:max_force_idx]
-        idx_where_le = np.where(sep_until_max_force <= \
-                                max(sep_until_max_force) - m_to_fit)[0]
-        assert idx_where_le.size > 0 
-        idx_fit_i = idx_where_le[-1]
+        spline_derivative = spline_force.derivative(1)
+        spline_derivative_2 = spline_force.derivative(2)
+        spline_derivative_until_max = spline_derivative(t)[:max_force_idx]
+        spline_derivative_2_until_max = spline_derivative_2(t)[:max_force_idx]
+        abs_deriv = np.abs(spline_derivative_until_max)
+        # find the last time the derivative is small and the second derivative
+        # is positive
+        idx_where_ge_0 = np.where((spline_derivative_2_until_max > 0))[0]
+        assert idx_where_ge_0.size > 0 
+        idx_fit_i = idx_where_ge_0[-1]
         idx_fit_f = max_force_idx
         slice_fit = slice(idx_fit_i,idx_fit_f)
         obj_to_fit = tmp._slice(slice_fit)
@@ -85,8 +92,8 @@ def align(input_dir,m_to_fit=20e-9):
         x0,model_x,model_y = fit_polymer_model(obj_to_fit)
         L0 = x0
         min_sep,min_z = min(tmp.Separation),min(tmp.ZSnsr)
-        offset_sep = 0
-        offset_z = 0
+        offset_sep = L0 + constant_offset_m
+        offset_z = L0 + constant_offset_m
         to_ret = e._slice(slice(zero_idx,None,1))
         to_ret.Separation -= offset_sep
         to_ret.ZSnsr -= offset_z
@@ -97,7 +104,7 @@ def run():
     """
     Filters the input data to something manageable. 
     """
-    m_to_fit = 30e-9
+    m_to_fit = 20e-9
     input_dir = Util.cache_sanitized()
     cache_dir = Util.cache_aligned()
     GenUtilities.ensureDirExists(cache_dir)
@@ -106,10 +113,12 @@ def run():
                                           force=True,
                                           name_func=FEC_Util.fec_name_func)
     for d in data:
-        plt.subplot(2,1,1)
+        plt.subplot(3,1,1)
         plt.plot(d.Separation,d.Force)
-        plt.subplot(2,1,2)
+        plt.subplot(3,1,2)
         plt.plot(d.Time,d.Force)
+        plt.subplot(3,1,3)
+        plt.plot(d.ZSnsr,d.Force)
     plt.show()
     fig = PlotUtilities.figure()
     plt.subplot(1,1,1)

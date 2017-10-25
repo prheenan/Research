@@ -76,7 +76,7 @@ def _get_region_demarcations(spline,time,first_N_peaks):
     diffs_rev = [diff(i,j) for i, j in
                  zip(idx_refold_top[1:], idx_refold_bottom)]
     all_diffs = np.concatenate([np.abs(diffs_fwd), np.abs(diffs_rev)])
-    target_diff = min(all_diffs)
+    target_diff = max(all_diffs)
     # tack on the start and end of the experiment (both 'bottom' indices)
     # ie, the '.' above 
     offset_z = spline_t[idx_refold_top[0]]
