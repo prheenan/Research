@@ -39,7 +39,8 @@ def run():
     images = CheckpointUtilities.lazy_multi_load(base_dir)
     load_func = lambda: filter(images,expected_length_m)
     e = CheckpointUtilities.multi_load(cache_dir=cache_dir,load_func=load_func,
-                                       name_func=FEC_Util.fec_name_func)
+                                       name_func=FEC_Util.fec_name_func,
+                                       force=True)
 
 if __name__ == "__main__":
     run()
