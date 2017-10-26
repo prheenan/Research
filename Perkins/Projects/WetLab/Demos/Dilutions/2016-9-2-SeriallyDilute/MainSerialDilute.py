@@ -17,13 +17,13 @@ def run():
     ConcString = "nM"
     VolString = "uL"
     # stock concentration
-    Stock = 1000
+    Stock = 1400
     # Desired concentrations
-    Desired = [200,80,20,5]
+    Desired = [40]
     # desired volumes (for each)
     Volumes = [10 for d in Desired]
     DilutionUtil.PrintSerialSteps(Stock,Volumes,Desired,
-                                  ConcString=ConcString,BufferString="FLAG",
+                                  ConcString=ConcString,BufferString="TE",
                                   dilution_concentration=0)
     
 
