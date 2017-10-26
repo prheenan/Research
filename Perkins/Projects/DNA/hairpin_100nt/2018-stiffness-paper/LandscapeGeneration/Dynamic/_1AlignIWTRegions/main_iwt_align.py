@@ -29,10 +29,12 @@ def get_unfolding_and_refolding(example_info,n_expected_pairs,dn,v):
     max_of_min = example_info._z_region_max_min
     z0 = max_of_min
     idx_starts = [r.start + np.where(z[r] >= z0)[0][0] for r in slice_idx]
+    idx_start_unfold = idx_starts[::2]
+    idx_end_refold = idx_starts[2::2] + [-1]
     unfolding = [original._slice(slice(r,r+dn,1))
-                 for r in idx_starts[::2]]
+                 for r in idx_start_unfold]
     refolding = [original._slice(slice(r-dn,r,1))
-                 for r in (idx_starts[2::2] + [-1])]
+                 for r in idx_end_refold]
     for u,r in zip(unfolding,refolding):
         u_t_tmp = u.Time
         z = (u_t_tmp - u_t_tmp[0]) * v + z0
@@ -40,6 +42,20 @@ def get_unfolding_and_refolding(example_info,n_expected_pairs,dn,v):
         u.ZSnsr = z.copy()
         r.Velocity = -v
         r.ZSnsr = z[::-1].copy()
+        
+    xlim = [min(original.ZSnsr),max(original.ZSnsr)]
+    ylim = [min(original.Force),max(original.Force)]
+    plt.subplot(2,1,1)
+    plt.plot(original.ZSnsr,original.Force)
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.subplot(2,1,2)
+    for u,r in zip(unfolding,refolding):
+        plt.plot(u.ZSnsr,u.Force)
+        plt.plot(r.ZSnsr,r.Force)
+    plt.xlim(xlim)
+    plt.ylim(ylim)
+    plt.show()
     # make sure we have the same number of slices
     n_total_pairs = len(unfolding) + len(refolding)
     assert len(unfolding) == len(refolding)

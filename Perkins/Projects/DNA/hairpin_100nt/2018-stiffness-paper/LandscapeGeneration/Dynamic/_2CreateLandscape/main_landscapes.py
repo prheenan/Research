@@ -39,7 +39,7 @@ def convert_to_iwt(tmp):
     return unfold,refold 
 
 def get_landscapes(unfold,refold):
-    l = InverseWeierstrass.free_energy_inverse_weierstrass(unfold,refold)
+    l = InverseWeierstrass.free_energy_inverse_weierstrass(unfold)
     return l
 
 
@@ -50,6 +50,11 @@ def run():
     data = [convert_to_iwt(tmp) for tmp in e]
     landscapes = [get_landscapes(*d) for d in data]
     kw = dict(linewidth=0.5)
+    for tmp in e:
+        for u,r in zip(tmp.unfolding,tmp.refolding):
+            plt.plot(u.ZSnsr,u.Force)
+            plt.plot(r.ZSnsr,r.Force)
+        plt.show()
     for i,l in enumerate(landscapes):
         plt.plot(l.q,l.G_0)
     plt.show()
