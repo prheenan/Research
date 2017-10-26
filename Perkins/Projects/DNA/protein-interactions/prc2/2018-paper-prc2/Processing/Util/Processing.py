@@ -44,3 +44,6 @@ def cache_select_images(*args,**kw):
     
 def cache_traces(*args,**kw):
     return _cache_dir(2,"TracedImages")
+    
+def cache_filtered_traces(*args,**kw):
+    return _cache_dir(3,"FilteredTraces")        
