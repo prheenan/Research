@@ -61,7 +61,7 @@ def align(input_dir,m_to_fit=20e-9):
         sep_max = tmp.Separation[max_idx]
         t = tmp.Time
         force = tmp.Force
-        n_bins = int(np.ceil(force.size/100))
+        n_bins = int(np.ceil(force.size/50))
         knots = np.linspace(min(t),max(t),endpoint=True,num=n_bins)
         spline_force = LSQUnivariateSpline(x=t,y=tmp.Force,t=knots[1:-1],
                                            k=3)
@@ -69,6 +69,10 @@ def align(input_dir,m_to_fit=20e-9):
                                          k=3)
         spline_force_t = spline_force(t)
         spline_sep_t = spline_sep(t)
+        idx_zero = np.argmax(spline_force_t)
+        new_force_zero = np.median(force[idx_zero:])
+        spline_force_t -= new_force_zero
+        tmp.Force -= new_force_zero
         where_ge_0 = np.where(spline_force_t > 0)[0]
         assert where_ge_0.size > 0 , "Data not zeroed."
         zero_idx = where_ge_0[0]
@@ -113,12 +117,9 @@ def run():
                                           force=True,
                                           name_func=FEC_Util.fec_name_func)
     for d in data:
-        plt.subplot(3,1,1)
         plt.plot(d.Separation,d.Force)
-        plt.subplot(3,1,2)
-        plt.plot(d.Time,d.Force)
-        plt.subplot(3,1,3)
-        plt.plot(d.ZSnsr,d.Force)
+        plt.xlim([-5e-9,100e-9])
+        plt.ylim([-5e-12,75e-12])
     plt.show()
     fig = PlotUtilities.figure()
     plt.subplot(1,1,1)
