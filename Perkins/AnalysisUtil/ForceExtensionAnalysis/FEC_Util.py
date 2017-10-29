@@ -166,7 +166,7 @@ def read_and_cache_pxp(directory,cache_name=None,force=True,**kwargs):
                                          force,directory,**kwargs)
     return d
     
-def name_func(i,e):
+def fec_name_func(i,e):
     """
     Args:
         i: an arbitrary id integer  
@@ -188,7 +188,7 @@ def name_func(i,e):
     return name                                  
     
 def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
-                                        name_func=name_func,
+                                        name_func=fec_name_func,
                                         force=False,load_func=None,**kwargs):
     """
     reads in all pxp files in a directory, caching their waves 
@@ -221,7 +221,7 @@ def cache_individual_waves_in_directory(pxp_dir,cache_dir,limit=None,
     return CheckpointUtilities.multi_load(cache_dir=cache_dir,
                                           load_func=load_functor,
                                           force=force,limit=limit,
-                                          name_func=name_func)
+                                          name_func=fec_name_func)
 
 def _slice_by_property(obj,min_prop,max_prop,property_func):
     """
@@ -510,16 +510,11 @@ def GetFilteredForce(Obj,NFilterPoints=None,FilterFunc=SavitskyFilter):
     """
     if (NFilterPoints is None):
         NFilterPoints = int(np.ceil(default_filter_pct*Obj.Force.size))
-    ToRet = copy.deepcopy(Obj)
+    ToRet = Obj._slice(slice(0,None,1))
     ToRet.Force = FilterFunc(Obj.Force,nSmooth=NFilterPoints)
-    try:
-        ToRet.Separation = FilterFunc(Obj.Separation,nSmooth=NFilterPoints)
-    except AttributeError:
-        ToRet.Extension = FilterFunc(Obj.Extension,nSmooth=NFilterPoints)
-    try:
-        ToRet.set_z_sensor(FilterFunc(Obj.ZSnsr,nSmooth=NFilterPoints))
-    except AttributeError:
-        pass
+    ToRet.Separation = FilterFunc(Obj.LowResData.sep,\
+                                  nSmooth=NFilterPoints)
+    ToRet.set_z_sensor(FilterFunc(Obj.ZSnsr,nSmooth=NFilterPoints))
     return ToRet
 
 def GetSurfaceIndexAndForce(TimeSepForceObj,Fraction,FilterPoints,

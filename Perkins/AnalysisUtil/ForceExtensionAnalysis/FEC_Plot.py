@@ -32,10 +32,14 @@ def _fec_base_plot(x,y,n_filter_points=None,label="",
         style_filtered['label'] = label
     if (n_filter_points is None):
         n_filter_points = int(np.ceil(x.size * FEC_Util.default_filter_pct))
-    x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
-    y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
+    if (n_filter_points > 1):
+        x_filtered = SavitskyFilter(x,nSmooth=n_filter_points)
+        y_filtered = SavitskyFilter(y,nSmooth=n_filter_points)
+        plt.plot(x_filtered,y_filtered,**style_filtered)
+    else:
+        x_filtered = x
+        y_filtered = y
     plt.plot(x,y,**style_data)
-    plt.plot(x_filtered,y_filtered,**style_filtered)
     return x_filtered,y_filtered
  
     
@@ -43,7 +47,7 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
                           x_func = lambda x: x.Separation,
                           y_func = lambda y: y.Force, 
                           ApproachLabel="Approach",
-                          RetractLabel="Retract"):
+                          RetractLabel="Retract",linewidth=1):
     """
     Most of the brains for the approach/retract curve. does *not* show anything
 
@@ -55,9 +59,11 @@ def _ApproachRetractCurve(Appr,Retr,NFilterPoints=100,
     """
     # plot the separation and force, with their filtered counterparts
     _fec_base_plot(x_func(Appr),y_func(Appr),n_filter_points=NFilterPoints,
-                   style_data=dict(color='r',alpha=0.3),label=ApproachLabel)
+                   style_data=dict(color='r',alpha=0.3,linewidth=linewidth),
+                   label=ApproachLabel)
     _fec_base_plot(x_func(Retr),y_func(Retr),n_filter_points=NFilterPoints,
-                   style_data=dict(color='b',alpha=0.3),label=RetractLabel)
+                   style_data=dict(color='b',alpha=0.3,linewidth=linewidth),
+                   label=RetractLabel)
 
 def FEC_AlreadySplit(Appr,Retr,
                      XLabel = "Separation (nm)",
