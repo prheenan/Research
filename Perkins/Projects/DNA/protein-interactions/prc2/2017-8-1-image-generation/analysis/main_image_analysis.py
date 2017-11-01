@@ -286,7 +286,6 @@ def run():
     detailed_plot(in_dir_0x="./in/in_empty/",ylim_max=11,
                   **args_mM(120))  
     detailed_plot(in_dir_0x="./in/in_0x_10mM/",ylim_max=11,**args_mM(10))
-    #plot_all_objects(out_dir,objs_all)        
 
 
 if __name__ == "__main__":

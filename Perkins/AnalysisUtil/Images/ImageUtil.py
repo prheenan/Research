@@ -12,7 +12,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def_imshow_kw = dict(cmap=plt.cm.afmhot)
 
-def subtract_background(image):
+def subtract_background(image,**kw):
     return _subtract_array_background(image.height,**kw)
 
 def _subtract_array_background(image,deg=2,**kwargs):
