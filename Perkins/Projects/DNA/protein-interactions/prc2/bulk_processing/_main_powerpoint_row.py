@@ -71,8 +71,7 @@ def run():
     images = CheckpointUtilities.lazy_multi_load("./cache/")
     out_dir = "./rows/"
     GenUtilities.ensureDirExists(out_dir)
-    to_save = [ ["0x_row", [134,144,147,158]],
-                ["5mer",[50,57,62,110]]]
+    to_save = [ ["3mer_regulatory",[182,189,205,208]]]
     for name,numbers in to_save:
         numbers_fmt = ["Image{:04d}".format(n) for n in numbers]
         to_plot = get_images_to_plot(images,numbers_fmt)
