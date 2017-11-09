@@ -69,7 +69,7 @@ def print_info(dist,name):
     print("For {:s}:".format(name))
     # print in nm 
     # round to the tens place (pretty sure are errors are ~100nm)
-    sanit = lambda x: int(np.round(x*1e9,-1))
+    sanit = lambda x: int(np.round(x*1e9,-1)) if np.isfinite(x) else np.nan
     print("\t Median: {:.0f} nm".format(sanit(np.median(dist))))
     print("\t Mean  : {:.0f} nm".format(sanit(np.mean(dist))))
     print("\t Std   : {:.0f} nm".format(sanit(np.std(dist))))
@@ -257,7 +257,7 @@ def detailed_plot(in_dir,in_dir_0x,out_dir,cache_base,**kw_L0):
     objs_all = read_images(in_dir,cache_dir=cache_base + "prc2/")
     kw = dict(min_m = 0,max_m = 125e-9)
     polymer_info_obj = PolymerTracing.ensemble_polymer_info(objs_all,**kw)
-    fig = PlotUtilities.figure()
+    fig = PlotUtilities.figure(figsize=(3,3))
     PolymerPlotting.plot_angle_information(polymer_info_obj)
     PlotUtilities.savefig(fig,out_dir + "angles.png")
     # POST: all the contour lengths are set in 'real' units ]
@@ -277,12 +277,15 @@ def run():
         This is a description of what is returned.
     """
     in_dir = "in/"
-    mM_fmt = lambda mM : "{:d}mM".format(mM)
-    args_mM = lambda mM : \
-        dict(in_dir="./in/in_{:s}/".format(mM_fmt(mM)),
-             out_dir="./out/out_{:s}/".format(mM_fmt(mM)),
-             cache_base="./cache/cache_{:s}".format(mM_fmt(mM)),
+    mM_fmt = lambda mM,s="" : "{:d}mM_{:s}".format(mM,s)
+    args_mM = lambda mM,**kw : \
+        dict(in_dir="./in/in_{:s}/".format(mM_fmt(mM,**kw)),
+             out_dir="./out/out_{:s}/".format(mM_fmt(mM,**kw)),
+             cache_base="./cache/cache_{:s}".format(mM_fmt(mM,**kw)),
              y_box=10)
+    detailed_plot(in_dir_0x="./in/in_10mM_NiCl2_0x/",ylim_max=11,
+                  **args_mM(10,s="NiCl2_0x"))     
+    exit(1)                    
     detailed_plot(in_dir_0x="./in/in_empty/",ylim_max=11,
                   **args_mM(120))  
     detailed_plot(in_dir_0x="./in/in_0x_10mM/",ylim_max=11,**args_mM(10))

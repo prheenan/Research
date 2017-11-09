@@ -63,8 +63,7 @@ def run():
         ax.imshow(height_nm_rel,cmap=plt.cm.Greys_r,vmin=vmin,vmax=vmax,
                   aspect='normal')
         size_microns = i.range_meters * 1e6                
-        size_str = "_{:.2g}microns".format(size_microns)
-        save_name =out_dir + FEC_Util.name_func(0,i) + size_str + ".tiff"
+        save_name =out_dir + FEC_Util.fec_name_func(0,i)  + ".tiff"
         fig.savefig(save_name,dpi=dpi)
 
 
