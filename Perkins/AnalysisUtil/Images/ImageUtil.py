@@ -51,8 +51,8 @@ def cache_images_in_directory(pxp_dir,cache_dir,**kwargs):
     return to_ret                                                  
     
 def smart_colorbar(im,ax=plt.gca(),fig=plt.gcf(),
-                   divider_kw=dict(size="5%",pad=0.1),
-                   label="Height (nm)",add_space_only=False):
+                   divider_kw=dict(size="5%",pad=0.05),
+                   label="Height (nm)",add_space_only=False,**kw):
     """
     Makes a color bar on the given axis/figure by moving the axis over a little 
     """    
@@ -61,12 +61,13 @@ def smart_colorbar(im,ax=plt.gca(),fig=plt.gcf(),
     cax = divider.append_axes("right", size="5%", pad=0.1)
     if (not add_space_only):
         PlotUtilities.colorbar(label,fig=fig,
-                               bar_kwargs=dict(mappable=im,cax=cax))    
+                               bar_kwargs=dict(mappable=im,cax=cax),**kw)    
     else:
         cax.axis('off')
 
     
-def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False):
+def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False,
+                    tick_fontsize=PlotUtilities.g_font_tick,lazy_kwargs=dict()):
     """
     Given an image object, makes a sensible plot 
     
@@ -87,7 +88,9 @@ def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False):
     PlotUtilities.tom_ticks()
     micron_str = PlotUtilities.upright_mu("m")
     PlotUtilities.lazyLabel(micron_str,micron_str,"",
-                            tick_kwargs=dict(direction='out'))    
+                            tick_kwargs=dict(direction='out',
+                                             fontsize=tick_fontsize),
+                            **lazy_kwargs)    
     return to_ret                          
 
 def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),\
