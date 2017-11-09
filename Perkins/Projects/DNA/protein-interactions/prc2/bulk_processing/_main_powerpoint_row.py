@@ -10,10 +10,12 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append("../../../../../../../")
 from Research.Perkins.AnalysisUtil.Images import  ImageUtil
+from Research.Perkins.AnalysisUtil.ForceExtensionAnalysis import FEC_Util
+
 from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 import ProcessingUtil
 
-def make_row_image(images,out_name,numbers_fmt):
+def get_images_to_plot(images,numbers_fmt):
     n_matches = [0 for n in numbers_fmt]
     to_plot = []
     for im in images:
@@ -29,7 +31,11 @@ def make_row_image(images,out_name,numbers_fmt):
     assert (np.array(n_matches) == 1).all() 
     # plot them all...
     n_cols = len(numbers_fmt)
+    return to_plot
+
+def make_row_image(to_plot,out_name):
     size_per_col = 3
+    n_cols = len(to_plot)
     fig = PlotUtilities.figure((n_cols*size_per_col,3))
     for i,im in enumerate(to_plot):
         is_last = (i == n_cols-1)
@@ -65,11 +71,19 @@ def run():
     images = CheckpointUtilities.lazy_multi_load("./cache/")
     out_dir = "./rows/"
     GenUtilities.ensureDirExists(out_dir)
-    to_save = [ ["0x_row.jpeg", [134,144,147,158]],
-                ["5mer.jpeg",[50,57,62,110]]]
+    to_save = [ ["0x_row", [134,144,147,158]],
+                ["5mer",[50,57,62,110]]]
     for name,numbers in to_save:
         numbers_fmt = ["Image{:04d}".format(n) for n in numbers]
-        make_row_image(images,out_dir + name,numbers_fmt)   
+        to_plot = get_images_to_plot(images,numbers_fmt)
+        base_name = out_dir + name + ".jpeg"
+        make_row_image(to_plot,base_name)
+        # save out all the images...
+        for i,im in enumerate(to_plot):
+            fec_name = FEC_Util.fec_name_func(0,im)
+            save_name = "{:s}_{:d}_{:s}".format(base_name,i,fec_name)
+            CheckpointUtilities.lazy_save(save_name,im)
+            
     
 if __name__ == "__main__":
     run()
