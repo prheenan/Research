@@ -13,7 +13,8 @@ from Research.Perkins.AnalysisUtil.Images import  ImageUtil
 from GeneralUtil.python import GenUtilities,PlotUtilities
 import matplotlib.colors as colors
 
-def _image_helper(im,fig,ax,imshow_kwargs=None,colorbar_kwargs=dict(),**kw):
+def _image_helper(im,fig,ax,imshow_kwargs=None,colorbar_kwargs=dict(),
+                  vmin_nm=-0.1,vmax_nm=3,**kw):
     """
     Utility function for creating reasonable images
     
@@ -23,9 +24,6 @@ def _image_helper(im,fig,ax,imshow_kwargs=None,colorbar_kwargs=dict(),**kw):
         imshow_kwargs: passed to ImageUtil.make_image_plot
         colorbar_kwargs: passed to smart_colorbar
     """
-    # note: vmin/vmax are in nm (as is height)                                 
-    vmin_nm = -0.1
-    vmax_nm = vmin_nm + 3
     if (imshow_kwargs is None):                                
         imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.afmhot,
                              norm=None)
@@ -34,7 +32,7 @@ def _image_helper(im,fig,ax,imshow_kwargs=None,colorbar_kwargs=dict(),**kw):
     except ValueError as e:
         print(full_out_path)
         print(e)
-    im = ImageUtil.make_image_plot(im,imshow_kwargs,pct=50,**kw)                      
+    im = ImageUtil.make_image_plot(im,imshow_kwargs,pct=50,**kw)               
     ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)     
 
 
