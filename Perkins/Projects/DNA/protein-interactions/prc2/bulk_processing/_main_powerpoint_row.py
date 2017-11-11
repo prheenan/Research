@@ -58,6 +58,7 @@ def make_row_image(to_plot,out_name):
     PlotUtilities.savefig(fig,out_name,tight=True,
                           subplots_adjust=subplots_adjust)    
 
+
 def run():
     """
     <Description>

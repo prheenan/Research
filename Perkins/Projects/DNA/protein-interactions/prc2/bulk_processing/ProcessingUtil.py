@@ -27,7 +27,7 @@ def _image_helper(im,fig,ax,imshow_kwargs=None,colorbar_kwargs=dict(),**kw):
     vmin_nm = -0.1
     vmax_nm = vmin_nm + 3
     if (imshow_kwargs is None):                                
-        imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.Greys_r,
+        imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.afmhot,
                              norm=None)
     try:
         im.height = ImageUtil.subtract_background(im)

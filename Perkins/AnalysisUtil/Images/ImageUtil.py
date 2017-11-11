@@ -93,7 +93,7 @@ def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False,
                             **lazy_kwargs)    
     return to_ret                          
 
-def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),\
+def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),
                colorbar=True,colorbar_kwargs=dict()):
     """
     Convenience wrapper: see make_image_plot for arguments, except 
