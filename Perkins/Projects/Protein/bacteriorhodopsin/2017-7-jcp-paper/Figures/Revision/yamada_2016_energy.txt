@@ -1,0 +1,23 @@
+# from: Yamada, et al Biophys J 111, 2086–2098 (2016).
+# Table 2: Free Energy of Transfer from the Bulk Water to Pure Lipid Environment
+# Protein  Energy (kJ/mol)
+Ala -3.5
+Arg +21.0
+Asn +9.6
+Asp +23.9
+Cys -2.7
+Gln +6.2
+Glu +19.3
+Gly -1.3
+His +2.2
+Ile -11.7
+Leu -11.7
+Lys +11.8
+Met -6.8
+Phe -14.3
+Pro -7.0
+Ser +5.8
+Thr +4.5
+Trp -13.4
+Tyr -9.7
+Val -8.8
