@@ -31,7 +31,7 @@ def run():
               ["Strept (in Aliquot)","mg/mL",ProteinStock,ProteinDesired,0]]
     aliquot_volume = 150
     vol_units = "uL"
-    n_aliquots_at_a_time = 15
+    n_aliquots_at_a_time = 10
     post_volume = 60
     print("{:d}x aliquots...".format(n_aliquots_at_a_time))
     DilutionUtil.PrintSolutionSteps(Stats,aliquot_volume*n_aliquots_at_a_time,

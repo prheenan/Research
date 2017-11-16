@@ -14,12 +14,19 @@ sys.path.append("../../../../")
 from Util import DilutionUtil 
 
 def run():
-    print("No Divalent buffer creation, 2x, HEPES")
+    buffer_str = "Tris-HCl"
+    print("No Divalent buffer creation, 2x, " + buffer_str)
     KCl = 50
-    Stats = [ ["HEPES","mM",500,20,0],
+    Stats = [ [buffer_str,"mM",500,20,0],
               ["KCl","mM",2500,KCl,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,250,"mL",
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
                                         BufferName="DI H20")
+    print("Rivetti buffer creation, 2x, " + buffer_str)
+    Stats = [ ["HEPES","mM",500,8,0],
+              ["KCl","mM",2500,20,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
+                                        BufferName="DI H20")
+
     print("...")
     print("No Divalent buffer creation, 2x")
     Stats = [ ["Tris-HCl","mM",1000,10,0],
