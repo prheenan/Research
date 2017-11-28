@@ -72,6 +72,8 @@ function write_coords_to_file(output_path,line_array_x,line_array_y,header)
 	}
 	output_string += "# (C) 2017 Patrick Heenan";
 	// save the string to the output file
+	print(file_var,output_string);
+	// print what we output, for the record.
 	print(output_string);
 	File.close(file_var);
 }
@@ -130,6 +132,17 @@ function get_protein_location_header()
 	return header;
 }
 
+function check_minimum_size()
+{
+	// Function to check for minimum sizes (only useful for DNA or protein, etc)
+	minimum_size = 3
+	getSelectionCoordinates(line_array_x,line_array_y);
+	if (lengthOf(line_array_x) < minimum_size))
+	{
+		exit("Didn't have large enough size")	
+	}
+}
+
 macro "Mark protein location [P]"
 {
 	add_current_point_as_protein();
@@ -138,11 +151,13 @@ macro "Mark protein location [P]"
 
 macro "Save line segment as a dna-protein complex [C]"
 {
+	check_minimum_size();
 	save_and_draw_current_selection("_Protein_DNA" + to_int_str(global_iter_num)); 
 	global_iter_num += 1;
 }
 macro "Save line segment as a dna molecule [D]"
 {
+	check_minimum_size();
 	save_and_draw_current_selection("_DNA"+ to_int_str(global_iter_num));
 	global_iter_num += 1;
 }
