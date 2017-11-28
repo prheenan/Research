@@ -107,6 +107,12 @@ class worm_object(object):
         """
         return "protein" in self.file_name.lower()
     @property
+    def is_only_dna(self):
+        """
+        :return: true iff this is only DNA, without protein
+        """
+        return "DNA" in self.file_name and not self.has_dna_bound_protein
+    @property
     def Lp(self):
         """
         Returns: the persistence length, in meters
@@ -145,14 +151,16 @@ class tagged_image:
         self.image_path = file_no_number
         self.image = image
         self.worm_objects = worm_objects
-        cond =  [w.has_dna_bound_protein for w in self.worm_objects]
-        assert len(cond) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
+        cond_protein =  [w.has_dna_bound_protein for w in self.worm_objects]
+        cond_dna = [w.is_only_dna for w in self.worm_objects]
+        assert len(cond_protein) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
         for w in worm_objects:
-            tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
-            w.set_spline_info(tmp_fit)
+            if (w._x_raw.size > 3):
+                tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
+                w.set_spline_info(tmp_fit)
         # POST: as least something to look at 
-        self.protein_idx = np.where(cond)[0]
-        self.dna_only_idx = np.where(~np.array(cond))[0]
+        self.protein_idx = np.where(cond_protein)[0]
+        self.dna_only_idx = np.where(np.array(cond_dna))[0]
     @property
     def file_name(self):
         return self.image_path.rsplit("/",1)[-1]

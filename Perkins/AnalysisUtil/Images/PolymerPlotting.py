@@ -19,7 +19,7 @@ def plot_single_worm_object(tmp_fit):
     plt.plot(x,y,color='r',linewidth=2)
     plt.imshow(tmp_fit.image_threshold)
 
-def plot_angle_information(polymer_info_obj,max_length_nm=30):
+def plot_angle_information(polymer_info_obj,max_length_nm=75):
     L_binned = polymer_info_obj.L_binned
     minus_log_mean_angle = -np.log(polymer_info_obj.cos_angle_binned)
     x,t1,t2,t3,t4 = PolymerTracing.theta_stats(polymer_info_obj,n_bins=50)
