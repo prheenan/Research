@@ -25,14 +25,13 @@ def _image_helper(im,fig,ax,imshow_kwargs=None,colorbar_kwargs=dict(),**kw):
     """
     # note: vmin/vmax are in nm (as is height)                                 
     vmin_nm = -0.1
-    vmax_nm = vmin_nm + 3
+    vmax_nm = vmin_nm + 4
     if (imshow_kwargs is None):                                
-        imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.Greys_r,
+        imshow_kwargs = dict(vmin=vmin_nm,vmax=vmax_nm,cmap = plt.cm.afmhot,
                              norm=None)
     try:
         im.height = ImageUtil.subtract_background(im)
     except ValueError as e:
-        print(full_out_path)
         print(e)
     im = ImageUtil.make_image_plot(im,imshow_kwargs,pct=50,**kw)                      
     ImageUtil.smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)     

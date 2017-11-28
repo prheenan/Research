@@ -16,21 +16,18 @@ from GeneralUtil.python import CheckpointUtilities,PlotUtilities,GenUtilities
 import ProcessingUtil
 
 def get_images_to_plot(images,numbers_fmt):
-    n_matches = [0 for n in numbers_fmt]
     to_plot = []
-    for im in images:
+    for n in numbers_fmt:
         # see if our name matched the expected format...
-        matched = [n in im.Name() for n in numbers_fmt]
+        matched = [n in im.Name() for im in images]
         if (matched == [False for _ in matched]):
             continue
-        # POST: at least one worked
-        for i,m in enumerate(matched):
-            n_matches[i] = n_matches[i] + 1 if m else n_matches[i]
+        # make sure one image matched
+        assert sum(matched) == 1
+        # get the matching index
+        image_idx = np.where(np.array(matched) == True)[0][0]
+        im = images[image_idx]
         to_plot.append(im)
-    # make sure we matched exactly one image
-    assert (np.array(n_matches) == 1).all() 
-    # plot them all...
-    n_cols = len(numbers_fmt)
     return to_plot
 
 def make_row_image(to_plot,out_name):
@@ -71,7 +68,10 @@ def run():
     images = CheckpointUtilities.lazy_multi_load("./cache/")
     out_dir = "./rows/"
     GenUtilities.ensureDirExists(out_dir)
-    to_save = [ ["3mer_regulatory",[182,189,205,208]]]
+    to_save = [ ["0x-601",[40,36,32,30]],
+                ["5mer-1.33x-601",[276,280,286,290]],
+                ["5mer-[conc]",[237,254,286,228]],
+                ]
     for name,numbers in to_save:
         numbers_fmt = ["Image{:04d}".format(n) for n in numbers]
         to_plot = get_images_to_plot(images,numbers_fmt)

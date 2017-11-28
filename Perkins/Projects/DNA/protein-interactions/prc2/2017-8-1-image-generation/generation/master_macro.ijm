@@ -1,4 +1,35 @@
+
 var global_iter_num = 0;
+var global_protein_x = newArray(0);
+var global_protein_y = newArray(0);
+var global_protein_idx = newArray(0);
+
+add_current_point_to_protein_arrays();
+
+function add_current_point_to_protein_arrays()
+{
+	// Assuming we have a current selection, appends
+	// the current x,y, and index associated with the selection
+	// to the global arrays
+	getSelectionCoordinates(line_array_x,line_array_y);
+	current_length = lengthOf(line_array_x);
+	// get the values we want
+	current_idx = current_length -1;
+	current_x = line_array_x[current_idx];
+	current_y = line_array_y[current_idx];
+	// add them to the arrays
+	global_protein_x = Array.concat(global_protein_x,current_x);
+	global_protein_y = Array.concat(global_protein_y,current_y);
+	global_protein_i = Array.concat(global_protein_idx,current_idx);
+}
+
+function clear_protein_arrays()
+{
+	// Removes all elements from the protein arrays
+	global_protein_x = Array.trim(global_protein_x,0);
+	global_protein_y = Array.trim(global_protein_y,0);
+	global_protein_idx = Array.trim(global_protein_idx,0);
+}
 
 function draw_array(line_array_x,line_array_y)
 {
@@ -29,28 +60,20 @@ function x_y_str(x,y)
 	return ret_str;
 }
 
-function get_line_id(line_array_x,line_array_y)
-{
-	// Args:
-	//	line_array_<x,y>: see draw_array
-	// Returns: 
-	//	an id with the line given by x and y, assuming unique endpoints
-	x0_y0=  x_y_str(line_array_x[0],line_array_y[0]);
-	n = lengthOf(line_array_x);
-	xn_yn = x_y_str(line_array_x[n-1],line_array_y[n-1]);
-	return  "";
-}
 
 function save_and_draw_current_selection(suffix)
 {
 	run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel global");
 	output_dir = getDirectory("Image")
 	getSelectionCoordinates(line_array_x,line_array_y);
-	str_id =  get_line_id(line_array_x,line_array_y);
+	// already have a number for the ID 
+	str_id =  ""
 	output_path = output_dir+ getTitle() + str_id + suffix;
 	print(output_path)
 	saveAs("XY Coordinates", "" + output_path);
-	draw_array(line_array_x,line_array_y);
+	draw_array(line_array_x,line_array_y);	
+	// Remove any tagged locations
+	clear_protein_arrays()
 }
 
 
@@ -62,6 +85,29 @@ macro "Save line segment as a dna-protein complex [C]"
 macro "Save line segment as a dna molecule [D]"
 {
 	save_and_draw_current_selection("_DNA"+ to_int_str(global_iter_num));
+	global_iter_num += 1;
+}
+
+macro "Save line segment as a multimer [M]"
+{
+	save_and_draw_current_selection("_Multiple_"+ to_int_str(global_iter_num));
+	global_iter_num += 1;
+}
+
+macro "Mark protein location [P]"
+{
+	add_current_point_to_protein_arrays();
+	n = lengthOf(global_protein_idx)
+	print(n)
+	for (i=0; i<n; i++)
+	{
+		print(global_protein_idx[i])
+	}	
+}
+
+macro "Save line segment as a uninterpretable [U]"
+{
+	save_and_draw_current_selection("_Unknown_"+ to_int_str(global_iter_num));
 	global_iter_num += 1;
 }
 
