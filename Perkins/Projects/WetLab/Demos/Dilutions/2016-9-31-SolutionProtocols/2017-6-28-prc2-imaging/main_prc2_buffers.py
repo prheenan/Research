@@ -7,17 +7,73 @@ from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
+import sys,copy
 
 
 sys.path.append("../../../../")
 from Util import DilutionUtil 
 
 def run():
-    print("No Divalent buffer creation, 2x")
-    Stats = [ ["HEPES","mM",500,20,0],
-              ["KCl","mM",2500,50,0]]
+    print("4x buffer creation")
+    """
+    # see: richard, 2017-6-27. This is the 1x buffer, multiply by 4 below
+
+    Here is the 1X [4x] binding buffer that you should use:
+    50    [200] mM Tris-HCl pH 7.5 at 25C
+    25    [100] mM KCl
+    0.1   [0.4] mM ZnCl2
+    2     [8]   mM 2-mercaptoethanol
+    0.05% [0.2%]v/v NP-40
+    5%    [20%] v/v glycerol
+
+    # from Xueyin:
+    #  I think you could eliminate NP40, which initially was put to prevent aggregation. PRC2 is fine without glycerol but I am not sure about DNA-PRC2 interaction. I would imagine it is fine as Glycerol is for keeping the protein stable in most cases.
+    # so the new buffer becomes (I substitute TCEP for beta, since the protein
+    # is stored in 1mM TCEP). HEPES is better for imaging, and I'm just
+    # going to do 10mM to keep everything consistent.
+
+    Here is the 1X [4x] binding buffer that you should use:
+    10    [400] mM HEPES pH 7.5 at 25C
+    25    [100] mM KCl
+    0.1   [0.4] mM ZnCl2
+    1     [4]   mM TCEP
+    """
+    HEPES_1x = 10
+    KCL_1x = 25
+    ZnCl2_1x = 0.1
+    Stats = [ ["HEPES","mM",975,HEPES_1x,0],
+              ["KCl","mM",2500,KCL_1x,0],
+              ["ZnCl2","mM",15,ZnCl2_1x,0],
+              ["TCEP","mM",50,1,0],
+    ]
+    # I convert it into the 4x buffer
+    conc_mult = 4
+    stats_4x = copy.deepcopy(Stats)
+    for i in range(len(Stats)):
+        stats_4x[i][3] *= conc_mult
+    DilutionUtil.PrintSolutionSteps(stats_4x,50,"mL",
+                                    BufferName="DI H20")
+    print("pH 7.5 buffer, 2x...")
+    # make a 2x buffer for AFM imaging with just the salts
+    Stats = [ ["HEPES","mM",500,2*HEPES_1x,0],
+              ["KCl","mM",2500,2*KCL_1x,0],
+              ["ZnCl2","mM",1.25,2*ZnCl2_1x,0]]
     DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
+                                    BufferName="DI H20")
+
+    print("No Divalent buffer creation, 2x, HEPES")
+    KCl = 50
+    Stats = [ ["HEPES","mM",500,20,0],
+              ["KCl","mM",2500,KCl,0],
+              ["ZnCl2","mM",1.25,0.2,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
+                                        BufferName="DI H20")
+    print("...")
+    print("No Divalent buffer creation, 2x")
+    Stats = [ ["Tris-HCl","mM",1000,10,0],
+              ["KCl","mM",2500,300,0],
+              ["ZnCl2","mM",1.25,0.2,0]]
+    DilutionUtil.PrintSolutionSteps(Stats,50,"mL",
                                     BufferName="DI H20")
     print("High salt buffer creation, 1x")
     Stats = [ ["Tris-HCl","mM",1000,10,0],
