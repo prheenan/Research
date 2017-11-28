@@ -90,7 +90,7 @@ function save_and_draw_current_selection(suffix)
 	// write the formatted file...
 	write_coords_to_file(output_path,line_array_x,line_array_y,header);
 	// Remove any tagged locations
-	//clear_protein_arrays();
+	clear_protein_arrays();
 	draw_array(line_array_x,line_array_y);	
 }
 
