@@ -35,7 +35,7 @@ function draw_array(line_array_x,line_array_y)
 	for (i=0; i<lengthOf(line_array_x)-1; i++)
 	{
 		makeLine(line_array_x[i],line_array_y[i],line_array_x[i+1],line_array_y[i+1]);
-		setForegroundColor(255,0,0);
+		setForegroundColor(255,255,255);
 		run("Draw");
 	}
 }
@@ -73,7 +73,6 @@ function write_coords_to_file(output_path,line_array_x,line_array_y,header)
 	output_string += "# (C) 2017 Patrick Heenan";
 	// save the string to the output file
 	print(output_string);
-	print(file_var,output_string);
 	File.close(file_var);
 }
 
