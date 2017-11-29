@@ -30,15 +30,15 @@ def run():
     #  I think you could eliminate NP40, which initially was put to prevent aggregation. PRC2 is fine without glycerol but I am not sure about DNA-PRC2 interaction. I would imagine it is fine as Glycerol is for keeping the protein stable in most cases.
     # so the new buffer becomes (I substitute TCEP for beta, since the protein
     # is stored in 1mM TCEP). HEPES is better for imaging, and I'm just
-    # going to do 10mM to keep everything consistent.
+    # going to do 50mM to keep everything consistent.
 
     Here is the 1X [4x] binding buffer that you should use:
-    10    [400] mM HEPES pH 7.5 at 25C
+    50    [200] mM HEPES pH 7.5 at 25C
     25    [100] mM KCl
     0.1   [0.4] mM ZnCl2
     1     [4]   mM TCEP
     """
-    HEPES_1x = 10
+    HEPES_1x = 50
     KCL_1x = 25
     ZnCl2_1x = 0.1
     Stats = [ ["HEPES","mM",975,HEPES_1x,0],
