@@ -81,10 +81,10 @@ function write_coords_to_file(output_path,line_array_x,line_array_y,header)
 function save_and_draw_current_selection(suffix)
 {
 	run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel global");
-	output_dir = getDirectory("Image")
+	output_dir = getDirectory("Image");
 	getSelectionCoordinates(line_array_x,line_array_y);
 	// already have a number for the ID 
-	str_id =  ""
+	str_id =  "";
 	output_path = output_dir+ getTitle() + str_id + suffix + ".txt";
 	// Get the header of the protein locations (if any)
 	header = get_protein_location_header();
@@ -135,9 +135,9 @@ function get_protein_location_header()
 function check_minimum_size()
 {
 	// Function to check for minimum sizes (only useful for DNA or protein, etc)
-	minimum_size = 3
+	minimum_size = 3;
 	getSelectionCoordinates(line_array_x,line_array_y);
-	if (lengthOf(line_array_x) < minimum_size))
+	if (lengthOf(line_array_x) < minimum_size)
 	{
 		exit("Didn't have large enough size")	
 	}
