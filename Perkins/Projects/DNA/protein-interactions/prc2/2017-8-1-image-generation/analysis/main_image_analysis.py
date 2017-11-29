@@ -20,7 +20,7 @@ def get_x_and_y_arrays(text_file):
     """
     Returns: the x and y columns (0 and 1) of text_file 
     """
-    data = np.loadtxt(text_file)
+    data = np.loadtxt(text_file,delimiter=" , ",comments="#")
     x = data[:,0]
     y = data[:,1]
     assert ((x >= 1) & (y > 1)).all()
@@ -282,13 +282,9 @@ def run():
         dict(in_dir="./in/in_{:s}/".format(mM_fmt(mM,**kw)),
              out_dir="./out/out_{:s}/".format(mM_fmt(mM,**kw)),
              cache_base="./cache/cache_{:s}".format(mM_fmt(mM,**kw)),
-             y_box=10)
+             y_box=10)                
     detailed_plot(in_dir_0x="./in/in_10mM_NiCl2_0x/",ylim_max=11,
                   **args_mM(10,s="NiCl2_0x"))     
-    exit(1)                    
-    detailed_plot(in_dir_0x="./in/in_empty/",ylim_max=11,
-                  **args_mM(120))  
-    detailed_plot(in_dir_0x="./in/in_0x_10mM/",ylim_max=11,**args_mM(10))
 
 
 if __name__ == "__main__":

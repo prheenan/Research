@@ -22,15 +22,6 @@ def plot_single_worm_object(tmp_fit):
 def plot_angle_information(polymer_info_obj,max_length_nm=75):
     L_binned = polymer_info_obj.L_binned
     minus_log_mean_angle = -np.log(polymer_info_obj.cos_angle_binned)
-    # get the stdev in the bins 
-    log_cos_sq = np.log(polymer_info_obj.cos_angle)**2
-    L_binned_sq,log_angle_sq_binned = \
-        PolymerTracing._binned_stat(x=polymer_info_obj.L_m,
-                                    y=log_cos_sq,
-                                    n_bins=L_binned.size)
-    np.testing.assert_allclose(L_binned_sq,L_binned)                                    
-    variance_log_cos = log_angle_sq_binned - minus_log_mean_angle**2
-    std_log_cos = np.sqrt(variance_log_cos)
     x,t1,t2,t3,t4 = PolymerTracing.theta_stats(polymer_info_obj,n_bins=50)
     log_t2 = np.log(t2)
     log_x = np.log(x)
@@ -48,6 +39,11 @@ def plot_angle_information(polymer_info_obj,max_length_nm=75):
     coeffs,cov = np.polyfit(x=fit_x,y=fit_y,deg=1,cov=True)
     # square root in the diagonal is the uncertainty in the fitting parameters
     coeffs_error = np.sqrt(np.diag(cov))
+    #     <Cos<Angle>>    = e(-L/(L_p))
+    # -Log(<Cos<Angle>>)  = L/(L_p)
+    # so on a plot of -Log(<Cos<Angle>>) vs L, the offset should be zero,
+    # the slope should be 
+    # slope = 1/(L_p)
     Lp = 1/coeffs[0]
     # L_p = 1/c0
     # sigma_(L_p) = (1/(c0^2)) * sigma_c0 
@@ -58,9 +54,6 @@ def plot_angle_information(polymer_info_obj,max_length_nm=75):
     plt.subplot(1,1,1)
     plt.plot(L_binned_plot,minus_log_mean_angle)
     plt.plot(interp_x,interp_y,'r--',label=fit_label)
-    upper = minus_log_mean_angle + std_log_cos
-    lower = minus_log_mean_angle - std_log_cos
-    plt.fill_between(x=L_binned_plot,y1=lower,y2=upper,alpha=0.3,color='g')
     plt.axvspan(max_length_nm,max(plt.xlim()),color='k',alpha=0.3,
                 linewidth=0,
                 label="Not fit")
