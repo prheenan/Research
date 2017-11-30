@@ -79,7 +79,7 @@ def run():
                                   BufferString="1x PRC2") 
     print("=== Binding dilution (note: PRC2 already has 1x binding)===")
     dna_start_conc_inc = 50
-    Stats = [ ["PRC2","x",ratio_prc2_dilution,1,0],
+    Stats = [ ["PRC2"," molar (x)",ratio_prc2_dilution,1,0],
               ["4x binding","x",4,1,1*volume_1x],
               ["DNA","nM",dna_start_conc_inc,dna_imaging_stock_conc_nM,0]]
     vol_units = "uL"
