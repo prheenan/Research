@@ -127,7 +127,9 @@ def run():
     Scalebar.crossed_x_and_y_relative(offset_x=0.55,offset_y=0.59,
                                       x_kwargs=x_kwargs,
                                       y_kwargs=y_kwargs,
-                                      ax=ax_example,x_on_top=True)    
+                                      ax=ax_example,x_on_top=True,
+                                      sanitize_kwargs=dict(factor_y_y=0,
+                                                           factor_x_y=1))    
     # add in the velocity annotation (in nm/s, from m/s)
     velocity_annotate(ax=ax_example,v=vel_m_per_s*1e9)
     # save out the fec
@@ -186,7 +188,8 @@ def run():
                                  ax=ax_tmp,
                                  x_kwargs=x_kwargs,
                                  y_kwargs=y_kwargs,x_on_top=True,
-                                 sanitize_kwargs=dict(factor_x_x=1))
+                                 sanitize_kwargs=dict(factor_x_x=0,
+                                                      factor_x_y=0.5))
         PlotUtilities.no_y_label(ax_tmp)
         PlotUtilities.no_x_label(ax_tmp)
         PlotUtilities.x_label_on_top(ax_tmp)        

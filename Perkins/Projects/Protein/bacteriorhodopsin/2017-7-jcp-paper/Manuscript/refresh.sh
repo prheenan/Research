@@ -41,7 +41,7 @@ function cp_files()
 # Re-calculates all the figures
 
 # run each python file
-force_re_run=0
+force_re_run=1
 figure_base_dir="../Figures/"
 out_dir="./Figures/"
 if [[ $force_re_run == 1 ]]; then
@@ -51,6 +51,7 @@ fi
 cp_files "$figure_base_dir" "*.svg" "$out_dir"
 cp_files "$figure_base_dir" "*.jpeg" "$out_dir"
 cp_files "$figure_base_dir" "*.csv" "$out_dir"
+cp_files "$figure_base_dir" "*.tiff" "$out_dir"
 # re-make the docx file. 
 
 

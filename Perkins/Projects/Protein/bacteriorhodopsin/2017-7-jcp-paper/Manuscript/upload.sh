@@ -12,19 +12,12 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 # Description: updates the document (assuming it dosnt already exist) and the figures (always)
 
 input_file="./2017-jcp-bacteriorhodopsin.md.docx"
-output_base_dir="/Users/patrickheenan/Dropbox/Perkins Group AFM/BR Energy landscape JPC/"
+output_base_dir="/c/Users/pahe3165/Dropbox/Perkins Group AFM/BR Energy landscape JPC/Additional Revision Documents/"
 output_figure_dir="${output_base_dir}Figures/"
-output_dir="${output_base_dir}/drafts/"
-output_file="Heenan_et_al_JCP_2017_bR_landscape_v1_prh.docx"
-output_path="${output_dir}${output_file}"
+output_data_dir="${output_base_dir}Data/"
 # cop the figures over
-cp ./Figures/*.png $output_figure_dir
-if [ -f "$output_path" ]; then
-    echo "File $output_path already exists. not-over-writing"
-    exit
-fi
-cp "$input_file" "$output_path"
-# Returns:
-
-
-
+cp ./Figures/*.tiff "$output_figure_dir"
+cp ./Figures/*.tiff "${output_figure_dir}tiff_only/"
+cp ./Figures/*.svg "$output_figure_dir"
+cp ./Figures/*.jpeg "$output_figure_dir"
+cp ./Figures/*.csv "$output_data_dir"
