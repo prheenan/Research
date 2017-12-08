@@ -31,6 +31,9 @@ def cache_dir(base,n,name):
 
 def _traces_dir(base):
     return cache_dir(base,0,"spline_traces")
+    
+def _ensemble_dir(base):
+    return cache_dir(base,1,"ensemble")
         
         
 def get_x_and_y_arrays(text_file):
