@@ -34,6 +34,11 @@ def _traces_dir(base):
     
 def _ensemble_dir(base):
     return cache_dir(base,1,"ensemble")
+    
+def _plot_dir(base):
+    to_ret = _dir_sanit("{:s}/plot/".format(base))
+    GenUtilities.ensureDirExists(to_ret)
+    return to_ret
         
         
 def get_x_and_y_arrays(text_file):

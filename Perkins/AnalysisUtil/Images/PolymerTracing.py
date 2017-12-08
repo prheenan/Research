@@ -420,7 +420,7 @@ def spline_fit(image_obj,x,y):
 def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
     """
     from an ensemble of tagged images, determines the persistence length,
-    given all of their data
+    given all of their datao
 
     Args:
         objs_all: list, each element is a TaggedImage instance
@@ -436,7 +436,8 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
     # concatenate all the angles and L0
     L,angles,cos_angle = sorted_concatenated_x_and_y_lists(L_and_angles)
     kw_stats = dict(n_bins=n_bins,min_cos_angle=0)
-    L_binned,mean_angle_binned,good_idx = get_L_and_mean_angle(cos_angle, L,**kw_stats)
+    L_binned,mean_angle_binned,good_idx = get_L_and_mean_angle(cos_angle, L,
+                                                               **kw_stats)
     good_idx = np.where( (L_binned >= min_m) & (L_binned <= max_m))
     L_binned = L_binned[good_idx]
     mean_angle_binned = mean_angle_binned[good_idx]

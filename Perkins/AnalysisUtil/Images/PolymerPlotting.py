@@ -51,7 +51,6 @@ def plot_angle_information(polymer_info_obj,max_length_nm=75):
     L_p_error = (Lp**2) * coeffs_error[0]
     fit_label = "$L_p$ = {:.1f} $\pm$ {:.1f} nm".format(Lp,L_p_error)
     interp_y = np.polyval(coeffs,x=interp_x)
-    plt.subplot(1,1,1)
     plt.plot(L_binned_plot,minus_log_mean_angle)
     plt.plot(interp_x,interp_y,'r--',label=fit_label)
     plt.axvspan(max_length_nm,max(plt.xlim()),color='k',alpha=0.3,
