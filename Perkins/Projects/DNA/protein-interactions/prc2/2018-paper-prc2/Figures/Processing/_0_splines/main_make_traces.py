@@ -20,9 +20,8 @@ def run(in_dir):
         in_dir: the input directory to operate on.  
     """
     input_dir =  IoUtil.data_dir(in_dir)
-    print(input_dir)
     output_dir = IoUtil._traces_dir(in_dir)
-    IoUtil.read_images(input_dir,cache_dir=output_dir)
+    IoUtil.read_images(input_dir,cache_dir=output_dir,force=True)
     
 if __name__ == "__main__":
     run(IoUtil.get_directory_command_line())

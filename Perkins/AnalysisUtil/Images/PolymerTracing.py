@@ -153,9 +153,8 @@ class tagged_image:
         self.worm_objects = worm_objects
         cond_protein =  [w.has_dna_bound_protein for w in self.worm_objects]
         cond_dna = [w.is_only_dna for w in self.worm_objects]
-        assert len(cond_protein) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
         for w in worm_objects:
-            if (w._x_raw.size > 3):
+            if (w._x_raw.size > 5):
                 tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
                 w.set_spline_info(tmp_fit)
         # POST: as least something to look at 
@@ -507,7 +506,7 @@ def angles_and_contour_lengths(spline,deriv,
     to_ret = angle_info(theta=flat_angle, L_px=flat_L)
     return to_ret,L0
 
-def _spline_u_and_tck(x,y,k=3,s=None,num=None):
+def _spline_u_and_tck(x,y,k=2,s=None,num=None):
     """
     fits a line r(u)=[x(u),y(u)], where u is determined implicitly
 
@@ -527,7 +526,7 @@ def _spline_u_and_tck(x,y,k=3,s=None,num=None):
     u = np.linspace(0,1,num=num,endpoint=True)
     return u,tck
 
-def _u_tck_spline_and_derivative(x,y,*kw):
+def _u_tck_spline_and_derivative(x,y,**kw):
     """
     Args:
         see _spline_u_and_tck
@@ -535,7 +534,7 @@ def _u_tck_spline_and_derivative(x,y,*kw):
         see _spline_u_and_tck, plus the evaluated spline and derivative
         (as an in-order tuple)
     """
-    u,tck = _spline_u_and_tck(x,y)
+    u,tck = _spline_u_and_tck(x,y,**kw)
     spline = splev(x=u,tck=tck,der=0)
     deriv = splev(x=u,tck=tck,der=1)
     return u,tck,spline,deriv

@@ -61,6 +61,11 @@ def get_x_y_and_contour_lengths(text_files):
     to_ret = []
     for t in text_files:
         x,y = get_x_and_y_arrays(t)
+        # read the first line (for possible protein locations)
+        with open(t) as f:
+            first_line = f.readline()
+            idx_x_y_pattern = """<(\d+)\D+(\d+)\D+(\d+)>"""
+            matches = re.search(first_line, idx_x_y_pattern, re.VERBOSE)
         to_ret.append(PolymerTracing.worm_object(x,y,t))
     return to_ret     
 
@@ -106,7 +111,6 @@ def get_id(str_v):
     
 def yield_files(image_files,text_files,size_images_meters):
     text_image_ids = [get_id(t) for t in text_files ]
-    print(image_files)
     for file_name in image_files:
         # get the text files that match
         m_id = get_id(file_name)
@@ -119,9 +123,12 @@ def yield_files(image_files,text_files,size_images_meters):
         objs_tmp = get_x_y_and_contour_lengths(these_text_files)
         # POST: dimensions are OK 
         img = PolymerTracing.tagged_image(image_obj,objs_tmp,file_name)
+        if (len(img.worm_objects) == 0):
+            print("Warning, {:s} has no tagged data...".format(file_name))
+            continue
         yield img
         
-def read_images(in_dir,cache_dir):
+def read_images(in_dir,cache_dir,force=False):
     """
     reads in all images / pkl files / annotation traces from in_dir, saving
     intermediate results to cache_dir
@@ -143,7 +150,7 @@ def read_images(in_dir,cache_dir):
     load_func = lambda : yield_files(image_files,text_files,size_images_meters)
     objs_all = CheckpointUtilities.multi_load(cache_dir=cache_dir,
                                               load_func=load_func,
-                                              force=False,name_func=name_func)
+                                              force=force,name_func=name_func)
     for o in objs_all:
         im = o.image.height_nm_rel()
         assert (im.shape[0] == im.shape[1])
