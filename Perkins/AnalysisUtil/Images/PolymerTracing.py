@@ -311,7 +311,7 @@ def theta_stats(polymer_info_obj,n_bins):
     thetas = [tmp[1] for tmp in x_ys]
     return [x] + thetas
 
-def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
+def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2),**kw):
     """
     Gets L and <cos(theta(L))>
 
@@ -325,12 +325,14 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
         min_cos_angle: we cant use when <cos(Theta)> <= 0,since that would go
         negative when we take a log. So, only look where above this value
 
+        **kw: passed to _binned_stat
+
     Returns:
        tuple of L_[avg,j],<Cos(Theta_[avg,j])>, where j runs 0 to n_bins-1
     """
 
     # last edge is right bin
-    edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins)
+    edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins,**kw)
     # filter to the bins with at least f% of the total size
     values,_ = np.histogram(a=L,bins=edges)
     bins_with_data = np.where(values > 0)[0]
@@ -345,7 +347,7 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     mean_cos_angle = sanit(mean_cos_angle)
     edges = sanit(edges)
     assert edges.size > 0 , "Couldn't find data to fit"
-    return edges,mean_cos_angle
+    return edges,mean_cos_angle,good_idx
 
 def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
     """
@@ -396,7 +398,7 @@ def spline_fit(image_obj,x,y):
     # POST: cos_angle and flat_L0 and reasonable
     cos_theta = angle_inf_obj.cos_theta
     flat_L0_px = angle_inf_obj.L_px
-    edges,mean_cos_angle =  get_L_and_mean_angle(cos_theta,flat_L0_px,n_bins=50)
+    edges,mean_cos_angle,_ =  get_L_and_mean_angle(cos_theta,flat_L0_px,n_bins=50)
     L_m = flat_L0_px * m_per_px
     L_binned_m = edges * m_per_px
     L0_m = L0_px * m_per_px
@@ -433,15 +435,17 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
                     for o in objs_all if len(o.dna_subset) > 0]
     # concatenate all the angles and L0
     L,angles,cos_angle = sorted_concatenated_x_and_y_lists(L_and_angles)
-    L_binned,mean_angle_binned = \
-        get_L_and_mean_angle(cos_angle, L, n_bins=n_bins,min_cos_angle=0)
+    kw_stats = dict(n_bins=n_bins,min_cos_angle=0)
+    L_binned,mean_angle_binned,good_idx = get_L_and_mean_angle(cos_angle, L,**kw_stats)
     good_idx = np.where( (L_binned >= min_m) & (L_binned <= max_m))
     L_binned = L_binned[good_idx]
     mean_angle_binned = mean_angle_binned[good_idx]
     Lp_m, log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_binned, mean_angle_binned)
-    polymer_info_obj = polymer_info(L_m=L,theta=angles,cos_theta=cos_angle,
-                                    Lp_m=Lp_m,L0_m=None,L_binned = L_binned,
+    # get all the contour lengths.
+    L0_arr = [L0 for o in objs_all for L0 in o.L0_dna_only()]
+    polymer_info_obj = polymer_info(L_m=None,theta=None,cos_theta=None,
+                                    Lp_m=Lp_m,L0_m=L0_arr,L_binned = L_binned,
                                     cos_angle_binned=mean_angle_binned,
                                     coeffs = coeffs)
     return polymer_info_obj
