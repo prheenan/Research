@@ -155,8 +155,12 @@ class tagged_image:
         cond_dna = [w.is_only_dna for w in self.worm_objects]
         for w in worm_objects:
             if (w._x_raw.size > 5):
-                tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
-                w.set_spline_info(tmp_fit)
+                try:
+                    tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
+                    w.set_spline_info(tmp_fit)                    
+                except SystemError as e:
+                    # XXX some splines throw a system error... unclear why
+                    print("Caught a system error from {:s}".format(w.file_name))
         # POST: as least something to look at 
         self.protein_idx = np.where(cond_protein)[0]
         self.dna_only_idx = np.where(np.array(cond_dna))[0]
