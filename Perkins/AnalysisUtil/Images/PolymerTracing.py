@@ -150,14 +150,20 @@ class tagged_image:
         """
         self.image_path = file_no_number
         self.image = image
-        self.worm_objects = worm_objects
+        good_worm_objects = []
+        for w in worm_objects:
+            if (w._x_raw.size > 5):
+                try:
+                    tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
+                    w.set_spline_info(tmp_fit)   
+                    good_worm_objects.append(w)                  
+                except SystemError as e:
+                    # XXX some splines throw a system error... unclear why
+                    print("Caught a system error from {:s}".format(w.file_name))
+        # save the 'good ones'                    
+        self.worm_objects = good_worm_objects                    
         cond_protein =  [w.has_dna_bound_protein for w in self.worm_objects]
         cond_dna = [w.is_only_dna for w in self.worm_objects]
-        assert len(cond_protein) > 0 , "{:s} has no tagged data".format(image.Meta.Name)
-        for w in worm_objects:
-            if (w._x_raw.size > 3):
-                tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
-                w.set_spline_info(tmp_fit)
         # POST: as least something to look at 
         self.protein_idx = np.where(cond_protein)[0]
         self.dna_only_idx = np.where(np.array(cond_dna))[0]
@@ -312,7 +318,7 @@ def theta_stats(polymer_info_obj,n_bins):
     thetas = [tmp[1] for tmp in x_ys]
     return [x] + thetas
 
-def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
+def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2),**kw):
     """
     Gets L and <cos(theta(L))>
 
@@ -326,12 +332,14 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
         min_cos_angle: we cant use when <cos(Theta)> <= 0,since that would go
         negative when we take a log. So, only look where above this value
 
+        **kw: passed to _binned_stat
+
     Returns:
        tuple of L_[avg,j],<Cos(Theta_[avg,j])>, where j runs 0 to n_bins-1
     """
 
     # last edge is right bin
-    edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins)
+    edges,mean_cos_angle = _binned_stat(x=L,y=cos_angle,n_bins=n_bins,**kw)
     # filter to the bins with at least f% of the total size
     values,_ = np.histogram(a=L,bins=edges)
     bins_with_data = np.where(values > 0)[0]
@@ -346,7 +354,7 @@ def get_L_and_mean_angle(cos_angle,L,n_bins,min_cos_angle = np.exp(-2)):
     mean_cos_angle = sanit(mean_cos_angle)
     edges = sanit(edges)
     assert edges.size > 0 , "Couldn't find data to fit"
-    return edges,mean_cos_angle
+    return edges,mean_cos_angle,good_idx
 
 def Lp_log_mean_angle_and_coeffs(L,mean_cos_angle):
     """
@@ -397,7 +405,7 @@ def spline_fit(image_obj,x,y):
     # POST: cos_angle and flat_L0 and reasonable
     cos_theta = angle_inf_obj.cos_theta
     flat_L0_px = angle_inf_obj.L_px
-    edges,mean_cos_angle =  get_L_and_mean_angle(cos_theta,flat_L0_px,n_bins=50)
+    edges,mean_cos_angle,_ =  get_L_and_mean_angle(cos_theta,flat_L0_px,n_bins=50)
     L_m = flat_L0_px * m_per_px
     L_binned_m = edges * m_per_px
     L0_m = L0_px * m_per_px
@@ -416,10 +424,11 @@ def spline_fit(image_obj,x,y):
                            polymer_info_obj=polymer_info_obj,
                            fit_spline=fit_spline_info)
 
-def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
+def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100,
+                          subset_func= (lambda o: o.dna_subset)) :
     """
     from an ensemble of tagged images, determines the persistence length,
-    given all of their data
+    given all of their datao
 
     Args:
         objs_all: list, each element is a TaggedImage instance
@@ -430,19 +439,22 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
         instance of polymer_info_obj, applied to the ensemble represented by
         objs_all
     """
-    L_and_angles = [o._L_angles_and_cos_angle(subset=o.dna_subset)
-                    for o in objs_all if len(o.dna_subset) > 0]
+    L_and_angles = [o._L_angles_and_cos_angle(subset=subset_func(o))
+                    for o in objs_all if len(subset_func(o)) > 0]
     # concatenate all the angles and L0
     L,angles,cos_angle = sorted_concatenated_x_and_y_lists(L_and_angles)
-    L_binned,mean_angle_binned = \
-        get_L_and_mean_angle(cos_angle, L, n_bins=n_bins,min_cos_angle=0)
+    kw_stats = dict(n_bins=n_bins,min_cos_angle=0)
+    L_binned,mean_angle_binned,good_idx = get_L_and_mean_angle(cos_angle, L,
+                                                               **kw_stats)
     good_idx = np.where( (L_binned >= min_m) & (L_binned <= max_m))
     L_binned = L_binned[good_idx]
     mean_angle_binned = mean_angle_binned[good_idx]
     Lp_m, log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_binned, mean_angle_binned)
-    polymer_info_obj = polymer_info(L_m=L,theta=angles,cos_theta=cos_angle,
-                                    Lp_m=Lp_m,L0_m=None,L_binned = L_binned,
+    # get all the contour lengths.
+    L0_arr = [wlc.L0 for o in objs_all for wlc in subset_func(o)]
+    polymer_info_obj = polymer_info(L_m=None,theta=None,cos_theta=None,
+                                    Lp_m=Lp_m,L0_m=L0_arr,L_binned = L_binned,
                                     cos_angle_binned=mean_angle_binned,
                                     coeffs = coeffs)
     return polymer_info_obj
@@ -507,7 +519,7 @@ def angles_and_contour_lengths(spline,deriv,
     to_ret = angle_info(theta=flat_angle, L_px=flat_L)
     return to_ret,L0
 
-def _spline_u_and_tck(x,y,k=3,s=None,num=None):
+def _spline_u_and_tck(x,y,k=2,s=None,num=None):
     """
     fits a line r(u)=[x(u),y(u)], where u is determined implicitly
 
@@ -527,7 +539,7 @@ def _spline_u_and_tck(x,y,k=3,s=None,num=None):
     u = np.linspace(0,1,num=num,endpoint=True)
     return u,tck
 
-def _u_tck_spline_and_derivative(x,y,*kw):
+def _u_tck_spline_and_derivative(x,y,**kw):
     """
     Args:
         see _spline_u_and_tck
@@ -535,7 +547,7 @@ def _u_tck_spline_and_derivative(x,y,*kw):
         see _spline_u_and_tck, plus the evaluated spline and derivative
         (as an in-order tuple)
     """
-    u,tck = _spline_u_and_tck(x,y)
+    u,tck = _spline_u_and_tck(x,y,**kw)
     spline = splev(x=u,tck=tck,der=0)
     deriv = splev(x=u,tck=tck,der=1)
     return u,tck,spline,deriv
