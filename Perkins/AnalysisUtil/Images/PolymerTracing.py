@@ -150,17 +150,20 @@ class tagged_image:
         """
         self.image_path = file_no_number
         self.image = image
-        self.worm_objects = worm_objects
-        cond_protein =  [w.has_dna_bound_protein for w in self.worm_objects]
-        cond_dna = [w.is_only_dna for w in self.worm_objects]
+        good_worm_objects = []
         for w in worm_objects:
             if (w._x_raw.size > 5):
                 try:
                     tmp_fit = spline_fit(self.image,x=w._x_raw,y=w._y_raw)
-                    w.set_spline_info(tmp_fit)                    
+                    w.set_spline_info(tmp_fit)   
+                    good_worm_objects.append(w)                  
                 except SystemError as e:
                     # XXX some splines throw a system error... unclear why
                     print("Caught a system error from {:s}".format(w.file_name))
+        # save the 'good ones'                    
+        self.worm_objects = good_worm_objects                    
+        cond_protein =  [w.has_dna_bound_protein for w in self.worm_objects]
+        cond_dna = [w.is_only_dna for w in self.worm_objects]
         # POST: as least something to look at 
         self.protein_idx = np.where(cond_protein)[0]
         self.dna_only_idx = np.where(np.array(cond_dna))[0]
@@ -421,7 +424,8 @@ def spline_fit(image_obj,x,y):
                            polymer_info_obj=polymer_info_obj,
                            fit_spline=fit_spline_info)
 
-def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
+def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100,
+                          subset_func= (lambda o: o.dna_subset)) :
     """
     from an ensemble of tagged images, determines the persistence length,
     given all of their datao
@@ -435,8 +439,8 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
         instance of polymer_info_obj, applied to the ensemble represented by
         objs_all
     """
-    L_and_angles = [o._L_angles_and_cos_angle(subset=o.dna_subset)
-                    for o in objs_all if len(o.dna_subset) > 0]
+    L_and_angles = [o._L_angles_and_cos_angle(subset=subset_func(o))
+                    for o in objs_all if len(subset_func(o)) > 0]
     # concatenate all the angles and L0
     L,angles,cos_angle = sorted_concatenated_x_and_y_lists(L_and_angles)
     kw_stats = dict(n_bins=n_bins,min_cos_angle=0)
@@ -448,7 +452,7 @@ def ensemble_polymer_info(objs_all,min_m=0,max_m=np.inf,n_bins=100):
     Lp_m, log_mean_angle,coeffs = \
         Lp_log_mean_angle_and_coeffs(L_binned, mean_angle_binned)
     # get all the contour lengths.
-    L0_arr = [L0 for o in objs_all for L0 in o.L0_dna_only()]
+    L0_arr = [wlc.L0 for o in objs_all for wlc in subset_func(o)]
     polymer_info_obj = polymer_info(L_m=None,theta=None,cos_theta=None,
                                     Lp_m=Lp_m,L0_m=L0_arr,L_binned = L_binned,
                                     cos_angle_binned=mean_angle_binned,

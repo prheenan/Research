@@ -21,7 +21,7 @@ def run(in_dir):
     """
     input_dir =  IoUtil.data_dir(in_dir)
     output_dir = IoUtil._traces_dir(in_dir)
-    IoUtil.read_images(input_dir,cache_dir=output_dir,force=True)
+    IoUtil.read_images(input_dir,cache_dir=output_dir,force=False)
     
 if __name__ == "__main__":
     run(IoUtil.get_directory_command_line())
