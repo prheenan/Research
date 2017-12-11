@@ -40,7 +40,6 @@ def run(in_dir):
     protein_subset = []
     for o in objs_all:
         protein_subset.extend(protein_func(o))
-    nm_per_px = 2e3/512
     for p in protein_subset:
         L0_tmp_nm = p.L0
         x,y = p.inf.fit_spline.spline
@@ -48,9 +47,6 @@ def run(in_dir):
         x0,y0 = x[0],y[0]
         idx = np.argmin( np.sqrt( (x-x0)**2 - (y-y0)**2))
         dx,dy = np.diff(x),np.diff(y)
-        dL_nm = np.cumsum(np.sqrt(dx**2+dy**2)) * nm_per_px
-        L_protein_nm = dL_nm[idx]
-        print(L_protein_nm,L0_tmp_nm * 1e9)
     to_save = IoUtil.EnsembleObject(*data)
     CheckpointUtilities.lazy_save(output_dir + "ensemble.pkl",to_save)
     
