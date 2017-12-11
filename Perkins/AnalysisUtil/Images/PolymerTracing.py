@@ -405,7 +405,8 @@ def spline_fit(image_obj,x,y):
     # POST: cos_angle and flat_L0 and reasonable
     cos_theta = angle_inf_obj.cos_theta
     flat_L0_px = angle_inf_obj.L_px
-    edges,mean_cos_angle,_ =  get_L_and_mean_angle(cos_theta,flat_L0_px,n_bins=50)
+    edges,mean_cos_angle,_ =  get_L_and_mean_angle(cos_theta,flat_L0_px,
+                                                   n_bins=50)
     L_m = flat_L0_px * m_per_px
     L_binned_m = edges * m_per_px
     L0_m = L0_px * m_per_px

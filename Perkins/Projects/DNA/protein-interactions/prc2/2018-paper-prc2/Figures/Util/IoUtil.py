@@ -77,11 +77,15 @@ def get_x_y_and_contour_lengths(text_files):
     for t in text_files:
         x,y = get_x_and_y_arrays(t)
         # read the first line (for possible protein locations)
+        locations = []
         with open(t) as f:
             first_line = f.readline()
-            idx_x_y_pattern = """<(\d+)\D+(\d+)\D+(\d+)>"""
-            matches = re.search(first_line, idx_x_y_pattern, re.VERBOSE)
-        to_ret.append(PolymerTracing.worm_object(x,y,t))
+            idx_x_y_pattern = """<(\d+),(\d+),(\d+)>"""
+            matches = re.finditer(idx_x_y_pattern,first_line, re.VERBOSE)
+            locations = [int(i) for m in matches for i in m.groups()]
+        worm_objs = PolymerTracing.worm_object(x,y,t)
+        worm_objs.protein_locations = locations
+        to_ret.append(worm_objs)
     return to_ret     
 
 def prh_hist(data,y=None,**hist_kw):

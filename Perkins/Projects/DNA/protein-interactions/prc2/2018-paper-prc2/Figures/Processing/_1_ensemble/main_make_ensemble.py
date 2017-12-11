@@ -27,14 +27,30 @@ def run(in_dir):
     # just read in from the cache...
     objs_all = IoUtil.read_images(input_dir,cache_dir=cache_dir,force=False)
     kw = dict(min_m = 0,max_m = 125e-9)
+    protein_func = lambda o_tmp: o_tmp.dna_protein_subset
     subset_funcs = [lambda o_tmp: o_tmp.dna_subset, 
-                    lambda o_tmp: o_tmp.dna_protein_subset]
+                    protein_func]
     data = []                        
     for subset_func in subset_funcs:
         polymer_info_obj = \
             PolymerTracing.ensemble_polymer_info(objs_all,
-                                                 subset_func=subset_func,**kw)    
+                                                 subset_func=subset_func,**kw)
         data.append(polymer_info_obj)
+    # get the protein subset
+    protein_subset = []
+    for o in objs_all:
+        protein_subset.extend(protein_func(o))
+    nm_per_px = 2e3/512
+    for p in protein_subset:
+        L0_tmp_nm = p.L0
+        x,y = p.inf.fit_spline.spline
+        _,x_protein,y_protein = p.protein_locations[0]
+        x0,y0 = x[0],y[0]
+        idx = np.argmin( np.sqrt( (x-x0)**2 - (y-y0)**2))
+        dx,dy = np.diff(x),np.diff(y)
+        dL_nm = np.cumsum(np.sqrt(dx**2+dy**2)) * nm_per_px
+        L_protein_nm = dL_nm[idx]
+        print(L_protein_nm,L0_tmp_nm * 1e9)
     to_save = IoUtil.EnsembleObject(*data)
     CheckpointUtilities.lazy_save(output_dir + "ensemble.pkl",to_save)
     

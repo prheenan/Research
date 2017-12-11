@@ -18,9 +18,8 @@ dateStr=`date +%Y-%m-%d:%H:%M:%S`
 
 function run()
 {
-    find .. -name "*main_*.py" -exec python `basename {}` --input "$1" \;
+    find .. -name "*main_*.py" -exec python2 `basename {}` --input "$1" \;
 }
-set -x
 run ${1:-../../../Data/601-widom/5mer/0x}
 
 

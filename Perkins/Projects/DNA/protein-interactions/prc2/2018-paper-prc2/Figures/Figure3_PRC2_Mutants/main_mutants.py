@@ -83,6 +83,7 @@ def run(in_dir):
     output_tuples = [ [ensemble.dna_only,"DNA Only"],
                       [ensemble.dna_plus_protein,"DNA + Protein"]]
     for data,name in output_tuples:
+        # make a figure of the dna...
         fig = PlotUtilities.figure((7.5,2.5))
         ax_L0 = plt.subplot(1,2,1)
         plt.xlim(xlim_L0_nm)
@@ -92,7 +93,7 @@ def run(in_dir):
         plt.xlim(xlim_L_nm)
         plt.ylim(ylim_minus_log_cos)
         persistence_length_plot(data)
-        PlotUtilities.savefig(fig,output_dir + "polymer{:s}.png".format(name))    
+        PlotUtilities.savefig(fig,output_dir + "polymer{:s}.png".format(name))
 
 if __name__ == "__main__":
     run(IoUtil.get_directory_command_line())
