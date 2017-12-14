@@ -17,7 +17,8 @@ import argparse
 def get_directory_command_line(description=""):
     parser = argparse.ArgumentParser(description)
     parser.add_argument("--input",type=str,metavar="input",
-                        help="Please list the input directory")
+                        help="Please list the input directory",
+                        required=True)
     return parser.parse_args().input
 
 def _dir_sanit(d):
@@ -42,7 +43,8 @@ def _plot_dir(base):
         
         
 class EnsembleObject:
-    def __init__(self,dna_only,dna_plus_protein,multimer=None,unknown=None):
+    def __init__(self,dna_only,dna_plus_protein=None,multimer=None,
+                 unknown=None):
         self.dna_only = dna_only
         self.dna_plus_protein = dna_plus_protein
         self.multimer = multimer

@@ -32,9 +32,17 @@ def run(in_dir):
                     protein_func]
     data = []                        
     for subset_func in subset_funcs:
-        polymer_info_obj = \
-            PolymerTracing.ensemble_polymer_info(objs_all,
-                                                 subset_func=subset_func,**kw)
+        n_in_subset = [s for o in objs_all for s in subset_func(o)]
+        # if there is no data (i.e., just DNA), skip
+        if (len(n_in_subset) == 0):
+            print("For input {:s}, couldn't apply {:s}".format(in_dir,
+                                                               subset_func))
+            polymer_info_obj = None
+        else:
+            polymer_info_obj = \
+                PolymerTracing.ensemble_polymer_info(objs_all,
+                                                     subset_func=subset_func,
+                                                     **kw)
         data.append(polymer_info_obj)
     # get the protein subset
     protein_subset = []

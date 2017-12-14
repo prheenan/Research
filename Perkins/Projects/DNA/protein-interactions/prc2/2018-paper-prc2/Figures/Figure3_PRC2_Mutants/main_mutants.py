@@ -21,11 +21,13 @@ def contour_length_plot(ensemble,hist_kwargs=hist_default_dict):
     L0_nm = np.array(ensemble.L0_m) * 1e9
     hist = plt.hist(L0_nm,label="$N$={:d}".format(L0_nm.size),**hist_kwargs)
     mean_v = np.mean(L0_nm)
-    percentiles = np.percentile(L0_nm,[5,95])
+    pct = [10,90]
+    percentiles = np.percentile(L0_nm,pct)
+    print(percentiles)
     f_round = lambda x : int(np.round(x,-1))
     mean_nm_rounded = f_round(mean_v)
-    percentile_label = "[5%,95%] = [{:d},{:d}] nm".\
-        format(*[f_round(p) for p in percentiles])
+    percentile_label = "[{:d}%,{:d}%] = [{:d},{:d}] nm".\
+        format(*(pct + [f_round(p) for p in percentiles]) )
     plt.axvline(mean_v,color='r',linestyle='--',
                 label="$\mu$ = {:d} nm".format(mean_nm_rounded))
     for i,p in enumerate(percentiles):
@@ -101,10 +103,15 @@ def run():
                    "../../Data/designed/at-rich/1x/",
                    "../../Data/designed/gc-rich/1x/"]
     in_dir = [IoUtil._ensemble_dir(d) for d in directories]
+    ensembles = [CheckpointUtilities.lazy_multi_load(d)[0].dna_plus_protein
+                 for d in in_dir]
+    # add in the 0x data
+    dir_0x = IoUtil._ensemble_dir("../../Data/601-widom/5mer/0x/")
+    dna_0x_only =CheckpointUtilities.lazy_multi_load(dir_0x)[0].dna_only
+    ensembles = [dna_0x_only] + ensembles
     xlim_L0_nm = [0,1e3]
-    ensembles = [CheckpointUtilities.lazy_multi_load(d) for d in in_dir]
     hist_arr = []
-    fig = PlotUtilities.figure((3.5,7))
+    fig = PlotUtilities.figure((4,6))
     ax_arr = []
     n = len(ensembles)
     hist_kw = dict(hist_default_dict)
@@ -113,12 +120,12 @@ def run():
     N = max_L0/binsize_nm
     hist_kw['bins'] = np.linspace(0,max_L0,num=20,endpoint=True)
     colors = ['g','r','b','k']
-    titles = ["12x601","GC-poor","GC-rich center"]
+    titles = ["- Control","12x601","GC-poor","GC-rich center"]
     for i,e in enumerate(ensembles):
         ax_tmp = plt.subplot(n,1,(i+1))
         hist_kw_tmp = dict(**hist_kw)
         hist_kw_tmp['color'] = colors[i]
-        hist_tmp = contour_length_plot(e[0].dna_plus_protein,
+        hist_tmp = contour_length_plot(e,
                                        hist_kwargs=hist_kw_tmp)
         hist_arr.append(hist_tmp)
         ax_arr.append(ax_tmp)
@@ -126,8 +133,14 @@ def run():
         if (i != n-1):
             PlotUtilities.xlabel("")
             PlotUtilities.no_x_label(ax_tmp)
-    max_n = [max(h[0]) for h in hist_arr]
-    ylim_P = [0,max(max_n)]
+        if (i != 0):
+            PlotUtilities.ylabel("")
+            PlotUtilities.no_y_label(ax_tmp)
+    n_arr = [h[0] for h in hist_arr]
+    edges_arr = [h[1] for h in hist_arr]
+    print([max(e) for e in edges_arr])
+    max_n = [max(n) for n in n_arr]
+    ylim_P = [0,max(max_n)*1.1]
     for a in ax_arr:
         a.set_xlim(xlim_L0_nm)
         a.set_ylim(ylim_P)
