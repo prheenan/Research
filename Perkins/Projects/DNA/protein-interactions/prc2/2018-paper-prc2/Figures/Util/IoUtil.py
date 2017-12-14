@@ -35,6 +35,10 @@ def _traces_dir(base):
     
 def _ensemble_dir(base):
     return cache_dir(base,1,"ensemble")
+
+def _loop_dir(base):
+    return cache_dir(base,2,"loop")
+    
     
 def _plot_dir(base):
     to_ret = _dir_sanit("{:s}/plot/".format(base))
@@ -149,7 +153,7 @@ def yield_files(image_files,text_files,size_images_meters):
             continue
         yield img
         
-def read_images(in_dir,cache_dir,force=False):
+def read_images(in_dir,cache_dir,force=False,**kw):
     """
     reads in all images / pkl files / annotation traces from in_dir, saving
     intermediate results to cache_dir
@@ -157,6 +161,7 @@ def read_images(in_dir,cache_dir,force=False):
     Args:
         in_dir: directory with pkl files and txt files as input to yield_files
         cache_dir: where to put the objects
+        force,**kwargs: passed to multi_load
     Returns:
         list of tagged_image objects 
     """
@@ -171,7 +176,8 @@ def read_images(in_dir,cache_dir,force=False):
     load_func = lambda : yield_files(image_files,text_files,size_images_meters)
     objs_all = CheckpointUtilities.multi_load(cache_dir=cache_dir,
                                               load_func=load_func,
-                                              force=force,name_func=name_func)
+                                              force=force,name_func=name_func,
+                                              **kw)
     for o in objs_all:
         im = o.image.height_nm_rel()
         assert (im.shape[0] == im.shape[1])

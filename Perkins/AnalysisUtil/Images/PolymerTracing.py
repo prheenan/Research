@@ -520,6 +520,17 @@ def angles_and_contour_lengths(spline,deriv,
     to_ret = angle_info(theta=flat_angle, L_px=flat_L)
     return to_ret,L0
 
+def _u_of_array(x,num_points=None):
+    n = len(x)
+    if (num_points is None):
+        num_points = n
+    u = np.linspace(0,n-1,num=num_points,endpoint=True)    
+    return u
+
+def evaluate_spline(u,tck,ext=2,**kw):
+    spline = splev(x=u,tck=tck,ext=ext,**kw)    
+    return spline
+
 def _spline_u_and_tck(x,y,k=2,s=None,num=None):
     """
     fits a line r(u)=[x(u),y(u)], where u is determined implicitly
@@ -531,14 +542,17 @@ def _spline_u_and_tck(x,y,k=2,s=None,num=None):
     Returns:
         tuple of <u,tck>, where tck is needed for (e.g.) splev
     """
+    n = len(x)
     if (num is None):
-        num = len(x) * 10
+        num = n * 10
     if (s is None):
         s = 0
+    u_fit = _u_of_array(x,num_points=n)
     tck,_ = splprep([x,y],per=0,
-                    s=s,k=k,u=None)
-    u = np.linspace(0,1,num=num,endpoint=True)
-    return u,tck
+                    s=s,k=k,u=u_fit)
+    # use a higher resolution for interpolating
+    u_interp = _u_of_array(x,num_points=num)
+    return u_interp,tck
 
 def _u_tck_spline_and_derivative(x,y,**kw):
     """
@@ -549,8 +563,16 @@ def _u_tck_spline_and_derivative(x,y,**kw):
         (as an in-order tuple)
     """
     u,tck = _spline_u_and_tck(x,y,**kw)
-    spline = splev(x=u,tck=tck,der=0)
-    deriv = splev(x=u,tck=tck,der=1)
+    # ensure that extrapolation returns an error:
+    """
+    if ext=0, return the extrapolated value.
+    if ext=1, return 0
+    if ext=2, raise a ValueError
+    if ext=3, return the boundary value.
+    """
+    kw_common = dict(ext=2)
+    spline = evaluate_spline(u,tck,der=0)
+    deriv = splev(u,tck,der=1)
     return u,tck,spline,deriv
 
 def _difference_matrix(v1,v2):

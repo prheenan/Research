@@ -57,7 +57,7 @@ def run():
     KCl = 50
     Stats = [ ["HEPES","mM",500,20,0],
               ["KCl","mM",2500,KCl,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,500,"mL",
+    DilutionUtil.PrintSolutionSteps(Stats,1000,"mL",
                                         BufferName="DI H20")
 
 
