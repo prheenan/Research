@@ -18,12 +18,36 @@ from scipy.interpolate import splev,BSpline
 from scipy.optimize import root
 
 def _root_func(i,s1,tck,max_n):
-    if (i > max_n):
+    if ((i > max_n) or (i <= 1e-200)):
         return [np.inf,np.inf]
-    diff = (s1.T - np.array(PolymerTracing.evaluate_spline(i[0], tck=tck))).T
+    x_y_point = np.array(PolymerTracing.evaluate_spline(i[0], tck=tck))
+    diff = (s1.T - x_y_point).T
     diff_summed = (np.abs(np.sum(diff,axis=0)))
     min_summed = np.argmin(diff_summed)
     return diff[:,min_summed]
+
+
+def get_distances(x):
+    """
+    :param x: a list of spline objects representing the curve
+    :return: distance[i][j] is the smallest distance from x[i] to x[j]
+    """
+    distances = np.zeros((len(x),len(x)))
+    for i,s1 in enumerate(x):
+        tmp = []
+        for j,s2 in enumerate(x):
+            if (j < i+2 and j > i-2):
+                add = np.inf
+            else:
+                x1,x2 = s1[0,:],s2[0,:]
+                y1,y2 = s1[1,:],s2[1,:]
+                diff_matrix_x = PolymerTracing._difference_matrix(x1,x2)**2
+                diff_matrix_y = PolymerTracing._difference_matrix(y1,y2)**2
+                dist_sq = (diff_matrix_x + diff_matrix_y)
+                add = np.min(np.sqrt(dist_sq))
+            tmp.append(add)
+        distances[i,:] = tmp
+    return distances
 
 def detect_loops_in_trace(wlc):
     x,y = wlc._x_raw,wlc._y_raw
@@ -32,8 +56,7 @@ def detect_loops_in_trace(wlc):
     n_points_interp = u.size/len(x)
     assert abs(n_points_interp - int(n_points_interp)) < 1e-6
     # POST: n_points_interp is an integer
-    tolerance = 0.25
-    n_points_interp = int(10/tolerance)
+    tolerance = 0.1
     # u runs from 0 to n-1; get just the slice from i to i+1, for i in 0 to n-2
     # (since for N data points, there are only N-1 segments. Think N=2 -- just
     # one (N-1) line connecting two (N) points)
@@ -41,27 +64,18 @@ def detect_loops_in_trace(wlc):
     spline_slices = [np.array(PolymerTracing.evaluate_spline(get_u(i),tck=tck))
                      for i,_ in enumerate(x[:-1])]
     n_spline_slices = len(spline_slices)
-    # find the other segment which is closest in L1; anything crossing should 
-    # be closest. Note that we sum over x and y. We ignore i == j, to prevent
-    # the trivial case.
-    distances = [ [np.sum(np.abs(s2-s1),axis=0) if (j >= i+2 or j <= i-2) else
-                   [np.inf for _ in s1[0,:]]
-                   for j,s1 in enumerate(spline_slices)] 
-                  for i,s2 in enumerate(spline_slices)]
+    distances = get_distances(spline_slices)
     # make sure each element compares to all (N-1) other elements
-    np.testing.assert_allclose([len(d) for d in distances],n_spline_slices)
-    # make sure each element is a list of the distances for each point
-    np.testing.assert_allclose([len(s) for d in distances for s in d],
-                               n_points_interp)
+    np.testing.assert_allclose(distances.shape,\
+                               (n_spline_slices,n_spline_slices))
     # min_dist_idx[i] is the closest idx to of spline_slices[i]
-    min_dist_idx = [ np.argmin([min(s) for s in d]) for d in distances]
+    min_dist_idx = [ np.nanargmin(d) for d in distances]
     # loop through each pair of splines, and determine the roots (closer than
     # <tolerance> of a pixel is considered an intersection).
     parameter_values_where_crossover = []
     for i,(min_idx,s1) in enumerate(zip(min_dist_idx,spline_slices)):
         # make a minimize function for this spline
         # only ask for a solution within <xatol> pixels
-        bounds = [min_idx,min_idx+1]
         kw = dict(x0 = min_idx + 1/2,
                   method="hybr",
                   options=dict(factor=1))
@@ -74,24 +88,27 @@ def detect_loops_in_trace(wlc):
         # the minimization suceeded, and the minimization was small enough,
         # then we count this as a crossover
         succeeded = res.success
-        small_value = (np.abs(res.fun) < tolerance).all()
-        in_range = (u_x <= n_spline_slices)
-        print(i,succeeded,small_value,in_range)
+        value_func = np.abs(res.fun)
+        small_value = (value_func < tolerance).all()
+        in_range = (u_x <= min_idx + 1) and (u_x >= min_idx)
+        print(res.message)
+        print(i,succeeded,small_value,in_range,u_x)
         if (succeeded and small_value and in_range):
             parameter_values_where_crossover.append(u_x)
     plt.close()
-    for p in parameter_values_where_crossover:
-        plt.plot(*PolymerTracing.evaluate_spline(p, tck=tck),color='r',marker='o')
+    plt.plot(x,y,'b.-')
     for s in spline_slices:
         plt.plot(*s)
-    debug_idx = [21,23]
+    debug_idx = [4,14,23,35]
     for i_tmp in debug_idx:
         plt.plot(*spline_slices[i_tmp],color='r',linewidth=3)
+        plt.plot(*(spline_slices[i_tmp][:,0]),color='r',marker='o')
         plt.plot(*spline_slices[min_dist_idx[i_tmp]],color='r',linewidth=3)
-
-    plt.plot(x,y,'b.-')
+    for p in parameter_values_where_crossover:
+        plt.plot(*PolymerTracing.evaluate_spline(p, tck=tck),
+                 color='k',marker='x')
     plt.show()
-
+    print("...")
 
 def run(in_dir):
     """
