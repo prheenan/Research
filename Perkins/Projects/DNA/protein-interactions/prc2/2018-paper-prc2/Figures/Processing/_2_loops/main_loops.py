@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../../")
 sys.path.append("../../")
-from Util import IoUtil
+from Util import IoUtil,AnalysisClasses
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing
 from GeneralUtil.python import CheckpointUtilities
 from scipy.interpolate import splev,BSpline
@@ -79,7 +79,7 @@ def detect_loops_in_trace(wlc):
     # loop through each pair of splines, and determine the roots (closer than
     # <tolerance> of a pixel is considered an intersection).
     parameter_values_where_crossover = []
-    pairs_of_splines = set()
+    pairs_of_splines = []
     for i,(min_idx,s1) in enumerate(zip(min_dist_idx,spline_slices)):
         # make a minimize function for this spline
         # only ask for a solution within <xatol> pixels
@@ -103,21 +103,22 @@ def detect_loops_in_trace(wlc):
         pair = "".join("{:d}".format(d) for d in sorted([i, min_idx]))
         if (is_small_value and is_in_range):
             parameter_values_where_crossover.append(u_x)
-            pairs_of_splines.add(pair)
-    plt.close()
-    plt.plot(x,y,'b.-')
-    for s in spline_slices:
-        plt.plot(*s)
-    debug_idx = [4,14,23,35]
-    for i_tmp in debug_idx:
-        plt.plot(*spline_slices[i_tmp],color='r',linewidth=3)
-        plt.plot(*(spline_slices[i_tmp][:,0]),color='r',marker='o')
-        plt.plot(*spline_slices[min_dist_idx[i_tmp]],color='r',linewidth=3)
-    for p in parameter_values_where_crossover:
-        plt.plot(*PolymerTracing.evaluate_spline(p, tck=tck),
-                 color='k',marker='x')
-    plt.show()
-    print("...")
+            pairs_of_splines.append(pair)
+    # get the start and end of each loop
+    set_of_pairs = sorted(list(set(pairs_of_splines)))
+    loop_starts,loop_ends = [],[]
+    for s in set_of_pairs:
+        # each look should stop and end.
+        assert pairs_of_splines.count(s) == 2
+        # make sure there are
+        u_idx = [i for i,s_tmp in enumerate(pairs_of_splines) if s_tmp == s]
+        u_loop = [parameter_values_where_crossover[i] for i in u_idx]
+        # by definition, u is along the contour, so loop starts at min, ends
+        # at max
+        u0,u1 = min(u_loop),max(u_loop)
+        loop_starts.append(u0)
+        loop_ends.append(u1)
+    return AnalysisClasses.Loops(u,tck,loop_starts,loop_ends)
 
 def run(in_dir):
     """
@@ -131,12 +132,19 @@ def run(in_dir):
     objs_all = IoUtil.read_images(input_dir,cache_dir=cache_dir,force=False,
                                   limit=1)
     tmp = objs_all[0]
-    wlc = tmp.worm_objects[1]
-    detect_loops_in_trace(wlc)
-    idx_debug = 15
-    x_raw,y_raw = wlc._x_raw,wlc._y_raw
-    x,y = wlc.inf.x_y_abs
-    
-    
+    dna_subset = tmp.dna_subset
+    for wlc in dna_subset:
+        # XXX check for appropriate number size of data...
+        tmp_loop = detect_loops_in_trace(wlc)
+        spline_x_y = PolymerTracing.evaluate_spline(tmp_loop.u,tmp_loop.tck)
+        plt.plot(*spline_x_y)
+        for loop_bounds in tmp_loop.get_loop_bounds():
+            u_min,u_max= loop_bounds[0],loop_bounds[1]
+            num = (u_max-u_min) * 10
+            u = np.linspace(u_min,u_max,endpoint=True,num=num)
+            spline_loop = PolymerTracing.evaluate_spline(u, tmp_loop.tck)
+            plt.plot(*spline_loop,linewidth=3)
+        plt.show()
+
 if __name__ == "__main__":
     run(IoUtil.get_directory_command_line())
