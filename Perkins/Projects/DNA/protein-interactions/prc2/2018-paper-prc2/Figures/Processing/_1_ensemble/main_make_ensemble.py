@@ -11,7 +11,7 @@ import sys
 
 sys.path.append("../../../../../../../../../../")
 sys.path.append("../../")
-from Util import IoUtil
+from Util import IoUtil,AnalysisClasses
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing
 from GeneralUtil.python import CheckpointUtilities
 
@@ -55,7 +55,7 @@ def run(in_dir):
         x0,y0 = x[0],y[0]
         idx = np.argmin( np.sqrt( (x-x0)**2 - (y-y0)**2))
         dx,dy = np.diff(x),np.diff(y)
-    to_save = IoUtil.EnsembleObject(*data)
+    to_save = AnalysisClasses.EnsembleObject(*data)
     CheckpointUtilities.lazy_save(output_dir + "ensemble.pkl",to_save)
     
 if __name__ == "__main__":

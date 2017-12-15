@@ -13,8 +13,7 @@ sys.path.append("../../../../../../../../../../")
 sys.path.append("../../")
 from Util import IoUtil,AnalysisClasses
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing
-from GeneralUtil.python import CheckpointUtilities
-from scipy.interpolate import splev,BSpline
+from GeneralUtil.python import PlotUtilities
 from scipy.optimize import brute
 
 def _root_func(i,s1,tck,max_n):
@@ -54,15 +53,14 @@ def get_distances(x):
         distances[i,:] = tmp
     return distances
 
-def detect_loops_in_trace(wlc):
+def detect_loops_in_trace(wlc,upscale_interp=3,tolerance=0.1):
     x,y = wlc._x_raw,wlc._y_raw
     u,tck,spline,deriv = PolymerTracing._u_tck_spline_and_derivative(x,y)
     # get the 
     n_points_interp = u.size/len(x)
     assert abs(n_points_interp - int(n_points_interp)) < 1e-6
     # POST: n_points_interp is an integer
-    tolerance = 0.1
-    n_points_interp = int(np.ceil(3/tolerance))
+    n_points_interp = int(np.ceil(upscale_interp/tolerance))
     # u runs from 0 to n-1; get just the slice from i to i+1, for i in 0 to n-2
     # (since for N data points, there are only N-1 segments. Think N=2 -- just
     # one (N-1) line connecting two (N) points)
@@ -83,7 +81,7 @@ def detect_loops_in_trace(wlc):
     for i,(min_idx,s1) in enumerate(zip(min_dist_idx,spline_slices)):
         # make a minimize function for this spline
         # only ask for a solution within <xatol> pixels
-        n_points = max(2,int(2*np.ceil(1 / tolerance)))
+        n_points = max(2,int(upscale_interp*np.ceil(1 / tolerance)))
         step = 1/n_points
         bounds = [slice(min_idx,min_idx+1+step,step)]
         kw = dict(ranges=bounds,
@@ -120,31 +118,48 @@ def detect_loops_in_trace(wlc):
         loop_ends.append(u1)
     return AnalysisClasses.Loops(u,tck,loop_starts,loop_ends)
 
+def debug_plot(tmp_loop):
+    spline_x_y = PolymerTracing.evaluate_spline(tmp_loop.u, tmp_loop.tck)
+    plt.plot(*spline_x_y,label="Full DNA")
+    for i,loop_bounds in enumerate(tmp_loop.get_loop_bounds()):
+        u_min, u_max = loop_bounds[0], loop_bounds[1]
+        num = (u_max - u_min) * 10
+        u = np.linspace(u_min, u_max, endpoint=True, num=num)
+        spline_loop = PolymerTracing.evaluate_spline(u, tmp_loop.tck)
+        label = "loop" if i == 0 else ""
+        plt.plot(*spline_loop, linewidth=3,alpha=0.5,label=label)
+    PlotUtilities.lazyLabel("x (pixels)","y (pixels)","")
+
+
+def get_subset_loops(subset):
+    loops = [detect_loops_in_trace(wlc) for wlc in subset]
+    return loops
+
 def run(in_dir):
     """
     Args:
         in_dir: the input directory to operate on.  
     """
+    debug = False
     input_dir =  IoUtil.data_dir(in_dir)
     cache_dir = IoUtil._traces_dir(in_dir)
     output_dir = IoUtil._ensemble_dir(in_dir)
     # just read in from the cache...
     objs_all = IoUtil.read_images(input_dir,cache_dir=cache_dir,force=False,
                                   limit=1)
-    tmp = objs_all[0]
-    dna_subset = tmp.dna_subset
-    for wlc in dna_subset:
-        # XXX check for appropriate number size of data...
-        tmp_loop = detect_loops_in_trace(wlc)
-        spline_x_y = PolymerTracing.evaluate_spline(tmp_loop.u,tmp_loop.tck)
-        plt.plot(*spline_x_y)
-        for loop_bounds in tmp_loop.get_loop_bounds():
-            u_min,u_max= loop_bounds[0],loop_bounds[1]
-            num = (u_max-u_min) * 10
-            u = np.linspace(u_min,u_max,endpoint=True,num=num)
-            spline_loop = PolymerTracing.evaluate_spline(u, tmp_loop.tck)
-            plt.plot(*spline_loop,linewidth=3)
-        plt.show()
+    debug = True
+    ensemble = AnalysisClasses.convert_to_ensemble(objs_all)
+    # remove the multimers and unknown; we score them separately.
+    ensemble.dna_only = get_subset_loops(ensemble.dna_only)
+    ensemble.dna_plus_protein = get_subset_loops(ensemble.dna_plus_protein)
+    ensemble.multimer = None
+    ensemble.unknown = None
+    if (debug):
+        all_plottable = ensemble.dna_only + ensemble.dna_plus_protein
+        for i,tmp_loop in enumerate(all_plottable):
+            fig = PlotUtilities.figure()
+            debug_plot(tmp_loop)
+            PlotUtilities.savefig(fig,"./{:d}.png".format(i))
 
 if __name__ == "__main__":
     run(IoUtil.get_directory_command_line())

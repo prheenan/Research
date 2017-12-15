@@ -45,15 +45,6 @@ def _plot_dir(base):
     GenUtilities.ensureDirExists(to_ret)
     return to_ret
         
-        
-class EnsembleObject:
-    def __init__(self,dna_only,dna_plus_protein=None,multimer=None,
-                 unknown=None):
-        self.dna_only = dna_only
-        self.dna_plus_protein = dna_plus_protein
-        self.multimer = multimer
-        self.unknown = unknown
-        
 def get_x_and_y_arrays(text_file):
     """
     Returns: the x and y columns (0 and 1) of text_file 
