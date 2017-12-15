@@ -15,16 +15,21 @@ from Util import IoUtil
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing
 from GeneralUtil.python import CheckpointUtilities
 from scipy.interpolate import splev,BSpline
-from scipy.optimize import root
+from scipy.optimize import brute
 
 def _root_func(i,s1,tck,max_n):
-    if ((i > max_n) or (i <= 1e-200)):
-        return [np.inf,np.inf]
-    x_y_point = np.array(PolymerTracing.evaluate_spline(i[0], tck=tck))
+    try:
+        u = i[0]
+    except IndexError:
+        u = i
+    if ((i > max_n) or (u <= 1e-200)):
+        return np.inf
+    x_y_point = np.array(PolymerTracing.evaluate_spline(u, tck=tck))
     diff = (s1.T - x_y_point).T
-    diff_summed = (np.abs(np.sum(diff,axis=0)))
-    min_summed = np.argmin(diff_summed)
-    return diff[:,min_summed]
+    diff_abs_summed = np.sum(np.abs(diff),axis=0)
+    to_ret = np.min(diff_abs_summed)
+    return to_ret
+
 
 
 def get_distances(x):
@@ -57,6 +62,7 @@ def detect_loops_in_trace(wlc):
     assert abs(n_points_interp - int(n_points_interp)) < 1e-6
     # POST: n_points_interp is an integer
     tolerance = 0.1
+    n_points_interp = int(np.ceil(3/tolerance))
     # u runs from 0 to n-1; get just the slice from i to i+1, for i in 0 to n-2
     # (since for N data points, there are only N-1 segments. Think N=2 -- just
     # one (N-1) line connecting two (N) points)
@@ -73,28 +79,31 @@ def detect_loops_in_trace(wlc):
     # loop through each pair of splines, and determine the roots (closer than
     # <tolerance> of a pixel is considered an intersection).
     parameter_values_where_crossover = []
+    pairs_of_splines = set()
     for i,(min_idx,s1) in enumerate(zip(min_dist_idx,spline_slices)):
         # make a minimize function for this spline
         # only ask for a solution within <xatol> pixels
-        kw = dict(x0 = min_idx + 1/2,
-                  method="hybr",
-                  options=dict(factor=1))
+        n_points = max(2,int(2*np.ceil(1 / tolerance)))
+        step = 1/n_points
+        bounds = [slice(min_idx,min_idx+1+step,step)]
+        kw = dict(ranges=bounds,
+                  Ns=n_points,
+                  full_output=True)
         f_min_spline = lambda i_lambda: _root_func(i_lambda,s1,tck,
                                                    max_n=n_spline_slices)
-        res = root(f_min_spline,**kw)
+        x0,fval,_,_ = brute(f_min_spline,**kw)
         # get the parameter difference between each..
-        u_x = res.x[0]
+        u_x = x0[0]
         # if the difference minimizing x and y is small enough, and
         # the minimization suceeded, and the minimization was small enough,
         # then we count this as a crossover
-        succeeded = res.success
-        value_func = np.abs(res.fun)
-        small_value = (value_func < tolerance).all()
-        in_range = (u_x <= min_idx + 1) and (u_x >= min_idx)
-        print(res.message)
-        print(i,succeeded,small_value,in_range,u_x)
-        if (succeeded and small_value and in_range):
+        value_func = fval
+        is_small_value = (value_func < tolerance).all()
+        is_in_range = (u_x <= min_idx + 1) and (u_x >= min_idx)
+        pair = "".join("{:d}".format(d) for d in sorted([i, min_idx]))
+        if (is_small_value and is_in_range):
             parameter_values_where_crossover.append(u_x)
+            pairs_of_splines.add(pair)
     plt.close()
     plt.plot(x,y,'b.-')
     for s in spline_slices:
