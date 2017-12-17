@@ -168,6 +168,9 @@ class tagged_image:
         self.protein_idx = np.where(cond_protein)[0]
         self.dna_only_idx = np.where(np.array(cond_dna))[0]
     @property
+    def m_per_px(self):
+        return (self.image.range_meters/self.image.height.shape[0])
+    @property
     def file_name(self):
         return self.image_path.rsplit("/",1)[-1]
     def subset(self,idx):

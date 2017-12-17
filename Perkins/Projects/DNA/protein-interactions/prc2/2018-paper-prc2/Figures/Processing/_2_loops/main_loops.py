@@ -13,7 +13,7 @@ sys.path.append("../../../../../../../../../../")
 sys.path.append("../../")
 from Util import IoUtil,AnalysisClasses
 from Research.Perkins.AnalysisUtil.Images import PolymerTracing
-from GeneralUtil.python import PlotUtilities
+from GeneralUtil.python import PlotUtilities,CheckpointUtilities
 from scipy.optimize import brute
 
 def _root_func(i,s1,tck,max_n):
@@ -107,7 +107,6 @@ def detect_loops_in_trace(wlc,upscale_interp=3,tolerance=0.1):
     loop_starts,loop_ends = [],[]
     for s in set_of_pairs:
         # each look should stop and end.
-        assert pairs_of_splines.count(s) == 2
         # make sure there are
         u_idx = [i for i,s_tmp in enumerate(pairs_of_splines) if s_tmp == s]
         u_loop = [parameter_values_where_crossover[i] for i in u_idx]
@@ -124,6 +123,9 @@ def debug_plot(tmp_loop):
     for i,loop_bounds in enumerate(tmp_loop.get_loop_bounds()):
         u_min, u_max = loop_bounds[0], loop_bounds[1]
         num = (u_max - u_min) * 10
+        if (u_max == u_min):
+            print("uhh... umax=umin...")
+            continue
         u = np.linspace(u_min, u_max, endpoint=True, num=num)
         spline_loop = PolymerTracing.evaluate_spline(u, tmp_loop.tck)
         label = "loop" if i == 0 else ""
@@ -143,10 +145,9 @@ def run(in_dir):
     debug = False
     input_dir =  IoUtil.data_dir(in_dir)
     cache_dir = IoUtil._traces_dir(in_dir)
-    output_dir = IoUtil._ensemble_dir(in_dir)
+    output_dir = IoUtil._loop_dir(in_dir)
     # just read in from the cache...
-    objs_all = IoUtil.read_images(input_dir,cache_dir=cache_dir,force=False,
-                                  limit=1)
+    objs_all = IoUtil.read_images(input_dir,cache_dir=cache_dir,force=False)
     debug = True
     ensemble = AnalysisClasses.convert_to_ensemble(objs_all)
     # remove the multimers and unknown; we score them separately.
@@ -154,6 +155,8 @@ def run(in_dir):
     ensemble.dna_plus_protein = get_subset_loops(ensemble.dna_plus_protein)
     ensemble.multimer = None
     ensemble.unknown = None
+    # save out the ensemble
+    CheckpointUtilities.lazy_save(output_dir + "loops.pkl",ensemble)
     if (debug):
         all_plottable = ensemble.dna_only + ensemble.dna_plus_protein
         for i,tmp_loop in enumerate(all_plottable):

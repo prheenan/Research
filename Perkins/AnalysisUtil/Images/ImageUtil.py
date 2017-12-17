@@ -10,7 +10,7 @@ from IgorUtil.PythonAdapter import PxpLoader,ProcessSingleWave
 from GeneralUtil.python import GenUtilities,PlotUtilities
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def_imshow_kw = dict(cmap=plt.cm.afmhot)
+def_imshow_kw = dict(cmap=plt.cm.afmhot,origin='lower',vmin=0,vmax=4)
 
 def subtract_background(image,**kw):
     return _subtract_array_background(image.height,**kw)
@@ -83,7 +83,7 @@ def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False,
     min_offset = np.percentile(im_height,pct)
     im_height -= min_offset
     range_microns = im.range_meters * 1e6
-    to_ret = plt.imshow(im_height.T,extent=[0,range_microns,0,range_microns],
+    to_ret = plt.imshow(im_height,extent=[0,range_microns,0,range_microns],
                         interpolation='bicubic',**imshow_kwargs)
     PlotUtilities.tom_ticks()
     micron_str = PlotUtilities.upright_mu("m")
@@ -100,5 +100,6 @@ def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),
     colorbar_kwargs (which go to smart_colorbar)
     """    
     im = make_image_plot(im,imshow_kwargs=imshow_kwargs,pct=50)
-    smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)    
+    if (colorbar):
+        smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)    
     return im

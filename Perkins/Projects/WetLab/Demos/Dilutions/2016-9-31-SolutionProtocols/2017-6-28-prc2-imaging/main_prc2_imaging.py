@@ -69,7 +69,7 @@ def run():
         dna_desired_pmol/(Volume_total_inc)
     # base the PRC2 on it
     Desired_prc2 = ratio_prc2_dilution * dna_imaging_stock_conc_nM/1000 * \
-                   np.array([12] + [1/(4**i) for i in range(-1,2)])
+                   np.array([12/(3**i) for i in range(0,4)])
     num_extra = 1
     # desired volumes (for each)
     volume_1x = Volume_total_inc/ratio_prc2_dilution 
