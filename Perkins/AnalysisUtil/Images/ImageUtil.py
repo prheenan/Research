@@ -94,12 +94,12 @@ def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False,
     return to_ret                          
 
 def image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,ax=plt.gca(),fig=plt.gcf(),
-               colorbar=True,colorbar_kwargs=dict()):
+               colorbar=True,colorbar_kwargs=dict(),**kw):
     """
     Convenience wrapper: see make_image_plot for arguments, except 
     colorbar_kwargs (which go to smart_colorbar)
     """    
-    im = make_image_plot(im,imshow_kwargs=imshow_kwargs,pct=50)
+    im = make_image_plot(im,imshow_kwargs=imshow_kwargs,pct=50,**kw)
     if (colorbar):
         smart_colorbar(im=im,ax=ax,fig=fig,**colorbar_kwargs)    
     return im
