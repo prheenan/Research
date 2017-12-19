@@ -83,6 +83,7 @@ def make_image_plot(im,imshow_kwargs=def_imshow_kw,pct=50,to_microns=False,
     min_offset = np.percentile(im_height,pct)
     im_height -= min_offset
     range_microns = im.range_meters * 1e6
+    print(imshow_kwargs)
     to_ret = plt.imshow(im_height,extent=[0,range_microns,0,range_microns],
                         interpolation='bicubic',**imshow_kwargs)
     PlotUtilities.tom_ticks()

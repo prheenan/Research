@@ -91,10 +91,14 @@ def single_trace(fig,i,trace,add_trace=True,add_scalebar=True,
                                           colorbar=colorbar,imshow_kwargs=kw)
     square_um = 0.30
     x,y = _trace_x_y_plot(trace,um_per_px_i)
+    if (skeleton_bool):
+        tmp = x 
+        x = y
+        y = tmp
     x0 = np.mean(x)
     y0 = np.mean(y)
-    xlim = [max(0,x0-square_um),min(max_um,x0+square_um)]
-    ylim = [max(0,y0-square_um),min(max_um,y0+square_um)]
+    xlim = [x0-square_um,x0+square_um]
+    ylim = [y0-square_um,y0+square_um]
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     if (add_scalebar):
@@ -162,16 +166,15 @@ def run(in_dir):
              [18,0,"butterfly"]]
     images_traces = [ [images[i],images[i].worm_objects[j]] for i,j,_ in pairs]
     imshow_kwargs = dict(**ImageUtil.def_imshow_kw)
-    imshow_kwargs['cmap'] = plt.cm.Reds_r
+    imshow_kwargs['cmap'] = plt.cm.YlOrRd_r
     imshow_kwargs['colorbar'] = False
     for i,(im,t) in enumerate(images_traces):
-        fig = PlotUtilities.figure(figsize=(5,5),frameon=False)
+        fig = PlotUtilities.figure(figsize=(3,3),frameon=False)
         vmin_nm = np.median(im.image.height_nm()+0.3)
-        vmax_nm = np.max(im.image.height_nm())
+        vmax_nm = 2 + vmin_nm
         imshow_kwargs['vmin'] = vmin_nm
         imshow_kwargs['vmax'] = vmax_nm
-        ax = plot_single_trace(fig,im,t,skeletonize=False,**imshow_kwargs)
-        ax.axis('off')
+        ax = plot_single_trace(fig,im,t,skeletonize=10,**imshow_kwargs)
         output_name = "./mom/" + "{:d}_{:s}.pdf".format(i,pairs[i][-1])
         PlotUtilities.savefig(fig,output_name,transparent=True)   
     
