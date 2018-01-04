@@ -313,7 +313,7 @@ def make_gallery_plot(areas,data_to_analyze,out_name="Fig3_gallery"):
                             labels=PlotUtilities._lowercase)
     PlotUtilities.save_tom(fig,out_name)          
     # make a gallery plot just for the poster; no labels, different size
-    fig = PlotUtilities.figure((2.5*3,2.5))
+    fig = PlotUtilities.figure((2*3,2))
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
     PlotUtilities.save_tom(fig,"poster_" + out_name)
     
