@@ -36,7 +36,85 @@ def velocity_annotate(ax,v,y=0.9,x=0.8,color='g'):
     Annotations.relative_annotate(ax=ax,s=s,
                                   xy=(x,y),
                                   color=color,bbox=dict(color='w',pad=0))
-                           
+
+def equilibrium_flickering_subplot(ax_time,fig4ab,color_equil):
+    min_x_new = 1.6233
+    max_x_new = 1.6268
+    idx = np.where( (fig4ab.time <= max_x_new) & (fig4ab.time >= min_x_new))
+    time = fig4ab.time[idx]
+    force = fig4ab.force[idx]
+    FEC_Plot._fec_base_plot(time,force,n_filter_points=200,
+                            style_data=dict(color=color_equil,alpha=0.3,
+                                            linewidth=0.75))
+    ax_time.set_xlim(min_x_new,max_x_new)
+    ax_time.set_ylim(None,None)
+    unit_kwargs = dict(value_function =lambda x: x*1e6,fmt="{:.0f}")
+    unit_micro_s = PlotUtilities.upright_mu() + "s"
+    x_kwargs = dict(unit_kwargs=unit_kwargs,width=600e-6,unit=unit_micro_s)
+    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
+    y_font['rotation'] = 90
+    y_kwargs = dict(height=20,unit="pN",font_kwargs=y_font)
+    Scalebar.crossed_x_and_y_relative(offset_x=0.3,offset_y=0.1,
+                                      x_kwargs=x_kwargs,
+                                      y_kwargs=y_kwargs,
+                                      ax=ax_time)
+    PlotUtilities.no_x_label(ax=ax_time)                                      
+    PlotUtilities.no_y_label(ax=ax_time)  
+    PlotUtilities.lazyLabel("Time","Force","")
+    velocity_annotate(ax=ax_time,v=0,color=color_equil)                                  
+                         
+def pfold_subplot(ax_equil,fig4c,color_equil):                   
+    # data is in kJ/mol, communication with hao, 2017-9-14
+    fig4c.energy /= 4.2
+    fig4c.energy_error /= 4.2
+    plt.errorbar(fig4c.x,fig4c.energy,fig4c.energy_error,color=color_equil,
+                 marker='o',
+                 mfc='w',zorder=0,markerfacecolor="None",capsize=2,elinewidth=1,
+                 linewidth=1)                 
+    PlotUtilities.lazyLabel("Extension (nm)","Energy","")     
+    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
+    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
+    y_font['rotation'] = 90
+    y_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),
+                    height=0.5,unit="kcal/mol",font_kwargs=y_font)
+    Scalebar.crossed_x_and_y_relative(offset_x=0.22,offset_y=0.60,
+                                      x_kwargs=x_kwargs,
+                                      y_kwargs=y_kwargs,
+                                      ax=ax_equil,
+                                      x_on_top=True)
+    # add in bell...
+    bell_mean = 0.64
+    bell_std = 0.09
+    x0,xf = ax_equil.get_xlim()
+    mean_x = bell_mean * (xf-x0) + x0
+    std_x = bell_std * (xf-x0)
+    color_bell = 'k'
+    plt.axvspan(mean_x-std_x,mean_x+std_x,color=color_bell,alpha=0.15)
+    plt.axvline(mean_x,color=color_bell,linestyle='--',zorder=0,alpha=0.7)
+    PlotUtilities.no_x_label(ax=ax_equil)         
+    t = ax_equil.annotate(s=r"$\Delta x^{\ddag}_{\mathrm{Bell}}$",
+                          xy=(0.4,0.3),color=color_bell,
+                          xycoords="axes fraction")
+    PlotUtilities.no_y_label(ax=ax_equil)        
+                         
+def poster_creation(base_re):
+    color_equil = 'rebeccapurple'
+    ax_time = plt.subplot(1,2,1)
+    fig4ab = figure_recreation.save_output(base_re,"Fig1D.csv")  
+    equilibrium_flickering_subplot(ax_time,fig4ab,color_equil)
+    # # figure 4C from the science paper -- the pfold energy landscape 
+    fig4c = figure_recreation.save_output(base_re,"Fig1E.csv")    
+    ax_equil = plt.subplot(1,2,2)
+    pfold_subplot(ax_equil,fig4c,color_equil)
+    
+def make_poster_plots(base_re):
+    fig = plt.figure(figsize=(5,2.5))
+    poster_creation(base_re)
+    PlotUtilities.save_tom(fig,"poster_equil",bbox_inches=None,tight=True)                           
+   
+    
+    
+                        
 def run():
     """
     <Description>q
@@ -49,6 +127,9 @@ def run():
     """
     in_dir = None
     flickering_dir = "../Data/fec/"
+    # where to read in the data ...
+    base_re = "./recreation_figure_data/" 
+    make_poster_plots(base_re)      
     # XXX use the flickering dir for stuff
     cache_dir = flickering_dir 
     GenUtilities.ensureDirExists(flickering_dir)
@@ -203,8 +284,6 @@ def run():
                          y_name=["Force","Force (filtered)"],
                          y_units="pN")
         Record.save_csv(record_kw)
-    # read in the data ...
-    base_re = "./recreation_figure_data/"
     # # Figure 1D from the science paper 
     ax_fec_ensemble = plt.subplot(top_spec[1,0])
     fig4d = figure_recreation.save_output(base_re,"Fig1C.csv")      
@@ -231,65 +310,12 @@ def run():
     color_equil = 'rebeccapurple'
     fig4ab = figure_recreation.save_output(base_re,"Fig1D.csv")  
     ax_time = plt.subplot(top_spec[1,1])
-    min_x_new = 1.6233
-    max_x_new = 1.6268
-    idx = np.where( (fig4ab.time <= max_x_new) & (fig4ab.time >= min_x_new))
-    time = fig4ab.time[idx]
-    force = fig4ab.force[idx]
-    FEC_Plot._fec_base_plot(time,force,n_filter_points=200,
-                            style_data=dict(color=color_equil,alpha=0.3,
-                                            linewidth=0.75))
-    ax_time.set_xlim(min_x_new,max_x_new)
-    ax_time.set_ylim(None,None)
-    unit_kwargs = dict(value_function =lambda x: x*1e6,fmt="{:.0f}")
-    unit_micro_s = PlotUtilities.upright_mu() + "s"
-    x_kwargs = dict(unit_kwargs=unit_kwargs,width=600e-6,unit=unit_micro_s)
-    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
-    y_font['rotation'] = 90
-    y_kwargs = dict(height=20,unit="pN",font_kwargs=y_font)
-    Scalebar.crossed_x_and_y_relative(offset_x=0.3,offset_y=0.1,
-                                      x_kwargs=x_kwargs,
-                                      y_kwargs=y_kwargs,
-                                      ax=ax_time)
-    PlotUtilities.no_x_label(ax=ax_time)                                      
-    PlotUtilities.no_y_label(ax=ax_time)  
-    PlotUtilities.lazyLabel("Time","Force","")
-    velocity_annotate(ax=ax_time,v=0,color=color_equil)
+    equilibrium_flickering_subplot(ax_time,fig4ab,color_equil)
     # # figure 4C from the science paper -- the pfold energy landscape 
     fig4c = figure_recreation.save_output(base_re,"Fig1E.csv")
     ax_equil = plt.subplot(top_spec[1,2])
-    # data is in kJ/mol, communication with hao, 2017-9-14
-    fig4c.energy /= 4.2
-    fig4c.energy_error /= 4.2
-    plt.errorbar(fig4c.x,fig4c.energy,fig4c.energy_error,color=color_equil,
-                 marker='o',
-                 mfc='w',zorder=0,markerfacecolor="None",capsize=2,elinewidth=1,
-                 linewidth=1)                 
-    PlotUtilities.lazyLabel("Extension (nm)","Energy","")     
-    x_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),width=0.1,unit="nm")
-    y_font = copy.deepcopy(Scalebar.def_font_kwargs_y)
-    y_font['rotation'] = 90
-    y_kwargs = dict(unit_kwargs=dict(fmt="{:.1f}"),
-                    height=0.5,unit="kcal/mol",font_kwargs=y_font)
-    Scalebar.crossed_x_and_y_relative(offset_x=0.22,offset_y=0.60,
-                                      x_kwargs=x_kwargs,
-                                      y_kwargs=y_kwargs,
-                                      ax=ax_equil,
-                                      x_on_top=True)
-    # add in bell...
-    bell_mean = 0.64
-    bell_std = 0.09
-    x0,xf = ax_equil.get_xlim()
-    mean_x = bell_mean * (xf-x0) + x0
-    std_x = bell_std * (xf-x0)
-    color_bell = 'k'
-    plt.axvspan(mean_x-std_x,mean_x+std_x,color=color_bell,alpha=0.15)
-    plt.axvline(mean_x,color=color_bell,linestyle='--',zorder=0,alpha=0.7)
-    PlotUtilities.no_x_label(ax=ax_equil)         
-    t = ax_equil.annotate(s=r"$\Delta x^{\ddag}_{\mathrm{Bell}}$",
-                          xy=(0.4,0.3),color=color_bell,
-                          xycoords="axes fraction")
-    PlotUtilities.no_y_label(ax=ax_equil)    
+    pfold_subplot(ax_equil,fig4c,color_equil)
+    # make all the labels 
     loc_upper = [-0.05,1.05]
     loc_lower = [-0.05,1.0]
     loc = [loc_upper,loc_upper,loc_upper,   
