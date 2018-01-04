@@ -298,7 +298,7 @@ def normalize_and_set_zeros(first_axs,second_axs,fudge_1=0.05,fudge_2=0.6):
     needed_min = normalized_zero * max_y_second / (normalized_zero-1)
     normalize_axes(second_axs,manual_min=needed_min)       
     
-def make_gallery_plot(areas,data_to_analyze,out_name="./Fig3_gallery"):
+def make_gallery_plot(areas,data_to_analyze,out_name="Fig3_gallery"):
     # skip the first one (the entire landscape )
     helical_areas = areas[1:]
     helical_data = data_to_analyze[1:]
@@ -311,7 +311,13 @@ def make_gallery_plot(areas,data_to_analyze,out_name="./Fig3_gallery"):
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
                             loc=[loc_first,loc_last_two,loc_last_two],
                             labels=PlotUtilities._lowercase)
-    PlotUtilities.save_tom(fig,out_name)                    
+    PlotUtilities.save_tom(fig,out_name)          
+    # make a gallery plot just for the poster; no labels, different size
+    fig = PlotUtilities.figure((2.5*3,2.5))
+    helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
+    PlotUtilities.save_tom(fig,"poster_" + out_name)
+    
+    
     
 def setup_pedagogy_ticks(ax,scale_bar_x,x_heat_kw,y_heat_kw,offset_y=0.9,**kw):
     font_kwargs= copy.deepcopy(Scalebar.def_font_kwargs_y)
