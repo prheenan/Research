@@ -313,9 +313,11 @@ def make_gallery_plot(areas,data_to_analyze,out_name="Fig3_gallery"):
                             labels=PlotUtilities._lowercase)
     PlotUtilities.save_tom(fig,out_name)          
     # make a gallery plot just for the poster; no labels, different size
-    fig = PlotUtilities.figure((2*3,2))
+    base = 5.6
+    fig = PlotUtilities.figure((base,base * (6.7/16.5)))
     helical_gallery_plot(helical_areas,helical_data,helical_kwargs)    
-    PlotUtilities.save_tom(fig,"poster_" + out_name)
+    PlotUtilities.save_tom(fig,"poster_" + out_name,tight=True,
+                           subplots_adjust=dict(wspace=0.3))
     
     
     
@@ -460,11 +462,7 @@ def make_second_deriv_plot(data_to_plot,kw):
     PlotUtilities.save_tom(fig,"./FigS3_stiffness")
     mpl.rc('text', usetex=False)                            
     
-    
-def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
-    heatmap_data = data_to_plot.heatmap_data
-    data = data_to_plot.generate_landscape_obj()
-    fig = PlotUtilities.figure((3.25,5))
+def make_pedagogical_plot(heatmap_data,data,kw):
     # # ploy the heat map 
     ax_heat = plt.subplot(3,1,1)
     x,y,heat = heatmap_plot(heatmap_data,data.amino_acids_per_nm(),
@@ -474,8 +472,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     ax_heat.set_ylim([0,150])
     PlotUtilities.no_x_label(ax_heat)
     PlotUtilities.no_y_label(ax_heat)   
-    fontsize_scalebar = 6 
-    common_kw = dict(color='w',fontsize=fontsize_scalebar)
+    common_kw = dict(color='w')
     x_font,y_font = Scalebar.\
         font_kwargs_modified(x_kwargs=common_kw,
                              y_kwargs=common_kw)
@@ -523,7 +520,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     PlotUtilities.no_y_anything(axins)
     # add in scale bars
     kw_common = dict(line_kwargs=dict(linewidth=0.75,color='k'))
-    common_font_inset = dict(fontsize=fontsize_scalebar)
+    common_font_inset = dict(fontsize=6)
     x_kwargs = dict(verticalalignment='top',**common_font_inset)
     x_font,y_font = Scalebar.\
         font_kwargs_modified(x_kwargs=x_kwargs,
@@ -563,7 +560,7 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
     ax_energy.set_xlim(xlim_fec)                         
     setup_pedagogy_ticks(ax_energy,scale_bar_x,x_heat_kw,y_heat_kw,
                          offset_y=offset_y_pedagogy,
-                         sanitize_kwargs=dict(factor_y_y=-3))
+                         sanitize_kwargs=dict(factor_y_y=-4))
     # add in the equation notation
     strings,colors = [],[]
     labels = kwargs_labels()
@@ -577,10 +574,24 @@ def make_pedagogical_plot(data_to_plot,kw,out_name="./Fig2_iwt_diagram"):
                              ax=ax_energy,size=legend_font_size)
     PlotUtilities.legend(handlelength=0.5,loc=(0.03,0.8))      
     PlotUtilities.no_x_label(ax_energy)           
+    
+def save_pedagogical_plot(data_to_plot,kw,out_name="Fig2_iwt_diagram"):
+    heatmap_data = data_to_plot.heatmap_data
+    data = data_to_plot.generate_landscape_obj()
+    fig = PlotUtilities.figure((3.25,5))
+    make_pedagogical_plot(heatmap_data,data,kw)
     ax_to_label = [ax for i,ax in enumerate(fig.axes) if i != 2]
     PlotUtilities.label_tom(fig=fig,axis_func=lambda *a,**kw: ax_to_label,
                             loc=(-0.05,1.02),labels=PlotUtilities._lowercase)
     PlotUtilities.save_tom(fig,out_name)  
+    # make one for the poster, without the labels 
+    ratio = 16.7/10.5
+    base = 2.5 * 1.3
+    figure_size = (base,ratio * base)
+    fig = PlotUtilities.figure(figure_size)
+    make_pedagogical_plot(heatmap_data,data,kw)
+    fig.set_size_inches(figure_size)
+    PlotUtilities.save_tom(fig,"poster_" + out_name,tight=True)      
     
 
 def print_info(helical_data):
@@ -698,11 +709,11 @@ def run():
         for o in tmp.originals:
             set_landscape_to_slice(o, a)
         helical_data.append(tmp) 
-    print_info(helical_data)        
+    print_info(helical_data)    
     # make the pedagogy plot
-    make_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
+    save_pedagogical_plot(helical_data[0],landscape_kwargs()[0])
     # make the 'gallery' plots.
-    make_gallery_plot(areas,helical_data)
+    make_gallery_plot(areas,helical_data)    
     # make the heatmaps/energy landscape plots
     # (note: this is just for debugging)
     if (debugging):

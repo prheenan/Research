@@ -108,9 +108,11 @@ def poster_creation(base_re):
     pfold_subplot(ax_equil,fig4c,color_equil)
     
 def make_poster_plots(base_re):
-    fig = plt.figure(figsize=(5,2.5))
+    n = 2
+    base = 5.5
+    fig = PlotUtilities.figure((base,base* (6.7/17.4)))
     poster_creation(base_re)
-    PlotUtilities.save_tom(fig,"poster_equil",bbox_inches=None,tight=True)                           
+    PlotUtilities.save_tom(fig,"poster_equil",bbox_inches='tight')                     
    
     
     
