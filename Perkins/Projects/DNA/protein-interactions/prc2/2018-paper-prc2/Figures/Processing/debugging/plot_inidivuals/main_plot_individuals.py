@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import numpy as np
 import matplotlib.pyplot as plt
 import sys,copy
+from skimage.filters import gaussian
 
 sys.path.append("../../../../../../../../../../../")
 sys.path.append("../../../")
@@ -47,29 +48,26 @@ def scalebar(ax,square_um,color):
     line_kwargs = dict(**Scalebar.def_line_kwargs)
     line_kwargs['color'] = color
     Scalebar.x_scale_bar_and_ticks_relative(unit="nm",width=scalebar_width_um,
-                                            offset_x=0.5,offset_y=0.95,
+                                            offset_x=0.5,offset_y=0.92,
                                             unit_kwargs=unit_kwargs,
                                             font_kwargs=x_font,
                                             ax=ax,
                                             line_kwargs=line_kwargs)
     PlotUtilities.no_x_anything(ax)
     PlotUtilities.no_y_anything(ax)
-    ax.axis('off')
-
 
 
 def single_trace(fig,i,trace,add_trace=True,add_scalebar=True,
-                 skeletonize=4,colorbar=True,**kw):
+                 skeletonize=4,**kw):
     ax = plt.subplot(1,1,1)
     um_per_px_i = um_per_px(i)
     image = copy.deepcopy(i.image)
     # copy the height, in case we modify it...
     image.height = copy.deepcopy(image.height)
     skeleton_bool = skeletonize is not None and skeletonize > 0
-    max_um = 2
     if (skeleton_bool):
         # get the pixel representation...
-        x_px,y_px = _trace_x_y_plot(trace,1)
+        y_px,x_px = _trace_x_y_plot(trace,1)
         skeleton = np.zeros(image.height.shape)
         for x_tmp,y_tmp in zip(x_px,y_px):
             skeleton[int(x_tmp),int(y_tmp)] = 1
@@ -77,24 +75,21 @@ def single_trace(fig,i,trace,add_trace=True,add_scalebar=True,
         cmap = kw['cmap']
         data = copy.deepcopy(image.height)
         data *= skeleton
-        min_d,max_d = np.min(data),np.max(data)
+        min_d,max_d = np.median(data),np.max(data)
         data -= min_d
         data /= (max_d-min_d)
+        data[np.where(data < 0.3e-9)] = 0
         x_thresh,y_thresh = np.where(skeleton < 1)
+        data = gaussian(data, sigma=1)
         rgba_img = cmap(data)
         rgba_img[x_thresh,y_thresh,:-1] = 1
         rgba_img[x_thresh,y_thresh,-1] = 0
-        plt.imshow(rgba_img,extent=[0,max_um,0,max_um],interpolation='bicubic',
+        plt.imshow(rgba_img,extent=[0,2,0,2],interpolation='nearest',
                    **kw)
     else:
-        image_plot = ImageUtil.image_plot(image,ax=ax,fig=fig,
-                                          colorbar=colorbar,imshow_kwargs=kw)
+        image_plot = ImageUtil.image_plot(image,ax=ax,fig=fig,imshow_kwargs=kw)
     square_um = 0.30
     x,y = _trace_x_y_plot(trace,um_per_px_i)
-    if (skeleton_bool):
-        tmp = x 
-        x = y
-        y = tmp
     x0 = np.mean(x)
     y0 = np.mean(y)
     xlim = [x0-square_um,x0+square_um]
@@ -102,19 +97,18 @@ def single_trace(fig,i,trace,add_trace=True,add_scalebar=True,
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
     if (add_scalebar):
-        scalebar(ax,square_um,color=('k' if not skeleton_bool else 'k'))
+        scalebar(ax,square_um,color=('w' if not skeleton_bool else 'k'))
     if (add_trace):
         plot_trace(ax,trace,um_per_px_i)
-    return ax
 
     
 def plot_single_trace(fig,image,trace,add_scalebar=False,**kw):
-    return single_trace(fig,image,trace,
-                        add_trace=False,
-                        add_scalebar=add_scalebar,**kw)
+    single_trace(fig,image,trace,
+                 add_trace=False,
+                 add_scalebar=add_scalebar,**kw)
+    plt.axis('off')
 
-def plot_image(image,output_dir,skeletonize=False,add_scalebar=False,
-               cmap=plt.cm.afmhot,colorbar=True):
+def plot_image(image,output_dir):
     name = GenUtilities.file_name_from_path(image.image_path)
     output_path = output_dir + name + "all_traces.png"
     # make a plot with everything
@@ -123,14 +117,12 @@ def plot_image(image,output_dir,skeletonize=False,add_scalebar=False,
     PlotUtilities.savefig(fig,output_path)
     # make a plot with each image
     imshow_kwargs = dict(**ImageUtil.def_imshow_kw)
-    imshow_kwargs['cmap'] = cmap
-    imshow_kwargs['colorbar'] = colorbar
+    imshow_kwargs['cmap'] = plt.cm.afmhot_r
     for j,trace in enumerate(image.worm_objects):
         if (trace.inf is None):
             continue
         fig = PlotUtilities.figure(frameon=False)
-        plot_single_trace(fig,image,trace,skeletonize=skeletonize,
-                          add_scalebar=add_scalebar,**imshow_kwargs)
+        plot_single_trace(fig,image,trace,**imshow_kwargs)
         output_name = output_path[:-3] + "{:d}_.pdf".format(j)
         PlotUtilities.savefig(fig,output_name,transparent=True)
 
@@ -143,8 +135,8 @@ def run(in_dir):
     output_dir = "./" #IoUtil._plot_dir(in_dir)
     images = CheckpointUtilities.lazy_multi_load(cache_dir)
     for i,im in enumerate(images):
-        #plot_image(im,output_dir + "{:d}_".format(i))
         pass
+        #plot_image(im,output_dir + "{:d}_".format(i))    
     pairs = [[12,2,"part of e"],
              [22,2,"l"],
              [2,0,"part of a"],
@@ -166,17 +158,16 @@ def run(in_dir):
              [18,0,"butterfly"]]
     images_traces = [ [images[i],images[i].worm_objects[j]] for i,j,_ in pairs]
     imshow_kwargs = dict(**ImageUtil.def_imshow_kw)
-    imshow_kwargs['cmap'] = plt.cm.YlOrRd_r
-    imshow_kwargs['colorbar'] = False
+    imshow_kwargs['cmap'] = plt.cm.cool_r
     for i,(im,t) in enumerate(images_traces):
-        fig = PlotUtilities.figure(figsize=(3,3),frameon=False)
-        vmin_nm = np.median(im.image.height_nm()+0.3)
-        vmax_nm = 2 + vmin_nm
-        imshow_kwargs['vmin'] = vmin_nm
-        imshow_kwargs['vmax'] = vmax_nm
-        ax = plot_single_trace(fig,im,t,skeletonize=10,**imshow_kwargs)
+        fig = PlotUtilities.figure(figsize=(5,5),frameon=False)
+        plot_single_trace(fig,im,t,skeletonize=3,**imshow_kwargs)
         output_name = "./mom/" + "{:d}_{:s}.pdf".format(i,pairs[i][-1])
         PlotUtilities.savefig(fig,output_name,transparent=True)   
+    # make a single one with a scale bar, for reference. 
+    fig = PlotUtilities.figure(figsize=(5,5),frameon=False)
+    plot_single_trace(fig,*images_traces[0],
+                      add_scalebar=True,**imshow_kwargs)
     
         
 
