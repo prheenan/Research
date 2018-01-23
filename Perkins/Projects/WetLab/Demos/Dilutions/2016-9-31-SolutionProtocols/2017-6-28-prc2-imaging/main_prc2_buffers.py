@@ -55,9 +55,10 @@ def run():
                                     BufferName="DI H20")
     print("No Divalent buffer creation, 2x, HEPES")
     KCl = 50
+    volume_mL = 50
     Stats = [ ["HEPES","mM",500,20,0],
               ["KCl","mM",2500,KCl,0]]
-    DilutionUtil.PrintSolutionSteps(Stats,1000,"mL",
+    DilutionUtil.PrintSolutionSteps(Stats,volume_mL,"mL",
                                         BufferName="DI H20")
 
 

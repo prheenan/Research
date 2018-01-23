@@ -14,7 +14,7 @@ def run():
     """
     Serially dilute something
     """
-    ConcString = "ng/uL"
+    ConcString = "nM"
     VolString = "uL"
     # stock concentration
     Stock = 189
