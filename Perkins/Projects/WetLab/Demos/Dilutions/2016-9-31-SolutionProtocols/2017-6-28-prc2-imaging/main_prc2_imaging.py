@@ -70,7 +70,11 @@ def run():
     # base the PRC2 on it
     max_ratio = 40
     Desired_prc2 = ratio_prc2_dilution * dna_imaging_stock_conc_nM/1000 * \
-                   np.array([ max_ratio/(3**i) for i in range(0,5)])
+                   np.array([ max_ratio, 
+                              max_ratio/3**(1/2),
+                              max_ratio/3,
+                              max_ratio/3**(3/2),
+                              max_ratio/3**(5/2)])
     num_extra = 1
     # desired volumes (for each)
     volume_1x = Volume_total_inc/ratio_prc2_dilution 
@@ -86,7 +90,7 @@ def run():
     vol_units = "uL"
     DilutionUtil.PrintSolutionSteps(Stats,Volume_total_inc,vol_units,
                                     BufferName="1x DI")
-    large_vol = len(Desired_prc2) + 0.5
+    large_vol = 4.0 + 0.5
     print("=== Binding dilution, {:.1f}x===".format(large_vol))
     DilutionUtil.PrintSolutionSteps(Stats,Volume_total_inc * large_vol,
                                     vol_units,
