@@ -90,7 +90,8 @@ def run():
     vol_units = "uL"
     DilutionUtil.PrintSolutionSteps(Stats,Volume_total_inc,vol_units,
                                     BufferName="1x DI")
-    large_vol = 4.0 + 0.5
+    large_vol = 5.0 + 0.2
+    Stats[1][-1] = volume_1x * large_vol
     print("=== Binding dilution, {:.1f}x===".format(large_vol))
     DilutionUtil.PrintSolutionSteps(Stats,Volume_total_inc * large_vol,
                                     vol_units,
