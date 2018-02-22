@@ -1,5 +1,6 @@
 # force floating point division. Can still use integer with //
 from __future__ import division
+from __future__ import unicode_literals
 # This file is used for importing the common utilities classes.
 import numpy as np
 import matplotlib.pyplot as plt
@@ -793,6 +794,13 @@ def GetRegionForWLCFit(RetractOriginal,NFilterPoints=None,
 
     
 
+def _safe_fmt(k,v):
+    safe = lambda x: str(unicode(x)).replace(",",";").replace(":","/")
+    try:
+        return "{:s}:{:s}".format(safe(k),safe(v))
+    except UnicodeDecodeError:
+        return None
+
 
 def save_time_sep_force_as_csv(output_path,data):
     """
@@ -806,9 +814,8 @@ def save_time_sep_force_as_csv(output_path,data):
     """
     meta = data.Meta.__dict__
     # get the string back as a dict
-    safe = lambda x: str(x).replace(",",";").replace(":","/")
-    str_meta = ",".join("{:s}:{:s}".format(safe(k),safe(v))
-                        for k,v in meta.items())
+    fmt_meta = [_safe_fmt(k,v) for k,v in meta.items()]
+    str_meta = ",".join([f for f in fmt_meta if f is not None])
     Events = [e for e in data.Events]
     header = str_meta
     # add the events to the second line if we want them

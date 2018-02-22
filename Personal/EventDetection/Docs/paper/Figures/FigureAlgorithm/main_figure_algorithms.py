@@ -225,6 +225,7 @@ def run(base="./"):
     force = False
     example = read_and_cache_file(data_base + "rupture.csv",has_events=True,
                                   force=force,cache_directory=data_base)
+    FEC_Util.save_time_sep_force_as_csv("./data/algorithm_example.csv",example)
     n_filter = 1000
     kw = dict(cache_directory=data_base,force=force)
     events = example.Events
